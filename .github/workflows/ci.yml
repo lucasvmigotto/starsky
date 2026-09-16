@@ -34,3 +34,17 @@ jobs:
 
       - name: No-pandas guard
         run: uv run pytest tests/test_no_pandas.py -q
+
+      # Live Nominatim path (needs the STARPY_USER_AGENT_CONTACT secret;
+      # skipped gracefully on forks without secrets).
+      - name: Live place render smoke
+        if: ${{ secrets.STARPY_USER_AGENT_CONTACT != '' }}
+        env:
+          STARPY__GEOCODING__USER_AGENT: ${{ secrets.STARPY_USER_AGENT_CONTACT }}
+        run: |
+          uv run python -m starpy cache warm
+          uv run python -m starpy render \
+            --place "Times Square, New York, NY" \
+            --when "2026-01-01T00:00" --tz UTC \
+            --shape circle --output smoke.png
+          uv run python -c "from PIL import Image; Image.open('smoke.png').verify()"
