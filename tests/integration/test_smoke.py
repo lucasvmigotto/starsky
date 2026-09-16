@@ -1,0 +1,92 @@
+"""End-to-end smoke test with real ephemeris (needs network on first run).
+
+Marked ``integration``: downloads de421.bsp (~17 MB), hip_main.dat (~13 MB)
+and the IAU index (~135 KB) into a temp cache on first run, then reuses them.
+"""
+
+from datetime import UTC, datetime
+from pathlib import Path
+
+import numpy as np
+import polars as pl
+import pytest
+from PIL import Image
+
+from starpy.data.catalog import load_hipparcos
+from starpy.data.constellations import load_constellation_lines
+from starpy.data.ephemeris import load_ephemeris
+from starpy.render.figure import project_visible, render_sky_map
+from starpy.schemas.inputs.render import RenderOptions
+from starpy.settings import EphemerisSettings
+
+pytestmark = pytest.mark.integration
+
+
+@pytest.fixture()
+def warmed(tmp_path: Path) -> tuple[EphemerisSettings, object, object, object]:
+    settings: EphemerisSettings = EphemerisSettings(CACHE_DIR=tmp_path / "eph")
+    _, planets, timescale = load_ephemeris(settings)
+    return settings, planets, timescale, tmp_path
+
+
+def test_full_render_deterministic(
+    warmed: tuple[EphemerisSettings, object, object, object],
+) -> None:
+    settings, planets, timescale, tmp_path = warmed
+    catalog: pl.DataFrame = load_hipparcos(settings)
+    assert catalog.height > 90000
+    lines: pl.DataFrame = load_constellation_lines(settings.CACHE_DIR)
+    assert lines.height > 500
+    options: RenderOptions = RenderOptions(
+        magnitude_limit=4.5, min_separation=0.0, shape="square", title="Test Night"
+    )
+    when: datetime = datetime(2026, 1, 1, tzinfo=UTC)
+    first: Image.Image = render_sky_map(
+        40.7580,
+        -73.9855,
+        "Times Square",
+        when,
+        "UTC",
+        options,
+        catalog,
+        lines,
+        planets,
+        timescale,
+        size_px=320,
+    )
+    second: Image.Image = render_sky_map(
+        40.7580,
+        -73.9855,
+        "Times Square",
+        when,
+        "UTC",
+        options,
+        catalog,
+        lines,
+        planets,
+        timescale,
+        size_px=320,
+    )
+    assert first.size == second.size
+    assert np.array_equal(np.asarray(first), np.asarray(second))
+    assert len(np.unique(np.asarray(first))) > 4  # sky + stars + caption
+
+
+def test_project_visible_nonempty(
+    warmed: tuple[EphemerisSettings, object, object, object],
+) -> None:
+    settings, planets, timescale, _ = warmed
+    catalog: pl.DataFrame = load_hipparcos(settings).head(2000)
+    projected: pl.DataFrame = project_visible(
+        catalog,
+        40.7580,
+        -73.9855,
+        datetime(2026, 1, 1, tzinfo=UTC),
+        RenderOptions(magnitude_limit=6.0, min_separation=0.0),
+        planets,
+        timescale,
+    )
+    assert projected.height > 0
+    assert (
+        projected.get_column("x") ** 2 + projected.get_column("y") ** 2 <= 1.01
+    ).all()

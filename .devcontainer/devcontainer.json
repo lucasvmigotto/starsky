@@ -1,0 +1,64 @@
+{
+    "name": "starpy",
+    "image": "lucasvmigotto/devenv:python-3.14-trixie",
+    "runArgs": [
+        "--env-file", ".env"
+    ],
+    "mounts": [
+        {
+            "source": "starpy-dependencies",
+            "target": "/home/developer/.venv",
+            "type": "volume"
+        },
+        {
+            "source": "starpy-cache",
+            "target": "/tmp/starpy-cache",
+            "type": "volume"
+        },
+        {
+            "source": "devcontainer-extensions",
+            "target": "/root/.vscode-server/extensions",
+            "type": "volume"
+        }
+    ],
+    "features": {
+        "ghcr.io/devcontainers/features/node": {}
+    },
+    "initializeCommand": {
+        "envfile": "[ ! -f '.env' ] && cp .env.example .env || echo '.env already exists'"
+    },
+    "postCreateCommand": {
+        "nodemon": "npm i -g nodemon"
+    },
+    "updateContentCommand": "[ -f './pyproject.toml' ] && uv sync --all-groups --all-extras || echo 'pyproject.toml not detected'",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "remote.autoForwardPorts": true,
+                "python.defaultInterpreterPath": "~/.venv",
+                "python.analysis.diagnosticSeverityOverrides": {
+                    "reportAttributeAccessIssue": "warning",
+                    "reportAssignmentType": "warning"
+                },
+                "python.languageServer": "None",
+                "[python]": {
+                    "diffEditor.ignoreTrimWhitespace": false,
+                    "editor.formatOnSave": true,
+                    "editor.defaultFormatter": "charliermarsh.ruff"
+                },
+                "editor.codeActionsOnSave": {
+                    "source.organizeImports.ruff": "explicit"
+                }
+            },
+            "extensions": [
+                "charliermarsh.ruff",
+                "astral-sh.ty",
+                "tamasfe.even-better-toml",
+                "EditorConfig.EditorConfig",
+                "mhutchie.git-graph",
+                "github.vscode-github-actions",
+                "DavidAnson.vscode-markdownlint"
+            ]
+        }
+    }
+}

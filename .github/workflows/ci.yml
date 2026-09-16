@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  lint-type-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.14"
+
+      - name: Sync dependencies
+        run: uv sync --all-groups --frozen
+
+      - name: Ruff check
+        run: uv run ruff check src tests
+
+      - name: Ruff format check
+        run: uv run ruff format --check src tests
+
+      - name: Type check (ty)
+        run: uv run ty check src tests
+
+      - name: Tests
+        run: uv run pytest -q
+
+      - name: No-pandas guard
+        run: uv run pytest tests/test_no_pandas.py -q
+
+      # Live Nominatim path (needs the STARPY_USER_AGENT_CONTACT secret;
+      # skipped gracefully on forks without secrets).
+      - name: Live place render smoke
+        if: ${{ secrets.STARPY_USER_AGENT_CONTACT != '' }}
+        env:
+          STARPY__GEOCODING__USER_AGENT: ${{ secrets.STARPY_USER_AGENT_CONTACT }}
+        run: |
+          uv run python -m starpy cache warm
+          uv run python -m starpy render \
+            --place "Times Square, New York, NY" \
+            --when "2026-01-01T00:00" --tz UTC \
+            --shape circle --output smoke.png
+          uv run python -c "from PIL import Image; Image.open('smoke.png').verify()"

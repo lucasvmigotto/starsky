@@ -1,0 +1,12 @@
+.env
+dist/
+build/
+*.egg-info/
+**/__pycache__/
+**/*.pyc
+.venv/
+/tmp/starpy-cache/
+/tmp/opencode/
+out.png
+*.png
+!tests/golden/*.png
