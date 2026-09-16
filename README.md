@@ -87,6 +87,14 @@ docker run --rm -p 8080:8080 -v starpy-cache:/tmp/starpy-cache starpy
 
 Runtime runs as UID/GID 65532 (DHI default non-root).
 
+## Secrets (GitHub Actions)
+
+| Secret | Used by | Purpose |
+| --- | --- | --- |
+| `HF_TOKEN` | `hf_spaces.yml` | push to HF Space (also set `HF_USERNAME`/`HF_SPACE_NAME` env) |
+| `DOCKER_HUB_PAT` | `dockerhub.yml` | Docker Hub PAT with push scope (username is `github.repository_owner`, no secret needed) |
+| `STARPY_USER_AGENT_CONTACT` | `ci.yml` live smoke | real contact User-Agent for Nominatim (skipped on forks without it) |
+
 ## Dev
 
 ```bash
