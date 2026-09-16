@@ -1,0 +1,46 @@
+name: Push to Docker Hub
+
+on:
+  push:
+    branches: ['main']
+
+env:
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  push-docker-image:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          file: ./Dockerfile
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Docker Hub attestations use buildx native flags (not the
+          # GHCR-specific attest-build-provenance action).
+          provenance: true
+          sbom: true
+          build-args: |
+            BUILDER_IMAGE=ghcr.io/astral-sh/uv:python3.14-trixie
+            RUNTIME_IMAGE=python:3.14-slim-trixie
