@@ -4,8 +4,8 @@ from datetime import UTC, datetime
 from typing import Any, Self
 from zoneinfo import ZoneInfo
 
-import polars as pl
-from PIL import Image
+from PIL.Image import Image as pil_Image
+from polars import DataFrame as pl_DataFrame
 
 from ...astro.observer import utc_from_local
 from ...geocoding.nominatim import geocode, resolve_latlon, timezone_from_coords
@@ -36,15 +36,15 @@ class SkyMapCallback(OnCallbackBase):
     def __init__(
         self: Self,
         settings: Settings,
-        catalog: pl.DataFrame,
-        lines: pl.DataFrame,
+        catalog: pl_DataFrame,
+        lines: pl_DataFrame,
         planets: Any,
         timescale: Any,
         /,
     ) -> None:
         self._settings: Settings = settings
-        self._catalog: pl.DataFrame = catalog
-        self._lines: pl.DataFrame = lines
+        self._catalog: pl_DataFrame = catalog
+        self._lines: pl_DataFrame = lines
         self._planets: Any = planets
         self._timescale: Any = timescale
 
@@ -81,7 +81,7 @@ class SkyMapCallback(OnCallbackBase):
         constellation_labels: bool,
         shape: str,
         title: str | None,
-    ) -> Image.Image:
+    ) -> pil_Image:
         coords, display_place = resolve_latlon(
             mode, float(lat), float(lon), place, self._settings.GEOCODING
         )
