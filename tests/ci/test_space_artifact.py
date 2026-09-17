@@ -24,15 +24,38 @@ def _frontmatter(path: Path) -> dict[str, Any]:
     return data
 
 
+def _version_tuple(raw: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in str(raw).strip().split(".") if part.isdigit())
+
+
 def test_hf_readme_gradio_frontmatter() -> None:
     meta: dict[str, Any] = _frontmatter(ROOT / "hf.README.md")
     assert meta["sdk"] == "gradio"
     assert meta["app_file"] == "app.py"
-    assert str(meta["python_version"]).startswith("3.14")
+    assert str(meta["python_version"]).startswith("3.13")
     # Quoted on purpose: a bare 6.27.0 parses as float 6.27 (invalid version).
     assert isinstance(meta["sdk_version"], str)
     assert meta["pinned"] is False
     assert meta["license"] == "gpl-3.0"
+
+
+def test_space_python_satisfies_requires_python() -> None:
+    """The Space builder silently falls back to 3.10 for unknown versions.
+
+    Requesting a `python_version` below our `requires-python` floor (or one
+    the builder has no image for) fails late and confusingly (e.g. pip
+    resolving 3.13-only pins on 3.10). Fail here instead, at PR time.
+    """
+    from tomllib import load as tomllib_load
+
+    with open(ROOT / "pyproject.toml", "rb") as handle:
+        project: dict[str, Any] = tomllib_load(handle)["project"]
+    spec: str = str(project["requires-python"]).strip()
+    assert spec.startswith(">=")
+    floor: tuple[int, ...] = _version_tuple(spec[len(">=") :])
+    meta: dict[str, Any] = _frontmatter(ROOT / "hf.README.md")
+    requested: tuple[int, ...] = _version_tuple(str(meta["python_version"]))
+    assert requested >= floor, f"Space python {requested} below floor {floor}"
 
 
 def test_github_readme_has_no_hf_frontmatter() -> None:

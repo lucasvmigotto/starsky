@@ -20,7 +20,7 @@ permissions:
   contents: read
 
 env:
-  PYTHON_VERSION: "3.14"
+  PYTHON_VERSION: "3.13"
 
 jobs:
   verify:
@@ -93,6 +93,15 @@ jobs:
         env:
           VITE_FULL_APP_URL: ${{ vars.STARPY_STATIC_SITE_URL }}
 
+      # Crawlers need absolute OG URLs: fail if the build left a placeholder.
+      # Tags span two lines (property line, then content line).
+      - name: Assert absolute OG tags
+        run: |
+          grep -A1 'property="og:url"' dist/index.html | grep -q 'content="https://'
+          grep -A1 'property="og:image"' dist/index.html | grep -q 'content="https://.*/og-banner.png"'
+          grep -A1 'name="twitter:image"' dist/index.html | grep -q 'content="https://.*/og-banner.png"'
+          test -f dist/og-banner.png
+
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
         with:
@@ -158,6 +167,11 @@ jobs:
             --exclude "index.html" \
             --exclude "data/*.json" \
             --cache-control "public, max-age=31536000, immutable"
+          # Stable filename but mutable content: no-cache like index.html.
+          aws s3 cp dist/og-banner.png "s3://${{ secrets.CLOUDFLARE_R2_BUCKET }}/og-banner.png" \
+            --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
+            --cache-control "no-cache" \
+            --content-type "image/png"
           aws s3 cp dist/index.html "s3://${{ secrets.CLOUDFLARE_R2_BUCKET }}/index.html" \
             --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
             --cache-control "no-cache" \

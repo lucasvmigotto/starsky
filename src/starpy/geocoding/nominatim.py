@@ -62,7 +62,7 @@ def _read_cache(cache_path: Path) -> dict[str, Any]:
         return {}
     try:
         payload: dict[str, Any] = json_loads(cache_path.read_text(encoding="utf-8"))
-    except json_JSONDecodeError, OSError:
+    except (json_JSONDecodeError, OSError):
         return {}
     return payload if isinstance(payload, dict) else {}
 
@@ -75,7 +75,7 @@ def _write_cache(cache_path: Path, payload: dict[str, Any]) -> None:
 def _cache_entry_valid(entry: dict[str, Any], ttl_days: int) -> bool:
     try:
         stored: datetime = datetime.fromisoformat(entry["at"])
-    except KeyError, ValueError:
+    except (KeyError, ValueError):
         return False
     if stored.tzinfo is None:
         stored = stored.replace(tzinfo=UTC)

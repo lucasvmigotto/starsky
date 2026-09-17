@@ -21,7 +21,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.14"
+          python-version: "3.13"
 
       - name: Read version from pyproject.toml
         id: version
