@@ -8,6 +8,7 @@ from .gradio import GradioSettings
 from .hf import HuggingFaceSettings
 from .log import LogSettings
 from .render import RenderSettings
+from .share import ShareSettings
 
 
 class Settings(BaseSettings):
@@ -23,5 +24,6 @@ class Settings(BaseSettings):
     EPHEMERIS: EphemerisSettings = EphemerisSettings()
     GEOCODING: GeocodingSettings = GeocodingSettings()
     RENDER: RenderSettings = RenderSettings()
+    SHARE: ShareSettings = ShareSettings()
     LOG: LogSettings = LogSettings()
     HF: HuggingFaceSettings = HuggingFaceSettings()

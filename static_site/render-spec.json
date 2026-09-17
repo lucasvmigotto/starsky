@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "starpy shared render spec",
+  "description": "Normative visual tokens consumed by BOTH the Python renderer (src/starpy/render/) and the static JS viewer (static_site/viewer/). Change both together; Python defaults in settings/render.py must match.",
+  "version": 1,
+  "colors": {
+    "background": "#0b0f19",
+    "star": "#f5efe0",
+    "line": "#b98a8a",
+    "ring": "#f5efe0"
+  },
+  "stars": {
+    "sizeFormula": "size_max * 10 ** (mag / -2.5)",
+    "sizeMax": 14.0,
+    "sizeMin": 0.6,
+    "glowMagThreshold": 3.5,
+    "glowRadiusFactor": 5.0,
+    "glowAlpha": 0.13,
+    "coreAlpha": 0.95
+  },
+  "constellations": {
+    "lineWidth": 0.7,
+    "lineAlpha": 0.7,
+    "labelUppercase": true,
+    "labelFontSize": 7,
+    "labelAlpha": 0.85
+  },
+  "shape": {
+    "ringWidth": 2.0,
+    "ringAlpha": 0.9
+  },
+  "projection": {
+    "stereographic": "cos(alt) / (1 + sin(alt)), north-up (x=sin(az), y=-cos(az))",
+    "fisheye": "r = ((90 - alt) / 90) ** strength"
+  },
+  "caption": {
+    "bandFraction": 0.22,
+    "titleFontSize": 17,
+    "detailFontSize": 10.5,
+    "coordsFormat": "{abs(lat):.4f}°N|S, {abs(lon):.4f}°E|W",
+    "detailTemplate": "{coords} — {place} · {local} {tz} (place segment omitted when unresolved; title line omitted when empty)"
+  },
+  "fonts": ["Cormorant Garamond", "EB Garamond", "DejaVu Serif"],
+  "shareLink": {
+    "fragmentParam": "s",
+    "encoding": "canonical-JSON | zlib-9 | base64url-no-pad",
+    "payloadVersion": 1
+  }
+}

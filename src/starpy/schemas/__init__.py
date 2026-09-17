@@ -10,6 +10,7 @@ from .inputs import (
     RenderOptions,
     ResolvedPlace,
 )
+from .share import SharePayload
 from .star import Star
 
 __all__ = [
@@ -22,5 +23,6 @@ __all__ = [
     "RenderOptions",
     "ResolvedPlace",
     "Shape",
+    "SharePayload",
     "Star",
 ]
