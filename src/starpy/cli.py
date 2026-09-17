@@ -4,8 +4,17 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-import click
-import polars as pl
+from click import BadParameter as click_BadParameter
+from click import Choice as click_Choice
+from click import Context as click_Context
+from click import Path as click_Path
+from click import UsageError as click_UsageError
+from click import echo as click_echo
+from click import group as click_group
+from click import option as click_option
+from click import pass_context as click_pass_context
+from polars import DataFrame as pl_DataFrame
+from polars import col as pl_col
 
 from .astro.observer import utc_from_local
 from .data.catalog import load_hipparcos
@@ -29,8 +38,8 @@ from .settings import Settings
 def warm_caches(settings: Settings) -> dict[str, int]:
     """Predownload ephemeris/catalog/constellations/font; return row counts."""
     _, planets, timescale = load_ephemeris(settings.EPHEMERIS)
-    catalog: pl.DataFrame = load_hipparcos(settings.EPHEMERIS)
-    lines: pl.DataFrame = load_constellation_lines(settings.EPHEMERIS.CACHE_DIR)
+    catalog: pl_DataFrame = load_hipparcos(settings.EPHEMERIS)
+    lines: pl_DataFrame = load_constellation_lines(settings.EPHEMERIS.CACHE_DIR)
     font: object = ensure_font(settings.EPHEMERIS.CACHE_DIR)
     _ = (planets, timescale)
     return {
@@ -51,7 +60,7 @@ def resolve_coordinates(
             str(resolved.get("place_short") or resolved["display_name"]),
         )
     if lat is None or lon is None:
-        raise click.UsageError("Provide --lat/--lon or --place.")
+        raise click_UsageError("Provide --lat/--lon or --place.")
     return Coordinates(lat=lat, lon=lon), None
 
 
@@ -60,12 +69,12 @@ def parse_when(raw: str) -> datetime:
     try:
         return datetime.fromisoformat(raw)
     except ValueError as exc:
-        raise click.BadParameter(f"Unparseable --when {raw!r}: {exc}") from exc
+        raise click_BadParameter(f"Unparseable --when {raw!r}: {exc}") from exc
 
 
-@click.group(invoke_without_command=True)
-@click.pass_context
-def main(ctx: click.Context) -> None:
+@click_group(invoke_without_command=True)
+@click_pass_context
+def main(ctx: click_Context) -> None:
     """starpy: no subcommand launches the Gradio app; see `render`/`cache`."""
     if ctx.invoked_subcommand is None:
         from .main import launch_app
@@ -74,28 +83,28 @@ def main(ctx: click.Context) -> None:
 
 
 @main.command(name="render")
-@click.option("--lat", type=float, default=None)
-@click.option("--lon", type=float, default=None)
-@click.option("--place", type=str, default=None)
-@click.option("--when", "when_raw", type=str, required=True)
-@click.option("--tz", "tz_name", type=str, default="UTC", show_default=True)
-@click.option(
+@click_option("--lat", type=float, default=None)
+@click_option("--lon", type=float, default=None)
+@click_option("--place", type=str, default=None)
+@click_option("--when", "when_raw", type=str, required=True)
+@click_option("--tz", "tz_name", type=str, default="UTC", show_default=True)
+@click_option(
     "--projection",
-    type=click.Choice(["stereographic", "fisheye"]),
+    type=click_Choice(["stereographic", "fisheye"]),
     default="stereographic",
 )
-@click.option("--fisheye-strength", type=float, default=1.0)
-@click.option("--min-separation", type=float, default=0.008)
-@click.option("--magnitude-limit", type=float, default=5.8)
-@click.option("--glow/--no-glow", default=True)
-@click.option("--glow-intensity", type=float, default=1.0)
-@click.option("--constellations/--no-constellations", default=True)
-@click.option("--constellation-labels/--no-constellation-labels", default=True)
-@click.option(
-    "--shape", "shape_opt", type=click.Choice(["circle", "square"]), default="circle"
+@click_option("--fisheye-strength", type=float, default=1.0)
+@click_option("--min-separation", type=float, default=0.008)
+@click_option("--magnitude-limit", type=float, default=5.8)
+@click_option("--glow/--no-glow", default=True)
+@click_option("--glow-intensity", type=float, default=1.0)
+@click_option("--constellations/--no-constellations", default=True)
+@click_option("--constellation-labels/--no-constellation-labels", default=True)
+@click_option(
+    "--shape", "shape_opt", type=click_Choice(["circle", "square"]), default="circle"
 )
-@click.option("--title", type=str, default=None)
-@click.option("--output", type=click.Path(path_type=Path), default=Path("out.png"))
+@click_option("--title", type=str, default=None)
+@click_option("--output", type=click_Path(path_type=Path), default=Path("out.png"))
 def render_cmd(
     lat: float | None,
     lon: float | None,
@@ -144,15 +153,15 @@ def render_cmd(
     cached: Path = cache_dir / f"{key}.png"
 
     _, planets, timescale = load_ephemeris(settings.EPHEMERIS)
-    catalog: pl.DataFrame = load_hipparcos(settings.EPHEMERIS)
-    lines: pl.DataFrame = load_constellation_lines(settings.EPHEMERIS.CACHE_DIR)
+    catalog: pl_DataFrame = load_hipparcos(settings.EPHEMERIS)
+    lines: pl_DataFrame = load_constellation_lines(settings.EPHEMERIS.CACHE_DIR)
 
     suffix: str = output.suffix.lower()
     if suffix == ".png" and cached.exists():
-        from PIL import Image
+        from PIL.Image import open as pil_open
 
-        Image.open(cached).save(output)
-        click.echo(f"cache hit -> {output}")
+        pil_open(cached).save(output)
+        click_echo(f"cache hit -> {output}")
         return
 
     from .astro.observer import format_local
@@ -164,15 +173,15 @@ def render_cmd(
     from .render.figure import project_visible, tz_label
 
     if suffix in {".svg", ".pdf"}:
-        projected: pl.DataFrame = project_visible(
+        projected: pl_DataFrame = project_visible(
             catalog, coords.lat, coords.lon, when_utc, options, planets, timescale
         )
-        segments: pl.DataFrame = (
+        segments: pl_DataFrame = (
             project_constellation_lines(projected, lines)
             if constellations
             else projected.clear()
         )
-        labels: pl.DataFrame = (
+        labels: pl_DataFrame = (
             constellation_label_positions(projected, lines)
             if constellations and constellation_labels
             else projected.clear()
@@ -214,7 +223,7 @@ def render_cmd(
         image.save(cached)
     # Ensure UTC-aware echo even for naive inputs.
     _ = when_utc.astimezone(UTC)
-    click.echo(f"rendered -> {output}")
+    click_echo(f"rendered -> {output}")
 
 
 @main.group(name="cache")
@@ -230,40 +239,44 @@ def cache_warm() -> None:
     settings: Settings = Settings()
     setup_log(settings.LOG)
     stats: dict[str, int] = warm_caches(settings)
-    click.echo(f"warmed: {stats['stars']} stars, {stats['segments']} segments")
+    click_echo(f"warmed: {stats['stars']} stars, {stats['segments']} segments")
 
 
 @main.command(name="export-static-data")
-@click.option("--mag-limit", type=float, default=6.5, show_default=True)
-@click.option(
+@click_option("--mag-limit", type=float, default=6.5, show_default=True)
+@click_option(
     "--output-dir",
-    type=click.Path(path_type=Path),
+    type=click_Path(path_type=Path),
     default=Path("static_site/viewer/public/data"),
     show_default=True,
 )
 def export_static_data(mag_limit: float, output_dir: Path) -> None:
     """Export trimmed catalog + constellation JSON for the static viewer."""
-    import json
+    from json import dumps as json_dumps
 
     from .utils.setup import setup_log
 
     settings: Settings = Settings()
     setup_log(settings.LOG)
-    catalog: pl.DataFrame = load_hipparcos(settings.EPHEMERIS)
-    lines: pl.DataFrame = load_constellation_lines(settings.EPHEMERIS.CACHE_DIR)
+    catalog: pl_DataFrame = load_hipparcos(settings.EPHEMERIS)
+    lines: pl_DataFrame = load_constellation_lines(settings.EPHEMERIS.CACHE_DIR)
     stars: list[list[float]] = [
         [float(hip), float(ra), float(dec), float(mag)]
-        for hip, ra, dec, mag in catalog.filter(pl.col("mag") <= mag_limit)
+        for hip, ra, dec, mag in catalog.filter(pl_col("mag") <= mag_limit)
         .select("hip", "ra_deg", "dec_deg", "mag")
         .iter_rows()
     ]
     segments: list[list[object]] = [
         [abbr, name, int(hip_a), int(hip_b)]
-        for abbr, name, hip_a, hip_b in lines.select("abbr", "name", "hip_a", "hip_b").iter_rows()
+        for abbr, name, hip_a, hip_b in lines.select(
+            "abbr", "name", "hip_a", "hip_b"
+        ).iter_rows()
     ]
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "catalog.json").write_text(json.dumps({"stars": stars}), encoding="utf-8")
-    (output_dir / "constellations.json").write_text(
-        json.dumps({"segments": segments}), encoding="utf-8"
+    (output_dir / "catalog.json").write_text(
+        json_dumps({"stars": stars}), encoding="utf-8"
     )
-    click.echo(f"exported {len(stars)} stars, {len(segments)} segments -> {output_dir}")
+    (output_dir / "constellations.json").write_text(
+        json_dumps({"segments": segments}), encoding="utf-8"
+    )
+    click_echo(f"exported {len(stars)} stars, {len(segments)} segments -> {output_dir}")

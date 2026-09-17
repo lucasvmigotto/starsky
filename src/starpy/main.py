@@ -1,7 +1,7 @@
 """App composition: settings -> env/log -> warm caches -> callbacks -> Gradio."""
 
-import polars as pl
 from gradio import Blocks
+from polars import DataFrame as pl_DataFrame
 
 from .data.catalog import load_hipparcos
 from .data.constellations import load_constellation_lines
@@ -23,8 +23,8 @@ def launch_app() -> None:
     register_cached_fonts(settings.EPHEMERIS.CACHE_DIR)
 
     _, planets, timescale = load_ephemeris(settings.EPHEMERIS)
-    catalog: pl.DataFrame = load_hipparcos(settings.EPHEMERIS)
-    lines: pl.DataFrame = load_constellation_lines(settings.EPHEMERIS.CACHE_DIR)
+    catalog: pl_DataFrame = load_hipparcos(settings.EPHEMERIS)
+    lines: pl_DataFrame = load_constellation_lines(settings.EPHEMERIS.CACHE_DIR)
 
     callback: SkyMapCallback = SkyMapCallback(
         settings, catalog, lines, planets, timescale

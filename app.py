@@ -8,14 +8,14 @@ Port: HF routes to port 7860 (exposed as ``$PORT``); honor it unless the
 operator explicitly set ``STARPY__GRADIO__SERVER_PORT``.
 """
 
-import os
-import sys
+from os import environ as os_environ
 from pathlib import Path
+from sys import path as sys_path
 
 ROOT: Path = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT / "src"))
+sys_path.insert(0, str(ROOT / "src"))
 
-os.environ.setdefault("STARPY__GRADIO__SERVER_PORT", os.environ.get("PORT", "7860"))
+os_environ.setdefault("STARPY__GRADIO__SERVER_PORT", os_environ.get("PORT", "7860"))
 
 from starpy.main import launch_app  # noqa: E402  (needs sys.path first)
 
