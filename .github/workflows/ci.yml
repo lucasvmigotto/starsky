@@ -38,10 +38,12 @@ jobs:
       - name: No-pandas guard
         run: uv run pytest tests/test_no_pandas.py -q
 
-      # Live Nominatim path (needs the STARPY_USER_AGENT_CONTACT secret;
-      # skipped gracefully on forks without secrets).
+      # Live Nominatim path (needs the STARPY_USER_AGENT_CONTACT secret).
+      # Secrets exist on pushes and same-repo PRs, never on fork PRs, so
+      # gating on fork status keeps fork CI green. (The `secrets` context
+      # is not allowed inside `if:` expressions.)
       - name: Live place render smoke
-        if: ${{ secrets.STARPY_USER_AGENT_CONTACT != '' }}
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         env:
           STARPY__GEOCODING__USER_AGENT: ${{ secrets.STARPY_USER_AGENT_CONTACT }}
         run: |
