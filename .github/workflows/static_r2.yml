@@ -103,6 +103,8 @@ jobs:
           grep -A1 'property="og:image"' dist/index.html | grep -q 'content="https://.*/og-banner.png"'
           grep -A1 'name="twitter:image"' dist/index.html | grep -q 'content="https://.*/og-banner.png"'
           test -f dist/og-banner.png
+          grep -q 'rel="icon"' dist/index.html
+          test -f dist/favicon.svg
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
@@ -168,7 +170,13 @@ jobs:
             --delete \
             --exclude "index.html" \
             --exclude "data/*.json" \
+            --exclude "favicon.svg" \
             --cache-control "public, max-age=31536000, immutable"
+          # Stable filename but mutable content: no-cache like index.html.
+          aws s3 cp dist/favicon.svg "s3://${{ secrets.CLOUDFLARE_R2_BUCKET }}/favicon.svg" \
+            --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
+            --cache-control "no-cache" \
+            --content-type "image/svg+xml"
           # Stable filename but mutable content: no-cache like index.html.
           aws s3 cp dist/og-banner.png "s3://${{ secrets.CLOUDFLARE_R2_BUCKET }}/og-banner.png" \
             --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \

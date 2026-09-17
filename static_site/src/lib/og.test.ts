@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -51,5 +51,14 @@ describe("social preview tags", () => {
     expect(INDEX_HTML).toContain('content="1200"');
     expect(INDEX_HTML).toContain('property="og:image:height"');
     expect(INDEX_HTML).toContain('content="630"');
+  });
+
+  it("links a favicon that exists in public/", () => {
+    expect(INDEX_HTML).toContain('rel="icon"');
+    expect(INDEX_HTML).toContain('href="./favicon.svg"');
+    const here = dirname(fileURLToPath(import.meta.url));
+    expect(existsSync(join(here, "..", "..", "public", "favicon.svg"))).toBe(
+      true,
+    );
   });
 });
