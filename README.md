@@ -103,6 +103,23 @@ uv run ty check src tests
 uv run pytest -q
 ```
 
+### Import style (enforced in CI)
+
+No `import x` / `import x as y`, no module attribute access. Every name
+arrives via an explicit from-import, namespaced with its module when it
+was previously reached attributively:
+
+```python
+from numpy import arange as np_arange
+from polars import DataFrame as pl_DataFrame
+from click import group as click_group
+```
+
+Already-unambiguous from-imports (`pathlib.Path`, `zoneinfo.ZoneInfo`,
+pydantic names, …) stay bare. Class/object member access (`fig.savefig`,
+`settings.RENDER`) is unaffected — only *module* attribute access is
+banned. Checked by `scripts/check_declarative_imports.py`.
+
 ## Attribution
 
 - Geocoding © OpenStreetMap contributors (Nominatim usage policy).

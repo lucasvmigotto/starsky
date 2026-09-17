@@ -26,6 +26,9 @@ jobs:
       - name: Ruff format check
         run: uv run ruff format --check src tests
 
+      - name: Declarative import style
+        run: uv run python scripts/check_declarative_imports.py src tests app.py
+
       - name: Type check (ty)
         run: uv run ty check src tests
 
