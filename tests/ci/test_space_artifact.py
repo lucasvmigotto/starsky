@@ -78,13 +78,17 @@ def test_publish_script_tree_shape(tmp_path: Path) -> None:
     work: Path = tmp_path / "work"
     remote: Path = tmp_path / "remote.git"
     work.mkdir()
-    subprocess_run(["git", "init", "-q", str(work)], check=True)
+    subprocess_run(["git", "init", "-q", "-b", "main", str(work)], check=True)
+    # Both identities local: CI runners have no global git identity.
     subprocess_run(["git", "-C", str(work), "config", "user.email", "t@t"], check=True)
+    subprocess_run(["git", "-C", str(work), "config", "user.name", "t"], check=True)
     for name in ("hf.README.md", "README.md", "app.py", "requirements.txt"):
         (work / name).write_bytes((ROOT / name).read_bytes())
     subprocess_run(["git", "-C", str(work), "add", "-A"], check=True)
     subprocess_run(["git", "-C", str(work), "commit", "-qm", "base"], check=True)
-    subprocess_run(["git", "init", "--bare", "-q", str(remote)], check=True)
+    subprocess_run(
+        ["git", "init", "--bare", "-q", "-b", "main", str(remote)], check=True
+    )
     env: dict[str, str] = {
         "PATH": os_environ["PATH"],
         "HF_TOKEN": "dummy",
