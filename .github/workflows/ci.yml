@@ -32,8 +32,11 @@ jobs:
       - name: Type check (ty)
         run: uv run ty check src tests
 
-      - name: Tests
-        run: uv run pytest -q
+      - name: Tests (fast)
+        run: uv run pytest -q -m "not integration"
+
+      - name: Tests (integration)
+        run: uv run pytest -q -m integration
 
       - name: No-pandas guard
         run: uv run pytest tests/test_no_pandas.py -q
