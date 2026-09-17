@@ -5,13 +5,16 @@ empty), hard 1 req/s throttle, local JSON response cache with TTL, and
 attribution ("© OpenStreetMap contributors") rendered in the UI footer.
 """
 
-import json
-import time
 from datetime import UTC, datetime, timedelta
+from json import JSONDecodeError as json_JSONDecodeError
+from json import dumps as json_dumps
+from json import loads as json_loads
 from pathlib import Path
+from time import sleep as time_sleep
 from typing import Any, Final
 
-import httpx
+from httpx import Client as httpx_Client
+from httpx import Response as httpx_Response
 
 from ..schemas.inputs.location import Coordinates
 from ..settings import GeocodingSettings
@@ -58,15 +61,15 @@ def _read_cache(cache_path: Path) -> dict[str, Any]:
     if not cache_path.exists():
         return {}
     try:
-        payload: dict[str, Any] = json.loads(cache_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError, OSError:
+        payload: dict[str, Any] = json_loads(cache_path.read_text(encoding="utf-8"))
+    except json_JSONDecodeError, OSError:
         return {}
     return payload if isinstance(payload, dict) else {}
 
 
 def _write_cache(cache_path: Path, payload: dict[str, Any]) -> None:
     cache_path.parent.mkdir(parents=True, exist_ok=True)
-    cache_path.write_text(json.dumps(payload), encoding="utf-8")
+    cache_path.write_text(json_dumps(payload), encoding="utf-8")
 
 
 def _cache_entry_valid(entry: dict[str, Any], ttl_days: int) -> bool:
@@ -82,7 +85,7 @@ def _cache_entry_valid(entry: dict[str, Any], ttl_days: int) -> bool:
 def geocode(
     place: str,
     settings: GeocodingSettings,
-    client: httpx.Client | None = None,
+    client: httpx_Client | None = None,
 ) -> dict[str, Any]:
     """Resolve ``place`` -> display_name/place_short/lat/lon dict.
 
@@ -105,9 +108,9 @@ def geocode(
         return result
 
     own_client: bool = client is None
-    http: httpx.Client = client or httpx.Client(timeout=30.0)
+    http: httpx_Client = client or httpx_Client(timeout=30.0)
     try:
-        response: httpx.Response = http.get(
+        response: httpx_Response = http.get(
             settings.BASE_URL.rstrip("/") + _SEARCH_PATH,
             params={"q": query, "format": "jsonv2", "limit": 1, "addressdetails": 1},
             headers={"User-Agent": user_agent, "Accept": "application/json"},
@@ -132,7 +135,7 @@ def geocode(
         "result": resolved,
     }
     _write_cache(cache_path, cache)
-    time.sleep(settings.RATE_LIMIT_S)
+    time_sleep(settings.RATE_LIMIT_S)
     return resolved
 
 
