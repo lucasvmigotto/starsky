@@ -17,19 +17,18 @@ from pytest import mark as pytest_mark
 
 from starpy.data.catalog import load_hipparcos
 from starpy.data.constellations import load_constellation_lines
-from starpy.data.ephemeris import load_ephemeris
 from starpy.render.figure import project_visible, render_sky_map
 from starpy.schemas.inputs.render import RenderOptions
 from starpy.settings import EphemerisSettings
+
+from ._helpers import warm_ephemeris
 
 pytestmark = pytest_mark.integration
 
 
 @pytest_fixture()
 def warmed(tmp_path: Path) -> tuple[EphemerisSettings, object, object, object]:
-    settings: EphemerisSettings = EphemerisSettings(CACHE_DIR=tmp_path / "eph")
-    _, planets, timescale = load_ephemeris(settings)
-    return settings, planets, timescale, tmp_path
+    return warm_ephemeris(tmp_path)
 
 
 def test_full_render_deterministic(
