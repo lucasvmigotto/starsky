@@ -10,3 +10,5 @@ build/
 out.png
 *.png
 !tests/golden/*.png
+# Generated viewer data (rebuild via `python -m starpy export-static-data`)
+static_site/viewer/public/data/*.json

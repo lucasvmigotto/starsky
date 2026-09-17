@@ -231,3 +231,39 @@ def cache_warm() -> None:
     setup_log(settings.LOG)
     stats: dict[str, int] = warm_caches(settings)
     click.echo(f"warmed: {stats['stars']} stars, {stats['segments']} segments")
+
+
+@main.command(name="export-static-data")
+@click.option("--mag-limit", type=float, default=6.5, show_default=True)
+@click.option(
+    "--output-dir",
+    type=click.Path(path_type=Path),
+    default=Path("static_site/viewer/public/data"),
+    show_default=True,
+)
+def export_static_data(mag_limit: float, output_dir: Path) -> None:
+    """Export trimmed catalog + constellation JSON for the static viewer."""
+    import json
+
+    from .utils.setup import setup_log
+
+    settings: Settings = Settings()
+    setup_log(settings.LOG)
+    catalog: pl.DataFrame = load_hipparcos(settings.EPHEMERIS)
+    lines: pl.DataFrame = load_constellation_lines(settings.EPHEMERIS.CACHE_DIR)
+    stars: list[list[float]] = [
+        [float(hip), float(ra), float(dec), float(mag)]
+        for hip, ra, dec, mag in catalog.filter(pl.col("mag") <= mag_limit)
+        .select("hip", "ra_deg", "dec_deg", "mag")
+        .iter_rows()
+    ]
+    segments: list[list[object]] = [
+        [abbr, name, int(hip_a), int(hip_b)]
+        for abbr, name, hip_a, hip_b in lines.select("abbr", "name", "hip_a", "hip_b").iter_rows()
+    ]
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "catalog.json").write_text(json.dumps({"stars": stars}), encoding="utf-8")
+    (output_dir / "constellations.json").write_text(
+        json.dumps({"segments": segments}), encoding="utf-8"
+    )
+    click.echo(f"exported {len(stars)} stars, {len(segments)} segments -> {output_dir}")
