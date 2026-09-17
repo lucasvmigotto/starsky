@@ -41,6 +41,8 @@ jobs:
       # the Python pipeline before building. Retried: the JPL ephemeris
       # host flakes from CI runners.
       - name: Warm cache and export viewer data
+        # Override the job default (static_site): `uv run` needs the repo
+        # root where pyproject.toml lives; the test path is root-relative.
         working-directory: .
         run: |
           for i in 1 2 3; do
