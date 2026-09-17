@@ -16,16 +16,41 @@ concurrency:
   group: static-r2-${{ github.ref }}
   cancel-in-progress: true
 
-defaults:
-  run:
-    working-directory: static_site/viewer
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.14"
 
 jobs:
   verify:
     runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: static_site/viewer
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # Viewer data (public/data/*.json) is gitignored: regenerate it from
+      # the Python pipeline before building. Retried: the JPL ephemeris
+      # host flakes from CI runners.
+      - name: Warm cache and export viewer data
+        working-directory: .
+        run: |
+          for i in 1 2 3; do
+            uv run python -m starpy cache warm \
+              && uv run python -m starpy export-static-data \
+              && break
+            echo "data warm attempt $i failed; retrying..."
+            sleep $((i * 30))
+          done
+          test -f static_site/viewer/public/data/catalog.json
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -34,6 +59,25 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Validate viewer base URL
+        run: |
+          URL="${{ vars.STARPY_STATIC_SITE_URL }}"
+          if [ -z "$URL" ]; then
+            echo "::error::vars.STARPY_STATIC_SITE_URL is not set (Settings > Variables > Actions)"
+            exit 1
+          fi
+          case "$URL" in
+            https://*) ;;
+            *) echo "::error::STARPY_STATIC_SITE_URL must start with https:// (got: $URL)"; exit 1 ;;
+          esac
+          case "$URL" in
+            *example.com*|*localhost*|*ngrok*|*127.0.0.1*)
+              echo "::error::STARPY_STATIC_SITE_URL looks like a placeholder ($URL)"
+              exit 1
+              ;;
+          esac
+          echo "Viewer base URL OK: $URL"
 
       - name: Lint
         run: bun run lint
@@ -46,17 +90,23 @@ jobs:
 
       - name: Build
         run: bun run build
+        env:
+          VITE_FULL_APP_URL: ${{ vars.STARPY_STATIC_SITE_URL }}
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
         with:
           name: viewer-dist
           path: static_site/viewer/dist
+          retention-days: 7
+          if-no-files-found: error
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: verify
     runs-on: ubuntu-24.04
+    # Named environment: deployment history today, optional manual
+    # approvals later (add required reviewers under Settings > Environments).
     environment: static-viewer
     steps:
       - name: Download dist artifact
@@ -65,28 +115,54 @@ jobs:
           name: viewer-dist
           path: dist
 
-      - name: Sync hashed assets (immutable)
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
-          R2_BUCKET: ${{ vars.R2_BUCKET }}
+      - name: Validate R2 secrets
         run: |
-          aws s3 sync dist "s3://${R2_BUCKET}" \
-            --endpoint-url "${R2_ENDPOINT}" \
+          missing=0
+          for var in CLOUDFLARE_R2_ACCOUNT_ACCESS_KEY CLOUDFLARE_R2_ACCOUNT_SECRET CLOUDFLARE_R2_ENDPOINT CLOUDFLARE_R2_BUCKET; do
+            if [ -z "${!var}" ]; then
+              echo "::error::$var secret is not set (Settings > Secrets > Actions)"
+              missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ]
+          case "${CLOUDFLARE_R2_ENDPOINT}" in
+            https://*) echo "R2 endpoint OK" ;;
+            *) echo "::error::CLOUDFLARE_R2_ENDPOINT must start with https://"; exit 1 ;;
+          esac
+        env:
+          CLOUDFLARE_R2_ACCOUNT_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_ACCESS_KEY }}
+          CLOUDFLARE_R2_ACCOUNT_SECRET: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_SECRET }}
+          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          CLOUDFLARE_R2_BUCKET: ${{ secrets.CLOUDFLARE_R2_BUCKET }}
+
+      - name: Ensure AWS CLI
+        run: |
+          if ! command -v aws >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq awscli
+          fi
+          aws --version
+
+      # Hashed Vite assets: immutable, long-lived. Entry HTML and the
+      # unhashed data/*.json payloads: no-cache (content changes per deploy).
+      - name: Sync static site to Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_SECRET }}
+          AWS_DEFAULT_REGION: auto
+          AWS_EC2_METADATA_DISABLED: "true"
+        run: |
+          aws s3 sync dist "s3://${{ secrets.CLOUDFLARE_R2_BUCKET }}" \
+            --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
             --delete \
             --exclude "index.html" \
-            --cache-control "public, max-age=31536000, immutable" \
-            --content-encoding "identity"
-
-      - name: Upload index.html (no-cache)
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
-          R2_BUCKET: ${{ vars.R2_BUCKET }}
-        run: |
-          aws s3 cp dist/index.html "s3://${R2_BUCKET}/index.html" \
-            --endpoint-url "${R2_ENDPOINT}" \
+            --exclude "data/*.json" \
+            --cache-control "public, max-age=31536000, immutable"
+          aws s3 cp dist/index.html "s3://${{ secrets.CLOUDFLARE_R2_BUCKET }}/index.html" \
+            --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
             --cache-control "no-cache" \
             --content-type "text/html; charset=utf-8"
+          aws s3 sync dist/data "s3://${{ secrets.CLOUDFLARE_R2_BUCKET }}/data" \
+            --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
+            --delete \
+            --cache-control "no-cache"
