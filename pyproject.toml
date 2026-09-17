@@ -3,7 +3,7 @@ name = "starpy"
 version = "0.1.0"
 description = "Personalized night-sky poster generator (Gradio + CLI), fully open source."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 license = { text = "GPL-3.0-only" }
 dependencies = [
     "click>=8.1.8",
@@ -37,7 +37,7 @@ module-root = "src"
 module-name = "starpy"
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 line-length = 88
 
 [tool.ruff.lint]
