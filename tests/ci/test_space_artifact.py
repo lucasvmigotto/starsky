@@ -29,7 +29,9 @@ def test_hf_readme_gradio_frontmatter() -> None:
     assert meta["sdk"] == "gradio"
     assert meta["app_file"] == "app.py"
     assert str(meta["python_version"]).startswith("3.14")
-    assert "sdk_version" in meta
+    # Quoted on purpose: a bare 6.27.0 parses as float 6.27 (invalid version).
+    assert isinstance(meta["sdk_version"], str)
+    assert meta["pinned"] is False
     assert meta["license"] == "gpl-3.0"
 
 
