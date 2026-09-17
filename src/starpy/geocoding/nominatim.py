@@ -13,6 +13,7 @@ from typing import Any, Final
 
 import httpx
 
+from ..schemas.inputs.location import Coordinates
 from ..settings import GeocodingSettings
 from ..utils.setup import require_user_agent
 
@@ -144,3 +145,26 @@ def timezone_from_coords(lat: float, lon: float) -> str:
     if name is None:
         raise LookupError(f"No timezone found for ({lat}, {lon}).")
     return str(name)
+
+
+def resolve_latlon(
+    mode: str,
+    lat: float,
+    lon: float,
+    place: str,
+    settings: GeocodingSettings,
+) -> tuple[Coordinates, str | None]:
+    """Resolve GUI/CLI location inputs -> (Coordinates, short place|None).
+
+    ``mode == "place"`` geocodes (caption uses the short label);
+    otherwise validates the raw coordinates. Raises ValueError.
+    """
+    if mode == "place":
+        if not place.strip():
+            raise ValueError("Enter a place name or switch to coordinates mode.")
+        resolved: dict[str, Any] = geocode(place.strip(), settings)
+        coords: Coordinates = Coordinates(
+            lat=float(resolved["lat"]), lon=float(resolved["lon"])
+        )
+        return coords, str(resolved.get("place_short") or resolved["display_name"])
+    return Coordinates(lat=float(lat), lon=float(lon)), None

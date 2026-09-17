@@ -37,6 +37,7 @@ def launch_app() -> None:
             on_render=callback.on_btn_render_callback_async,
             on_detect_tz=callback.on_detect_tz,
             on_geocode_preview=callback.on_geocode_preview,
+            on_share_link=callback.on_share_link,
         ),
     )
     app.launch(**settings.GRADIO.config)

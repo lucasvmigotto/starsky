@@ -8,13 +8,14 @@ import polars as pl
 from PIL import Image
 
 from ...astro.observer import utc_from_local
-from ...geocoding.nominatim import geocode, timezone_from_coords
+from ...geocoding.nominatim import geocode, resolve_latlon, timezone_from_coords
 from ...render.figure import render_sky_map
 from ...schemas.enums.projection import Projection
 from ...schemas.enums.shape import Shape
-from ...schemas.inputs.location import Coordinates
 from ...schemas.inputs.render import RenderOptions
+from ...schemas.share import SharePayload
 from ...settings import Settings
+from ...share.spec import share_link
 from ._base import OnCallbackBase
 
 
@@ -81,33 +82,26 @@ class SkyMapCallback(OnCallbackBase):
         shape: str,
         title: str | None,
     ) -> Image.Image:
-        coords: Coordinates
-        display_place: str | None = None
-        if mode == "place":
-            if not place.strip():
-                raise ValueError("Enter a place name or switch to coordinates mode.")
-            resolved: dict[str, Any] = geocode(place.strip(), self._settings.GEOCODING)
-            coords = Coordinates(lat=float(resolved["lat"]), lon=float(resolved["lon"]))
-            display_place = str(resolved.get("place_short") or resolved["display_name"])
-        else:
-            coords = Coordinates(lat=float(lat), lon=float(lon))
+        coords, display_place = resolve_latlon(
+            mode, float(lat), float(lon), place, self._settings.GEOCODING
+        )
 
         moment: datetime = coerce_when(when)
         tz: str = (tz_name or "UTC").strip() or "UTC"
         ZoneInfo(tz)  # fail fast on unknown zones
         when_utc: datetime = utc_from_local(moment, tz)
 
-        options: RenderOptions = RenderOptions(
-            projection=Projection(projection),
-            fisheye_strength=float(fisheye_strength),
-            min_separation=float(min_separation),
-            magnitude_limit=float(magnitude_limit),
-            glow=bool(glow),
-            glow_intensity=float(glow_intensity),
-            constellations=bool(constellations),
-            constellation_labels=bool(constellation_labels),
-            shape=Shape(shape),
-            title=(title.strip() if title and title.strip() else None),
+        options: RenderOptions = self._render_options(
+            projection,
+            fisheye_strength,
+            min_separation,
+            magnitude_limit,
+            glow,
+            glow_intensity,
+            constellations,
+            constellation_labels,
+            shape,
+            title,
         )
         return render_sky_map(
             lat=coords.lat,
@@ -122,3 +116,80 @@ class SkyMapCallback(OnCallbackBase):
             timescale=self._timescale,
             render_cfg=self._settings.RENDER,
         )
+
+    @staticmethod
+    def _render_options(
+        projection: str,
+        fisheye_strength: float,
+        min_separation: float,
+        magnitude_limit: float,
+        glow: bool,
+        glow_intensity: float,
+        constellations: bool,
+        constellation_labels: bool,
+        shape: str,
+        title: str | None,
+    ) -> RenderOptions:
+        """Build validated render options from raw UI values."""
+        return RenderOptions(
+            projection=Projection(projection),
+            fisheye_strength=float(fisheye_strength),
+            min_separation=float(min_separation),
+            magnitude_limit=float(magnitude_limit),
+            glow=bool(glow),
+            glow_intensity=float(glow_intensity),
+            constellations=bool(constellations),
+            constellation_labels=bool(constellation_labels),
+            shape=Shape(shape),
+            title=(title.strip() if title and title.strip() else None),
+        )
+
+    def on_share_link(
+        self: Self,
+        /,
+        mode: str,
+        lat: float,
+        lon: float,
+        place: str,
+        when: Any,
+        tz_name: str,
+        projection: str,
+        fisheye_strength: float,
+        min_separation: float,
+        magnitude_limit: float,
+        glow: bool,
+        glow_intensity: float,
+        constellations: bool,
+        constellation_labels: bool,
+        shape: str,
+        title: str | None,
+    ) -> str:
+        """Resolve the same inputs as render and return a viewer share URL."""
+        coords, display_place = resolve_latlon(
+            mode, float(lat), float(lon), place, self._settings.GEOCODING
+        )
+        moment: datetime = coerce_when(when)
+        tz: str = (tz_name or "UTC").strip() or "UTC"
+        ZoneInfo(tz)
+        when_utc: datetime = utc_from_local(moment, tz)
+        options: RenderOptions = self._render_options(
+            projection,
+            fisheye_strength,
+            min_separation,
+            magnitude_limit,
+            glow,
+            glow_intensity,
+            constellations,
+            constellation_labels,
+            shape,
+            title,
+        )
+        payload: SharePayload = SharePayload(
+            lat=coords.lat,
+            lon=coords.lon,
+            place=display_place,
+            when_utc=when_utc,
+            tz=tz,
+            options=options,
+        )
+        return share_link(payload, self._settings.SHARE.BASE_URL)

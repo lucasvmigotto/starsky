@@ -47,6 +47,8 @@ class SkyPage(BaseGUI_):
     label_shape: Label = Label(emoji="🔵", text="shape")
     label_title: Label = Label(emoji="✏️", text="title (optional)")
     label_render: Label = Label(emoji="🖨️", text="render sky map")
+    label_share: Label = Label(emoji="🔗", text="generate share link")
+    label_share_link: Label = Label(emoji="🌌", text="explorer link")
     label_output: Label = Label(emoji="🖼️", text="poster")
 
     @computed_field
@@ -184,6 +186,16 @@ class SkyPage(BaseGUI_):
     @property
     def btn_render(self: Self, /) -> Button:
         return Button(label=self.label_render)
+
+    @computed_field
+    @property
+    def btn_share(self: Self, /) -> Button:
+        return Button(label=self.label_share)
+
+    @computed_field
+    @property
+    def text_share_link(self: Self, /) -> Text:
+        return Text(label=self.label_share_link, value=None)
 
     @computed_field
     @property
