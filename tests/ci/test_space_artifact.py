@@ -24,38 +24,16 @@ def _frontmatter(path: Path) -> dict[str, Any]:
     return data
 
 
-def _version_tuple(raw: str) -> tuple[int, ...]:
-    return tuple(int(part) for part in str(raw).strip().split(".") if part.isdigit())
-
-
-def test_hf_readme_gradio_frontmatter() -> None:
+def test_hf_readme_docker_frontmatter() -> None:
     meta: dict[str, Any] = _frontmatter(ROOT / "hf.README.md")
-    assert meta["sdk"] == "gradio"
-    assert meta["app_file"] == "app.py"
-    assert str(meta["python_version"]).startswith("3.14")
-    # Quoted on purpose: a bare 6.27.0 parses as float 6.27 (invalid version).
-    assert isinstance(meta["sdk_version"], str)
-    assert meta["pinned"] is False
+    assert meta["sdk"] == "docker"
+    assert int(meta["app_port"]) == 7860
     assert meta["license"] == "gpl-3.0"
-
-
-def test_space_python_satisfies_requires_python() -> None:
-    """The Space builder silently falls back to 3.10 for unknown versions.
-
-    Requesting a `python_version` below our `requires-python` floor (or one
-    the builder has no image for) fails late and confusingly (e.g. pip
-    resolving 3.13-only pins on 3.10). Fail here instead, at PR time.
-    """
-    from tomllib import load as tomllib_load
-
-    with open(ROOT / "pyproject.toml", "rb") as handle:
-        project: dict[str, Any] = tomllib_load(handle)["project"]
-    spec: str = str(project["requires-python"]).strip()
-    assert spec.startswith(">=")
-    floor: tuple[int, ...] = _version_tuple(spec[len(">=") :])
-    meta: dict[str, Any] = _frontmatter(ROOT / "hf.README.md")
-    requested: tuple[int, ...] = _version_tuple(str(meta["python_version"]))
-    assert requested >= floor, f"Space python {requested} below floor {floor}"
+    # Gradio-builder keys must stay out: the Docker builder ignores them,
+    # and a stale `sdk_version`/`pinned` pair would mislead the next reader
+    # into thinking the managed builder is still in play.
+    for key in ("sdk_version", "pinned", "python_version", "app_file"):
+        assert key not in meta, key
 
 
 def test_github_readme_has_no_hf_frontmatter() -> None:
@@ -98,9 +76,9 @@ def test_publish_script_tree_shape(tmp_path: Path) -> None:
     """Run scripts/publish_space.sh into a local bare repo: minimal tree only.
 
     The Space must receive exactly the artifact the builder needs
-    (README.md, app.py, requirements.txt, src/) and nothing else: the Hub
-    rejects binary files, and tests/workflows/scripts/static_site have no
-    business in the Space repo.
+    (README.md, Dockerfile, app.py, requirements.txt, src/) and nothing
+    else: the Hub rejects binary files, and tests/workflows/scripts/
+    static_site have no business in the Space repo.
     """
     from os import environ as os_environ
 
@@ -111,7 +89,13 @@ def test_publish_script_tree_shape(tmp_path: Path) -> None:
     # Both identities local: CI runners have no global git identity.
     subprocess_run(["git", "-C", str(work), "config", "user.email", "t@t"], check=True)
     subprocess_run(["git", "-C", str(work), "config", "user.name", "t"], check=True)
-    for name in ("hf.README.md", "README.md", "app.py", "requirements.txt"):
+    for name in (
+        "hf.README.md",
+        "README.md",
+        "hf.Dockerfile",
+        "app.py",
+        "requirements.txt",
+    ):
         (work / name).write_bytes((ROOT / name).read_bytes())
     # Artifact payload the Space builder actually needs (via the src/ shim).
     src_dir: Path = work / "src" / "starpy"
@@ -157,7 +141,16 @@ def test_publish_script_tree_shape(tmp_path: Path) -> None:
         check=True,
     )
     assert show.stdout.startswith("---")
-    assert "sdk: gradio" in show.stdout
+    assert "sdk: docker" in show.stdout
+    dockerfile: subprocess_CompletedProcess[str] = subprocess_run(
+        ["git", "--git-dir", str(remote), "show", "HEAD:Dockerfile"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "FROM python:3.14-slim" in dockerfile.stdout
+    assert 'CMD ["python", "app.py"]' in dockerfile.stdout
+    assert "USER user" in dockerfile.stdout
     tree: subprocess_CompletedProcess[str] = subprocess_run(
         ["git", "--git-dir", str(remote), "ls-tree", "-r", "--name-only", "HEAD"],
         capture_output=True,
@@ -167,6 +160,8 @@ def test_publish_script_tree_shape(tmp_path: Path) -> None:
     names: list[str] = tree.stdout.splitlines()
     assert "README.md" in names
     assert "hf.README.md" not in names
+    assert "Dockerfile" in names
+    assert "hf.Dockerfile" not in names
     assert "app.py" in names and "requirements.txt" in names
     assert "src/starpy/__init__.py" in names
     for decoy in (
@@ -175,4 +170,4 @@ def test_publish_script_tree_shape(tmp_path: Path) -> None:
         "scripts/publish_space.sh",
     ):
         assert decoy not in names, decoy
-    assert len(names) == 4, names
+    assert len(names) == 5, names

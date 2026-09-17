@@ -3,11 +3,8 @@ title: starpy
 emoji: 🔭
 colorFrom: indigo
 colorTo: purple
-sdk: gradio
-sdk_version: "6.27.0"
-python_version: "3.14"
-app_file: app.py
-pinned: false
+sdk: docker
+app_port: 7860
 license: gpl-3.0
 ---
 
