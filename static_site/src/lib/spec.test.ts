@@ -6,7 +6,7 @@ import { SPEC, starSize } from "./spec.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const parsed: unknown = JSON.parse(
-  readFileSync(join(here, "..", "..", "..", "render-spec.json"), "utf-8"),
+  readFileSync(join(here, "..", "..", "render-spec.json"), "utf-8"),
 );
 const renderSpec = parsed as Record<string, Record<string, unknown>>;
 

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "starpy shared render spec",
-  "description": "Normative visual tokens consumed by BOTH the Python renderer (src/starpy/render/) and the static JS viewer (static_site/viewer/). Change both together; Python defaults in settings/render.py must match.",
+  "description": "Normative visual tokens consumed by BOTH the Python renderer (src/starpy/render/) and the static JS viewer (static_site/). Change both together; Python defaults in settings/render.py must match.",
   "version": 1,
   "colors": {
     "background": "#0b0f19",

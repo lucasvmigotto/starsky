@@ -57,7 +57,7 @@ keeps the preview visually consistent.
 
 Adopt **C**. Status: `render-spec.json` written; `export-static-data`
 shipped; share-link contract (`#s=` payload, see `src/starpy/share/`)
-implemented; explorer viewer built at `static_site/viewer/`.
+implemented; explorer viewer built at `static_site/`.
 Do not block the main deliverable on this build.
 
 ## Appendix — FastAPI render endpoint: rejected for v1 (2026-09-17)
