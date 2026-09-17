@@ -8,6 +8,7 @@ from polars import DataFrame as pl_DataFrame
 from polars import Float64 as pl_Float64
 from polars import Int64 as pl_Int64
 from polars import String as pl_String
+
 # NOTE: bare `fixture` (not the pytest_ alias): pluggy scans conftest.py
 # for pytest_* hooks, so the aliased name breaks collection.
 from pytest import fixture
