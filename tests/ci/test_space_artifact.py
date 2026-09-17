@@ -69,3 +69,52 @@ def test_app_entrypoint_imports_without_launching() -> None:
     sys_modules["space_app"] = module
     spec.loader.exec_module(module)
     assert callable(module.launch_app)
+
+
+def test_publish_script_tree_shape(tmp_path: Path) -> None:
+    """Run scripts/publish_space.sh into a local bare repo: exactly one README."""
+    from os import environ as os_environ
+
+    work: Path = tmp_path / "work"
+    remote: Path = tmp_path / "remote.git"
+    work.mkdir()
+    subprocess_run(["git", "init", "-q", str(work)], check=True)
+    subprocess_run(["git", "-C", str(work), "config", "user.email", "t@t"], check=True)
+    for name in ("hf.README.md", "README.md", "app.py", "requirements.txt"):
+        (work / name).write_bytes((ROOT / name).read_bytes())
+    subprocess_run(["git", "-C", str(work), "add", "-A"], check=True)
+    subprocess_run(["git", "-C", str(work), "commit", "-qm", "base"], check=True)
+    subprocess_run(["git", "init", "--bare", "-q", str(remote)], check=True)
+    env: dict[str, str] = {
+        "PATH": os_environ["PATH"],
+        "HF_TOKEN": "dummy",
+        "SPACE_REMOTE": str(remote),
+        "GITHUB_SHA": "abc1234",
+    }
+    completed: subprocess_CompletedProcess[str] = subprocess_run(
+        ["bash", str(ROOT / "scripts" / "publish_space.sh"), "example.com/x/y"],
+        capture_output=True,
+        text=True,
+        cwd=work,
+        env=env,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    show: subprocess_CompletedProcess[str] = subprocess_run(
+        ["git", "--git-dir", str(remote), "show", "HEAD:README.md"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert show.stdout.startswith("---")
+    assert "sdk: gradio" in show.stdout
+    tree: subprocess_CompletedProcess[str] = subprocess_run(
+        ["git", "--git-dir", str(remote), "ls-tree", "-r", "--name-only", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    names: list[str] = tree.stdout.splitlines()
+    assert "README.md" in names
+    assert "hf.README.md" not in names
+    assert "app.py" in names and "requirements.txt" in names
