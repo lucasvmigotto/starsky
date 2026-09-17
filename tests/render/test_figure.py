@@ -2,17 +2,19 @@
 
 from datetime import UTC, datetime
 
-import polars as pl
 from matplotlib.figure import Figure
-from PIL import Image
+from PIL.Image import Image as pil_Image
+from polars import DataFrame as pl_DataFrame
+from polars import Float64 as pl_Float64
+from polars import String as pl_String
 
 from starpy.render.figure import cache_key, compose_figure, figure_to_pil, tz_label
 from starpy.schemas.inputs.render import RenderOptions
 from starpy.settings import RenderSettings
 
 
-def _segments() -> pl.DataFrame:
-    return pl.DataFrame(
+def _segments() -> pl_DataFrame:
+    return pl_DataFrame(
         {
             "abbr": ["TST"],
             "name": ["Test"],
@@ -22,24 +24,24 @@ def _segments() -> pl.DataFrame:
             "y_b": [0.05],
         },
         schema={
-            "abbr": pl.String,
-            "name": pl.String,
-            "x_a": pl.Float64,
-            "y_a": pl.Float64,
-            "x_b": pl.Float64,
-            "y_b": pl.Float64,
+            "abbr": pl_String,
+            "name": pl_String,
+            "x_a": pl_Float64,
+            "y_a": pl_Float64,
+            "x_b": pl_Float64,
+            "y_b": pl_Float64,
         },
     )
 
 
-def _labels() -> pl.DataFrame:
-    return pl.DataFrame(
+def _labels() -> pl_DataFrame:
+    return pl_DataFrame(
         {"abbr": ["TST"], "name": ["Test"], "x": [0.05], "y": [0.02]},
-        schema={"abbr": pl.String, "name": pl.String, "x": pl.Float64, "y": pl.Float64},
+        schema={"abbr": pl_String, "name": pl_String, "x": pl_Float64, "y": pl_Float64},
     )
 
 
-def test_compose_figure_smoke(tiny_projected: pl.DataFrame) -> None:
+def test_compose_figure_smoke(tiny_projected: pl_DataFrame) -> None:
     fig: Figure = compose_figure(
         tiny_projected,
         _segments(),
@@ -51,22 +53,22 @@ def test_compose_figure_smoke(tiny_projected: pl.DataFrame) -> None:
     )
     assert isinstance(fig, Figure)
     buf_size: int = 0
-    import io
+    from io import BytesIO as io_BytesIO
 
-    buf: io.BytesIO = io.BytesIO()
+    buf: io_BytesIO = io_BytesIO()
     fig.savefig(buf, format="png")
     buf_size = len(buf.getvalue())
     assert buf_size > 1000
+    close_figure(fig)
+
+
+def close_figure(fig: Figure) -> None:
+    from matplotlib.pyplot import close as plt_close
+
     plt_close(fig)
 
 
-def plt_close(fig: Figure) -> None:
-    import matplotlib.pyplot as plt
-
-    plt.close(fig)
-
-
-def test_figure_to_pil_circle_corners_transparent(tiny_projected: pl.DataFrame) -> None:
+def test_figure_to_pil_circle_corners_transparent(tiny_projected: pl_DataFrame) -> None:
     fig: Figure = compose_figure(
         tiny_projected,
         _segments(),
@@ -76,7 +78,7 @@ def test_figure_to_pil_circle_corners_transparent(tiny_projected: pl.DataFrame) 
         RenderSettings(),
         320,
     )
-    image: Image.Image = figure_to_pil(fig, "circle", 320, 70)
+    image: pil_Image = figure_to_pil(fig, "circle", 320, 70)
     assert image.mode == "RGBA"
     corner: object = image.getpixel((0, 0))
     assert isinstance(corner, tuple) and corner[3] == 0

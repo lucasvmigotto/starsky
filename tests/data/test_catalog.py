@@ -1,6 +1,6 @@
 """hip_main.dat parser tests (fixed-width, no network)."""
 
-import polars as pl
+from polars import DataFrame as pl_DataFrame
 
 from starpy.data.catalog import parse_hip_main, parse_hip_main_line
 
@@ -38,6 +38,6 @@ def test_blank_coordinates_skipped() -> None:
 
 def test_parse_frame_skips_short_and_blank() -> None:
     text: str = "\n".join([make_line(hip=1), "short", make_line(hip=2)[:51]])
-    df: pl.DataFrame = parse_hip_main(text)
+    df: pl_DataFrame = parse_hip_main(text)
     assert df.height == 1
     assert df.get_column("hip").to_list() == [1]

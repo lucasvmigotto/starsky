@@ -2,8 +2,8 @@
 
 from datetime import UTC, datetime
 
-import pytest
 from pydantic import ValidationError
+from pytest import raises as pytest_raises
 
 from starpy.schemas.inputs.location import Coordinates
 from starpy.schemas.inputs.observation import Observation
@@ -11,9 +11,9 @@ from starpy.schemas.inputs.render import RenderOptions
 
 
 def test_coordinates_reject_out_of_range() -> None:
-    with pytest.raises(ValidationError):
+    with pytest_raises(ValidationError):
         Coordinates(lat=91.0, lon=0.0)
-    with pytest.raises(ValidationError):
+    with pytest_raises(ValidationError):
         Coordinates(lat=0.0, lon=181.0)
     assert Coordinates(lat=-90.0, lon=180.0).lat == -90.0
 

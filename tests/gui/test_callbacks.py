@@ -3,8 +3,9 @@
 from datetime import datetime
 from typing import Any
 
-import polars as pl
-from PIL import Image
+from PIL.Image import Image as pil_Image
+from PIL.Image import new as pil_new
+from polars import DataFrame as pl_DataFrame
 
 from starpy.gui.callbacks.skymap import SkyMapCallback, coerce_when
 from starpy.settings import Settings
@@ -17,12 +18,12 @@ def test_coerce_when_variants() -> None:
     assert coerce_when(1767225600).year == 2026
 
 
-def _callback(monkeypatch: Any, catalog: pl.DataFrame) -> SkyMapCallback:
+def _callback(monkeypatch: Any, catalog: pl_DataFrame) -> SkyMapCallback:
     settings: Settings = Settings()
     callback: SkyMapCallback = SkyMapCallback(
         settings, catalog, catalog.clear(), None, None
     )
-    fake: Image.Image = Image.new("RGBA", (32, 32), (0, 0, 0, 255))
+    fake: pil_Image = pil_new("RGBA", (32, 32), (0, 0, 0, 255))
     monkeypatch.setattr(
         "starpy.gui.callbacks.skymap.render_sky_map", lambda **kwargs: fake
     )
@@ -30,10 +31,10 @@ def _callback(monkeypatch: Any, catalog: pl.DataFrame) -> SkyMapCallback:
 
 
 def test_render_callback_coordinates_mode(
-    monkeypatch: Any, tiny_catalog: pl.DataFrame
+    monkeypatch: Any, tiny_catalog: pl_DataFrame
 ) -> None:
     callback: SkyMapCallback = _callback(monkeypatch, tiny_catalog)
-    image: Image.Image = callback.on_btn_render_callback(
+    image: pil_Image = callback.on_btn_render_callback(
         "coordinates",
         40.7580,
         -73.9855,
@@ -51,13 +52,13 @@ def test_render_callback_coordinates_mode(
         "square",
         "",
     )
-    assert isinstance(image, Image.Image)
+    assert isinstance(image, pil_Image)
 
 
 def test_render_callback_rejects_bad_lat(
-    monkeypatch: Any, tiny_catalog: pl.DataFrame
+    monkeypatch: Any, tiny_catalog: pl_DataFrame
 ) -> None:
-    import pydantic
+    from pydantic import ValidationError as pydantic_ValidationError
 
     callback: SkyMapCallback = _callback(monkeypatch, tiny_catalog)
     try:
@@ -79,6 +80,6 @@ def test_render_callback_rejects_bad_lat(
             "square",
             None,
         )
-    except pydantic.ValidationError:
+    except pydantic_ValidationError:
         return
     raise AssertionError("expected ValidationError for lat=999")
