@@ -1,13 +1,3 @@
----
-title: starpy
-emoji: 🔭
-colorFrom: indigo
-colorTo: purple
-sdk: docker
-app_port: 8080
-license: gpl-3.0
----
-
 # 🔭 starpy — personalized night-sky posters
 
 Self-hosted, fully open-source "custom star map poster" generator.

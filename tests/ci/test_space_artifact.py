@@ -33,9 +33,11 @@ def test_hf_readme_gradio_frontmatter() -> None:
     assert meta["license"] == "gpl-3.0"
 
 
-def test_github_readme_not_gradio_space() -> None:
-    meta: dict[str, Any] = _frontmatter(ROOT / "README.md")
-    assert meta.get("sdk") != "gradio"
+def test_github_readme_has_no_hf_frontmatter() -> None:
+    """GitHub does not parse HF metadata headers: README.md must not have one."""
+    text: str = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert not text.startswith("---")
+    assert "sdk:" not in text
 
 
 def test_requirements_in_sync_with_lock() -> None:
