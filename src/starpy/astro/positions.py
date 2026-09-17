@@ -3,19 +3,21 @@
 from datetime import datetime
 from typing import Any
 
-import numpy as np
-import polars as pl
+from numpy import float64 as np_float64
 from numpy.typing import NDArray
+from polars import DataFrame as pl_DataFrame
+from polars import Float64 as pl_Float64
+from polars import Series as pl_Series
 
 
 def altaz_for_stars(
-    catalog: pl.DataFrame,
+    catalog: pl_DataFrame,
     lat: float,
     lon: float,
     when_utc: datetime,
     planets: Any,
     timescale: Any,
-) -> pl.DataFrame:
+) -> pl_DataFrame:
     """Compute apparent alt/az for every catalog row.
 
     ``catalog`` needs ``hip, ra_deg, dec_deg, mag``. Returns the input plus
@@ -24,11 +26,11 @@ def altaz_for_stars(
     """
     from skyfield.api import Star
 
-    ra_hours: NDArray[np.float64] = (
+    ra_hours: NDArray[np_float64] = (
         catalog.get_column("ra_deg").to_numpy() / 15.0
-    ).astype(np.float64)
-    dec_deg: NDArray[np.float64] = (
-        catalog.get_column("dec_deg").to_numpy().astype(np.float64)
+    ).astype(np_float64)
+    dec_deg: NDArray[np_float64] = (
+        catalog.get_column("dec_deg").to_numpy().astype(np_float64)
     )
     stars: list[Any] = [
         Star(ra_hours=ra, dec_degrees=dec)
@@ -49,6 +51,6 @@ def altaz_for_stars(
         alts.append(float(alt.degrees))
         azs.append(float(az.degrees))
     return catalog.with_columns(
-        pl.Series("alt_deg", alts, dtype=pl.Float64),
-        pl.Series("az_deg", azs, dtype=pl.Float64),
+        pl_Series("alt_deg", alts, dtype=pl_Float64),
+        pl_Series("az_deg", azs, dtype=pl_Float64),
     )
