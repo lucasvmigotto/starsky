@@ -55,7 +55,36 @@ keeps the preview visually consistent.
 
 ## Decision
 
-Adopt **C**. Next steps if pursued: (1) write `render-spec.json`;
-(2) add `starpy export-static-data` (catalog + lines JSON);
-(3) Pages preview app + Nominatim-proxy Worker; (4) link preview ↔ app.
+Adopt **C**. Status: `render-spec.json` written; `export-static-data`
+shipped; share-link contract (`#s=` payload, see `src/starpy/share/`)
+implemented; explorer viewer built at `static_site/viewer/`.
 Do not block the main deliverable on this build.
+
+## Appendix — FastAPI render endpoint: rejected for v1 (2026-09-17)
+
+Considered: exposing the Gradio app's pipeline over HTTP (custom FastAPI
+routes via `mount_gradio_app`, or a separate service) for the static
+client to consume instead of recomputing the sky in JS.
+
+Rejected because:
+
+1. **SDK shape break.** The HF publish artifact is a stock Gradio SDK app
+   (`app.py` + `launch()`). Custom mounts deviate from that shape and
+   complicate the Space build for zero v1 benefit.
+2. **Abuse surface.** One render costs minutes of CPU (Skyfield over
+   ~118k stars + matplotlib). An open endpoint with no auth or
+   rate-limit primitives in the Gradio SDK is an invitation to burn
+   free-tier compute. Proper throttling (per-IP buckets, API keys,
+   AbuseIPDB-style filtering) is a whole service of its own.
+3. **Sleep/cold starts.** Free-tier Spaces sleep; a viewer dependent on a
+   sleeping backend gets multi-minute first loads. Client-side rendering
+   is instant and works fully offline after first load.
+4. **Redundancy.** The share-link already delivers the use case
+   (exact-sky sharing + exploration) with no server, no cost, no logs.
+
+Revisit triggers: client-side precision proven insufficient for print
+claims; a funded backend with auth + rate limiting exists; or the app
+outgrows the free tier anyway. If revisited, prefer the hybrid shape
+(Option B): keep `render_sky_map()` unmodified behind FastAPI, reuse the
+share payload as the request body, and put Cloudflare in front for
+throttle/caching.

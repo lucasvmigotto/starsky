@@ -11,6 +11,9 @@ env:
 jobs:
   sync-to-hf-spaces:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -18,9 +21,24 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: Push to HF spaces
+      - name: Install hf CLI
+        run: pip install -U "huggingface_hub[cli]"
+
+      - name: Mint HF token via OIDC trusted publisher
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_OIDC_RESOURCE: spaces/${{ env.HF_USERNAME }}/${{ env.HF_SPACE_NAME }}
+        run: echo "HF_TOKEN=$(hf auth token)" >> "$GITHUB_ENV"
+
+      - name: Push Gradio artifact to HF spaces
+        env:
           HF_USERNAME: ${{ env.HF_USERNAME }}
           HF_SPACE_NAME: ${{ env.HF_SPACE_NAME }}
-        run: git push -f https://$HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/$HF_USERNAME/$HF_SPACE_NAME main
+        run: |
+          # The Space repo gets the Gradio publish artifact: hf.README.md
+          # lands as README.md (GitHub keeps rendering README.md instead).
+          cp hf.README.md README.md
+          git add -A
+          git -c user.name "github-actions[bot]" \
+              -c user.email "github-actions[bot]@users.noreply.github.com" \
+              commit -m "chore: space publish ${GITHUB_SHA::7}" || true
+          git push -f "https://$HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/$HF_USERNAME/$HF_SPACE_NAME" HEAD:main

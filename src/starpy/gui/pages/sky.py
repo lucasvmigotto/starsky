@@ -34,6 +34,7 @@ def build_sky(
     on_render: Callable[..., Any],
     on_detect_tz: Callable[..., Any],
     on_geocode_preview: Callable[..., Any],
+    on_share_link: Callable[..., Any],
 ) -> Callable[[Blocks], Blocks]:
     """Build the star-map tab; returns a function mounting it onto ``Blocks``."""
 
@@ -67,6 +68,11 @@ def build_sky(
                 title: Textbox = Textbox(**ui.text_title.dump(exclude={"value"}))
             render_btn: Button = Button(**ui.btn_render.dump())
             output: Image = Image(**ui.image_output.dump())
+            with Row():
+                share_btn: Button = Button(**ui.btn_share.dump())
+                share_link_box: Textbox = Textbox(
+                    **ui.text_share_link.dump(exclude={"value"})
+                )
             Markdown(f"*{FOOTER}*")
 
             render_inputs: list[Any] = [
@@ -88,6 +94,9 @@ def build_sky(
                 title,
             ]
             render_btn.click(fn=on_render, inputs=render_inputs, outputs=output)
+            share_btn.click(
+                fn=on_share_link, inputs=render_inputs, outputs=share_link_box
+            )
             detect_tz.click(
                 fn=on_detect_tz, inputs=[mode, lat, lon, place], outputs=tz_name
             )

@@ -3,43 +3,43 @@
 from pathlib import Path
 from typing import Any
 
-import polars as pl
 from click.testing import CliRunner
-from PIL import Image
+from PIL.Image import new as pil_new
+from PIL.Image import open as pil_open
+from polars import DataFrame as pl_DataFrame
+from polars import Float64 as pl_Float64
+from polars import Int64 as pl_Int64
+from polars import String as pl_String
 
 from starpy.cli import main
 
 
 def _stub_pipeline(monkeypatch: Any, tmp_path: Path) -> None:
-    import starpy.cli as cli_module
-
-    fake_catalog: pl.DataFrame = pl.DataFrame(
+    fake_catalog: pl_DataFrame = pl_DataFrame(
         {"hip": [1], "ra_deg": [10.0], "dec_deg": [20.0], "mag": [1.0]},
         schema={
-            "hip": pl.Int64,
-            "ra_deg": pl.Float64,
-            "dec_deg": pl.Float64,
-            "mag": pl.Float64,
+            "hip": pl_Int64,
+            "ra_deg": pl_Float64,
+            "dec_deg": pl_Float64,
+            "mag": pl_Float64,
         },
     )
-    fake_lines: pl.DataFrame = pl.DataFrame(
+    fake_lines: pl_DataFrame = pl_DataFrame(
         {"abbr": [], "name": [], "hip_a": [], "hip_b": []},
         schema={
-            "abbr": pl.String,
-            "name": pl.String,
-            "hip_a": pl.Int64,
-            "hip_b": pl.Int64,
+            "abbr": pl_String,
+            "name": pl_String,
+            "hip_a": pl_Int64,
+            "hip_b": pl_Int64,
         },
     )
     monkeypatch.setattr(
-        cli_module, "load_ephemeris", lambda settings: (None, None, None)
+        "starpy.cli.load_ephemeris", lambda settings: (None, None, None)
     )
-    monkeypatch.setattr(cli_module, "load_hipparcos", lambda settings: fake_catalog)
+    monkeypatch.setattr("starpy.cli.load_hipparcos", lambda settings: fake_catalog)
+    monkeypatch.setattr("starpy.cli.load_constellation_lines", lambda cache: fake_lines)
     monkeypatch.setattr(
-        cli_module, "load_constellation_lines", lambda cache: fake_lines
-    )
-    monkeypatch.setattr(
-        cli_module, "render_sky_map", lambda **kwargs: Image.new("RGBA", (16, 16))
+        "starpy.cli.render_sky_map", lambda **kwargs: pil_new("RGBA", (16, 16))
     )
     monkeypatch.setenv("STARPY__RENDER__CACHE_DIR", str(tmp_path / "renders"))
 
@@ -75,7 +75,7 @@ def test_render_coordinates_png(monkeypatch: Any, tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.output
     assert output.exists()
-    Image.open(output).verify()
+    pil_open(output).verify()
 
 
 def test_render_requires_location(monkeypatch: Any, tmp_path: Path) -> None:

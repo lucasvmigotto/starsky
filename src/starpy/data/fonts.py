@@ -8,7 +8,9 @@ fall back to matplotlib's bundled DejaVu Serif (FONT_STACK in render.figure).
 from pathlib import Path
 from typing import Final
 
-import httpx
+from httpx import HTTPError as httpx_HTTPError
+from httpx import Response as httpx_Response
+from httpx import get as httpx_get
 
 CORMORANT_URL: Final[str] = (
     "https://github.com/google/fonts/raw/main/ofl/cormorantgaramond/"
@@ -29,12 +31,12 @@ def ensure_font(cache_dir: Path | str) -> Path | None:
         return target
     target.parent.mkdir(parents=True, exist_ok=True)
     try:
-        response: httpx.Response = httpx.get(
+        response: httpx_Response = httpx_get(
             CORMORANT_URL, follow_redirects=True, timeout=120.0
         )
         response.raise_for_status()
         target.write_bytes(response.content)
-    except httpx.HTTPError:
+    except httpx_HTTPError:
         return None
     return target if target.exists() else None
 
@@ -45,9 +47,9 @@ def register_cached_fonts(cache_dir: Path | str) -> bool:
     if not target.exists():
         return False
     try:
-        from matplotlib import font_manager
+        from matplotlib.font_manager import fontManager as mplfm_fontManager
 
-        font_manager.fontManager.addfont(str(target))
+        mplfm_fontManager.addfont(str(target))
     except Exception:  # noqa: BLE001 - font registration must never break startup
         return False
     return True

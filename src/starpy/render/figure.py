@@ -9,18 +9,26 @@ No duplicated rendering logic lives in entry points; they only resolve
 params and call :func:`render_sky_map`.
 """
 
-import hashlib
-import io
 from datetime import datetime
+from hashlib import sha256 as hashlib_sha256
+from io import BytesIO as io_BytesIO
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-import matplotlib
-import polars as pl
+from matplotlib import use as matplotlib_use
 from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure
-from PIL import Image
+from PIL.Image import Image as pil_Image
+from PIL.Image import Resampling as pil_Resampling
+from PIL.Image import fromarray as pil_fromarray
+from PIL.Image import open as pil_open
+from polars import DataFrame as pl_DataFrame
+from polars import Float64 as pl_Float64
+from polars import Int64 as pl_Int64
+from polars import Series as pl_Series
+from polars import String as pl_String
+from polars import col as pl_col
 
 from ..astro.observer import format_local
 from ..astro.positions import altaz_for_stars
@@ -33,10 +41,11 @@ from .density import declutter
 from .glow import star_size
 from .mask import circle_alpha
 
-matplotlib.use("Agg")
-
-import matplotlib.pyplot as plt  # noqa: E402
+matplotlib_use("Agg")
 from matplotlib.patches import Circle  # noqa: E402
+from matplotlib.pyplot import close as plt_close
+from matplotlib.pyplot import figure as plt_figure
+from matplotlib.pyplot import rcParams as plt_rcParams
 
 FONT_STACK: list[str] = ["Cormorant Garamond", "EB Garamond", "DejaVu Serif"]
 CAPTION_BAND_FRACTION: float = 0.22
@@ -54,38 +63,38 @@ def tz_label(tz_name: str, when_utc: datetime) -> str:
 
 
 def project_visible(
-    catalog: pl.DataFrame,
+    catalog: pl_DataFrame,
     lat: float,
     lon: float,
     when_utc: datetime,
     options: RenderOptions,
     planets: Any,
     timescale: Any,
-) -> pl.DataFrame:
+) -> pl_DataFrame:
     """Filter + locate + project the visible stars -> (hip, x, y, mag)."""
-    bright: pl.DataFrame = catalog.filter(pl.col("mag") <= options.magnitude_limit)
+    bright: pl_DataFrame = catalog.filter(pl_col("mag") <= options.magnitude_limit)
     if bright.is_empty():
-        return pl.DataFrame(
+        return pl_DataFrame(
             {"hip": [], "x": [], "y": [], "mag": []},
             schema={
-                "hip": pl.Int64,
-                "x": pl.Float64,
-                "y": pl.Float64,
-                "mag": pl.Float64,
+                "hip": pl_Int64,
+                "x": pl_Float64,
+                "y": pl_Float64,
+                "mag": pl_Float64,
             },
         )
-    located: pl.DataFrame = altaz_for_stars(
+    located: pl_DataFrame = altaz_for_stars(
         bright, lat, lon, when_utc, planets, timescale
     )
-    above: pl.DataFrame = located.filter(pl.col("alt_deg") > 0.0)
+    above: pl_DataFrame = located.filter(pl_col("alt_deg") > 0.0)
     if above.is_empty():
-        return pl.DataFrame(
+        return pl_DataFrame(
             {"hip": [], "x": [], "y": [], "mag": []},
             schema={
-                "hip": pl.Int64,
-                "x": pl.Float64,
-                "y": pl.Float64,
-                "mag": pl.Float64,
+                "hip": pl_Int64,
+                "x": pl_Float64,
+                "y": pl_Float64,
+                "mag": pl_Float64,
             },
         )
     alt: Any = above.get_column("alt_deg").to_numpy()
@@ -96,16 +105,16 @@ def project_visible(
         x, y = fisheye(alt, az, strength=options.fisheye_strength)
     else:
         x, y = stereographic(alt, az)
-    projected: pl.DataFrame = above.with_columns(
-        pl.Series("x", x, dtype=pl.Float64), pl.Series("y", y, dtype=pl.Float64)
+    projected: pl_DataFrame = above.with_columns(
+        pl_Series("x", x, dtype=pl_Float64), pl_Series("y", y, dtype=pl_Float64)
     ).select("hip", "x", "y", "mag")
     return declutter(projected, options.min_separation)
 
 
 def compose_figure(
-    projected: pl.DataFrame,
-    segments: pl.DataFrame,
-    labels: pl.DataFrame,
+    projected: pl_DataFrame,
+    segments: pl_DataFrame,
+    labels: pl_DataFrame,
     caption_lines: list[str],
     options: RenderOptions,
     render_cfg: RenderSettings,
@@ -114,11 +123,11 @@ def compose_figure(
     """Compose the matplotlib poster figure (sky + ring + caption)."""
     dpi: int = render_cfg.DPI
     band_px: int = int(size_px * CAPTION_BAND_FRACTION)
-    fig: Figure = plt.figure(
+    fig: Figure = plt_figure(
         figsize=(size_px / dpi, (size_px + band_px) / dpi), dpi=dpi
     )
     fig.patch.set_facecolor(render_cfg.BACKGROUND)
-    plt.rcParams["font.family"] = FONT_STACK
+    plt_rcParams["font.family"] = FONT_STACK
     sky_height: float = size_px / (size_px + band_px)
     ax: Any = fig.add_axes((0.0, 1.0 - sky_height, 1.0, sky_height))
     ax.set_xlim(-1.06, 1.06)
@@ -223,26 +232,27 @@ def compose_figure(
     return fig
 
 
-def figure_to_pil(fig: Figure, shape: str, size_px: int, band_px: int) -> Image.Image:
+def figure_to_pil(fig: Figure, shape: str, size_px: int, band_px: int) -> pil_Image:
     """Render ``fig`` canvas to RGBA PIL, applying circular alpha when needed."""
-    buf: io.BytesIO = io.BytesIO()
+    buf: io_BytesIO = io_BytesIO()
     fig.savefig(buf, format="png", facecolor=fig.get_facecolor())
-    plt.close(fig)
+    plt_close(fig)
     buf.seek(0)
-    image: Image.Image = Image.open(buf).convert("RGBA")
+    image: pil_Image = pil_open(buf).convert("RGBA")
     if shape == "circle":
-        import numpy as np
+        from numpy import array as np_array
+        from numpy import minimum as np_minimum
 
         width: int
         height: int
         width, height = image.size
         alpha: Any = circle_alpha(size_px)
-        arr: Any = np.array(image)
-        resized_mask: Any = np.array(
-            Image.fromarray(alpha).resize((width, height), Image.Resampling.LANCZOS)
+        arr: Any = np_array(image)
+        resized_mask: Any = np_array(
+            pil_fromarray(alpha).resize((width, height), pil_Resampling.LANCZOS)
         )
-        arr[:, :, 3] = np.minimum(arr[:, :, 3], resized_mask)
-        image = Image.fromarray(arr)
+        arr[:, :, 3] = np_minimum(arr[:, :, 3], resized_mask)
+        image = pil_fromarray(arr)
     return image
 
 
@@ -253,54 +263,54 @@ def render_sky_map(
     when_utc: datetime,
     tz_name: str,
     options: RenderOptions,
-    catalog: pl.DataFrame,
-    lines: pl.DataFrame | None,
+    catalog: pl_DataFrame,
+    lines: pl_DataFrame | None,
     planets: Any,
     timescale: Any,
     render_cfg: RenderSettings | None = None,
     size_px: int | None = None,
-) -> Image.Image:
+) -> pil_Image:
     """Render the poster sky map -> PIL image (single shared renderer)."""
     cfg: RenderSettings = render_cfg or RenderSettings()
     px: int = size_px or cfg.SIZE_PX
-    projected: pl.DataFrame = project_visible(
+    projected: pl_DataFrame = project_visible(
         catalog, lat, lon, when_utc, options, planets, timescale
     )
-    empty_lines: pl.DataFrame = pl.DataFrame(
+    empty_lines: pl_DataFrame = pl_DataFrame(
         {"abbr": [], "name": [], "hip_a": [], "hip_b": []},
         schema={
-            "abbr": pl.String,
-            "name": pl.String,
-            "hip_a": pl.Int64,
-            "hip_b": pl.Int64,
+            "abbr": pl_String,
+            "name": pl_String,
+            "hip_a": pl_Int64,
+            "hip_b": pl_Int64,
         },
     )
-    source_lines: pl.DataFrame = lines if lines is not None else empty_lines
-    segments: pl.DataFrame = (
+    source_lines: pl_DataFrame = lines if lines is not None else empty_lines
+    segments: pl_DataFrame = (
         project_constellation_lines(projected, source_lines)
         if options.constellations
-        else pl.DataFrame(
+        else pl_DataFrame(
             {"abbr": [], "name": [], "x_a": [], "y_a": [], "x_b": [], "y_b": []},
             schema={
-                "abbr": pl.String,
-                "name": pl.String,
-                "x_a": pl.Float64,
-                "y_a": pl.Float64,
-                "x_b": pl.Float64,
-                "y_b": pl.Float64,
+                "abbr": pl_String,
+                "name": pl_String,
+                "x_a": pl_Float64,
+                "y_a": pl_Float64,
+                "x_b": pl_Float64,
+                "y_b": pl_Float64,
             },
         )
     )
-    labels: pl.DataFrame = (
+    labels: pl_DataFrame = (
         constellation_label_positions(projected, source_lines)
         if options.constellations and options.constellation_labels
-        else pl.DataFrame(
+        else pl_DataFrame(
             {"abbr": [], "name": [], "x": [], "y": []},
             schema={
-                "abbr": pl.String,
-                "name": pl.String,
-                "x": pl.Float64,
-                "y": pl.Float64,
+                "abbr": pl_String,
+                "name": pl_String,
+                "x": pl_Float64,
+                "y": pl_Float64,
             },
         )
     )
@@ -340,10 +350,10 @@ def cache_key(
             str(size_px),
         ]
     )
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return hashlib_sha256(payload.encode("utf-8")).hexdigest()
 
 
-def export_image(image: Image.Image, output: Path) -> Path:
+def export_image(image: pil_Image, output: Path) -> Path:
     """Save ``image`` to ``output`` (png; svg/pdf are vector paths, see below)."""
     output.parent.mkdir(parents=True, exist_ok=True)
     image.save(output, format="PNG")
@@ -351,9 +361,9 @@ def export_image(image: Image.Image, output: Path) -> Path:
 
 
 def export_vector(
-    projected: pl.DataFrame,
-    segments: pl.DataFrame,
-    labels: pl.DataFrame,
+    projected: pl_DataFrame,
+    segments: pl_DataFrame,
+    labels: pl_DataFrame,
     caption_lines: list[str],
     options: RenderOptions,
     render_cfg: RenderSettings,
@@ -366,5 +376,5 @@ def export_vector(
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output, format=output.suffix.lstrip("."))
-    plt.close(fig)
+    plt_close(fig)
     return output

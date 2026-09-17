@@ -12,12 +12,16 @@ Each constellation entry: ``{"id": "CON modern_iau And", "lines": [[hip, ...],
 polyline form one segment each.
 """
 
-import json
+from json import loads as json_loads
 from pathlib import Path
 from typing import Any, Final
 
-import httpx
-import polars as pl
+from httpx import Response as httpx_Response
+from httpx import get as httpx_get
+from polars import DataFrame as pl_DataFrame
+from polars import Int64 as pl_Int64
+from polars import String as pl_String
+from polars import read_parquet as pl_read_parquet
 
 IAU_INDEX_URL: Final[str] = (
     "https://raw.githubusercontent.com/Stellarium/stellarium/master"
@@ -26,7 +30,7 @@ IAU_INDEX_URL: Final[str] = (
 PARQUET_NAME: Final[str] = "constellations.parquet"
 
 
-def parse_iau_index(payload: dict[str, Any]) -> pl.DataFrame:
+def parse_iau_index(payload: dict[str, Any]) -> pl_DataFrame:
     """Flatten Stellarium ``index.json`` polylines into HIP pair rows."""
     abbrs: list[str] = []
     names: list[str] = []
@@ -45,32 +49,32 @@ def parse_iau_index(payload: dict[str, Any]) -> pl.DataFrame:
                 names.append(name)
                 hip_a.append(first)
                 hip_b.append(second)
-    return pl.DataFrame(
+    return pl_DataFrame(
         {"abbr": abbrs, "name": names, "hip_a": hip_a, "hip_b": hip_b},
         schema={
-            "abbr": pl.String,
-            "name": pl.String,
-            "hip_a": pl.Int64,
-            "hip_b": pl.Int64,
+            "abbr": pl_String,
+            "name": pl_String,
+            "hip_a": pl_Int64,
+            "hip_b": pl_Int64,
         },
     )
 
 
 def download_iau_index(url: str = IAU_INDEX_URL) -> dict[str, Any]:
     """Download the IAU skyculture JSON (~135 KB)."""
-    response: httpx.Response = httpx.get(url, follow_redirects=True, timeout=60.0)
+    response: httpx_Response = httpx_get(url, follow_redirects=True, timeout=60.0)
     response.raise_for_status()
-    payload: dict[str, Any] = json.loads(response.text)
+    payload: dict[str, Any] = json_loads(response.text)
     return payload
 
 
-def load_constellation_lines(cache_dir: Path | str) -> pl.DataFrame:
+def load_constellation_lines(cache_dir: Path | str) -> pl_DataFrame:
     """Load constellation HIP pairs as a Polars DataFrame (parquet-cached)."""
     directory: Path = Path(cache_dir)
     directory.mkdir(parents=True, exist_ok=True)
     parquet_path: Path = directory / PARQUET_NAME
     if parquet_path.exists():
-        return pl.read_parquet(parquet_path)
-    df: pl.DataFrame = parse_iau_index(download_iau_index())
+        return pl_read_parquet(parquet_path)
+    df: pl_DataFrame = parse_iau_index(download_iau_index())
     df.write_parquet(parquet_path)
     return df

@@ -91,7 +91,7 @@ Runtime runs as UID/GID 65532 (DHI default non-root).
 
 | Secret | Used by | Purpose |
 | --- | --- | --- |
-| `HF_TOKEN` | `hf_spaces.yml` | push to HF Space (also set `HF_USERNAME`/`HF_SPACE_NAME` env) |
+| _(none — OIDC trusted publisher)_ | `hf_spaces.yml` | Push to the Space mints a 1h token via OpenID Connect. One-time manual setup: create the Space as Gradio SDK, then add this repo (`main` + `hf_spaces.yml` claims) under the Space's Trusted Publishers. |
 | `DOCKER_HUB_PAT` | `dockerhub.yml` | Docker Hub PAT with push scope (username is `github.repository_owner`, no secret needed) |
 | `STARPY_USER_AGENT_CONTACT` | `ci.yml` live smoke | real contact User-Agent for Nominatim (skipped on forks without it) |
 
@@ -102,6 +102,23 @@ uv run ruff check src tests && uv run ruff format --check src tests
 uv run ty check src tests
 uv run pytest -q
 ```
+
+### Import style (enforced in CI)
+
+No `import x` / `import x as y`, no module attribute access. Every name
+arrives via an explicit from-import, namespaced with its module when it
+was previously reached attributively:
+
+```python
+from numpy import arange as np_arange
+from polars import DataFrame as pl_DataFrame
+from click import group as click_group
+```
+
+Already-unambiguous from-imports (`pathlib.Path`, `zoneinfo.ZoneInfo`,
+pydantic names, …) stay bare. Class/object member access (`fig.savefig`,
+`settings.RENDER`) is unaffected — only *module* attribute access is
+banned. Checked by `scripts/check_declarative_imports.py`.
 
 ## Attribution
 

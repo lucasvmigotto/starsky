@@ -7,6 +7,7 @@ from .hf import HuggingFaceSettings
 from .log import LogSettings
 from .render import RenderSettings
 from .settings import Settings
+from .share import ShareSettings
 
 __all__ = [
     "EphemerisSettings",
@@ -16,4 +17,5 @@ __all__ = [
     "LogSettings",
     "RenderSettings",
     "Settings",
+    "ShareSettings",
 ]
