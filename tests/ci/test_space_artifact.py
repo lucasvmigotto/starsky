@@ -95,7 +95,13 @@ def test_app_entrypoint_imports_without_launching() -> None:
 
 
 def test_publish_script_tree_shape(tmp_path: Path) -> None:
-    """Run scripts/publish_space.sh into a local bare repo: exactly one README."""
+    """Run scripts/publish_space.sh into a local bare repo: minimal tree only.
+
+    The Space must receive exactly the artifact the builder needs
+    (README.md, app.py, requirements.txt, src/) and nothing else: the Hub
+    rejects binary files, and tests/workflows/scripts/static_site have no
+    business in the Space repo.
+    """
     from os import environ as os_environ
 
     work: Path = tmp_path / "work"
@@ -107,6 +113,23 @@ def test_publish_script_tree_shape(tmp_path: Path) -> None:
     subprocess_run(["git", "-C", str(work), "config", "user.name", "t"], check=True)
     for name in ("hf.README.md", "README.md", "app.py", "requirements.txt"):
         (work / name).write_bytes((ROOT / name).read_bytes())
+    # Artifact payload the Space builder actually needs (via the src/ shim).
+    src_dir: Path = work / "src" / "starpy"
+    src_dir.mkdir(parents=True)
+    (src_dir / "__init__.py").write_text('"""Fixture package."""\n', encoding="utf-8")
+    # Decoys mirroring the real repo: none of these may reach the Space.
+    # The PNG carries real magic bytes: the Hub rejects binary files outright.
+    banner: Path = work / "static_site" / "public" / "og-banner.png"
+    banner.parent.mkdir(parents=True)
+    banner.write_bytes(bytes.fromhex("89504e470d0a1a0a") + b"decoy")
+    workflows_dir: Path = work / ".github" / "workflows"
+    workflows_dir.mkdir(parents=True)
+    (workflows_dir / "ci.yml").write_text("decoy: true\n", encoding="utf-8")
+    scripts_dir: Path = work / "scripts"
+    scripts_dir.mkdir()
+    (scripts_dir / "publish_space.sh").write_bytes(
+        (ROOT / "scripts" / "publish_space.sh").read_bytes()
+    )
     subprocess_run(["git", "-C", str(work), "add", "-A"], check=True)
     subprocess_run(["git", "-C", str(work), "commit", "-qm", "base"], check=True)
     subprocess_run(
@@ -145,3 +168,11 @@ def test_publish_script_tree_shape(tmp_path: Path) -> None:
     assert "README.md" in names
     assert "hf.README.md" not in names
     assert "app.py" in names and "requirements.txt" in names
+    assert "src/starpy/__init__.py" in names
+    for decoy in (
+        "static_site/public/og-banner.png",
+        ".github/workflows/ci.yml",
+        "scripts/publish_space.sh",
+    ):
+        assert decoy not in names, decoy
+    assert len(names) == 4, names
