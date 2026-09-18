@@ -7,7 +7,7 @@ import {
   ShareVersionError,
   type SharePayload,
 } from "../lib/share.ts";
-import { FULL_APP_URL, SAMPLE_FRAGMENT } from "../lib/site.ts";
+import { randomSampleFragment } from "../lib/site.ts";
 import {
   useSkyModel,
   type SegmentRow,
@@ -319,19 +319,16 @@ export default function ViewerPage() {
       <footer className="atlas-footer">
         <p>
           Poster-grade preview drawn from{" "}
-          <code className="atlas-code">catalog.json</code>. For fine print
-          and vector exports, the full app waits.{" "}
-          <a className="atlas-link" href={FULL_APP_URL}>
-            starpy
-          </a>
+          <code className="atlas-code">catalog.json</code>, rendered entirely
+          in your browser.
           {link.kind === "empty" && (
             <>
               {" "}·{" "}
               <a
                 className="atlas-link"
-                href={`#s=${SAMPLE_FRAGMENT}`}
+                href={`#s=${randomSampleFragment()}`}
               >
-                sample sky
+                random sky
               </a>
             </>
           )}
