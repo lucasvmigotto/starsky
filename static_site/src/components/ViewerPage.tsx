@@ -230,9 +230,6 @@ export default function ViewerPage() {
     }, "image/png");
   }, []);
 
-  const fullAppHref =
-    link.kind === "ready" ? `${FULL_APP_URL}#s=${link.fragment}` : FULL_APP_URL;
-
   return (
     <div className="atlas-page">
       <header className="atlas-header">
@@ -242,16 +239,6 @@ export default function ViewerPage() {
             A night-sky atlas moment, recomputed in your browser
           </p>
         </div>
-        <nav className="flex items-center gap-2" aria-label="Poster actions">
-          {link.kind === "ready" && (
-            <button type="button" onClick={downloadPng} className="atlas-btn">
-              Download PNG
-            </button>
-          )}
-          <a className="atlas-btn-ghost" href={fullAppHref}>
-            Open in full app
-          </a>
-        </nav>
       </header>
 
       <main className="atlas-main">
@@ -349,6 +336,17 @@ export default function ViewerPage() {
             </>
           )}
         </p>
+        {link.kind === "ready" && (
+          <p className="mt-2">
+            <button
+              type="button"
+              onClick={downloadPng}
+              className="atlas-btn-subtle"
+            >
+              Save image
+            </button>
+          </p>
+        )}
       </footer>
     </div>
   );

@@ -1,7 +1,7 @@
 {
   "name": "starpy-viewer",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Static star-map explorer viewer for starpy (Cloudflare R2 static host).",
   "scripts": {
