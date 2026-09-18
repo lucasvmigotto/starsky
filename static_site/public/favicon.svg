@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>starpy</title>
+  <!-- Night-sky mark in the poster palette (see static_site/render-spec.json):
+       cream star + glow on deep navy, one faint constellation thread. -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f5efe0" stop-opacity="0.85" />
+      <stop offset="55%" stop-color="#f5efe0" stop-opacity="0.28" />
+      <stop offset="100%" stop-color="#f5efe0" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#0b0f19" />
+  <polyline
+    points="14,44 24,36 34,40 44,26"
+    fill="none"
+    stroke="#b98a8a"
+    stroke-width="1.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.65"
+  />
+  <circle cx="14" cy="44" r="2" fill="#f5efe0" opacity="0.8" />
+  <circle cx="24" cy="36" r="1.6" fill="#f5efe0" opacity="0.6" />
+  <circle cx="34" cy="40" r="2" fill="#f5efe0" opacity="0.8" />
+  <circle cx="44" cy="26" r="1.6" fill="#f5efe0" opacity="0.6" />
+  <circle cx="47" cy="45" r="15" fill="url(#glow)" />
+  <circle cx="47" cy="45" r="6.5" fill="#f5efe0" />
+</svg>

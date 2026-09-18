@@ -1,0 +1,16 @@
+.env
+dist/
+node_modules/
+build/
+*.egg-info/
+**/__pycache__/
+**/*.pyc
+.venv/
+/tmp/starpy-cache/
+/tmp/opencode/
+out.png
+*.png
+!tests/golden/*.png
+!static_site/public/og-banner.png
+# Generated viewer data (rebuild via `python -m starpy export-static-data`)
+static_site/public/data/*.json

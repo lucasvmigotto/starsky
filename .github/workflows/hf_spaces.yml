@@ -1,0 +1,36 @@
+name: Sync with HuggingFace Spaces
+
+on:
+  push:
+    branches: ['main']
+
+env:
+  HF_USERNAME: lucasvmigotto
+  HF_SPACE_NAME: starpy
+
+jobs:
+  sync-to-hf-spaces:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Install hf CLI
+        run: pip install -U "huggingface_hub[cli]"
+
+      - name: Mint HF token via OIDC trusted publisher
+        env:
+          HF_OIDC_RESOURCE: spaces/${{ env.HF_USERNAME }}/${{ env.HF_SPACE_NAME }}
+        run: echo "HF_TOKEN=$(hf auth token)" >> "$GITHUB_ENV"
+
+      - name: Push Gradio artifact to HF spaces
+        env:
+          HF_USERNAME: ${{ env.HF_USERNAME }}
+          HF_SPACE_NAME: ${{ env.HF_SPACE_NAME }}
+        run: bash scripts/publish_space.sh "huggingface.co/spaces/$HF_USERNAME/$HF_SPACE_NAME"

@@ -1,0 +1,12 @@
+{
+    "verbose": false,
+    "ignore": [
+        ".git/",
+        "**/__pycache__/**"
+    ],
+    "watch": [
+        "src"
+    ],
+    "ext": "py",
+    "exec": "python -m starpy"
+}

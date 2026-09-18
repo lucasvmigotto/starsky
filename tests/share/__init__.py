@@ -1,0 +1,1 @@
+"""Share tests package."""
