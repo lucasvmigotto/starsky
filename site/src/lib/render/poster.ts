@@ -137,6 +137,80 @@ function drawSegments(
   ctx.stroke();
 }
 
+/** Preview-space disc, for mapping figure centroids onto the poster. */
+export interface PreviewOrigins {
+  diskCx: number;
+  diskCy: number;
+  diskR: number;
+}
+
+/**
+ * Draw the focus effect on top of an already-composed poster.
+ *
+ * The poster is flattened, so per-constellation alpha is no longer possible.
+ * Instead: veil the whole disc, then redraw the focused figure's segments and
+ * label on top. Visually equivalent to the old per-line dimming, and cheap
+ * (one figure is a handful of segments) — no re-composition per hover.
+ */
+export function drawFocusOverlay(
+  ctx: CanvasRenderingContext2D,
+  model: SkyModel,
+  geometry: PosterGeometry,
+  preview: PreviewOrigins,
+  focused: number,
+  options: SharePayload["options"],
+): void {
+  const [cx, cy] = unitToCanvas(0, 0, geometry);
+  const radius = (1 / AXIS_EXTENT) * (geometry.sizePx / 2);
+  if (focused < 0 || focused >= model.figures.length) return;
+  const figure = model.figures[focused];
+
+  ctx.save();
+  // Veil: dim everything inside the disc.
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = withAlpha(SPEC.colors.background, 0.62);
+  ctx.fillRect(
+    cx - radius,
+    cy - radius,
+    radius * 2,
+    radius * 2,
+  );
+
+  // Redraw the focused figure above the veil.
+  if (options.constellations) {
+    ctx.strokeStyle = withAlpha(
+      SPEC.colors.line,
+      Math.min(1, SPEC.constellations.lineAlpha + 0.3),
+    );
+    ctx.lineWidth = SPEC.constellations.lineWidth * 2;
+    ctx.beginPath();
+    for (const seg of model.segments) {
+      if (model.figures[seg.figure] !== figure) continue;
+      const a = model.stars[seg.a];
+      const b = model.stars[seg.b];
+      const [ax, ay] = unitToCanvas(a.unitX, a.unitY, geometry);
+      const [bx, by] = unitToCanvas(b.unitX, b.unitY, geometry);
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(bx, by);
+    }
+    ctx.stroke();
+  }
+
+  if (options.constellations && options.constellation_labels) {
+    const ux = (figure.centroidX - preview.diskCx) / preview.diskR;
+    const uy = (preview.diskCy - figure.centroidY) / preview.diskR;
+    const [lx, ly] = unitToCanvas(ux, uy, geometry);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = `${pointsToPx(SPEC.constellations.labelFontSize).toString()}px "Cormorant Garamond", serif`;
+    ctx.fillStyle = withAlpha(SPEC.colors.line, 1);
+    ctx.fillText(figure.name.toUpperCase(), lx, ly);
+  }
+  ctx.restore();
+}
+
 function drawGlow(
   ctx: CanvasRenderingContext2D,
   model: SkyModel,
