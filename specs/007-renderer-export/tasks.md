@@ -75,3 +75,22 @@ The remaining work:
 - [ ] T027 [US3] Test an exported SVG/PDF opens with the network disabled (bundled font, no fallback)
 - [ ] T028 Flip the renderer flag to poster by default once T024-T027 pass, then delete the preview renderer
 - [ ] T029 Performance profile on a mid-range phone against the budget; record numbers in `plan.md`
+
+## QA
+
+Feature risk: **High** — see `specs/007-renderer-export/qa.md`.
+
+- [ ] T030 [QA] e2e J1 (Chrome + Firefox): land → render → export PNG/SVG/PDF; assert each download opens and the status reports it
+- [ ] T031 [QA] e2e J3: export SVG with the network disabled; assert the bundled font renders (no serif fallback)
+- [ ] T032 [QA] Negative: render with the font not yet loaded; assert it fails loudly or waits — never a silent fallback
+- [ ] T033 [QA] Negative: empty sky (polar night) still renders frame + caption
+- [ ] T034 [QA] Boundary: render at the maximum magnitude limit (~8870 stars) within the time budget
+- [ ] T035 [QA] Boundary: fisheye strength at both ends; `<= 0` rejected before rendering
+- [ ] T036 [QA] a11y: axe on the viewer; keyboard-only export path (tab to each button, activate, confirm the download)
+- [ ] T037 [QA] Visual: reference-image suite over the fixture matrix with stored PNGs (the T024 suite); wire it as the `main` gate
+- [ ] T038 [QA] Performance (`qa:load`): measure render + export on a mid-range device class; record the number against the ≤ 2 s assumption
+- [ ] T039 [QA] Gate: run the e2e journeys on PRs touching `site/**`, and the full Chrome + Firefox matrix on `main`
+- [ ] T040 [QA] Charter C1: poster fidelity sweep (extreme latitudes, solstice edges, accents/emoji in the title)
+- [ ] T041 [QA] Charter C2: export integrity in a different viewer per format (clipping, missing stars, rasterised text, external refs)
+
+**Checkpoint**: exports verified in a real browser on both supported browsers; nothing Verified until T030–T033 pass on `main`.

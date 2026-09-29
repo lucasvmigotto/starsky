@@ -11,3 +11,7 @@ Key entities (`RenderOptions`, `LocationInput`, `Observation`) move to those
 features unchanged.
 
 This directory is kept only as history; nothing here is built.
+
+**QA: N/A.** No `qa.md` and no `tasks.md` — there is no code to test and no
+story to verify. Testing for the surface that replaced this feature lives in
+`specs/007-renderer-export/qa.md` and `specs/006-viewer/qa.md`.

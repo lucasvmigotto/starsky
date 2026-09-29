@@ -153,17 +153,18 @@ No personal data is stored or transmitted (place text goes only to Nominatim, fr
 
 ## Risks
 
-- **Renderer parity** (biggest): browser vs CLI divergence — mitigated by freezing `render-spec.json` (Slice 0) and a parallel-run harness before the default flip.
+- **Visual regression** (biggest): the poster is the product and the renderer is the only implementation — mitigated by the reference-image suite (`refactor.md` T024) and the `render-spec.json` conformance test.
 - **Browser performance/battery** for the 1600 px poster on low-end phones — a render budget and device-class profiling in `qa:load`.
 - **Free-tier request ceilings** at extreme virality — immutable assets + long cache keep origin fetches minimal; alarm on R2 operation counts.
-- **TypeScript 7 migration** — isolated, reversible slice.
+- **TypeScript 7 migration** — isolated, reversible slice; the compiler ships as a dev pre-release while 7.0 stabilises.
 - **Single-host dependency** on R2/Cloudflare — acceptable at this cost target; the artifact is rebuildable anywhere.
+- **WebKit untested** — no `standalone-webkit` image exists; Safari is not a supported browser until a Playwright-container exception is added.
 
 ## Architecture fitness functions (automatable)
 
-1. **No server**: CI fails if any Python module imports `gradio` or opens a socket; `python -m starpy` exits without binding.
-2. **Contract conformance**: `render-spec.json` parsed by both Python and TS tests; a change to either renderer without the spec fails.
-3. **Parity**: a fixture matrix renders in the CLI and the browser; a tolerance-bounded comparison runs on every PR touching `site/src/lib/render*` or `src/starpy/render/*`.
+1. **No server**: CI fails if any Python module imports a web framework or opens a socket; `python -m starpy` exits without binding.
+2. **Contract conformance**: `render-spec.json` and the TS `SPEC` must match field for field (`site/src/lib/spec.test.ts`).
+3. **Visual regression**: the fixture matrix renders in the browser against stored reference PNGs; unexplained change fails (replaces the removed CLI parity harness).
 4. **Bundle budget**: `dist/` ≤ 500 KB brotli (excluding font) and `data/` ≤ 400 KB brotli; CI fails over.
 5. **No secrets in the bundle**: a CI scan fails on any `*_TOKEN`/key-like string in `dist/`.
 6. **Offline render**: a test renders and exports with network disabled (font bundled).

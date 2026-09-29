@@ -53,3 +53,17 @@ the story-level acceptance tests.
 
 - Data versioning must be deterministic: derive it from the exported files' hash.
 - `## Frontend` section is owned by `frontend:spec`.
+
+## QA
+
+Feature risk: **Medium** — see `specs/008-site-delivery/qa.md`.
+
+- [ ] T018 [QA] e2e J6 (post-deploy smoke): open the deployed URL, render a shared sky, export a PNG, assert no third-party asset request
+- [ ] T019 [QA] Negative: a failed build leaves the previous prefix serving; nothing partial published
+- [ ] T020 [QA] Test: the bundle carries no `fonts.googleapis`/`gstatic` reference and no `*_TOKEN`-like string
+- [ ] T021 [QA] Drill: time a rollback to the previous prefix; record it against the 5-minute target
+- [ ] T022 [QA] Gate: enforce all five fitness functions in CI (no-server, conformance, visual regression, bundle/data budgets, no-secrets)
+- [ ] T023 [QA] Scheduled: dependency and secret scan on a schedule
+- [ ] T024 [QA] Charter C4: release integrity (cache headers, old prefix retired, rollback re-point)
+
+**Checkpoint**: the release path is gated and the rollback is proven by a timed drill.
