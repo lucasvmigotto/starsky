@@ -29,9 +29,14 @@ export function randomSampleFragment(exclude: string | null = null): string {
   return list[Math.floor(Math.random() * list.length)];
 }
 
-/** Full-app deep-link target, configurable at build time. */
+/**
+ * The site's own public base URL, used for absolute OG/Twitter image URLs.
+ * CI sets `VITE_FULL_APP_URL` from the `STARPY_STATIC_SITE_URL` repository
+ * variable; the placeholder below is only a local-build default and is
+ * asserted away in CI ("Assert absolute OG tags").
+ */
 const configured: unknown = import.meta.env["VITE_FULL_APP_URL"];
 export const FULL_APP_URL =
   typeof configured === "string" && configured.length > 0
     ? configured
-    : "https://huggingface.co/spaces/lucasvmigotto/starpy";
+    : "http://localhost:5173";
