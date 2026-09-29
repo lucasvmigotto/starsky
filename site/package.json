@@ -13,10 +13,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "jspdf": "^3.0.1",
     "pako": "^2.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^7.6.2"
+    "react-router-dom": "^7.6.2",
+    "svg2pdf.js": "^2.5.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.10",

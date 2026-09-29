@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 import { formatDetailLine } from "../lib/caption.ts";
+import { renderPoster } from "../lib/render/poster.ts";
+import { selectedRenderer } from "../lib/render/index.ts";
 import type { SharePayload } from "../lib/share.ts";
 import {
   BAND_FRACTION,
@@ -63,6 +65,12 @@ export default function SkyCanvas({
   const activeRef = useRef({ hovered, selected, view, fontsReady });
   activeRef.current = { hovered, selected, view, fontsReady };
 
+  // Renderer selection is a flag until the parity harness proves the poster
+  // path (refactor Slice 3 → default flip in Slice 5).
+  const rendererKind = selectedRenderer(
+    typeof window === "undefined" ? "" : window.location.search,
+  );
+
   // Core draw routine (reads latest state via ref so rAF tweens stay smooth).
   const drawRef = useRef(() => {});
   drawRef.current = () => {
@@ -79,6 +87,18 @@ export default function SkyCanvas({
         : hov !== null
           ? (model.figures[hov] ?? null)
           : null;
+
+    if (rendererKind === "poster") {
+      // Poster path: full-bleed render, no interactive zoom/focus dimming.
+      canvas.width = Math.round(CANVAS_W * dpr);
+      canvas.height = Math.round(CANVAS_H * dpr);
+      renderPoster(ctx, payload, model, CANVAS_W, dpr, {
+        diskCx: DISK_CX,
+        diskCy: DISK_CY,
+        diskR: DISK_R,
+      });
+      return;
+    }
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     // Paper.
