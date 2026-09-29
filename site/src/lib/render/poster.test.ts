@@ -11,12 +11,14 @@ import { describe, expect, it } from "bun:test";
 import { buildPosterSvg } from "./export.ts";
 import {
   AXIS_EXTENT,
+  REFERENCE_DPI,
   posterGeometry,
   renderPosterToCanvas,
   unitToCanvas,
 } from "./poster.ts";
 import type { SharePayload } from "../share.ts";
 import type { SkyModel, VisibleStar } from "../skymodel.ts";
+import { starSize } from "../spec.ts";
 
 function makePayload(overrides: Partial<SharePayload["options"]> = {}): SharePayload {
   return {
@@ -170,5 +172,19 @@ describe("renderPosterToCanvas", () => {
     );
     expect(canvas.width).toBe(1600);
     expect(canvas.height).toBe(Math.round(800 * 1.22 * 2));
+  });
+});
+
+describe("star geometry (parity harness finding)", () => {
+  it("REFERENCE_DPI is the CLI's render DPI", () => {
+    expect(REFERENCE_DPI).toBe(150);
+  });
+
+  it("a mag -1.44 star is ~29 px across at 320 px, matching matplotlib", () => {
+    // Measured from matplotlib at DPI 150: size 14 -> 29 px drawn width.
+    const size = starSize(-1.44);
+    expect(size).toBe(14);
+    const diameterPx = size * (REFERENCE_DPI / 72);
+    expect(diameterPx).toBeCloseTo(29.2, 1);
   });
 });

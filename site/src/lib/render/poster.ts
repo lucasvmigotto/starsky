@@ -87,9 +87,22 @@ export function unitToCanvas(
   return [cx + (u / AXIS_EXTENT) * half, cy - (v / AXIS_EXTENT) * half];
 }
 
-/** Star radius in canvas pixels: diameter is `size` spec px, scaled to axes. */
-function starRadiusPx(star: VisibleStar, geometry: PosterGeometry): number {
-  return (star.size / 2) * (geometry.sizePx / 2 / AXIS_EXTENT);
+/**
+ * The CLI draws stars with matplotlib's `scatter(s = size**2)` at `DPI`. The
+ * drawn marker diameter is `size` points = `size * DPI / 72` device pixels —
+ * verified against matplotlib at DPI 150 in the Slice-3 investigation
+ * (size 0.6→1 px, 5.57→11 px, 14.0→29 px).
+ *
+ * The parity harness first caught this being treated as pixels (stars far too
+ * large), then a `sqrt(s/π)` correction that was too small. This is the
+ * geometry matplotlib actually uses.
+ */
+export const REFERENCE_DPI = 150;
+
+/** Star radius in canvas pixels, matching matplotlib's point-based markers. */
+function starRadiusPx(star: VisibleStar): number {
+  const diameterPx = star.size * (REFERENCE_DPI / 72);
+  return diameterPx / 2;
 }
 
 function drawSegments(
@@ -121,7 +134,7 @@ function drawGlow(
   for (const star of model.stars) {
     if (star.mag >= SPEC.stars.glowMagThreshold) continue;
     const [x, y] = unitToCanvas(star.unitX, star.unitY, geometry);
-    const radius = starRadiusPx(star, geometry) * SPEC.stars.glowRadiusFactor;
+    const radius = starRadiusPx(star) * SPEC.stars.glowRadiusFactor;
     const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
     gradient.addColorStop(0, withAlpha(SPEC.colors.star, alpha));
     gradient.addColorStop(1, withAlpha(SPEC.colors.star, 0));
@@ -142,7 +155,7 @@ function drawStars(
   for (const star of model.stars) {
     const [x, y] = unitToCanvas(star.unitX, star.unitY, geometry);
     ctx.beginPath();
-    ctx.arc(x, y, starRadiusPx(star, geometry), 0, Math.PI * 2);
+    ctx.arc(x, y, starRadiusPx(star), 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
@@ -157,8 +170,10 @@ function drawLabels(
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const size = SPEC.constellations.labelFontSize * (geometry.sizePx / 800);
+  // The CLI draws labels in the line colour, not the star colour
+  // (render/figure.py: `color=render_cfg.LINE_COLOR`).
   ctx.font = `${size.toString()}px "Cormorant Garamond", serif`;
-  ctx.fillStyle = withAlpha(SPEC.colors.star, SPEC.constellations.labelAlpha);
+  ctx.fillStyle = withAlpha(SPEC.colors.line, SPEC.constellations.labelAlpha);
   for (const figure of model.figures) {
     // Figure centroids are stored as preview pixels; map back to the unit
     // disc (the preview's DISK_R) before placing on the poster.
@@ -216,6 +231,34 @@ function drawCaption(
 }
 
 /**
+ * Circular alpha mask, mirroring `figure_to_pil` in the CLI.
+ *
+ * For `shape === "circle"` the CLI paints everything outside the disc with
+ * `alpha = 0` (transparent), not the background colour, so the disk reads as
+ * a disc rather than a square. The browser must do the same or the parity
+ * comparison sees the corners differ (which it did).
+ */
+function applyCircleMask(
+  ctx: CanvasRenderingContext2D,
+  geometry: PosterGeometry,
+): void {
+  const [cx, cy] = unitToCanvas(0, 0, geometry);
+  const radius = (1 / AXIS_EXTENT) * (geometry.sizePx / 2);
+  ctx.save();
+  // `destination-in` keeps the destination only where the new shape is
+  // opaque, so the fill colour is irrelevant — but it must be fully opaque
+  // for the mask to work. The CLI masks the sky only, so the caption band
+  // stays fully opaque.
+  ctx.globalCompositeOperation = "destination-in";
+  ctx.fillStyle = "#000000";
+  ctx.beginPath();
+  ctx.rect(0, geometry.skyPx, geometry.sizePx, geometry.bandPx);
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fill("evenodd");
+  ctx.restore();
+}
+
+/**
  * Compose the poster onto a canvas context.
  *
  * `sizePx` is the width of the sky (and the width of the canvas); the caption
@@ -258,6 +301,7 @@ export function renderPoster(
 
   if (payload.options.shape === "circle") {
     drawRing(ctx, geometry);
+    applyCircleMask(ctx, geometry);
   }
   drawCaption(ctx, payload, geometry);
 

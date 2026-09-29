@@ -19,12 +19,15 @@ from hashlib import sha256 as hashlib_sha256
 from json import dumps as json_dumps
 from json import loads as json_loads
 from pathlib import Path
+from re import DOTALL as re_DOTALL
+from re import findall as re_findall
 from typing import Any
 
 from starpy.cli import render_sky_map  # type: ignore[attr-defined]
 from starpy.data.catalog import load_hipparcos
 from starpy.data.constellations import load_constellation_lines
 from starpy.data.ephemeris import load_ephemeris
+from starpy.data.fonts import register_cached_fonts
 from starpy.render.figure import export_image
 from starpy.schemas.inputs.render import RenderOptions
 from starpy.settings import Settings
@@ -48,11 +51,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--matrix", type=Path, default=MATRIX)
     args: argparse_Namespace = parser.parse_args(argv)
 
-    matrix: dict[str, Any] = json_loads(args.matrix.read_text(encoding="utf-8"))
+    matrix_text: str = args.matrix.read_text(encoding="utf-8")
+    # The fixture is a Markdown file with a fenced JSON block; extract it.
+    fenced: list[str] = re_findall(r"```json\n(.*?)\n```", matrix_text, re_DOTALL)
+    matrix: dict[str, Any] = json_loads(fenced[0] if fenced else matrix_text)
     out_dir: Path = args.out
     out_dir.mkdir(parents=True, exist_ok=True)
 
     settings: Settings = Settings()
+    # Register the bundled poster font so the CLI golden is the real face.
+    register_cached_fonts(settings.EPHEMERIS.CACHE_DIR)
     _, planets, timescale = load_ephemeris(settings.EPHEMERIS)
     catalog = load_hipparcos(settings.EPHEMERIS)
     lines = load_constellation_lines(settings.EPHEMERIS.CACHE_DIR)
