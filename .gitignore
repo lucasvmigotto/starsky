@@ -10,10 +10,6 @@ build/
 /tmp/opencode/
 out.png
 *.png
-!tests/golden/*.png
 !site/public/og-banner.png
-# Generated viewer data (rebuild via `python -m starpy export-static-data`)
+# Generated sky data for the site (rebuild via `python -m starpy catalog`)
 site/public/data/*.json
-
-# Test-generated font cache
-tests/golden/.font-cache/

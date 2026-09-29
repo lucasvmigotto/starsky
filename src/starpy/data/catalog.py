@@ -25,7 +25,7 @@ from polars import Float64 as pl_Float64
 from polars import Int64 as pl_Int64
 from polars import read_parquet as pl_read_parquet
 
-from ..settings import EphemerisSettings
+from ..settings import CatalogSettings
 
 HIPPARCOS_URL: Final[str] = "https://cdsarc.cds.unistra.fr/ftp/cats/I/239/hip_main.dat"
 PARQUET_NAME: Final[str] = "hipparcos.parquet"
@@ -82,14 +82,14 @@ def download_hip_main(url: str = HIPPARCOS_URL) -> str:
 
 
 def load_hipparcos(
-    settings: EphemerisSettings | None = None,
+    settings: CatalogSettings | None = None,
 ) -> pl_DataFrame:
     """Load the Hipparcos catalog as a Polars DataFrame (parquet-cached).
 
     Sorted by magnitude ascending (brightest first) for deterministic
     downstream decluttering.
     """
-    _settings: EphemerisSettings = settings or EphemerisSettings()
+    _settings: CatalogSettings = settings or CatalogSettings()
     cache_dir: Path = Path(_settings.CACHE_DIR)
     cache_dir.mkdir(parents=True, exist_ok=True)
     parquet_path: Path = cache_dir / PARQUET_NAME

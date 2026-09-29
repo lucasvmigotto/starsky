@@ -1,21 +1,11 @@
 """Settings package."""
 
-from .ephemeris import EphemerisSettings
-from .geocoding import GeocodingSettings
-from .gradio import GradioSettings
-from .hf import HuggingFaceSettings
+from .catalog import CatalogSettings
 from .log import LogSettings
-from .render import RenderSettings
 from .settings import Settings
-from .share import ShareSettings
 
 __all__ = [
-    "EphemerisSettings",
-    "GeocodingSettings",
-    "GradioSettings",
-    "HuggingFaceSettings",
+    "CatalogSettings",
     "LogSettings",
-    "RenderSettings",
     "Settings",
-    "ShareSettings",
 ]

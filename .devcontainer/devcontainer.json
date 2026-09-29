@@ -2,7 +2,8 @@
     "name": "starpy",
     "image": "lucasvmigotto/devenv:python-3.14-trixie",
     "runArgs": [
-        "--env-file", ".env"
+        "--env-file",
+        ".env"
     ],
     "mounts": [
         {
@@ -21,14 +22,9 @@
             "type": "volume"
         }
     ],
-    "features": {
-        "ghcr.io/devcontainers/features/node": {}
-    },
+    "features": {},
     "initializeCommand": {
         "envfile": "[ ! -f '.env' ] && cp .env.example .env || echo '.env already exists'"
-    },
-    "postCreateCommand": {
-        "nodemon": "npm i -g nodemon"
     },
     "updateContentCommand": "[ -f './pyproject.toml' ] && uv sync --all-groups --all-extras || echo 'pyproject.toml not detected'",
     "customizations": {

@@ -1,8 +1,7 @@
 """Dependency-hygiene guard: starpy's core never imports pandas.
 
-Runs in a fresh interpreter because unrelated dev-time imports (e.g. gradio,
-which legitimately depends on pandas for its own widgets) may otherwise
-populate ``sys.modules`` in the pytest process.
+Runs in a fresh interpreter so unrelated dev-time imports cannot populate
+``sys.modules`` in the pytest process first.
 """
 
 from subprocess import CompletedProcess as subprocess_CompletedProcess
@@ -13,8 +12,7 @@ from sys import executable as sys_executable
 def test_no_pandas_imported() -> None:
     code: str = (
         "import sys; "
-        "import starpy.astro, starpy.data, starpy.geocoding, "
-        "starpy.render, starpy.schemas, starpy.settings, starpy.cli; "
+        "import starpy.data, starpy.settings, starpy.cli; "
         "assert 'pandas' not in sys.modules, "
         "'pandas imported by starpy core'; "
         "print('ok')"
