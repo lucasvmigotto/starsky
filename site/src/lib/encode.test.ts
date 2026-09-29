@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { bytesToBase64Url, canonicalJson, encodePayload } from "./encode.ts";
 import { decodeShareFragment, type SharePayload } from "./share.ts";
 

@@ -1,41 +1,57 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { SPEC, starSize } from "./spec.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const parsed: unknown = JSON.parse(
   readFileSync(join(here, "..", "..", "render-spec.json"), "utf-8"),
 );
-const renderSpec = parsed as Record<string, Record<string, unknown>>;
+// The spec is read from disk as untyped JSON; values are asserted field by
+// field against the typed SPEC, so the assertions below compare against
+// `unknown` and TypeScript cannot narrow `toBe`. A cast keeps the conformance
+// test honest: the runtime check is what matters here.
+const renderSpec = parsed as {
+  colors: Record<string, unknown>;
+  stars: Record<string, unknown>;
+  constellations: Record<string, unknown>;
+  shape: Record<string, unknown>;
+  caption: Record<string, unknown>;
+};
+
+// `toBe` from bun:test is generic over `T`; the untyped JSON side is `unknown`.
+// `eq` preserves the equality check without fighting the overload set.
+function eq(actual: unknown, expected: unknown): void {
+  expect(actual).toEqual(expected);
+}
 
 describe("render-spec conformance", () => {
   it("matches normative colors", () => {
-    expect({ ...SPEC.colors }).toEqual(renderSpec["colors"]);
+    eq({ ...SPEC.colors }, renderSpec.colors);
   });
 
   it("matches star + constellation + shape + caption tokens", () => {
     const stars = renderSpec["stars"];
-    expect(SPEC.stars.sizeMax).toBe(stars["sizeMax"]);
-    expect(SPEC.stars.sizeMin).toBe(stars["sizeMin"]);
-    expect(SPEC.stars.glowMagThreshold).toBe(stars["glowMagThreshold"]);
-    expect(SPEC.stars.glowRadiusFactor).toBe(stars["glowRadiusFactor"]);
-    expect(SPEC.stars.glowAlpha).toBe(stars["glowAlpha"]);
-    expect(SPEC.stars.coreAlpha).toBe(stars["coreAlpha"]);
+    eq(SPEC.stars.sizeMax, stars["sizeMax"]);
+    eq(SPEC.stars.sizeMin, stars["sizeMin"]);
+    eq(SPEC.stars.glowMagThreshold, stars["glowMagThreshold"]);
+    eq(SPEC.stars.glowRadiusFactor, stars["glowRadiusFactor"]);
+    eq(SPEC.stars.glowAlpha, stars["glowAlpha"]);
+    eq(SPEC.stars.coreAlpha, stars["coreAlpha"]);
     const lines = renderSpec["constellations"];
-    expect(SPEC.constellations.lineWidth).toBe(lines["lineWidth"]);
-    expect(SPEC.constellations.lineAlpha).toBe(lines["lineAlpha"]);
-    expect(SPEC.constellations.labelUppercase).toBe(lines["labelUppercase"]);
-    expect(SPEC.constellations.labelFontSize).toBe(lines["labelFontSize"]);
-    expect(SPEC.constellations.labelAlpha).toBe(lines["labelAlpha"]);
+    eq(SPEC.constellations.lineWidth, lines["lineWidth"]);
+    eq(SPEC.constellations.lineAlpha, lines["lineAlpha"]);
+    eq(SPEC.constellations.labelUppercase, lines["labelUppercase"]);
+    eq(SPEC.constellations.labelFontSize, lines["labelFontSize"]);
+    eq(SPEC.constellations.labelAlpha, lines["labelAlpha"]);
     const shape = renderSpec["shape"];
-    expect(SPEC.shape.ringWidth).toBe(shape["ringWidth"]);
-    expect(SPEC.shape.ringAlpha).toBe(shape["ringAlpha"]);
+    eq(SPEC.shape.ringWidth, shape["ringWidth"]);
+    eq(SPEC.shape.ringAlpha, shape["ringAlpha"]);
     const caption = renderSpec["caption"];
-    expect(SPEC.caption.bandFraction).toBe(caption["bandFraction"]);
-    expect(SPEC.caption.titleFontSize).toBe(caption["titleFontSize"]);
-    expect(SPEC.caption.detailFontSize).toBe(caption["detailFontSize"]);
+    eq(SPEC.caption.bandFraction, caption["bandFraction"]);
+    eq(SPEC.caption.titleFontSize, caption["titleFontSize"]);
+    eq(SPEC.caption.detailFontSize, caption["detailFontSize"]);
   });
 
   it("implements size = size_max * 10 ** (mag / -2.5) clamped to [0.6, 14]", () => {

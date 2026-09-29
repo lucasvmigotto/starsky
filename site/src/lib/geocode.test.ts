@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { geocodePlace, shortPlaceName } from "./geocode.ts";
 
 describe("shortPlaceName", () => {
@@ -40,46 +40,60 @@ describe("shortPlaceName", () => {
 
 describe("geocodePlace", () => {
   afterEach(() => {
-    vi.unstubAllGlobals();
+    mock.restore();
   });
 
   it("resolves the first result with labels", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve([
-            {
-              lat: "40.7580",
-              lon: "-73.9855",
-              display_name: "Times Square, Manhattan, ...",
-              name: "Times Square",
-              address: {
-                city: "New York",
-                state: "New York",
-                country: "United States",
-              },
+    const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve([
+          {
+            lat: "40.7580",
+            lon: "-73.9855",
+            display_name: "Times Square, Manhattan, ...",
+            name: "Times Square",
+            address: {
+              city: "New York",
+              state: "New York",
+              country: "United States",
             },
-          ]),
-      }),
-    );
+          },
+        ]),
+    } as unknown as Response);
     const resolved = await geocodePlace("Times Square, New York, NY");
     expect(resolved.lat).toBeCloseTo(40.758, 6);
     expect(resolved.lon).toBeCloseTo(-73.9855, 6);
     expect(resolved.short).toBe("Times Square, New York, United States");
-    const url = String((fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] ?? "");
+    const firstArg: unknown = fetchMock.mock.calls[0]?.[0];
+    const url = typeof firstArg === "string" ? firstArg : String(firstArg);
     expect(url).toContain("format=jsonv2");
     expect(url).toContain("limit=1");
     expect(url).toContain("addressdetails=1");
   });
 
   it("rejects empty queries and empty results", async () => {
-    await expect(geocodePlace("   ")).rejects.toThrow();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) }),
-    );
-    await expect(geocodePlace("nowhere-at-all")).rejects.toThrow(/No place found/);
+    await rejectionOf(geocodePlace("   "));
+    spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([]),
+    } as unknown as Response);
+    const message = await rejectionOf(geocodePlace("nowhere-at-all"));
+    expect(message).toMatch(/No place found/);
   });
 });
+
+/**
+ * bun:test's `expect(...).rejects` returns `void`, so it cannot be awaited and
+ * the matcher is fire-and-forget. This helper awaits the promise itself and
+ * returns the rejection message, keeping the assertion lint-clean and the
+ * failure mode explicit.
+ */
+async function rejectionOf(promise: Promise<unknown>): Promise<string> {
+  try {
+    await promise;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+  throw new Error("expected the promise to reject, but it resolved");
+}
