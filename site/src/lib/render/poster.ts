@@ -3,7 +3,7 @@
  *
  * Mirrors `src/starpy/render/figure.py`'s `compose_figure` layout so the two
  * renderers agree within the tolerance in
- * `specs/007-renderer-export/contracts/parity.md`:
+ * `site/src/lib/render/README.md` and `specs/007-renderer-export/contracts/render-spec.md`:
  *
  * - full canvas is `size_px` wide; the sky is a square `size_px` tall region
  *   on top and the caption band is `size_px * BAND_FRACTION` below it;

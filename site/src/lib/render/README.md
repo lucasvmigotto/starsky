@@ -1,59 +1,53 @@
 # Browser poster renderer (`site/src/lib/render/`)
 
-Slice 3 of the static-first refactor (`docs/product/refactor.md`). The browser
-renders the poster; the Python CLI (`src/starpy/render/`) remains the offline
-and parity-reference implementation. `site/render-spec.json` is the shared,
-normative contract (ADR-0003).
+The browser is the **only** renderer (ADR-0003; the Python renderer was removed
+by BCR-0005). `site/render-spec.json` is its normative contract — colours, star
+sizing, glow, lines, labels, ring, caption, and the unit rules
+(`units.referenceDpi`).
 
-## Parity status (2026-09-29, after the Slice-3 fixes)
+## Tests
 
-Harness: `site/scripts/parity.ts` renders `specs/007-renderer-export/fixtures/parity.json`
-and compares against CLI PNGs from `scripts/render_parity_fixtures.py`.
-Measurements on `nyc-newyear-circle` (320 px):
+| Suite | Covers |
+|---|---|
+| `poster.test.ts` | geometry, star/point sizing, masks, labels, SVG structure |
+| `export.test.ts` | the three exports, self-containment, caption, escaping |
+| `reference.test.ts` | **regression**: the render matrix, structure + pixels |
 
-| Aspect | CLI | Browser | State |
-|---|---|---|---|
-| star core area | 3203 px | 3412 px | close |
-| star blobs | 130 | 119 | close |
-| label (rose) area | 1717 px | 5428 px | **3× too heavy** |
-| canvas size | 320×390 | 320×390 | exact |
-| caption strings | identical | identical | exact |
-| `meanAbs` (matrix) | — | 18.0–24.8 | tolerance 25 |
+### Reference-image suite (`reference.test.ts`)
 
-**Fixed during Slice 3** (each caught by the harness, not by eye):
+Renders `specs/007-renderer-export/fixtures/render-matrix.json` and, per case:
 
-1. star markers were drawn `size` pixels instead of `size` **points**
-   (`size * 150/72` px) — the field rendered card-sized discs;
-2. `shape: "circle"` had no circular alpha mask, so the corners were opaque;
-3. constellation labels used the star colour instead of the line colour;
-4. figure/label membership used decluttered stars instead of all visible ones
-   (`render/figure.py` computes them pre-declutter);
-5. every point size (labels, ring, caption, single-line caption) was scaled by
-   canvas ratio `sizePx/800` instead of DPI — labels drew at 2.8 px where the
-   CLI drew ~14.6 px. The shared contract now states the unit explicitly
-   (`render-spec.json` `units.referenceDpi`).
+- asserts **exact** star / segment / figure counts and the caption string
+  (the primary guard — a silent count change is the bug this exists to catch);
+- compares the PNG against `__references__/` on two bars: **changed-fraction**
+  (pixels differing by more than 2, budget 1 %) and **mean absolute difference**
+  (budget 6/255).
 
-**Still open — blocking the default flip (refactor Slice 5):**
+Both bars exist for a measured reason: a mean over the whole image dilutes a
+change confined to thin features. Quadrupling the ring width moved 20 356 pixels
+(5.4 %) but only pushed `meanAbs` from 0 to 7.97, so the mean alone would have
+let a visibly different poster through. The changed-fraction bar catches it
+(verified: doubling *and* quadrupling the ring width both fail).
 
-- label weight/opacity: the browser's glyphs are ~3× the CLI's ink. Likely the
-  bundled variable font's default weight (300) versus matplotlib's choice;
-  needs an explicit `font-variation-settings`/weight to match.
-- the single-line caption's detail string runs past the right edge at small
-  sizes where the CLI's larger type wraps within the band.
-- `channel_mean_abs: 25` is the **measured** gap, not a standard of quality;
-  passing it is not evidence of visual parity.
+Regenerate after reviewing every diff:
 
-Until those are resolved, `?renderer=poster` is an opt-in flag only and
-`refactor.md` Slice 5 must not flip the default.
+```bash
+STARPY_UPDATE_REFERENCE=1 bun test src/lib/render/reference.test.ts
+```
+
+**What it does not cover.** It runs on `@napi-rs/canvas`, not Chrome or Firefox,
+so it cannot see browser rasterisation, font fallback, or whether a download
+happens. Those belong to the Playwright journeys (`site/e2e/`). A green run here
+means the renderer is unchanged — not that the site works in a browser.
 
 ## Geometry notes
 
-- matplotlib draws `scatter(s = size**2)` with a marker `size` points across,
-  i.e. `size * 150/72` px at the CLI's DPI 150 (verified empirically: size
-  0.6→1 px, 5.57→11 px, 14.0→29 px). `REFERENCE_DPI` captures this.
-- The sky axes span `[-1.06, 1.06]` (`AXIS_EXTENT`), matching `ax.set_xlim`.
+- matplotlib drew `scatter(s = size**2)` with a marker `size` **points** across,
+  i.e. `size × referenceDpi / 72` px (verified empirically: size 0.6→1 px,
+  5.57→11 px, 14.0→29 px). `REFERENCE_DPI` captures this; the Python renderer is
+  gone but the geometry it defined is the poster's geometry.
+- The sky axes span `[-1.06, 1.06]` (`AXIS_EXTENT`).
 - Figure centroids are stored in **preview** pixels (the 800×1000 model), so
   callers pass the preview geometry (400/400/368), not poster pixels.
-- `shape: "circle"` applies a circular alpha mask (`destination-in`) to the
-  sky only; the caption band stays opaque, matching `figure_to_pil`.
-
+- `shape: "circle"` applies a circular alpha mask (`destination-in`) to the sky
+  only; the caption band stays opaque.

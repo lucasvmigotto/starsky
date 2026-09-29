@@ -27,7 +27,9 @@ disk and the `SPEC` constant must match field for field.
 
 ## Visual regression (replaces the old parity harness)
 
-There is no second implementation, so no cross-renderer tolerance. The
-replacement is a **reference-image suite**: the fixture matrix
-(`fixtures/parity.json`) rendered by the browser, with the PNGs stored as
-references and a failure on unexplained change. Tracked as a follow-up task.
+There is no second implementation, so no cross-renderer tolerance. The guard is
+a **reference-image suite**: `fixtures/render-matrix.json` renders through the
+real renderer and is compared against stored PNGs in
+`site/src/lib/render/__references__/`, with exact structural counts as the
+primary check and two pixel bars (changed-fraction, mean). See
+`site/src/lib/render/README.md` for why two bars are needed.

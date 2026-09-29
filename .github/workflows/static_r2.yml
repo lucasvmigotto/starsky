@@ -5,10 +5,12 @@ on:
     branches: ["main"]
     paths:
       - "site/**"
+      - "specs/007-renderer-export/fixtures/**"
       - ".github/workflows/static_r2.yml"
   pull_request:
     paths:
       - "site/**"
+      - "specs/007-renderer-export/fixtures/**"
       - ".github/workflows/static_r2.yml"
   workflow_dispatch:
 

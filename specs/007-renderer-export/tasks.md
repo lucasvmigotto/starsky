@@ -69,7 +69,7 @@ detailed client tasks.
 The Python renderer was removed (BCR-0005), so the parity tasks above are void.
 The remaining work:
 
-- [ ] T024 [P] Replace the parity harness with a browser reference-image suite: render `fixtures/parity.json`, store the PNGs, fail on unexplained change
+- [x] T024 [P] Reference-image suite: `site/src/lib/render/reference.test.ts` renders `fixtures/render-matrix.json` against stored PNGs with exact structural counts + two pixel bars (verified to fail on a doubled ring width)
 - [ ] T025 [US2] Wire the export controls (PNG/SVG/PDF) into the viewer UI with keyboard-reachable buttons and status
 - [ ] T026 [US2] Test each export opens and contains the caption and star count; the PDF is vector with selectable text
 - [ ] T027 [US3] Test an exported SVG/PDF opens with the network disabled (bundled font, no fallback)
@@ -87,7 +87,7 @@ Feature risk: **High** — see `specs/007-renderer-export/qa.md`.
 - [ ] T034 [QA] Boundary: render at the maximum magnitude limit (~8870 stars) within the time budget
 - [ ] T035 [QA] Boundary: fisheye strength at both ends; `<= 0` rejected before rendering
 - [ ] T036 [QA] a11y: axe on the viewer; keyboard-only export path (tab to each button, activate, confirm the download)
-- [ ] T037 [QA] Visual: reference-image suite over the fixture matrix with stored PNGs (the T024 suite); wire it as the `main` gate
+- [~] T037 [QA] Visual: suite built (T024); still to do — wire it as the `main` gate and add the PR trigger on `site/**`
 - [ ] T038 [QA] Performance (`qa:load`): measure render + export on a mid-range device class; record the number against the ≤ 2 s assumption
 - [ ] T039 [QA] Gate: run the e2e journeys on PRs touching `site/**`, and the full Chrome + Firefox matrix on `main`
 - [ ] T040 [QA] Charter C1: poster fidelity sweep (extreme latitudes, solstice edges, accents/emoji in the title)
