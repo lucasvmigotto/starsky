@@ -32,7 +32,7 @@ Traffic is unknown (private tool becoming public); figures are `[ASSUMPTION]` an
 - **Payloads**: HTML+JS+CSS ≈ 400 KB brotli `[ASSUMPTION, pre-tune]`; `catalog.json` ≈ 250 KB brotli, `constellations.json` ≈ 30 KB brotli (mag ≤ 6.5, ~8.5 k stars). Total ≈ 0.7 MB first visit.
 - **Bandwidth at peak**: `8.3 × 0.7 MB ≈ 6 MB/s ≈ 48 Mbit/s` — a CDN's rounding error; R2 has no egress fee.
 - **Origin compute**: **zero** at runtime. The only compute is CI (data export) and the visitor's browser.
-- **Browser work**: poster render at 1600 px + export — measured in `qa:load`-style profiling per device class, not server RPS. `[ASSUMPTION]` ≤ 2 s on a mid-range phone; a Slice-0/3 budget.
+- **Browser work**: poster render at 1600 px + export — measured by `site/e2e/perf.spec.ts` under CDP CPU throttling (×4), since a CI container is not a phone. Measured 2026-09-29: **render 387 ms**, exports **PNG 252 ms / SVG 57 ms / PDF 223 ms** (Chromium, throttled). `[RELATIVE]` — the proxy, not the ≤ 2 s mid-range-phone claim, which remains unverified on real hardware.
 - **10× check**: 500 000 PV/24 h, 80 req/s peak, ~56 MB/s — still CDN-shaped; first thing to strain is **R2 object request count** (free tier is generous but finite) and CI minutes for cache-warm, not the visitors. Mitigation: long `Cache-Control` + immutable hashed assets (few origin fetches), and CI caching the Python data warm step.
 
 No storage grows: the catalog is a build artifact, not user data.

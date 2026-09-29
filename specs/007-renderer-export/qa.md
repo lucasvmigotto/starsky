@@ -84,3 +84,23 @@ Expected: all three succeed; status text reports each.
 
 Passing e2e on Chrome and Firefox; axe clean on J1; visual references match; all
 three exports open and are self-contained offline; no open High-severity defect.
+
+## Measured performance (2026-09-29, Chromium, CDP CPU throttle ×4)
+
+From `site/e2e/perf.spec.ts` (runs in CI on `main`; Chromium only — Firefox has
+no CDP):
+
+| Operation | Measured | CI guard-rail |
+|---|---|---|
+| poster render (1600 px) | **387 ms** | fails above 8000 ms |
+| export PNG | **252 ms** | fails above 8000 ms |
+| export SVG | **57 ms** | fails above 8000 ms |
+| export PDF | **223 ms** | fails above 8000 ms |
+
+**`[RELATIVE]`**: a throttled CI container is a *proxy* for a mid-range phone,
+not a measurement of one. The architecture's ≤ 2 s phone budget therefore stays
+**unverified on real hardware**; the honest claim is "comfortably fast under a
+4× throttle on CI", not "under 2 s on a phone". The assertions are loose
+guard-rails (a ~20× regression trips them), deliberately not false precision.
+
+To run it: `cd site && bun run test:e2e -- e2e/perf.spec.ts --project=chromium`.
