@@ -1,0 +1,89 @@
+name: Site e2e
+
+# Chromium + Firefox journeys, accessibility and contrast (qa:strategy).
+# Browsers come from the Playwright container image, never from
+# `playwright install` on the runner (qa/references/browsers.md).
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "site/**"
+      - "specs/007-renderer-export/fixtures/**"
+      - ".github/workflows/site_e2e.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - "specs/007-renderer-export/fixtures/**"
+      - ".github/workflows/site_e2e.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: site-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.14"
+  # Pinned so the browser version matches the image tag (containers.md §3).
+  PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble
+
+jobs:
+  e2e:
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --user 1001
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # The container has Node; Bun is only needed to build, and the runner
+      # (not the container) provides it. Build on the runner instead.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Build the sky data
+        working-directory: .
+        run: |
+          for i in 1 2 3; do
+            uv run python -m starpy cache warm \
+              && uv run python -m starpy catalog \
+              && break
+            echo "data build attempt $i failed; retrying..."
+            sleep $((i * 30))
+          done
+          test -f site/public/data/catalog.json
+
+      - name: Install dependencies
+        working-directory: site
+        # Bun is the project's package manager; the Playwright image ships
+        # only Node, so install Bun here rather than switching lockfiles.
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+          "$HOME/.bun/bin/bun" install --frozen-lockfile
+
+      - name: Build the site
+        working-directory: site
+        run: bun run build
+
+      - name: Run the journeys
+        working-directory: site
+        env:
+          CI: "true"
+          E2E_SERVE_CMD: node e2e/serve.mjs 4173
+        run: npx playwright test
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            site/test-results
+          retention-days: 7

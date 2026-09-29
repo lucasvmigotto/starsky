@@ -15,3 +15,9 @@ out.png
 !site/src/lib/render/__references__/*.png
 # Generated sky data for the site (rebuild via `python -m starpy catalog`)
 site/public/data/*.json
+# Reference images for the renderer's regression suite (must be versioned)
+!site/src/lib/render/__references__/*.png
+
+# Playwright artifacts
+site/test-results/
+site/playwright-report/
