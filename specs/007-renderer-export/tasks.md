@@ -27,13 +27,11 @@ Tests are required for every story (constitution IV).
 
 ## Open
 
-- [ ] **T028 Flip the renderer default to poster, then delete the preview path.**
-      Requires the reference suite green on `main` first.
+- [x] **T028 Flip the renderer default to poster, then delete the preview path.** Done (`be118cf`): the poster is the only renderer, the preview path and the `?renderer` flag are deleted, zoom/pan became a blit of a cached composition, and hover a scrim + focus overlay. Reference images matched unchanged; 54 e2e journeys pass on Chromium and Firefox (verified visually, not only asserted).
 - [ ] **T030 e2e: empty sky in a browser.** The unit boundary covers the SVG
       path; a browser journey for a polar-night payload is still missing.
 - [ ] **T031 e2e: exported SVG/PDF opened standalone** with the network disabled
       (partly covered by J3, which asserts the SVG's self-containment).
-- [ ] **T036 a11y: axe on the viewer** — done; **keyboard-only export** — done.
 - [ ] **Decide the two open findings**:
       `finding-font-degradation.md` (silent fallback on a missing font) and
       `../006-viewer/finding-unvalidated-options.md` (out-of-range share
