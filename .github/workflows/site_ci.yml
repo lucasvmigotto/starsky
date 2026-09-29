@@ -1,0 +1,98 @@
+name: Site CI
+
+# Fast, browser-less checks for the site: unit, component, conformance and the
+# reference-image suite, plus lint/typecheck/build and the size budgets.
+# Runs on every branch so the frontend is gated before it reaches `main`; the
+# browser journeys live in `site_e2e.yml` (heavier, main + PR on site changes).
+#
+# Why this exists: `static_r2.yml` also runs `bun run test`, but it only triggers
+# on `main` and PRs, so work on `dev` was reaching `main` ungated.
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "site/**"
+      - "specs/007-renderer-export/fixtures/**"
+      - ".github/workflows/site_ci.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - "specs/007-renderer-export/fixtures/**"
+      - ".github/workflows/site_ci.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: site-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # The reference-image suite needs the exported sky data, which is
+      # gitignored; build it with the CLI first.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.14"
+
+      - name: Build the sky data
+        working-directory: .
+        run: |
+          for i in 1 2 3; do
+            uv run python -m starpy cache warm \
+              && uv run python -m starpy catalog \
+              && break
+            echo "data build attempt $i failed; retrying..."
+            sleep $((i * 30))
+          done
+          test -f site/public/data/catalog.json
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Unit, component and reference tests
+        run: bun run test
+
+      - name: Build
+        run: bun run build
+
+      # Fitness functions: the bundle and data budgets, and no secrets in the
+      # shipped bytes (architecture.md, test-strategy.md).
+      - name: Bundle and data budgets
+        run: |
+          bundle=$(gzip -c dist/assets/*.js dist/assets/*.css | wc -c)
+          data=$(gzip -c public/data/*.json | wc -c)
+          echo "bundle gzip:  $((bundle / 1024)) KB  (budget 5120 KB)"
+          echo "data gzip:    $((data / 1024)) KB  (budget 4096 KB)"
+          test "$bundle" -le 5242880
+          test "$data" -le 4194304
+
+      - name: No secrets in the bundle
+        run: |
+          if grep -rEo '(sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16})' dist/; then
+            echo "::error::secret-like string found in dist/"
+            exit 1
+          fi
+          echo "no secret-like strings in dist/"

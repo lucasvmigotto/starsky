@@ -6,7 +6,10 @@ name: Site e2e
 
 on:
   push:
-    branches: ["main"]
+    # `main` is the release gate; `dev` is included so the integration branch is
+    # validated before it merges up (the strategy's "full matrix on main" plus a
+    # real check on the branch work actually lands on).
+    branches: ["main", "dev"]
     paths:
       - "site/**"
       - "specs/007-renderer-export/fixtures/**"
@@ -35,13 +38,16 @@ jobs:
     runs-on: ubuntu-24.04
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble
-      options: --user 1001
+      # No `--user` override: the image's default user is already the non-root
+      # `pwuser` (1001), and forcing a UID fights `actions/checkout`, which
+      # writes the workspace as root before the job steps run.
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      # The container has Node; Bun is only needed to build, and the runner
-      # (not the container) provides it. Build on the runner instead.
+      # The Playwright image has Node but no Python toolchain, and the sky data
+      # the site fetches is built by the Python CLI. `setup-uv` installs uv into
+      # the job's home; the data build runs in the repo root.
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
@@ -61,16 +67,22 @@ jobs:
 
       - name: Install dependencies
         working-directory: site
-        # Bun is the project's package manager; the Playwright image ships
-        # only Node, so install Bun here rather than switching lockfiles.
+        # Bun is the project's package manager but the Playwright image ships
+        # only Node, and it has no `unzip` — so the official installer fails.
+        # Fetch the release zip and extract it with Python, which is present.
         run: |
-          curl -fsSL https://bun.sh/install | bash
-          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
-          "$HOME/.bun/bin/bun" install --frozen-lockfile
+          mkdir -p /tmp/bun/bin /tmp/bun/build && cd /tmp/bun/build
+          curl -fsSL -o bun.zip \
+            "https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip"
+          python3 -c 'import zipfile; zipfile.ZipFile("bun.zip").extractall(".")'
+          cp bun-linux-x64/bun /tmp/bun/bin/bun && chmod +x /tmp/bun/bin/bun
+          /tmp/bun/bin/bun --version
+          /tmp/bun/bin/bun install --frozen-lockfile
 
       - name: Build the site
         working-directory: site
-        run: bun run build
+        # Absolute path: PATH edits do not survive into the container's steps.
+        run: /tmp/bun/bin/bun run build
 
       - name: Run the journeys
         working-directory: site
