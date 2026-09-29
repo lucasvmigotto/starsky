@@ -116,4 +116,4 @@ banned. Checked by `scripts/check_declarative_imports.py`.
 - Stars: Hipparcos Catalogue (ESA); ephemeris: JPL DE421 (public domain).
 - Constellation lines: Stellarium IAU skyculture (CC BY-SA 4.0).
 - Font: Cormorant Garamond (SIL OFL 1.1), DejaVu Serif fallback.
-- Details: `THIRD_PARTY_NOTICES.md`. Static-site feasibility: `static_site/PLAN.md`.
+- Details: `THIRD_PARTY_NOTICES.md`. Static-site feasibility: `site/PLAN.md`.

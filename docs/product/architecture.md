@@ -12,7 +12,7 @@ Single Python service with two front doors sharing one functional core. [OBSERVE
 CLI (click: render | cache warm | export-static-data; bare `python -m starpy` → Gradio)
   └→ Gradio app (gui/pages + callbacks/skymap) ─┐
                                                  ├→ render_sky_map (render/figure.py:259)
-Static explorer (static_site/ viewer, render-spec.json) → share links (#s= payload)
+Static explorer (site/ viewer, render-spec.json) → share links (#s= payload)
 Data loaders → /tmp/starpy-cache/{ephemeris,geocode.json,renders}
 ```
 
@@ -25,7 +25,7 @@ Data loaders → /tmp/starpy-cache/{ephemeris,geocode.json,renders}
 
 - Python >= 3.14 (`3.14` in `.python-version`). [OBSERVED: pyproject.toml:6; .python-version:1]
 - Core: `skyfield` (positions/ephemeris), `numpy` + `scipy` (projection/declutter via `cKDTree`), `polars` (catalogs), `matplotlib` Agg + `pillow` (compose), `httpx` (downloads/Nominatim), `timezonefinder` + `zoneinfo`, `pydantic`/`pydantic-settings` + `click`, `gradio>=6.3`. [OBSERVED: pyproject.toml:8-21; src/starpy/render/figure.py:44]
-- Static site: Vite + TypeScript (`static_site/package.json`), Vitest suites (`*.test.ts`). [INFERRED: static_site file listing → conclusion; confirm with viewer run.]
+- Static site: Vite + TypeScript (`site/package.json`), Vitest suites (`*.test.ts`). [INFERRED: site file listing → conclusion; confirm with viewer run.]
 - Toolchain: `uv` (+ `uv.lock`, `requirements.txt` for HF), `ruff` (E,F,I,UP,B; line-length 88), `ty`, `pytest -q --strict-markers` with markers `unit/integration/golden/network`. [OBSERVED: pyproject.toml:39-53; README.md:90-94]
 
 ## Hosting
@@ -48,7 +48,7 @@ No DBMS. File caches only:
 | Font | `EPHEMERIS__CACHE_DIR/CormorantGaramond.ttf` | Google Fonts URL, `httpx` download, `fontManager.addfont`; failure → `None`/`False` fallback to DejaVu [OBSERVED: src/starpy/data/fonts.py:15-55] |
 | Geocode cache | `GEOCODING__CACHE_PATH` | JSON `{v:1, at, result}`, TTL 30d [OBSERVED: src/starpy/geocoding/nominatim.py:24-82] |
 | Render cache | `RENDER__CACHE_DIR/{sha256}.png` | Content-hash PNG; SVG/PDF bypass PNG cache [OBSERVED: src/starpy/render/figure.py:332-353; src/starpy/cli.py:147-165] |
-| Static export | `static_site/public/data/` | `catalog.json` (mag ≤ 6.5: hip,ra,dec,mag) + `constellations.json` (abbr,name,hip_a,hip_b) [OBSERVED: src/starpy/cli.py:245-282] |
+| Static export | `site/public/data/` | `catalog.json` (mag ≤ 6.5: hip,ra,dec,mag) + `constellations.json` (abbr,name,hip_a,hip_b) [OBSERVED: src/starpy/cli.py:245-282] |
 
 ## Integrations (hosts only; keys by name)
 

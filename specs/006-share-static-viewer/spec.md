@@ -2,7 +2,7 @@ Reconstructed by project:introspec on 2026-09-29 from 51287a78a915da74fab965cc2c
 
 # Feature Specification: share-static-viewer
 
-**Feature Branch**: `feat/share-static-viewer` | **Created**: 2026-09-29 | **Status**: Draft | **Input**: `src/starpy/share/*`, `src/starpy/schemas/share.py`, `static_site/**`, `static_site/render-spec.json`.
+**Feature Branch**: `feat/share-static-viewer` | **Created**: 2026-09-29 | **Status**: Draft | **Input**: `src/starpy/share/*`, `src/starpy/schemas/share.py`, `site/**`, `site/render-spec.json`.
 
 ## User Scenarios & Testing
 

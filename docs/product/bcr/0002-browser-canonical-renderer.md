@@ -7,9 +7,9 @@ From: `project:refactor`, commit `51287a7`
 
 ## Current behavior
 
-- The browser (`static_site/`) only draws an 800×1000 **preview** canvas and a landing form; it does not produce a poster or export (`static_site/src/components/SkyCanvas.tsx:68-216`).
+- The browser (`site/`) only draws an 800×1000 **preview** canvas and a landing form; it does not produce a poster or export (`site/src/components/SkyCanvas.tsx:68-216`).
 - Posters and all exports are produced by Python/matplotlib: `render_sky_map` + `export_image`/`export_vector` (`src/starpy/render/figure.py:259-380`).
-- `static_site/PLAN.md:45-61` explicitly **decided Option C**: generic preview only (stereographic, mag ≤ 5.5, no vector), with a link out to the Gradio app for advanced options.
+- `site/PLAN.md:45-61` explicitly **decided Option C**: generic preview only (stereographic, mag ≤ 5.5, no vector), with a link out to the Gradio app for advanced options.
 
 ## Proposed behavior
 
@@ -26,8 +26,8 @@ The product's value is a personalized poster; requiring a Python server for the 
 ## Impacts
 
 - Users: poster creation and export move to the browser; no server needed.
-- Contract: `render-spec.json` gains normative status; `SPEC` (TS) and the Python constants must conform (a conformance test already exists: `static_site/src/lib/spec.test.ts`).
-- `static_site/PLAN.md` Option C decision is superseded (record a `[UPERSEDED]`/note; do not silently edit history).
+- Contract: `render-spec.json` gains normative status; `SPEC` (TS) and the Python constants must conform (a conformance test already exists: `site/src/lib/spec.test.ts`).
+- `site/PLAN.md` Option C decision is superseded (record a `[UPERSEDED]`/note; do not silently edit history).
 - Features: `specs/006-share-static-viewer` splits into a viewer feature and a new renderer/export feature.
 
 ## Data migration

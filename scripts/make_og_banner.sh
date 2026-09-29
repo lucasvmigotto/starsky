@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Render the canonical sample sky (Times Square, 2026-01-01 -- the same moment
 # the viewer opens to without a #s= link) and crop it to the 1200x630 social
-# preview at static_site/public/og-banner.png. Deterministic inputs,
+# preview at site/public/og-banner.png. Deterministic inputs,
 # so the output is byte-reproducible given the same data cache.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -12,7 +12,7 @@ uv run python -m starpy render \
   --when "2026-01-01T00:00" --tz UTC \
   --shape square --title "starpy" \
   --output "$POSTER"
-uv run python - "$POSTER" "static_site/public/og-banner.png" <<'EOF'
+uv run python - "$POSTER" "site/public/og-banner.png" <<'EOF'
 from PIL.Image import LANCZOS as pil_LANCZOS
 from PIL.Image import open as pil_open
 from sys import argv as sys_argv

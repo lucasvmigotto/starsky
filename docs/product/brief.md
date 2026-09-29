@@ -18,7 +18,7 @@ Self-hosted, fully open-source custom star-map poster generator. Gradio app + he
 - Caption: `[Title]` then `40.7580°N, 73.9855°W — Times Square, New York, United States · 2026-01-01 00:00 UTC+00:00`. [OBSERVED: README.md:45-48; src/starpy/render/caption.py:13-38]
 - `cache warm` preloads ephemeris + catalog + lines + font. [OBSERVED: README.md:13; src/starpy/cli.py:38-49]
 - Share links: canonical JSON → zlib-9 → URL-safe base64 → `<base>/#s=<payload>` for the static explorer viewer. [OBSERVED: src/starpy/share/spec.py:1-6]
-- Static explorer viewer + `export-static-data` (`catalog.json`, `constellations.json`) for offline viewing. [OBSERVED: src/starpy/cli.py:245-282; static_site/PLAN.md]
+- Static explorer viewer + `export-static-data` (`catalog.json`, `constellations.json`) for offline viewing. [OBSERVED: src/starpy/cli.py:245-282; site/PLAN.md]
 - Delivery: `uv` + multistage Docker (GHCR/Docker Hub), Hugging Face Space via `app.py`. [OBSERVED: README.md:66-86; app.py:1-23]
 
 ## Audiences

@@ -1,5 +1,5 @@
 /**
- * Normative visual tokens mirrored from `static_site/render-spec.json`.
+ * Normative visual tokens mirrored from `site/render-spec.json`.
  * Change both together; `src/tests/spec.test.ts` guards against drift.
  */
 export const SPEC = {

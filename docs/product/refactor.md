@@ -13,7 +13,7 @@ Inputs: `project:introspec` artifacts (`docs/product/{brief,architecture,domain-
 ## 1. Baseline and safety net
 
 - Baseline green 2026-09-29: `uv run pytest` **78 passed**; `ruff check`/`format --check` and `ty check` clean; `bun test` 44 pass / 2 fail (runner mismatch, see §3). Integration suite `-m integration` timed out locally on cold `de421.bsp`; CI runs it warm. [OBSERVED]
-- Characterization coverage today: unit + render/caption/density/astro tests, share-codec tests, CLI tests, `render-spec.json` conformance (`static_site/src/lib/spec.test.ts`), integration determinism (byte-stable at 320 px). The safety net is adequate for the invariants below; **gaps to close in Slice 0**: a golden byte-hash of a CLI poster, and a browser↔CLI parallel-run harness.
+- Characterization coverage today: unit + render/caption/density/astro tests, share-codec tests, CLI tests, `render-spec.json` conformance (`site/src/lib/spec.test.ts`), integration determinism (byte-stable at 320 px). The safety net is adequate for the invariants below; **gaps to close in Slice 0**: a golden byte-hash of a CLI poster, and a browser↔CLI parallel-run harness.
 
 ## 2. Rule classification
 
@@ -28,12 +28,12 @@ Inputs: `project:introspec` artifacts (`docs/product/{brief,architecture,domain-
 | Attribution/licences (OSM, Hipparcos, Stellarium CC BY-SA, font OFL) | **Core invariant** (legal) | `THIRD_PARTY_NOTICES.md`; GUI footer | you |
 | Gradio UI is the canonical poster creator | **Business policy** → BCR-0001/0002 | `gui/pages/sky.py`; `PLAN.md:45-61` | you |
 | HF Space hosting | **Business policy** → BCR-0003 | `hf_spaces.yml`; `hf.Dockerfile` | you |
-| Static viewer reduced feature set (stereographic, mag ≤ 5.5, no vector) | **Business policy** → BCR-0002 | `static_site/PLAN.md:45-61` | you |
+| Static viewer reduced feature set (stereographic, mag ≤ 5.5, no vector) | **Business policy** → BCR-0002 | `site/PLAN.md:45-61` | you |
 | Silent font fallback to DejaVu | **Business policy** → BCR-0004 | `data/fonts.py:27-55`; `figure.py:50` | you |
 | GUI separation slider max 0.05 vs schema max 0.1 | **Accidental** — verdict: fix (align to 0.1 or to 0.05, decide in Slice 3) | `gui/components/sky.py:129-138` vs `schemas/inputs/render.py:10-20` | you |
-| `bun test` cannot run two vitest `vi`-based cases | **Accidental** — verdict: fix (port to `bun:test`, §Slices) | `static_site/src/lib/geocode.test.ts:43,79` | you |
+| `bun test` cannot run two vitest `vi`-based cases | **Accidental** — verdict: fix (port to `bun:test`, §Slices) | `site/src/lib/geocode.test.ts:43,79` | you |
 | `tests/golden/` exists but the `golden` marker is unused | **Accidental** — verdict: fix (used from Slice 0) | `pyproject.toml:49-54`; `tests/golden/` | you |
-| `static_site/PLAN.md` Option C now contradicts the target | **Accidental** — verdict: supersede via note (BCR-0002) | `PLAN.md:45-61` | you |
+| `site/PLAN.md` Option C now contradicts the target | **Accidental** — verdict: supersede via note (BCR-0002) | `PLAN.md:45-61` | you |
 | `FONT_STACK` silently choosing DejaVu | **Accidental** — verdict: fix (BCR-0004) | `figure.py:50` | you |
 
 Core list confirmed by you 2026-09-29.

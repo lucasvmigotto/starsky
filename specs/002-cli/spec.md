@@ -20,7 +20,7 @@ Reconstructed by project:introspec on 2026-09-29 from 51287a78a915da74fab965cc2c
 
 ### User Story 2 - Cache warm + static export (Priority: P2)
 
-`cache warm` → `{stars, segments, font}` + echo; `export-static-data --mag-limit 6.5 --output-dir static_site/public/data` writes `catalog.json` + `constellations.json`. [OBSERVED: `cli.py:38-49,245-282`]
+`cache warm` → `{stars, segments, font}` + echo; `export-static-data --mag-limit 6.5 --output-dir site/public/data` writes `catalog.json` + `constellations.json`. [OBSERVED: `cli.py:38-49,245-282`]
 
 ### Edge Cases
 

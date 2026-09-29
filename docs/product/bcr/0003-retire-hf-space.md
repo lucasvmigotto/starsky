@@ -8,7 +8,7 @@ From: `project:refactor`, commit `51287a7`
 ## Current behavior
 
 - The HF Space is one of two deploys: `hf.Dockerfile`, `app.py`, `hf.README.md`, `.github/workflows/hf_spaces.yml` (OIDC trusted publisher), `scripts/publish_space.sh`, `scripts/export_space_requirements.sh`, `requirements.txt`, `tests/ci/test_space_artifact.py`.
-- The static client deploys to Cloudflare R2 (`static_r2.yml`), and its "full app" link defaults to the Space (`static_site/src/lib/site.ts:32-37`).
+- The static client deploys to Cloudflare R2 (`static_r2.yml`), and its "full app" link defaults to the Space (`site/src/lib/site.ts:32-37`).
 
 ## Proposed behavior
 

@@ -38,7 +38,7 @@ Infrastructure-only (not domain): Gradio Blocks wiring, Click plumbing, Skyfield
 ### SharePayload (versioned link)
 
 - `SharePayload(v=1, lat, lon, place|None, when_utc, tz, options)`; `to_flat_dict = model_dump(mode=json)`. [OBSERVED: `schemas/share.py:11-28`]
-- Encoding: canonical JSON (sorted, compact) → zlib-9 → base64url-no-pad → `<base>/#s=`. Decode re-pads, validates dict + `v==1` else `ValueError`. [OBSERVED: `share/spec.py:20-45`] Static TS mirrors (`SPEC.shareLink.payloadVersion`, `fragmentParam s`). [OBSERVED: `static_site/render-spec.json:44-48`; `static_site/src/lib/share.ts:72-113`]
+- Encoding: canonical JSON (sorted, compact) → zlib-9 → base64url-no-pad → `<base>/#s=`. Decode re-pads, validates dict + `v==1` else `ValueError`. [OBSERVED: `share/spec.py:20-45`] Static TS mirrors (`SPEC.shareLink.payloadVersion`, `fragmentParam s`). [OBSERVED: `site/render-spec.json:44-48`; `site/src/lib/share.ts:72-113`]
 
 ## Lifecycles / state machines
 

@@ -247,7 +247,7 @@ def cache_warm() -> None:
 @click_option(
     "--output-dir",
     type=click_Path(path_type=Path),
-    default=Path("static_site/public/data"),
+    default=Path("site/public/data"),
     show_default=True,
 )
 def export_static_data(mag_limit: float, output_dir: Path) -> None:

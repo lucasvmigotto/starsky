@@ -4,11 +4,11 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "static_site/**"
+      - "site/**"
       - ".github/workflows/static_r2.yml"
   pull_request:
     paths:
-      - "static_site/**"
+      - "site/**"
       - ".github/workflows/static_r2.yml"
   workflow_dispatch:
 
@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-24.04
     defaults:
       run:
-        working-directory: static_site
+        working-directory: site
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -41,7 +41,7 @@ jobs:
       # the Python pipeline before building. Retried: the JPL ephemeris
       # host flakes from CI runners.
       - name: Warm cache and export viewer data
-        # Override the job default (static_site): `uv run` needs the repo
+        # Override the job default (site): `uv run` needs the repo
         # root where pyproject.toml lives; the test path is root-relative.
         working-directory: .
         run: |
@@ -52,7 +52,7 @@ jobs:
             echo "data warm attempt $i failed; retrying..."
             sleep $((i * 30))
           done
-          test -f static_site/public/data/catalog.json
+          test -f site/public/data/catalog.json
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -110,7 +110,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: viewer-dist
-          path: static_site/dist
+          path: site/dist
           retention-days: 7
           if-no-files-found: error
 

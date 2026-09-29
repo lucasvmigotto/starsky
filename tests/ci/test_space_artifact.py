@@ -78,7 +78,7 @@ def test_publish_script_tree_shape(tmp_path: Path) -> None:
     The Space must receive exactly the artifact the builder needs
     (README.md, Dockerfile, app.py, requirements.txt, src/) and nothing
     else: the Hub rejects binary files, and tests/workflows/scripts/
-    static_site have no business in the Space repo.
+    site have no business in the Space repo.
     """
     from os import environ as os_environ
 
@@ -103,7 +103,7 @@ def test_publish_script_tree_shape(tmp_path: Path) -> None:
     (src_dir / "__init__.py").write_text('"""Fixture package."""\n', encoding="utf-8")
     # Decoys mirroring the real repo: none of these may reach the Space.
     # The PNG carries real magic bytes: the Hub rejects binary files outright.
-    banner: Path = work / "static_site" / "public" / "og-banner.png"
+    banner: Path = work / "site" / "public" / "og-banner.png"
     banner.parent.mkdir(parents=True)
     banner.write_bytes(bytes.fromhex("89504e470d0a1a0a") + b"decoy")
     workflows_dir: Path = work / ".github" / "workflows"
@@ -165,7 +165,7 @@ def test_publish_script_tree_shape(tmp_path: Path) -> None:
     assert "app.py" in names and "requirements.txt" in names
     assert "src/starpy/__init__.py" in names
     for decoy in (
-        "static_site/public/og-banner.png",
+        "site/public/og-banner.png",
         ".github/workflows/ci.yml",
         "scripts/publish_space.sh",
     ):

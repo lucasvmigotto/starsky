@@ -6,7 +6,7 @@ Gradio app (HF Spaces + Docker).
 
 ## Shared render spec (normative for both renderers)
 
-`static_site/render-spec.json` (to be created on implementation):
+`site/render-spec.json` (to be created on implementation):
 colors (`background #0b0f19`, `star #f5efe0`, `line #b98a8a`),
 `size = size_max * 10 ** (mag / -2.5)` clamp range, glow alpha/radius
 factors, ring width, caption layout (stacked, centered, title-optional),
@@ -57,7 +57,7 @@ keeps the preview visually consistent.
 
 Adopt **C**. Status: `render-spec.json` written; `export-static-data`
 shipped; share-link contract (`#s=` payload, see `src/starpy/share/`)
-implemented; explorer viewer built at `static_site/`.
+implemented; explorer viewer built at `site/`.
 Do not block the main deliverable on this build.
 
 ## Appendix — FastAPI render endpoint: rejected for v1 (2026-09-17)

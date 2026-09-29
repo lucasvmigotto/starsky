@@ -6,7 +6,7 @@ Status: Draft
 
 ## Scope and boundaries
 
-- In scope: entire repo — Python package `src/starpy/` (~60 files), `app.py` HF entry, `static_site/` viewer, `Dockerfile`/`hf.Dockerfile`, `.devcontainer/`, `.github/workflows/`, `tests/`, `scripts/`. [ASSUMPTION confirmed with user 2026-09-29: everything.]
+- In scope: entire repo — Python package `src/starpy/` (~60 files), `app.py` HF entry, `site/` viewer, `Dockerfile`/`hf.Dockerfile`, `.devcontainer/`, `.github/workflows/`, `tests/`, `scripts/`. [ASSUMPTION confirmed with user 2026-09-29: everything.]
 - Runs permitted (user: yes): `uv sync --all-groups`, `ruff`, `ty`, `pytest`, `bun test`, `bun install`. [OBSERVED]
 - Database: none — file caches only. `db:inspect` N/A (user confirmed 2026-09-29). [OBSERVED: `.env.example:9-11`; no DB client in `pyproject.toml:8-21`]
 - `contracts/openapi.yaml`: **N/A** — no HTTP/REST routes exist (CLI + Gradio + static viewer only). User confirmed. CI/Gradio seams documented in `specs/*/contracts/seam.md`, not as OpenAPI. [OBSERVED: repo-wide]
@@ -14,7 +14,7 @@ Status: Draft
 ## Inventory
 
 - Language/toolchain: Python `>=3.14` (`3.14`), `uv` 0.12.9, `ruff` (E,F,I,UP,B; 88 cols), `ty` 0.0.81, `pytest` (`-q --strict-markers`; markers unit/integration/golden/network). [OBSERVED: `pyproject.toml:6,39-54`]
-- Static site: Vite + TS + React + Vitest, `bun.lock`, `eslint` + `tsc`. [INFERRED: `static_site/package.json`, `vitest.config.ts`; confirm with `bun run build`.]
+- Static site: Vite + TS + React + Vitest, `bun.lock`, `eslint` + `tsc`. [INFERRED: `site/package.json`, `vitest.config.ts`; confirm with `bun run build`.]
 - Delivery: `Dockerfile` (DHI builder/runtime, non-root 65532, EXPOSE 8080, cache volume), `hf.Dockerfile` (python:3.14-slim, uid 1000, EXPOSE 7860), `requirements.txt` (uv-exported, 71 pinned pkgs). [OBSERVED: `Dockerfile:18-72`; `hf.Dockerfile:11-30`; `requirements.txt:1-213`]
 - SBOM: `docs/product/sbom.cdx.json` — 71 components from pinned `requirements.txt` (CycloneDX 1.5). `syft`/`cdxgen` are not installed, so this was generated from the lock's export; regenerate with `syft dir:. -o cyclonedx-json` when available. [OBSERVED]
 - Licenses: GPL-3.0-only (code); Hipparcos + DE421 public domain; Stellarium IAU lines CC BY-SA 4.0 (one-way GPL-compatible); Cormorant Garamond OFL 1.1. [OBSERVED: `THIRD_PARTY_NOTICES.md`]
@@ -29,7 +29,7 @@ Status: Draft
 | `starpy export-static-data` | 006 | `cli.py:245-282` |
 | Gradio `sky` route + 4 callbacks | 003 | `gui/pages/sky.py:31-103` |
 | `app.py` HF Space entry | 003 | `app.py:10-23` |
-| Static viewer routes `#s=` / landing | 006 | `static_site/src/App.tsx:18-36` |
+| Static viewer routes `#s=` / landing | 006 | `site/src/App.tsx:18-36` |
 | `scripts/*` (publish_space, export_space_requirements, make_og_banner, check_declarative_imports) | delivery / CI | listed in architecture |
 
 No scheduled jobs, queue consumers, webhooks, gRPC/GraphQL observed.
@@ -54,8 +54,8 @@ No scheduled jobs, queue consumers, webhooks, gRPC/GraphQL observed.
 | `uv run pytest` (full, 226s) | `78 passed` |
 | `uv run pytest -m "not integration"` | `76 passed, 2 deselected in 2.33s` |
 | `uv run pytest -m integration` | timed out at 120s locally (cold `de421.bsp` cache, Skyfield download); CI runs it with a warm cache. **Not timed to completion → cannot mark Verified.** |
-| `cd static_site && bun install` | OK (227 pkgs) |
-| `cd static_site && bun test` | `44 pass, 2 fail` — both in `geocode.test.ts` (`vi.stubGlobal/unstubAllGlobals is not a function`): the file is written for vitest's `vi`, run under bun's test runner here. Render-spec, astro, share, skymodel, encode, caption, site, og suites pass. |
+| `cd site && bun install` | OK (227 pkgs) |
+| `cd site && bun test` | `44 pass, 2 fail` — both in `geocode.test.ts` (`vi.stubGlobal/unstubAllGlobals is not a function`): the file is written for vitest's `vi`, run under bun's test runner here. Render-spec, astro, share, skymodel, encode, caption, site, og suites pass. |
 
 All Python results are `OBSERVED` (run outputs above). Static-site pass/fail verified by run.
 
@@ -75,7 +75,7 @@ No prior pipeline artifacts existed (`docs/product/`, `specs/`, `contracts/` all
 
 - `README.md:5` claims "never pandas" and CI enforces it (`tests/test_no_pandas.py`); confirmed true. No drift.
 - `README.md:49` "renders are deterministic (content-hash cache)" — confirmed by `cache_key` + integration determinism test (not re-run to completion here). [OBSERVED: `figure.py:332-353`]
-- `static_site/PLAN.md:45-60` describes the viewer as stereographic-only preview (mag ≤ 5.5, no vector); the shipped TS `SPEC` also implements fisheye/skymodel projection, a superset of the plan. Minor doc/code drift — the viewer supports more than PLAN states. [OBSERVED: `static_site/src/lib/skymodel.ts:63-68`; `render-spec.json:28-35`]
+- `site/PLAN.md:45-60` describes the viewer as stereographic-only preview (mag ≤ 5.5, no vector); the shipped TS `SPEC` also implements fisheye/skymodel projection, a superset of the plan. Minor doc/code drift — the viewer supports more than PLAN states. [OBSERVED: `site/src/lib/skymodel.ts:63-68`; `render-spec.json:28-35`]
 
 ## Contradictions
 

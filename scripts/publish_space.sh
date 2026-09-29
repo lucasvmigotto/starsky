@@ -4,7 +4,7 @@
 # The Space receives a MINIMAL artifact tree — README.md (the docker one),
 # Dockerfile (staged from hf.Dockerfile), app.py, requirements.txt, src/ —
 # assembled in a temp dir. The live checkout is never touched, and everything
-# else (tests, workflows, scripts, static_site incl. its PNG banner) stays
+# else (tests, workflows, scripts, site incl. its PNG banner) stays
 # out of the Space repo, which the Hub's no-binary pre-receive hook would
 # reject.
 #
