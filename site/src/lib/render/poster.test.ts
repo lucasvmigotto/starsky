@@ -187,4 +187,19 @@ describe("star geometry (parity harness finding)", () => {
     const diameterPx = size * (REFERENCE_DPI / 72);
     expect(diameterPx).toBeCloseTo(29.2, 1);
   });
+
+  it("point sizes do NOT scale with canvas ratio (regression)", () => {
+    // The Slice-3 bug: sizes were multiplied by sizePx/800, so a 320 px
+    // poster drew 2.8 px labels where the CLI drew ~14.6 px. Point sizes
+    // are DPI-based and independent of the render size: the SVG for 320 and
+    // 1600 must declare the SAME label font size.
+    const model = makeModel([star()]);
+    const small = buildPosterSvg(makePayload(), model, 320);
+    const large = buildPosterSvg(makePayload(), model, 1600);
+    const match = small.match(/font-size="([\d.]+)"[^>]*text-anchor/);
+    expect(match).not.toBeNull();
+    const largeMatch = large.match(/font-size="([\d.]+)"[^>]*text-anchor/);
+    expect(largeMatch).not.toBeNull();
+    expect(match?.[1]).toBe(largeMatch?.[1]);
+  });
 });

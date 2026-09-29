@@ -3,6 +3,9 @@
  * Change both together; `src/tests/spec.test.ts` guards against drift.
  */
 export const SPEC = {
+  units: {
+    referenceDpi: 150,
+  },
   colors: {
     background: "#0b0f19",
     star: "#f5efe0",
@@ -32,6 +35,7 @@ export const SPEC = {
     bandFraction: 0.22,
     titleFontSize: 17,
     detailFontSize: 10.5,
+    singleCaptionFontSize: 11,
   },
   shareLink: {
     fragmentParam: "s",

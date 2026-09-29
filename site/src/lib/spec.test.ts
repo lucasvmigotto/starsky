@@ -13,6 +13,7 @@ const parsed: unknown = JSON.parse(
 // `unknown` and TypeScript cannot narrow `toBe`. A cast keeps the conformance
 // test honest: the runtime check is what matters here.
 const renderSpec = parsed as {
+  units: Record<string, unknown>;
   colors: Record<string, unknown>;
   stars: Record<string, unknown>;
   constellations: Record<string, unknown>;
@@ -29,6 +30,17 @@ function eq(actual: unknown, expected: unknown): void {
 describe("render-spec conformance", () => {
   it("matches normative colors", () => {
     eq({ ...SPEC.colors }, renderSpec.colors);
+  });
+
+  it("matches the shared unit contract", () => {
+    eq(SPEC.units.referenceDpi, renderSpec.units["referenceDpi"]);
+  });
+
+  it("exposes the single-line caption size", () => {
+    eq(
+      SPEC.caption.singleCaptionFontSize,
+      renderSpec.caption["singleCaptionFontSize"],
+    );
   });
 
   it("matches star + constellation + shape + caption tokens", () => {

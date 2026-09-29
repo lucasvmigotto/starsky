@@ -71,9 +71,7 @@ def main(argv: list[str]) -> int:
     violations: list[str] = []
     for root in roots:
         base: Path = Path(root)
-        files: list[Path] = (
-            sorted(base.rglob("*.py")) if base.is_dir() else [base]
-        )
+        files: list[Path] = sorted(base.rglob("*.py")) if base.is_dir() else [base]
         for path in files:
             violations.extend(check_file(path))
     for violation in violations:

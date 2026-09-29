@@ -97,12 +97,25 @@ export function unitToCanvas(
  * large), then a `sqrt(s/π)` correction that was too small. This is the
  * geometry matplotlib actually uses.
  */
-export const REFERENCE_DPI = 150;
+export const REFERENCE_DPI = SPEC.units.referenceDpi;
 
 /** Star radius in canvas pixels, matching matplotlib's point-based markers. */
 function starRadiusPx(star: VisibleStar): number {
   const diameterPx = star.size * (REFERENCE_DPI / 72);
   return diameterPx / 2;
+}
+
+/**
+ * Convert a matplotlib point size to canvas pixels at the reference DPI.
+ *
+ * The CLI sets `linewidths`, `fontsize` and the caption sizes in points and
+ * renders at DPI 150, so every one of those becomes `pt * DPI / 72` px. Sizing
+ * them by canvas ratio instead made labels 2.8 px at `size_px=320` where the
+ * CLI draws ~14.6 px — the parity harness showed the browser with 81 rose
+ * (label) pixels against the CLI's 1717.
+ */
+function pointsToPx(points: number): number {
+  return points * (REFERENCE_DPI / 72);
 }
 
 function drawSegments(
@@ -169,10 +182,12 @@ function drawLabels(
 ): void {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  const size = SPEC.constellations.labelFontSize * (geometry.sizePx / 800);
+  const size = pointsToPx(SPEC.constellations.labelFontSize);
   // The CLI draws labels in the line colour, not the star colour
-  // (render/figure.py: `color=render_cfg.LINE_COLOR`).
-  ctx.font = `${size.toString()}px "Cormorant Garamond", serif`;
+  // (render/figure.py: `color=render_cfg.LINE_COLOR`). The bundled face is a
+  // variable font; pin a normal weight so the browser does not pick a heavier
+  // default than matplotlib (parity: label ink was ~3x the CLI's).
+  ctx.font = `400 ${size.toString()}px "Cormorant Garamond", serif`;
   ctx.fillStyle = withAlpha(SPEC.colors.line, SPEC.constellations.labelAlpha);
   for (const figure of model.figures) {
     // Figure centroids are stored as preview pixels; map back to the unit
@@ -193,7 +208,7 @@ function drawRing(
   const [cx, cy] = unitToCanvas(0, 0, geometry);
   const radius = (1 / AXIS_EXTENT) * (geometry.sizePx / 2);
   ctx.strokeStyle = withAlpha(RING_COLOR, SPEC.shape.ringAlpha);
-  ctx.lineWidth = SPEC.shape.ringWidth * (geometry.sizePx / 800);
+  ctx.lineWidth = pointsToPx(SPEC.shape.ringWidth);
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.stroke();
@@ -206,7 +221,6 @@ function drawCaption(
 ): void {
   const bandTop = geometry.skyPx;
   const bandMid = bandTop + geometry.bandPx / 2;
-  const scale = geometry.sizePx / 800;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const detail = formatDetailLine(
@@ -216,15 +230,28 @@ function drawCaption(
     payload.when_utc,
     payload.tz,
   );
+  // matplotlib's `fig.text(x, y, …)` takes FIGURE fractions; the CLI's
+  // `band_center ± 0.018/0.028` are fractions of the whole canvas, so the
+  // offsets become `fraction * canvasHeight` here (they already did), but the
+  // font sizes are points, not canvas ratios.
   if (payload.options.title) {
-    ctx.font = `${(SPEC.caption.titleFontSize * scale).toString()}px "Cormorant Garamond", serif`;
+    ctx.font = `${pointsToPx(SPEC.caption.titleFontSize).toString()}px "Cormorant Garamond", serif`;
     ctx.fillStyle = withAlpha(SPEC.colors.star, 1);
-    ctx.fillText(payload.options.title, geometry.sizePx / 2, bandMid - 0.018 * geometry.canvasHeight);
-    ctx.font = `${(SPEC.caption.detailFontSize * scale).toString()}px "Cormorant Garamond", serif`;
+    ctx.fillText(
+      payload.options.title,
+      geometry.sizePx / 2,
+      bandMid - 0.018 * geometry.canvasHeight,
+    );
+    ctx.font = `${pointsToPx(SPEC.caption.detailFontSize).toString()}px "Cormorant Garamond", serif`;
     ctx.fillStyle = withAlpha(SPEC.colors.star, 0.92);
-    ctx.fillText(detail, geometry.sizePx / 2, bandMid + 0.028 * geometry.canvasHeight);
+    ctx.fillText(
+      detail,
+      geometry.sizePx / 2,
+      bandMid + 0.028 * geometry.canvasHeight,
+    );
   } else {
-    ctx.font = `${(11 * scale).toString()}px "Cormorant Garamond", serif`;
+    // The CLI uses fontsize 11 for the single-line caption (figure.py:227).
+    ctx.font = `${pointsToPx(SPEC.caption.singleCaptionFontSize).toString()}px "Cormorant Garamond", serif`;
     ctx.fillStyle = withAlpha(SPEC.colors.star, 0.92);
     ctx.fillText(detail, geometry.sizePx / 2, bandMid);
   }

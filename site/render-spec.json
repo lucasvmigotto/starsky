@@ -1,8 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "starpy shared render spec",
-  "description": "Normative visual tokens consumed by BOTH the Python renderer (src/starpy/render/) and the static JS viewer (site/). Change both together; Python defaults in settings/render.py must match.",
+  "description": "Normative visual tokens consumed by BOTH the Python renderer (src/starpy/render/) and the site (site/). Change both together; Python defaults in settings/render.py must match.",
   "version": 1,
+  "units": {
+    "note": "All sizes below (star sizeFormula value, lineWidth, ringWidth, labelFontSize, titleFontSize, detailFontSize, singleCaptionFontSize) are POINTS, historically because matplotlib takes points. A renderer converting to pixels must use referenceDpi: px = pt * referenceDpi / 72. Before this field existed the browser scaled these by canvas ratio instead, drawing 2.8 px labels where the CLI drew ~14.6 px (parity Slice-3 finding).",
+    "referenceDpi": 150,
+    "starMarkerNote": "matplotlib scatter(s = size**2) draws a marker of `size` points across: diameterPx = size * referenceDpi / 72."
+  },
   "colors": {
     "background": "#0b0f19",
     "star": "#f5efe0",
@@ -37,6 +42,7 @@
     "bandFraction": 0.22,
     "titleFontSize": 17,
     "detailFontSize": 10.5,
+    "singleCaptionFontSize": 11,
     "coordsFormat": "{abs(lat):.4f}°N|S, {abs(lon):.4f}°E|W",
     "detailTemplate": "{coords} — {place} · {local} {tz} (place segment omitted when unresolved; title line omitted when empty)"
   },

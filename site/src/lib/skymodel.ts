@@ -83,7 +83,6 @@ export function buildSkyModel(
     .map((_, i) => i)
     .sort((a, b) => projected[a].mag - projected[b].mag);
   const kept: VisibleStar[] = [];
-  const keptIndex = new Map<number, number>();
   const sep = options.min_separation;
   for (const i of order) {
     const s = projected[i];
@@ -98,24 +97,27 @@ export function buildSkyModel(
         }
       }
     }
-    if (!clash) {
-      keptIndex.set(i, kept.length);
-      kept.push(s);
-    }
+    if (!clash) kept.push(s);
   }
 
+  // Figures, segments and label centroids come from ALL visible stars, not the
+  // decluttered set — this mirrors the CLI, where `constellation_label_positions`
+  // and `project_constellation_lines` run on `projected` and declutter only
+  // chooses which stars are drawn (`render/figure.py:65-111`, `constellations.py`).
+  // Using the kept set here made the browser draw about half the CLI's figures.
+  const visibleHip = new Map(projected.map((s, i) => [s.hip, i]));
   const figureOrder = new Map<string, number>();
   const figures: Figure[] = [];
   const segs: SkyModel["segments"] = [];
-  const hipOf = new Map(projected.map((s, i) => [s.hip, i]));
+  const drawnIndex = new Map<VisibleStar, number>();
+  kept.forEach((s, i) => drawnIndex.set(s, i));
   for (const [abbr, name, hipA, hipB] of segments) {
     if (!options.constellations) break;
-    const pa = hipOf.get(hipA);
-    const pb = hipOf.get(hipB);
+    const pa = visibleHip.get(hipA);
+    const pb = visibleHip.get(hipB);
     if (pa === undefined || pb === undefined) continue;
-    const ka = keptIndex.get(pa);
-    const kb = keptIndex.get(pb);
-    if (ka === undefined || kb === undefined) continue;
+    const a = projected[pa];
+    const b = projected[pb];
     let fi = figureOrder.get(abbr);
     if (fi === undefined) {
       fi = figures.length;
@@ -130,16 +132,22 @@ export function buildSkyModel(
         brightestHip: 0,
       });
     }
-    segs.push({ a: ka, b: kb, figure: fi });
+    const ka = drawnIndex.get(a);
+    const kb = drawnIndex.get(b);
+    // A segment is only drawn when both endpoints survived declutter; the
+    // figure still exists (and gets a label) if it has visible members.
+    if (ka !== undefined && kb !== undefined) {
+      segs.push({ a: ka, b: kb, figure: fi });
+    }
     const fig = figures[fi];
-    for (const si of [ka, kb]) {
-      if (!fig.starIndices.includes(si)) {
-        fig.starIndices.push(si);
-        const st = kept[si];
-        if (st.mag < fig.brightestMag) {
-          fig.brightestMag = st.mag;
-          fig.brightestHip = st.hip;
-        }
+    for (const [st, vi] of [
+      [a, pa],
+      [b, pb],
+    ] as const) {
+      if (!fig.starIndices.includes(vi)) fig.starIndices.push(vi);
+      if (st.mag < fig.brightestMag) {
+        fig.brightestMag = st.mag;
+        fig.brightestHip = st.hip;
       }
     }
   }
@@ -147,8 +155,8 @@ export function buildSkyModel(
     let sx = 0;
     let sy = 0;
     for (const si of fig.starIndices) {
-      sx += kept[si].px;
-      sy += kept[si].py;
+      sx += projected[si].px;
+      sy += projected[si].py;
     }
     fig.centroidX = sx / Math.max(1, fig.starIndices.length);
     fig.centroidY = sy / Math.max(1, fig.starIndices.length);

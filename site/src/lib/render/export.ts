@@ -9,7 +9,17 @@ import type { SharePayload } from "../share.ts";
 import type { SkyModel } from "../skymodel.ts";
 import { formatDetailLine } from "../caption.ts";
 import { SPEC } from "../spec.ts";
-import { AXIS_EXTENT, posterGeometry, unitToCanvas } from "./poster.ts";
+import {
+  AXIS_EXTENT,
+  REFERENCE_DPI,
+  posterGeometry,
+  unitToCanvas,
+} from "./poster.ts";
+
+/** matplotlib point -> SVG user-unit pixels at the reference DPI. */
+function pointsToPx(points: number): number {
+  return points * (REFERENCE_DPI / 72);
+}
 
 export type ExportFormat = "png" | "svg" | "pdf";
 
@@ -34,7 +44,6 @@ export function buildPosterSvg(
   sizePx: number,
 ): string {
   const geometry = posterGeometry(sizePx);
-  const scale = sizePx / 800;
   const [cx, cy] = unitToCanvas(0, 0, geometry);
   const radius = (1 / AXIS_EXTENT) * (sizePx / 2);
   const parts: string[] = [];
@@ -50,7 +59,7 @@ export function buildPosterSvg(
   parts.push(`<g clip-path="url(#disc)">`);
   if (payload.options.constellations) {
     parts.push(
-      `<g stroke="${SPEC.colors.line}" stroke-opacity="${SPEC.constellations.lineAlpha.toString()}" stroke-width="${(SPEC.constellations.lineWidth * scale).toFixed(2)}">`,
+      `<g stroke="${SPEC.colors.line}" stroke-opacity="${SPEC.constellations.lineAlpha.toString()}" stroke-width="${(pointsToPx(SPEC.constellations.lineWidth)).toFixed(2)}">`,
     );
     for (const seg of model.segments) {
       const a = model.stars[seg.a];
@@ -66,13 +75,13 @@ export function buildPosterSvg(
   parts.push(`<g fill="${SPEC.colors.star}" fill-opacity="${SPEC.stars.coreAlpha.toString()}">`);
   for (const star of model.stars) {
     const [x, y] = unitToCanvas(star.unitX, star.unitY, geometry);
-    const r = (star.size / 2) * (sizePx / 2 / AXIS_EXTENT);
+    const r = pointsToPx(star.size) / 2;
     parts.push(`<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${r.toFixed(2)}"/>`);
   }
   parts.push(`</g>`);
   if (payload.options.constellations && payload.options.constellation_labels) {
     parts.push(
-      `<g fill="${SPEC.colors.star}" fill-opacity="${SPEC.constellations.labelAlpha.toString()}" font-family="Cormorant Garamond, serif" font-size="${(SPEC.constellations.labelFontSize * scale).toFixed(2)}" text-anchor="middle">`,
+      `<g fill="${SPEC.colors.star}" fill-opacity="${SPEC.constellations.labelAlpha.toString()}" font-family="Cormorant Garamond, serif" font-size="${(pointsToPx(SPEC.constellations.labelFontSize)).toFixed(2)}" text-anchor="middle">`,
     );
     const previewCx = 400;
     const previewCy = 400;
@@ -92,7 +101,7 @@ export function buildPosterSvg(
 
   if (payload.options.shape === "circle") {
     parts.push(
-      `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${radius.toFixed(2)}" fill="none" stroke="${SPEC.colors.ring}" stroke-opacity="${SPEC.shape.ringAlpha.toString()}" stroke-width="${(SPEC.shape.ringWidth * scale).toFixed(2)}"/>`,
+      `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${radius.toFixed(2)}" fill="none" stroke="${SPEC.colors.ring}" stroke-opacity="${SPEC.shape.ringAlpha.toString()}" stroke-width="${(pointsToPx(SPEC.shape.ringWidth)).toFixed(2)}"/>`,
     );
   }
 
@@ -111,14 +120,14 @@ export function buildPosterSvg(
   );
   if (payload.options.title) {
     parts.push(
-      `<text x="${(sizePx / 2).toString()}" y="${(bandMid - 0.018 * geometry.canvasHeight).toFixed(2)}" font-size="${(SPEC.caption.titleFontSize * scale).toFixed(2)}" dominant-baseline="middle">${escapeXml(payload.options.title)}</text>`,
+      `<text x="${(sizePx / 2).toString()}" y="${(bandMid - 0.018 * geometry.canvasHeight).toFixed(2)}" font-size="${(pointsToPx(SPEC.caption.titleFontSize)).toFixed(2)}" dominant-baseline="middle">${escapeXml(payload.options.title)}</text>`,
     );
     parts.push(
-      `<text x="${(sizePx / 2).toString()}" y="${(bandMid + 0.028 * geometry.canvasHeight).toFixed(2)}" font-size="${(SPEC.caption.detailFontSize * scale).toFixed(2)}" fill-opacity="0.92" dominant-baseline="middle">${escapeXml(detail)}</text>`,
+      `<text x="${(sizePx / 2).toString()}" y="${(bandMid + 0.028 * geometry.canvasHeight).toFixed(2)}" font-size="${(pointsToPx(SPEC.caption.detailFontSize)).toFixed(2)}" fill-opacity="0.92" dominant-baseline="middle">${escapeXml(detail)}</text>`,
     );
   } else {
     parts.push(
-      `<text x="${(sizePx / 2).toString()}" y="${bandMid.toFixed(2)}" font-size="${(11 * scale).toFixed(2)}" fill-opacity="0.92" dominant-baseline="middle">${escapeXml(detail)}</text>`,
+      `<text x="${(sizePx / 2).toString()}" y="${bandMid.toFixed(2)}" font-size="${pointsToPx(SPEC.caption.singleCaptionFontSize).toFixed(2)}" fill-opacity="0.92" dominant-baseline="middle">${escapeXml(detail)}</text>`,
     );
   }
   parts.push(`</g>`);

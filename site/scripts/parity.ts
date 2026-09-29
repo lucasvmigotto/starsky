@@ -161,10 +161,12 @@ async function main(): Promise<number> {
       model,
       c.size_px,
       1,
+      // Figure centroids are stored in PREVIEW pixels (the 800×1000 model),
+      // not in poster pixels, so the preview geometry is passed as-is.
       {
-        diskCx: c.size_px / 2,
-        diskCy: c.size_px / 2,
-        diskR: (c.size_px / 800) * 368,
+        diskCx: 400,
+        diskCy: 400,
+        diskR: 368,
       },
     );
     writeFileSync(join(outDir, `${c.id}.png`), canvas.toBuffer("image/png"));
