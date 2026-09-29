@@ -14,6 +14,7 @@ import {
   type StarRow,
 } from "../lib/skymodel.ts";
 import FiguresPanel from "./FiguresPanel.tsx";
+import ExportControls from "./ExportControls.tsx";
 import SkyCanvas, { HOME_VIEW, type View } from "./SkyCanvas.tsx";
 import { EmptyState, InvalidState, LegacyState } from "./States.tsx";
 
@@ -312,6 +313,8 @@ export default function ViewerPage() {
                 </p>
               )
             )}
+
+            {model && <ExportControls payload={payload} model={model} />}
           </>
         )}
       </main>
