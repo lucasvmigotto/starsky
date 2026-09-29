@@ -16,7 +16,7 @@ The product is a self-hosted, single-user night-sky poster generator. Today its 
 
 ## Decision outcome
 
-Adopt option 3. One deployable (a Vite-built React/TS bundle + JSON data + font) on a CDN; no server process, no database, no identity. The browser renders the poster and exports PNG/SVG/PDF (BCR-0002); Python 3.14 serves `render`, `cache warm`, `export-static-data` and the parity golden.
+Adopt option 3. One deployable (a Vite-built React/TS bundle + JSON data + font) on a CDN; no server process, no database, no identity. The browser renders the poster and exports PNG/SVG/PDF (BCR-0002) and is the only renderer (ADR-0003, BCR-0005); Python 3.14 is a data CLI — `starpy catalog` and `starpy cache warm` — with no renderer and no server.
 
 ## Consequences
 

@@ -63,3 +63,15 @@ detailed client tasks.
 
 - Nothing here flips the default renderer; that is `refactor.md` Slice 5 (BCR-0001).
 - `## Frontend` section (screens, components, states, tokens) is owned by `frontend:spec`.
+
+## Post-BCR-0005 rewrite (2026-09-29)
+
+The Python renderer was removed (BCR-0005), so the parity tasks above are void.
+The remaining work:
+
+- [ ] T024 [P] Replace the parity harness with a browser reference-image suite: render `fixtures/parity.json`, store the PNGs, fail on unexplained change
+- [ ] T025 [US2] Wire the export controls (PNG/SVG/PDF) into the viewer UI with keyboard-reachable buttons and status
+- [ ] T026 [US2] Test each export opens and contains the caption and star count; the PDF is vector with selectable text
+- [ ] T027 [US3] Test an exported SVG/PDF opens with the network disabled (bundled font, no fallback)
+- [ ] T028 Flip the renderer flag to poster by default once T024-T027 pass, then delete the preview renderer
+- [ ] T029 Performance profile on a mid-range phone against the budget; record numbers in `plan.md`

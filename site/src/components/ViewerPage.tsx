@@ -89,7 +89,7 @@ export default function ViewerPage() {
     };
   }, []);
 
-  // Static catalog + line data (regenerate via `python -m starpy export-static-data`).
+  // Static catalog + line data (regenerate via `python -m starpy catalog`).
   useEffect(() => {
     let live = true;
     Promise.all([
@@ -265,7 +265,7 @@ export default function ViewerPage() {
               <p role="alert" className="atlas-alert">
                 Star data could not be loaded ({dataError}). Regenerate it
                 with <code className="atlas-code">python -m starpy
-                export-static-data</code> and redeploy.
+                catalog</code> and redeploy.
               </p>
             )}
 

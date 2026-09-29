@@ -30,7 +30,7 @@ Inputs: `project:introspec` artifacts (`docs/product/{brief,architecture,domain-
 | HF Space hosting | **Business policy** → BCR-0003 | `hf_spaces.yml`; `hf.Dockerfile` | you |
 | Static viewer reduced feature set (stereographic, mag ≤ 5.5, no vector) | **Business policy** → BCR-0002 | `site/PLAN.md:45-61` | you |
 | Silent font fallback to DejaVu | **Business policy** → BCR-0004 | `data/fonts.py:27-55`; `figure.py:50` | you |
-| GUI separation slider max 0.05 vs schema max 0.1 | **Accidental** — verdict: fix (align to 0.1 or to 0.05, decide in Slice 3) | `gui/components/sky.py:129-138` vs `schemas/inputs/render.py:10-20` | you |
+| GUI separation slider max 0.05 vs schema max 0.1 | **Accidental** — moot: the GUI and the schema are gone (BCR-0001/0005) | `gui/components/sky.py` (deleted) | you |
 | `bun test` cannot run two vitest `vi`-based cases | **Accidental** — verdict: fix (port to `bun:test`, §Slices) | `site/src/lib/geocode.test.ts:43,79` | you |
 | `tests/golden/` exists but the `golden` marker is unused | **Accidental** — verdict: fix (used from Slice 0) | `pyproject.toml:49-54`; `tests/golden/` | you |
 | `site/PLAN.md` Option C now contradicts the target | **Accidental** — verdict: supersede via note (BCR-0002) | `PLAN.md:45-61` | you |
@@ -40,7 +40,7 @@ Core list confirmed by you 2026-09-29.
 
 ## 3. Findings (by angle, with evidence and cost)
 
-**Code.** Two full implementations of one spec (Python `render/*` vs TS `skymodel/astro/spec`) is the dominant duplication — the source of the parity burden. Churn hotspots: `tests/ci/test_space_artifact.py`, `static_r2.yml`, `ci.yml`, `README.md`, `hf.README.md`, `geocoding/nominatim.py`, `src/starpy/cli.py` (`git log --name-only`). Coupling is low otherwise (functional core + thin shell). Dead-on-arrival after BCR-0001/0003: `gui/`, `main.py`, `app.py`, `settings/{gradio,hf}.py`, `tests/gui/*`, `tests/ci/*`, `requirements.txt`, `scripts/{publish_space,export_space_requirements}.sh`. Cost to remove: low.
+**Code.** Two full implementations of one spec was the dominant duplication. **Resolved by BCR-0005**: the Python renderer is deleted, so the browser is the only implementation and the parity burden is gone. Churn hotspots: `tests/ci/test_space_artifact.py`, `static_r2.yml`, `ci.yml`, `README.md`, `hf.README.md`, `geocoding/nominatim.py`, `src/starpy/cli.py` (`git log --name-only`). Coupling is low otherwise (functional core + thin shell). Dead-on-arrival after BCR-0001/0003: `gui/`, `main.py`, `app.py`, `settings/{gradio,hf}.py`, `tests/gui/*`, `tests/ci/*`, `requirements.txt`, `scripts/{publish_space,export_space_requirements}.sh`. Cost to remove: low.
 
 **Architecture.** As-is is a two-front-end monolith (Gradio + CLI) sharing a functional core, plus a static viewer. Target removes the server runtime entirely. `project:architecture` review mode should formalize ADR files (see §4); `docs/product/architecture.md` currently holds as-is only.
 
@@ -54,12 +54,12 @@ Core list confirmed by you 2026-09-29.
 
 ## 4. Target design
 
-In three lines: **A static, client-only product** — React (latest) + TypeScript 7 on Bun, built by Vite and served from R2, which renders the poster and exports PNG/SVG/PDF with the Cormorant Garamond font bundled; **Python 3.14 is a build-time/CLI tool only** (`render`, `cache warm`, `export-static-data`) whose output is pinned byte-stable and shares `render-spec.json` with the client; **no server, no Gradio, no HF Space.**
+In three lines: **A static, client-only product** — React (latest) + TypeScript 7 on Bun, built by Vite and served from R2, which renders the poster and exports PNG/SVG/PDF with the Cormorant Garamond font bundled; **Python 3.14 is a build-time/CLI data tool only** (`catalog`, `cache warm`) whose JSON the site fetches, with `render-spec.json` as the browser's contract; **no server, no Gradio, no HF Space.**
 
 Draft ADRs (to be formalized as files under `docs/product/adr/` by `project:architecture` review mode):
 
 - **ADR-1 — Static-first, no runtime server.** Context: self-hosted single-user tool; the only server need was Gradio. Decision: client-only runtime; Python at build/CLI time. Consequences: no auth/bind risk, near-zero cost; browser must own rendering and exports.
-- **ADR-2 — `render-spec.json` is the single normative render contract.** Both renderers conform; conformance is tested. Consequences: parity is enforceable; changing the spec is a reviewed change.
+- **ADR-2 — `render-spec.json` is the browser's normative render contract.** There is one implementation (BCR-0005), so no cross-renderer agreement is required; conformance to the spec is still tested.
 - **ADR-3 — R2-only hosting; data served same-origin.** ~100 KB brotli catalog; avoids CORS and a second service. Bucket/dataset hosting deferred.
 - **ADR-4 — TypeScript 7 (native `tsgo`) + Bun (package manager, runtime, `bun:test`), React latest.** One toolchain; drop Vitest and its runner mismatch.
 - **ADR-5 — Bundle the font; no silent fallback.** Guarantees typography and self-contained SVG/PDF.
@@ -74,11 +74,11 @@ Seam: **branch by abstraction inside the client** (a `Renderer` module interface
 
 **Slice 2 — Bundle the font (BCR-0004).** Vendor the font, make `ensure_font` use it and fail loudly; client embeds it. Verify: offline render uses Cormorant Garamond; SVG/PDF embed the font. Rollback: flag back to DejaVu.
 
-**Slice 3 — Browser poster renderer (BCR-0002), flagged.** Implement high-DPI poster render behind `?renderer=poster`; default stays preview. Verification: parallel run vs CLI over a fixed matrix, quantify pixel/SVG diffs. Rollback: keep preview default.
+**Slice 3 — Browser poster renderer (BCR-0002). DONE.** High-DPI poster render behind `?renderer=poster`; the fixture matrix is the visual-regression reference. Rollback: keep the preview default.
 
-**Slice 4 — Exports PNG/SVG/PDF (BCR-0002).** Canvas `toBlob` PNG; SVG DOM; true-vector PDF via `svg2pdf.js`/jsPDF. Verify: exports open, caption/stars correct, no rasterised text in PDF. Rollback: hide export buttons.
+**Slice 4 — Exports PNG/SVG/PDF (BCR-0002). IN PROGRESS.** Exporters written and unit-tested; the UI controls are not wired yet. Verify: exports open, caption/stars correct, no rasterised text in the PDF. Rollback: hide export buttons.
 
-**Slice 5 — Client canonical; remove Gradio (BCR-0001).** Flip the default renderer to poster; delete `gui/`, `main.py`, `app.py`, `settings/{gradio,hf}.py`, `tests/gui/*`, the `gradio` dep; `python -m starpy` prints help. Verify: CLI tests green, no `gradio` import, no port opened. Cutover: R2 already serves the client. Rollback: redeploy previous R2 build; Gradio removable only after the default flip proves stable.
+**Slice 5 — Client canonical; remove the Python renderer (BCR-0001 + BCR-0005). DONE.** The browser is the sole renderer; `src/starpy/render/`, `astro/`, `share/`, `gui/`, the Gradio app and the ephemeris are deleted. `python -m starpy` prints help and opens no socket. Verify: no matplotlib/skyfield/gradio anywhere; `starpy catalog` reproduces 8870/843. Rollback: revert the deletion commit (`a4c8175`).
 
 **Slice 6 — Decommission HF Space and leftovers (BCR-0003).** Delete `hf.*`, `hf_spaces.yml`, `scripts/{publish_space,export_space_requirements}.sh`, `requirements.txt`, `tests/ci/*`; retarget the client's "full app" link. Verify: `grep huggingface` empty; `uv sync`/Docker build without `requirements.txt`; R2 deploy green. Rollback: restore files (kept in git history).
 
@@ -86,7 +86,7 @@ Seam: **branch by abstraction inside the client** (a `Renderer` module interface
 
 ## 6. Risks
 
-- **Renderer parity** — the biggest risk; mitigated by pinning the spec in Slice 0 and parallel-running before the Slice 5 flip.
+- **Renderer parity** — **eliminated** by BCR-0005 (one renderer). Replaced by visual-regression risk, handled by the reference-image suite (T024).
 - **Desktop-print fidelity for PDF/SVG** — true-vector PDF and font embedding can differ across viewers; test in Chrome/Firefox and a PDF reader.
 - **TypeScript 7 migration** — a real compiler change; Slice 1 is isolated and reversible.
 - **Spec drift** — enforced by conformance tests.
@@ -100,9 +100,9 @@ Seam: **branch by abstraction inside the client** (a `Renderer` module interface
 - [~] target design with ADRs — drafted here (§4); formal ADR files are `project:architecture` review-mode's job (next stage)
 - [x] slices independently shippable and reversible, each with seam, verification, cutover and rollback
 - [x] every data move has a backfill/contract step — N/A, no database; contract steps named for the share payload and exported JSON
-- [ ] core invariants tested at every slice; parallel runs where risk is high (set up in Slice 0, run in Slice 3)
+- [x] core invariants tested at every slice; parallel runs superseded by the reference-image suite (one renderer, BCR-0005)
 - [x] the old paths' decommissioning is planned (Slices 5–6), not left for later
 
 ## Handoff
 
-Core invariants confirmed. BCRs **proposed, awaiting your accept/reject**: 0001 remove Gradio UI, 0002 browser canonical renderer + exports, 0003 retire HF Space, 0004 bundle font. Target in three lines: static client-only on R2 with browser rendering/export; Python CLI/data-tool only; `render-spec.json` shared. First slice to build: **Slice 0 (pin contract + safety net)**, then Slice 1 (TS7/Bun). Biggest risk: browser↔CLI renderer parity. Next stage after approval: `project:architecture` (review → ADR files), then `project:spec` for the first slices' features. Commits follow `git:workflow`.
+BCRs **all accepted**: 0001 remove Gradio UI, 0002 browser canonical renderer + exports, 0003 retire HF Space, 0004 bundle font, 0005 remove the Python renderer. Target in three lines: static client-only on R2 where the browser renders and exports the poster; Python is a small CLI that builds the sky data (`starpy catalog`); `render-spec.json` is the browser's contract. Slices 0-3 and 5 are done; 4 (export UI) and 6 (HF decommission) remain, then 7 (docs). Biggest risk: browser visual regression (was renderer parity, now eliminated). Next stage: finish Slice 4, then `qa:e2e`. Commits follow `git:workflow`.

@@ -12,7 +12,7 @@ the story-level acceptance tests.
 ## Phase 2: User Story 1 — Deploy to R2 from CI (P1) 🎯 MVP
 
 - [ ] T002 [P] [US1] Rename `static_r2.yml` to `site_r2.yml`; update paths (`site/**`) and job references
-- [ ] T003 [US1] Restructure the deploy: `cache warm` + `export-static-data` (retry) → `bun run build` → sync assets under `/assets/<sha>/`, data under `/data/<version>/` + manifest, `index.html` last
+- [ ] T003 [US1] Restructure the deploy: `cache warm` + `catalog` (retry) → `bun run build` → sync assets under `/assets/<sha>/`, data under `/data/<version>/` + manifest, `index.html` last
 - [ ] T004 [US1] Set cache headers per `contracts/delivery.md`
 - [ ] T005 [US1] Add the rollback step (re-point the version prefix) and document it
 - [ ] T006 [US1] Test: a broken build deploys nothing; a good one serves the full workflow

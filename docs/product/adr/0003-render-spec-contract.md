@@ -1,29 +1,50 @@
-# ADR-0003 — `render-spec.json` is the single normative render contract
+# ADR-0003 — The browser is the sole renderer; `render-spec.json` is its contract
 
-Status: proposed
+Status: proposed (supersedes the two-renderer form)
 Date: 2026-09-29
 Deciders: lucas
 
 ## Context and drivers
 
-Correctness is the top driver, and after ADR-0001 two renderers implement the same poster: TypeScript in the browser (canonical) and Python/matplotlib in the CLI (offline/batch). The visual tokens already live in `site/render-spec.json` and are mirrored in Python (`src/starpy/settings/render.py`, `render/figure.py`) and TS (`site/src/lib/spec.ts`).
+Correctness is the top driver, and the poster is the product. An earlier version
+of this decision made `render-spec.json` a contract binding **two** renderers —
+Python/matplotlib and the browser — with a parity harness and a tolerance. That
+framing cost real effort: the harness found five genuine bugs, then the two
+implementations still disagreed on constellation-label clipping, and the
+difference blocked shipping. The Python render was, in the owner's words,
+"additional" — the browser is the protagonist.
 
 ## Considered options
 
-1. **Independent per-renderer constants** — drift is invisible until a poster looks wrong.
-2. **Generate one renderer from the other** — no practical codegen path between matplotlib and DOM/canvas.
-3. **One normative JSON spec, both renderers conform, conformance tested** (chosen).
+1. **Two renderers kept in lockstep** — a parity gate, a tolerance, and every
+   change applied twice. Rejected: the second renderer exists only to be kept
+   equal to the first, at the price of matplotlib, Skyfield, Pillow, numpy and
+   scipy in the dependency tree, a 30 MB cold start, and a permanent negotiation.
+2. **The browser is normative; the CLI follows best-effort** — still two
+   implementations, one always chasing. Rejected: same cost, weaker guarantee.
+3. **The browser is the only renderer; the CLI prepares data** (chosen, BCR-0005).
 
 ## Decision outcome
 
-`render-spec.json` is normative. Every visual token (colors, star size, glow, lines, labels, ring, caption band, fonts, share codec) is defined there; Python and TS constants must conform, enforced by tests on both sides. Changing the spec is a reviewed change that updates both renderers in the same PR. `site/PLAN.md`'s "Option C" note is superseded by BCR-0002.
+`site/render-spec.json` is the **browser's** normative contract: colours, star
+sizing, glow, lines, labels, ring, caption and the unit rules
+(`units.referenceDpi`). There is no second implementation to agree with, so no
+parity tolerance and no drift between renderers. The Python side builds the
+data (`starpy catalog`) and nothing else.
 
 ## Consequences
 
-Good: parity is explicit and testable; the spec is documentation and contract at once; the share codec and exported JSON schemas are covered by the same rule.
+Good: one implementation, one contract; the Python dependency tree shrinks to
+cli/httpx/polars/pydantic and the CLI's only job is reproducible data; a whole
+class of "these two must match" maintenance disappears; the 30 MB ephemeris
+cold start is gone.
 
-Bad: two conformance tests to keep aligned; some tokens cannot be exactly identical across engines (antialiasing, font rasterisation), so the spec pins the *values*, and a tolerance-bounded parallel run covers the *pixels*.
+Bad: no headless CLI rendering. Anyone scripting `starpy render` must use the
+browser (or drive it) — accepted 2026-09-29. The `render-spec.json` name is now
+slightly grander than its role.
 
 ## Confirmation
 
-Conformance tests pass on both sides; the parallel-run harness reports differences within the agreed tolerance before the browser default flip.
+`grep` finds no matplotlib/skyfield/PIL in `src/`; the site builds and exports
+PNG/SVG/PDF with no Python at runtime; `starpy catalog` reproduces the exact
+star and segment counts (8870 / 843 at mag ≤ 6.5 on 2026-09-29).

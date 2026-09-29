@@ -88,3 +88,14 @@ outgrows the free tier anyway. If revisited, prefer the hybrid shape
 (Option B): keep `render_sky_map()` unmodified behind FastAPI, reuse the
 share payload as the request body, and put Cloudflare in front for
 throttle/caching.
+
+---
+
+## Superseded (2026-09-29)
+
+Option C above is superseded. The refactor (BCRs 0001–0005, ADR-0003) made the
+**browser the sole renderer**: the Gradio app and the Python renderer were
+removed, the site renders the poster and exports PNG/SVG/PDF, and Python is a
+CLI that builds the sky data (`starpy catalog`). The "stereographic only, mag
+≤ 5.5, no vector export" preview limits no longer apply — the viewer implements
+the full `render-spec.json` (both projections, vector export).

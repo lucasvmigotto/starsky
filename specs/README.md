@@ -1,23 +1,34 @@
-Reconstructed by project:introspec on 2026-09-29 from 51287a7; restructured by project:spec on 2026-09-29 (branch `refactor/static-first-client`) against `docs/product/refactor.md`, accepted BCRs 0001–0004 and ADRs 0001–0005.
+Reconstructed by project:introspec on 2026-09-29; re-scoped by project:refactor (BCRs 0001–0005) into the static-first target.
 
 # Specs — feature index
 
-Status: the target split is **Planned**; features 001/002/004/005 remain **Implemented** for their current code, and 006 is partly Implemented. Nothing is Verified (no passing e2e).
+Status: `002` and `005` are **Implemented** (the CLI data tool ships today).
+`006` is Implemented, `007` is **In progress** (renderer built, exports to wire),
+`008` is Planned. `003` is retired. Nothing is Verified.
 
 | # | Feature | Priority | Depends | Frontend | Backend | Notes |
 |---|---|---|---|---|---|---|
-| 001 | render-core | P1 | 005 | N/A | Implemented | Python CLI renderer, pinned byte-stable (BCR-0002 keeps it in sync) |
-| 002 | cli | P1 | 001,004,005 | N/A | Implemented | `render`, `cache warm`, `export-static-data`; loses the Gradio default (BCR-0001) |
-| 003 | — | — | — | — | — | **Retired by BCR-0001**: the Gradio app is removed. See `003-gradio-app/DEPRECATED.md` |
-| 004 | geocoding-time | P1 | 005 | Planned (browser) | Implemented (CLI) | Browser already calls Nominatim (`site/src/lib/geocode.ts`); unified here |
-| 005 | data-cache | P1 | — | N/A | Implemented | CLI data pipeline; feeds the site's `catalog.json`/`constellations.json` |
-| 006 | viewer | P1 | 005, 007 | Implemented (partial) | N/A | Landing + `#s=` viewer, share codec; static TS |
-| 007 | renderer-export | P1 | 006 | Planned | N/A | **New (BCR-0002)**: browser poster renderer + PNG/SVG/PDF exports, `render-spec.json` contract |
-| 008 | site-delivery | P2 | 006, 007 | Planned | Planned | **New (BCR-0003/0004)**: R2-only delivery, font bundling, budgets and fitness functions |
-| 000 | design-system | P2 | — | Planned | — | Reserved for `frontend:spec` (tokens, components, states, motion) |
+| 000 | design-system | P2 | — | Planned | — | Reserved for `frontend:spec` |
+| 002 | catalog-cli | P1 | 005 | N/A | Implemented | `starpy catalog` + `cache warm`; the CLI's whole product (BCR-0005) |
+| 003 | — | — | — | — | — | **Retired by BCR-0001** (Gradio removed); see `003-gradio-app/DEPRECATED.md` |
+| 005 | data-cache | P1 | — | N/A | Implemented | Hipparcos + Stellarium → parquet; ephemeris gone (BCR-0005) |
+| 006 | viewer | P1 | 005 | Implemented | N/A | Landing + `#s=` viewer, share codec, place lookup |
+| 007 | renderer-export | P1 | 006 | In progress | N/A | The browser is the sole renderer (ADR-0003); PNG/SVG/PDF exports to wire |
+| 008 | site-delivery | P1 | 006, 007 | Planned | Planned | R2-only deploy, font bundling, budgets, fitness functions |
 
-Ordering is dependency-first, MVP first: **006 + 007 + 008** are the refactor's MVP (a static client that renders and exports); 001/002/005 keep the Python half honest; 004 covers place lookup.
+## Removed features
 
-`frontend:spec` owns `000-design-system`, `site/` UI layers and the `specs/007-*/ui.md`/`008-*/ui.md` layers. `backend:spec` owns the Python layers in 001/002/005.
+- `001-render-core` — the Python/matplotlib renderer, deleted by BCR-0005.
+- `004-geocoding-time` — its Python half is dead (the browser calls Nominatim);
+  place lookup lives in `006-viewer`.
 
-`contracts/openapi.yaml` remains **N/A** — the architecture has no API (ADR-0001); the seams are `render-spec.json`, the `#s=` share payload and the exported JSON schemas.
+## Status legend
+
+- **Planned** — specified, no code yet.
+- **In progress** — a build stage is working through its phases.
+- **Implemented** — the code path exists and runs (evidence in the feature).
+- **Verified** — e2e tests pass in CI. Nothing is Verified yet.
+
+`contracts/openapi.yaml` remains **N/A** — the architecture has no API
+(ADR-0001). The seams are `render-spec.json`, the `#s=` share payload, and the
+exported JSON shapes documented in `002-catalog-cli/contracts/seam.md`.

@@ -32,7 +32,7 @@ Gradio Share or landing submit → `SharePayload(v=1,lat,lon,place,when_utc,tz,o
 
 - **FR-001**: MUST keep Python/TS codecs byte-compatible (same canonical JSON + zlib-9 + base64url). [OBSERVED: `render-spec.json:44-48`; `encode.ts:35-79`]
 - **FR-002**: MUST keep `SPEC` tokens in sync with Python (`size=14*10**(mag/-2.5)` clamp [0.6,14], glow ≤3.5, lines 0.7/0.7, labels upper 7pt, band 0.22). [OBSERVED: `spec.ts:42-45`; `render-spec.json:12-42`]
-- **FR-003**: MUST export trimmed `catalog.json`/`constellations.json` via `export-static-data`. [OBSERVED: `cli.py:245-282`]
+- **FR-003**: MUST consume the trimmed `catalog.json`/`constellations.json` produced by `starpy catalog` (feature 002).
 
 ## Success Criteria
 

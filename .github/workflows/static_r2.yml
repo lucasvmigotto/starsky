@@ -37,19 +37,18 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # Viewer data (public/data/*.json) is gitignored: regenerate it from
-      # the Python pipeline before building. Retried: the JPL ephemeris
-      # host flakes from CI runners.
-      - name: Warm cache and export viewer data
+      # Sky data (public/data/*.json) is gitignored: build it with the CLI
+      # before the site build. Retried: the catalog hosts can flake from CI.
+      - name: Build the sky data
         # Override the job default (site): `uv run` needs the repo
-        # root where pyproject.toml lives; the test path is root-relative.
+        # root where pyproject.toml lives.
         working-directory: .
         run: |
           for i in 1 2 3; do
             uv run python -m starpy cache warm \
-              && uv run python -m starpy export-static-data \
+              && uv run python -m starpy catalog \
               && break
-            echo "data warm attempt $i failed; retrying..."
+            echo "data build attempt $i failed; retrying..."
             sleep $((i * 30))
           done
           test -f site/public/data/catalog.json
