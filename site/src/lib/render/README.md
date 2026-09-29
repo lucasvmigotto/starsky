@@ -5,12 +5,17 @@ by BCR-0005). `site/render-spec.json` is its normative contract — colours, sta
 sizing, glow, lines, labels, ring, caption, and the unit rules
 (`units.referenceDpi`).
 
+`SkyCanvas` composes the poster **once** into an offscreen canvas and blits it;
+zoom/pan transforms the blit and hover draws a focus overlay on top, so neither
+recomposes the sky. There is no second renderer and no `?renderer` flag.
+
 ## Tests
 
 | Suite | Covers |
 |---|---|
 | `poster.test.ts` | geometry, star/point sizing, masks, labels, SVG structure |
 | `export.test.ts` | the three exports, self-containment, caption, escaping |
+| `boundaries.test.ts` | empty sky, maximum density, fisheye bounds |
 | `reference.test.ts` | **regression**: the render matrix, structure + pixels |
 
 ### Reference-image suite (`reference.test.ts`)
