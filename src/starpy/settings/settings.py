@@ -2,13 +2,8 @@
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from .ephemeris import EphemerisSettings
-from .geocoding import GeocodingSettings
-from .gradio import GradioSettings
-from .hf import HuggingFaceSettings
+from .catalog import CatalogSettings
 from .log import LogSettings
-from .render import RenderSettings
-from .share import ShareSettings
 
 
 class Settings(BaseSettings):
@@ -20,10 +15,5 @@ class Settings(BaseSettings):
         env_nested_delimiter="__",
     )
 
-    GRADIO: GradioSettings = GradioSettings()
-    EPHEMERIS: EphemerisSettings = EphemerisSettings()
-    GEOCODING: GeocodingSettings = GeocodingSettings()
-    RENDER: RenderSettings = RenderSettings()
-    SHARE: ShareSettings = ShareSettings()
+    CATALOG: CatalogSettings = CatalogSettings()
     LOG: LogSettings = LogSettings()
-    HF: HuggingFaceSettings = HuggingFaceSettings()

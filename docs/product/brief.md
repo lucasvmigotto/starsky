@@ -18,7 +18,7 @@ Self-hosted, fully open-source custom star-map poster generator. Gradio app + he
 - Caption: `[Title]` then `40.7580°N, 73.9855°W — Times Square, New York, United States · 2026-01-01 00:00 UTC+00:00`. [OBSERVED: README.md:45-48; src/starpy/render/caption.py:13-38]
 - `cache warm` preloads ephemeris + catalog + lines + font. [OBSERVED: README.md:13; src/starpy/cli.py:38-49]
 - Share links: canonical JSON → zlib-9 → URL-safe base64 → `<base>/#s=<payload>` for the static explorer viewer. [OBSERVED: src/starpy/share/spec.py:1-6]
-- Static explorer viewer + `export-static-data` (`catalog.json`, `constellations.json`) for offline viewing. [OBSERVED: src/starpy/cli.py:245-282; static_site/PLAN.md]
+- Static explorer viewer + `starpy catalog` (`catalog.json`, `constellations.json`) for offline viewing. [OBSERVED: src/starpy/cli.py; site/PLAN.md]
 - Delivery: `uv` + multistage Docker (GHCR/Docker Hub), Hugging Face Space via `app.py`. [OBSERVED: README.md:66-86; app.py:1-23]
 
 ## Audiences
@@ -33,7 +33,7 @@ Out of scope: [ASSUMPTION: no accounts, payments, multi-user library, or mobile 
 ## Capabilities (observed)
 
 1. Render core (stereographic/fisheye, declutter, glow, masks, caption, PNG/SVG/PDF). [OBSERVED: src/starpy/render/figure.py:65-380]
-2. CLI (`render`, `cache warm`, `export-static-data`; no subcommand launches Gradio). [OBSERVED: src/starpy/cli.py:75-282]
+2. CLI (`catalog`, `cache warm`; there is no renderer and no server — BCR-0001/0005). [OBSERVED: src/starpy/cli.py]
 3. Gradio app (place/coordinates, tz detect, render options, download, share-link copy). [OBSERVED: src/starpy/main.py:17-43; README.md:53-56]
 4. Geocoding + time (Nominatim with 1 req/s throttle + JSON cache TTL 30d; `timezonefinder`; `ZoneInfo` UTC conversion). [OBSERVED: src/starpy/geocoding/nominatim.py:1-150; src/starpy/astro/observer.py:7-17]
 5. Data loading (JPL DE421 via Skyfield `Loader`; Hipparcos `hip_main.dat` → parquet; Stellarium IAU lines → parquet; Cormorant Garamond font). [OBSERVED: src/starpy/data/catalog.py:30; src/starpy/data/constellations.py:26-30; src/starpy/data/ephemeris.py:18-30; src/starpy/data/fonts.py:15-19]

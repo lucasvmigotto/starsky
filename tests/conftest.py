@@ -1,8 +1,6 @@
-"""Shared fixtures (no network, no ephemeris downloads)."""
+"""Shared fixtures (no network)."""
 
-from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 from polars import DataFrame as pl_DataFrame
 from polars import Float64 as pl_Float64
@@ -12,11 +10,6 @@ from polars import String as pl_String
 # NOTE: bare `fixture` (not the pytest_ alias): pluggy scans conftest.py
 # for pytest_* hooks, so the aliased name breaks collection.
 from pytest import fixture
-
-
-@fixture()
-def fixed_utc() -> datetime:
-    return datetime(2026, 1, 1, 0, 0, tzinfo=UTC)
 
 
 @fixture()
@@ -39,19 +32,6 @@ def tiny_catalog() -> pl_DataFrame:
 
 
 @fixture()
-def tiny_projected() -> pl_DataFrame:
-    return pl_DataFrame(
-        {
-            "hip": [1, 2, 3],
-            "x": [0.0, 0.1, -0.3],
-            "y": [0.0, 0.05, 0.4],
-            "mag": [0.5, 1.0, 2.5],
-        },
-        schema={"hip": pl_Int64, "x": pl_Float64, "y": pl_Float64, "mag": pl_Float64},
-    )
-
-
-@fixture()
 def tiny_lines() -> pl_DataFrame:
     return pl_DataFrame(
         {
@@ -70,11 +50,6 @@ def tiny_lines() -> pl_DataFrame:
 
 
 @fixture()
-def tmp_geocoding_settings(tmp_path: Path) -> Any:
-    from starpy.settings import GeocodingSettings
-
-    return GeocodingSettings(
-        USER_AGENT="starpy-tests/0.1.0 (tests@example.com)",
-        RATE_LIMIT_S=0.0,
-        CACHE_PATH=tmp_path / "geocode.json",
-    )
+def catalog_cache_dir(tmp_path: Path) -> Path:
+    """An isolated catalog cache dir for tests that write parquet."""
+    return tmp_path / "catalog"

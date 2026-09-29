@@ -1,70 +1,185 @@
-Reconstructed by project:introspec on 2026-09-29 from 51287a78a915da74fab965cc2c27a85e4616d0e0
+Reconstructed by project:architecture (review → to-be) on 2026-09-29 from 51287a7 (branch `refactor/static-first-client`)
 
-# starpy — architecture (as-is)
+# starpy — architecture
 
 Status: Draft
 
-## Topology
+Mode: **review** (a system exists; as-is recorded, to-be proposed)
 
-Single Python service with two front doors sharing one functional core. [OBSERVED: README.md:3-6]
+## Summary
+
+A **static, client-only product**: one React + TypeScript application built by Vite and served from Cloudflare R2/CDN is the whole runtime — it is the **only renderer**, producing the poster and exporting PNG/SVG/PDF in the browser (ADR-0003). Python 3.14 is a small **CLI data tool**: `starpy catalog` writes the two JSON files the site fetches (`catalog.json`, `constellations.json`), with `starpy cache warm` as its companion (BCR-0005). No server process, no database, no broker, no identity, no ephemeris. This is the target of `docs/product/refactor.md`; the as-is is recorded below and is now largely realised.
+
+## Drivers (ranked)
+
+1. **Correctness** of the rendered poster (visual tokens, caption, geometry) and its determinism — the product *is* the image.
+2. **Offline/self-contained** at runtime — no server dependency to view or export a poster.
+3. **Cost** — free tier only (R2 free tier + GitHub Actions minutes).
+4. Availability 99.9 %+, riding the CDN's own SLA — achievable for free because there is no origin compute.
+5. Public site subject to **viral spikes** — CDN absorbs them; originless by design.
+
+Source: user, 2026-09-29. Mode: design decisions follow from these; see *Decisions*.
+
+## Inputs used
+
+`docs/product/brief.md`, `domain-model.md`, `introspec.md`, `refactor.md` + accepted BCRs 0001–0004; `specs/001..006`; the code inventory from `introspec`. No `docs/product/references/`. No metrics available (single-user tool today) — capacity is modelled from estimates, each marked.
+
+## Capacity model
+
+Traffic is unknown (private tool becoming public); figures are `[ASSUMPTION]` and carried through a 10× sensitivity check.
+
+- **Visitors**: assume 1 000 visiting days/month, 1.5 page views each ⇒ ~1 500 PV/month average — trivially low. A viral spike is the real load: `[ASSUMPTION] 50 000 PV in 24 h`, 60 % inside one hour ⇒ `50 000 × 0.6 / 3 600 ≈ 8.3 req/s` edge peak.
+- **Payloads**: HTML+JS+CSS ≈ 400 KB brotli `[ASSUMPTION, pre-tune]`; `catalog.json` ≈ 250 KB brotli, `constellations.json` ≈ 30 KB brotli (mag ≤ 6.5, ~8.5 k stars). Total ≈ 0.7 MB first visit.
+- **Bandwidth at peak**: `8.3 × 0.7 MB ≈ 6 MB/s ≈ 48 Mbit/s` — a CDN's rounding error; R2 has no egress fee.
+- **Origin compute**: **zero** at runtime. The only compute is CI (data export) and the visitor's browser.
+- **Browser work**: poster render at 1600 px + export — measured in `qa:load`-style profiling per device class, not server RPS. `[ASSUMPTION]` ≤ 2 s on a mid-range phone; a Slice-0/3 budget.
+- **10× check**: 500 000 PV/24 h, 80 req/s peak, ~56 MB/s — still CDN-shaped; first thing to strain is **R2 object request count** (free tier is generous but finite) and CI minutes for cache-warm, not the visitors. Mitigation: long `Cache-Control` + immutable hashed assets (few origin fetches), and CI caching the Python data warm step.
+
+No storage grows: the catalog is a build artifact, not user data.
+
+## As-is (review)
 
 ```
-CLI (click: render | cache warm | export-static-data; bare `python -m starpy` → Gradio)
-  └→ Gradio app (gui/pages + callbacks/skymap) ─┐
-                                                 ├→ render_sky_map (render/figure.py:259)
-Static explorer (static_site/ viewer, render-spec.json) → share links (#s= payload)
-Data loaders → /tmp/starpy-cache/{ephemeris,geocode.json,renders}
+CLI (click: catalog | cache warm; bare → help)
+  └→ site/ (Vite/React/TS) — the only renderer: poster + PNG/SVG/PDF exports
+Data loaders → /tmp/starpy-cache/catalog/{hipparcos.parquet, constellations.parquet}
 ```
 
-- `python -m starpy` shim → click group; `invoke_without_command` launches Gradio. [OBSERVED: src/starpy/__main__.py:3-5; src/starpy/cli.py:75-82]
-- `launch_app()` composes `Settings → setup_envvars/setup_log → register_cached_fonts → load_ephemeris/load_hipparcos/load_constellation_lines → SkyMapCallback → build_app/build_sky → app.launch(**GRADIO.config)`. [OBSERVED: src/starpy/main.py:17-43]
-- HF Space runs `app.py` (`sys.path` shim, honors `$PORT` → `STARPY__GRADIO__SERVER_PORT`, default 7860). [OBSERVED: app.py:10-23]
-- No REST API, no broker, no database. [OBSERVED: repo-wide grep for RestController/route/app.get found none; settings only file-cache paths]
+- Two front ends share one functional core: `render_sky_map` (`src/starpy/render/figure.py:259`).
+- **No runtime server**: the Gradio app and the Python renderer were removed (BCR-0001/0005). The site is static; the CLI runs only in CI or by hand.
+- Hosting: the site on Cloudflare R2; the CLI image on GHCR/Docker Hub. The HF Space is retired (BCR-0003).
+- Data: file caches only; no DBMS, no migrations, no personal data. [OBSERVED: `introspec.md` §Data]
+- Current bottleneck / headroom: none at runtime — there is no origin. The CI data build downloads the two catalog sources (~13 MB) and is cached between runs; the ephemeris cold start is gone with the renderer.
 
-## Stack
+**Prioritized improvement list**
 
-- Python >= 3.14 (`3.14` in `.python-version`). [OBSERVED: pyproject.toml:6; .python-version:1]
-- Core: `skyfield` (positions/ephemeris), `numpy` + `scipy` (projection/declutter via `cKDTree`), `polars` (catalogs), `matplotlib` Agg + `pillow` (compose), `httpx` (downloads/Nominatim), `timezonefinder` + `zoneinfo`, `pydantic`/`pydantic-settings` + `click`, `gradio>=6.3`. [OBSERVED: pyproject.toml:8-21; src/starpy/render/figure.py:44]
-- Static site: Vite + TypeScript (`static_site/package.json`), Vitest suites (`*.test.ts`). [INFERRED: static_site file listing → conclusion; confirm with viewer run.]
-- Toolchain: `uv` (+ `uv.lock`, `requirements.txt` for HF), `ruff` (E,F,I,UP,B; line-length 88), `ty`, `pytest -q --strict-markers` with markers `unit/integration/golden/network`. [OBSERVED: pyproject.toml:39-53; README.md:90-94]
+| # | Issue | Evidence | Recommendation | Effort | Gain |
+|---|---|---|---|---|---|
+| 1 | Artifact needs a Python server | `gui/pages/sky.py`; `PLAN.md:45-61` | Browser renderer + exports (BCR-0002) | L | Removes the server entirely |
+| 2 | Server exposes an unauthenticated UI on 0.0.0.0 | `settings/gradio.py:11` | Delete the server (BCR-0001) | S–M | Removes the attack surface |
+| 3 | Silent font fallback ⇒ non-reproducible posters | `data/fonts.py:27-55` | Bundle font, fail loudly (BCR-0004) | S | Deterministic typography |
+| 4 | Two renderers may drift | `render/*` vs `site/src/lib/*` | `render-spec.json` normative + conformance tests | M | Enforceable parity |
+| 5 | Stateless-host cold re-download | `hf.README.md` | Static-first (no host) | — | Removed by design |
+| 6 | `bun test` cannot run vitest cases | `site/src/lib/geocode.test.ts:43,79` | One runner: `bun:test` | S | CI reliability |
 
-## Hosting
+## To-be
 
-- Local: `uv run python -m starpy` on 8080 (example). [OBSERVED: README.md:10-14; .env.example:3-4]
-- Docker multistage (`Dockerfile`; DHI default, public fallback `ghcr.io/astral-sh/uv:python3.14-trixie` → `python:3.14-slim-trixie`); runtime non-root 65532; cache volume `starpy-cache:/tmp/starpy-cache`. [OBSERVED: README.md:66-78]
-- HF Space: `sdk: docker`, `app_port: 7860`. [OBSERVED: hf.README.md:1-8]
-- Static explorer: deployed via `static_r2.yml` [INFERRED: workflow filename → R2 deploy; confirm with workflow read.]
-- CI: `ci.yml` (ruff + format check + ty + pytest + declarative-imports + live Nominatim smoke gated on `STARPY_USER_AGENT_CONTACT`), `ghcr.yml`/`dockerhub.yml`/`release.yml`/`hf_spaces.yml` (OIDC trusted publisher, 1h token). [OBSERVED: README.md:80-86]
+### C4 — context
 
-## Data stores
+```mermaid
+graph LR
+  Visitor["Visitor (browser)"] -->|HTTPS| CDN["Cloudflare CDN + R2 static host"]
+  Visitor -.->|place search only| NOM["OpenStreetMap Nominatim"]
+  CDN --> Bundle["React/TS app bundle + render-spec.json + catalog.json + constellations.json + font"]
+  CI["GitHub Actions"] -->|build bundle, export data, deploy| CDN
+  CI -->|cache warm: Hipparcos, Stellarium| SRC["CDS / Stellarium (build-time only)"]
+  CLI["starpy CLI (Python 3.14): builds the sky data"] --> SRC
+```
 
-No DBMS. File caches only:
+### C4 — container
 
-| Store | Path (config key, name only) | Format |
-|---|---|---|
-| Ephemeris BSP | `EPHEMERIS__CACHE_DIR` | `de421.bsp` via Skyfield `Loader` [OBSERVED: src/starpy/data/ephemeris.py:11-30] |
-| Star catalog | `EPHEMERIS__CACHE_DIR/hipparcos.parquet` | Hipparcos `hip_main.dat` parsed (slices 51:63, 64:76, 8:14, 41:46) → parquet, sorted by mag [OBSERVED: src/starpy/data/catalog.py:30-100] |
-| Constellation lines | `EPHEMERIS__CACHE_DIR/constellations.parquet` | Stellarium IAU `index.json` consecutive-HIP pairs → parquet [OBSERVED: src/starpy/data/constellations.py:26-80] |
-| Font | `EPHEMERIS__CACHE_DIR/CormorantGaramond.ttf` | Google Fonts URL, `httpx` download, `fontManager.addfont`; failure → `None`/`False` fallback to DejaVu [OBSERVED: src/starpy/data/fonts.py:15-55] |
-| Geocode cache | `GEOCODING__CACHE_PATH` | JSON `{v:1, at, result}`, TTL 30d [OBSERVED: src/starpy/geocoding/nominatim.py:24-82] |
-| Render cache | `RENDER__CACHE_DIR/{sha256}.png` | Content-hash PNG; SVG/PDF bypass PNG cache [OBSERVED: src/starpy/render/figure.py:332-353; src/starpy/cli.py:147-165] |
-| Static export | `static_site/public/data/` | `catalog.json` (mag ≤ 6.5: hip,ra,dec,mag) + `constellations.json` (abbr,name,hip_a,hip_b) [OBSERVED: src/starpy/cli.py:245-282] |
+```mermaid
+graph TB
+  subgraph Browser
+    UI["React UI (landing + viewer + controls)"]
+    RND["Renderer module (poster geometry + tokens from render-spec.json)"]
+    EXP["Exporters: PNG (canvas), SVG (DOM), PDF (svg2pdf.js + jsPDF)"]
+    COD["Share codec (canonical JSON → zlib-9 → base64url, #s=)"]
+    UI --> RND --> EXP
+    UI --> COD
+  end
+  subgraph "Static host (R2 + CDN)"
+    ASSETS["immutable hashed assets"]
+    DATA["catalog.json, constellations.json"]
+    SPEC["render-spec.json"]
+    FONT["Cormorant Garamond (woff2/otf)"]
+  end
+  subgraph "Build (GitHub Actions)"
+    PY["starpy CLI: cache warm + catalog (the sky data)"]
+    VITE["Vite build"]
+    PY --> DATA
+    VITE --> ASSETS
+  end
+  UI -->|fetch| DATA
+  UI -->|fetch| FONT
+  RND -->|import| SPEC
+  DATA -->|deploy| ASSETS
+```
 
-## Integrations (hosts only; keys by name)
+### Deployment view
 
-- Nominatim `GEOCODING__BASE_URL` + required `GEOCODING__USER_AGENT`, 1 req/s throttle (`RATE_LIMIT_S`), `format=jsonv2&limit=1&addressdetails=1`. [OBSERVED: src/starpy/geocoding/nominatim.py:85-139]
-- CDS Hipparcos `hip_main.dat` URL, Stellarium `index.json` URL, Google Fonts Cormorant URL (constants in `data/`). [OBSERVED: src/starpy/data/catalog.py:30; src/starpy/data/constellations.py:26-29; src/starpy/data/fonts.py:15-18]
-- JPL DE421 via Skyfield loader (network once, then cached). [OBSERVED: src/starpy/data/ephemeris.py:21-24]
-- Registries: GHCR `ghcr.io/<owner>/<repo>`, Docker Hub (`DOCKER_HUB_PAT`), HF Space push. [OBSERVED: README.md:80-86]
+- **One artifact**: `dist/` (app) + `data/*.json` + font, all uploaded to R2 behind Cloudflare's CDN. Immutable assets under `/assets/<hash>`; data under `/data/<version>/` with a short manifest for cache-busting.
+- **Environments**: production (R2 `site` target) and preview (PR build, optional R2 prefix or Pages preview). Local `bun run dev` with Vite; `bun run preview` for the built bundle.
+- **CI**: `ci.yml` (Python lint/type/test + data export golden), `site_ci.yml` (Bun: lint, typecheck, `bun test`, build, OG assert), `static_r2.yml` → rename `site_r2.yml` (R2 sync on `main`).
+- **No IaC needed** beyond CI config: R2 bucket + CDN is the only infrastructure; `devsecops:iac` can stay N/A or become a tiny OpenTofu root for the bucket + DNS.
 
-## Capacity
+### Data view
 
-No metrics observed in repo. Render path is per-request CPU (Skyfield per-star alt/az loop [OBSERVED: src/starpy/astro/positions.py:35-50]) + matplotlib compose; deterministic cache mitigates repeats. [INFERRED: loop + cache → CPU-bound without cache; confirm with load run.]
+No database. Stores are files, all build artifacts or browser-local:
 
-## ADRs (only where history/docs explain)
+| Store | Where | Lifetime | Notes |
+|---|---|---|---|
+| `catalog.json`, `constellations.json` | R2/CDN | per release | regenerated by `starpy catalog`; versioned path |
+| `render-spec.json` | bundle | per release | normative shared contract |
+| Font (woff2/otf) | bundle | per release | bundled (BCR-0004) |
+| Poster exports | visitor's device | ephemeral | never uploaded |
+| Share payload | URL fragment | ephemeral | v1 codec, backward compatible |
 
-- Polars over pandas (functional core, CI-enforced). [OBSERVED: README.md:5-6; tests/test_no_pandas.py]
-- Explicit from-imports, no module attribute access (CI script). [OBSERVED: README.md:96-111]
-- Content-hash deterministic renders. [OBSERVED: README.md:49]
+No personal data is stored or transmitted (place text goes only to Nominatim, from the browser — `site/src/lib/geocode.ts:15,80`).
 
-No to-be — that belongs to `project:architecture` / `project:refactor`.
+## Decisions
+
+| Dimension | Choice | Why / alternative rejected | ADR |
+|---|---|---|---|
+| Deployment shape | **Single static client; no server** | No independent scaling or ownership need; the only server existed for Gradio. A BFF/API would reintroduce hosting cost and a CORS/secret surface for zero benefit | 0001 |
+| Hosting | **Cloudflare R2 + CDN; free tier** | Driver 3 (free) + driver 4 (CDN SLA, originless). PaaS/containers rejected: a server for a static artifact. HF Space rejected: an origin with cold starts (BCR-0003) | 0001, 0003 |
+| API style | **No API** (static fetch + URL fragment) | One client, no partners, no cache headers to negotiate. REST/gRPC/GraphQL all N/A | — |
+| Data | **Build-artifact JSON on CDN** | Read-only, immutable, tiny; no transactions. A DB would be a component without a driver | — |
+| Integration | **Browser → Nominatim only; everything else build-time** | Matches the existing client behaviour; no broker/queue needed | — |
+| Identity & access | **None** | Public, read-only, no accounts (user: local-only) | — |
+| Multi-tenancy | **N/A** | Single public site | — |
+| Resilience & DR | **CDN redundancy; rebuildable from git** | RPO/RTO = restore the last CI build; assets are reproducible; no data to lose. Rebuild trigger documented | 0004 |
+| Observability | **R2/Cloudflare analytics + a client-side error hook (optional)** | No server logs to keep; a tiny beacon for render failures is the only useful signal | 0004 |
+| Delivery | **GitHub Actions → R2 sync; blue/green by immutable prefix** | Rollback = re-point to the previous prefix | 0002 |
+| Cost | **Free tier** | R2 free tier + Actions minutes; egress free | 0002, 0003 |
+| Stack | **Bun + React (latest) + TypeScript 7 + Vite + Tailwind; `bun:test`**; Python 3.14 + `uv` + `ruff` + `ty` + `pytest` for the data CLI — dependencies: click, httpx, polars, pydantic(-settings) only | One client toolchain (ADR-0005); the Python tree shrank to its data job (BCR-0005) | 0003, 0005 |
+
+## Cost estimate
+
+- R2: storage of a few MB + read operations within free tier; **$0** at modelled scale (no egress fee). At the 10× spike, request count may approach free-tier limits → warn, not bill.
+- GitHub Actions: existing usage; the data warm step is cached to keep minutes low.
+- Nominal: **$0/month**; the only cost driver would be exceeding R2 free operations, monitored via Cloudflare dashboards.
+- Cheapest acceptable alternative: GitHub Pages (also $0) — rejected only because R2 + Cloudflare CDN is already wired and gives explicit cache control + analytics.
+
+## Risks
+
+- **Renderer parity** (biggest): browser vs CLI divergence — mitigated by freezing `render-spec.json` (Slice 0) and a parallel-run harness before the default flip.
+- **Browser performance/battery** for the 1600 px poster on low-end phones — a render budget and device-class profiling in `qa:load`.
+- **Free-tier request ceilings** at extreme virality — immutable assets + long cache keep origin fetches minimal; alarm on R2 operation counts.
+- **TypeScript 7 migration** — isolated, reversible slice.
+- **Single-host dependency** on R2/Cloudflare — acceptable at this cost target; the artifact is rebuildable anywhere.
+
+## Architecture fitness functions (automatable)
+
+1. **No server**: CI fails if any Python module imports `gradio` or opens a socket; `python -m starpy` exits without binding.
+2. **Contract conformance**: `render-spec.json` parsed by both Python and TS tests; a change to either renderer without the spec fails.
+3. **Parity**: a fixture matrix renders in the CLI and the browser; a tolerance-bounded comparison runs on every PR touching `site/src/lib/render*` or `src/starpy/render/*`.
+4. **Bundle budget**: `dist/` ≤ 500 KB brotli (excluding font) and `data/` ≤ 400 KB brotli; CI fails over.
+5. **No secrets in the bundle**: a CI scan fails on any `*_TOKEN`/key-like string in `dist/`.
+6. **Offline render**: a test renders and exports with network disabled (font bundled).
+
+## Evolution path (with triggers)
+
+| Trigger | Evolution |
+|---|---|
+| Renderer grows features the CLI can't follow (fire on `render-spec.json` divergence > 1 release) | Retire the CLI renderer, keep Python as data-export only |
+| `data/` exceeds the bundle budget (> 400 KB brotli, e.g. mag limit raised) | Move data to an R2 prefix fetched on demand with `Cache-Control: immutable` (already same-origin) |
+| R2 free-tier operations exceeded for a sustained week | Raise mag-limit trimming / gzip-brotli precompress / move data to a cheaper CDN pattern |
+| A hosted/shared feature is requested (accounts, saved posters) | Reopen architecture: add an API + identity per that brief (`project:refactor` BCR) |
+| Poster render p95 on mid-range phones > 4 s | Precompute common skies, or move heavy paths to an OffscreenCanvas worker |
+
+## Open questions
+
+- Exact render/export performance budgets per device class (to set in `qa:load`).
+- Whether a client-side error beacon is wanted (adds a third-party endpoint).
+- Final mag-limit for the shipped catalog (cost vs. star density).

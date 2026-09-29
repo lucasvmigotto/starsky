@@ -35,9 +35,11 @@ compatibility. `starpy` itself is GPL-3.0-only (`LICENSE`).
 
 ## Font — Cormorant Garamond (SIL Open Font License 1.1)
 
-- Source: `https://github.com/google/fonts` (`ofl/cormorantgaramond/`),
-  downloaded at `cache warm`; falls back to matplotlib's bundled
-  DejaVu Serif offline.
+- Source: `https://github.com/google/fonts` (`ofl/cormorantgaramond/`).
+- **Vendored in this repository** at `assets/fonts/` (`CormorantGaramond.ttf`
+  for the Python renderer, `CormorantGaramond.woff2` for the browser, plus
+  `OFL.txt`); the site serves its copy from `site/public/fonts/`. It is no
+  longer downloaded at runtime and there is no fallback face (BCR-0004).
 - License: SIL OFL 1.1 (permissive; allows bundling with attribution).
 - GPL-3.0 compatibility: yes (OFL fonts used as unmodified assets alongside
   GPL software; no copyleft conflict for document output).

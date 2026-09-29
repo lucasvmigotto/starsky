@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1
 #
-# Multistage build mirroring mba-dsa, on Docker Hardened Images (DHI).
+# The CLI data tool (BCR-0005): builds the sky JSON the browser app consumes.
+# There is no server and no renderer here, so this image is a one-shot job, not
+# a long-running service.
 #
 # Base images are build ARGs because DHI requires registry enrollment
 # (`docker login dhi.io`). With enrollment, the defaults below apply:
@@ -13,7 +15,7 @@
 #
 # The runtime stage performs NO `RUN` steps (DHI minimal images ship no
 # shell): the writable cache dir is prepared in the builder and copied over.
-# The app runs as numeric UID/GID 65532 (DHI default non-root user).
+# The job runs as numeric UID/GID 65532 (DHI default non-root user).
 
 ARG BUILDER_IMAGE=dhi.io/python:3.14-debian13-dev
 ARG RUNTIME_IMAGE=dhi.io/python:3.14-debian13
@@ -58,10 +60,7 @@ COPY \
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV HOME="/tmp"
-ENV MPLCONFIGDIR="/tmp/mpl"
 ENV PYTHONUNBUFFERED=1
-
-EXPOSE 8080
 
 VOLUME ["/tmp/starpy-cache"]
 
@@ -69,4 +68,4 @@ USER 65532:65532
 
 ENTRYPOINT ["/app/.venv/bin/python"]
 
-CMD ["-m", "starpy"]
+CMD ["-m", "starpy", "catalog", "--output-dir", "/out"]
