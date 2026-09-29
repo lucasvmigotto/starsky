@@ -1,6 +1,6 @@
 Reconstructed by project:introspec on 2026-09-29 from 51287a78a915da74fab965cc2c27a85e4616d0e0
 
-# Plan: share-static-viewer (as-is) | Status: Draft, no tasks.md.
+# Plan: viewer (as-is) | Status: Draft, no tasks.md.
 
 - Python: `encode_payload (canonical JSON → zlib-9 → b64url strip =)`, `decode_payload (re-pad → decode → decompress → parse → v==1 check)`, `share_link = base.rstrip('/') + /#s=`. [OBSERVED: `share/spec.py:20-45`]
 - TS mirrors: `canonicalJson` [OBSERVED: `encode.ts:35-60`], `bytesToBase64Url` [`encode.ts:62-69`], `encodePayload` [`encode.ts:75-79`], `decodeShareFragment` (inflate raw zlib, parse, version + field validation) [`share.ts:72-106`], `fragmentFromHash` (`s=` via `SPEC.shareLink.fragmentParam`) [`share.ts:109-113`].

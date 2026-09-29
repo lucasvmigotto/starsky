@@ -1,8 +1,8 @@
 Reconstructed by project:introspec on 2026-09-29 from 51287a78a915da74fab965cc2c27a85e4616d0e0
 
-# Feature Specification: share-static-viewer
+# Feature Specification: viewer
 
-**Feature Branch**: `feat/share-static-viewer` | **Created**: 2026-09-29 | **Status**: Draft | **Input**: `src/starpy/share/*`, `src/starpy/schemas/share.py`, `site/**`, `site/render-spec.json`.
+**Feature Branch**: `feat/viewer` | **Created**: 2026-09-29 | **Status**: Draft | **Input**: Reconstructed from `src/starpy/share/*`, `src/starpy/schemas/share.py`, `site/**`, `site/render-spec.json`. (Renamed from `share-static-viewer`; the poster renderer and exports moved to feature 007 per BCR-0002.)
 
 ## User Scenarios & Testing
 

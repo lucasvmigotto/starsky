@@ -28,7 +28,7 @@ The product's value is a personalized poster; requiring a Python server for the 
 - Users: poster creation and export move to the browser; no server needed.
 - Contract: `render-spec.json` gains normative status; `SPEC` (TS) and the Python constants must conform (a conformance test already exists: `site/src/lib/spec.test.ts`).
 - `site/PLAN.md` Option C decision is superseded (record a `[UPERSEDED]`/note; do not silently edit history).
-- Features: `specs/006-share-static-viewer` splits into a viewer feature and a new renderer/export feature.
+- Features: `specs/006-viewer` (renamed from `share-static-viewer`) keeps the viewer and share codec; the poster renderer and exports became `specs/007-renderer-export`.
 
 ## Data migration
 
