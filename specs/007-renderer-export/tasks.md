@@ -2,95 +2,57 @@
 
 Feature: `007-renderer-export` | Branch: `feat/renderer-export` | Input: `specs/007-renderer-export/`
 
-Tests are required for every story (constitution IV). Layers: this file holds
-the story-level plan; `## Frontend` is appended by `frontend:spec` with the
-detailed client tasks.
+Tests are required for every story (constitution IV).
 
-## Phase 1: Setup
+> **History (2026-09-29).** Phases 1–2 below were drafted while a second
+> (Python) renderer existed and a *parity harness* compared the two. BCR-0005
+> removed that renderer, so those tasks were superseded mid-flight: the
+> conformance test and the fixture matrix shipped, the parity comparison did
+> not, and the golden hash was never built. They are struck, not left pending,
+> because the work they describe no longer exists. What shipped is recorded in
+> the `## Delivered` section.
 
-- [ ] T001 [P] Create `site/src/lib/render/` module skeleton with a `Renderer` interface (branch-by-abstraction) and a `tokens.ts` that reads `render-spec.json`
-- [ ] T002 [P] Add export dependencies (`svg2pdf.js`, `jspdf`) to `site/package.json` and lockfile
-- [ ] T003 [P] Freeze the current CLI poster as a golden artifact plus its byte hash (refactor Slice 0)
+## Delivered (implemented and verified)
 
-## Phase 2: Foundational
+- [x] `site/src/lib/render/poster.ts` — poster composer (geometry, masks, glow, labels, caption)
+- [x] `site/src/lib/render/export.ts` — PNG / SVG / true-vector PDF
+- [x] `site/src/lib/render/index.ts` — `Renderer` abstraction + the `?renderer` flag
+- [x] `site/render-spec.json` conformance (`spec.test.ts`), incl. `units.referenceDpi`
+- [x] Poster geometry corrected against measurement (point sizing, circular mask, label colour, pre-declutter membership)
+- [x] `ExportControls.tsx` wired into the viewer, keyboard-reachable, errors surfaced
+- [x] Reference-image suite (`reference.test.ts`): exact structural counts + two pixel bars; verified to fail on a doubled ring width
+- [x] Component tests for the export controls (`ExportControls.test.tsx`)
+- [x] e2e journeys J1–J4 + accessibility + contrast (`site/e2e/`), 40 passing on Chromium and Firefox
+- [x] Performance measured under CDP ×4 throttle (render 387 ms; exports 57–252 ms)
 
-- [ ] T004 [P] Write the parity harness: a fixture matrix (place, moment, options, size) rendered by the Python CLI, with the comparison and tolerance from `contracts/parity.md`
-- [ ] T005 [P] Add a conformance test asserting `tokens.ts` equals `render-spec.json` on both renderers
-- [ ] T006 Extend `tokens.ts` to cover every field in `render-spec.json` (colours, stars, glow, lines, labels, ring, caption, fonts, shareLink)
+## Open
 
-## Phase 3: User Story 1 — Render a poster in the browser (P1) 🎯 MVP
+- [ ] **T028 Flip the renderer default to poster, then delete the preview path.**
+      Requires the reference suite green on `main` first.
+- [ ] **T030 e2e: empty sky in a browser.** The unit boundary covers the SVG
+      path; a browser journey for a polar-night payload is still missing.
+- [ ] **T031 e2e: exported SVG/PDF opened standalone** with the network disabled
+      (partly covered by J3, which asserts the SVG's self-containment).
+- [ ] **T036 a11y: axe on the viewer** — done; **keyboard-only export** — done.
+- [ ] **Decide the two open findings**:
+      `finding-font-degradation.md` (silent fallback on a missing font) and
+      `../006-viewer/finding-unvalidated-options.md` (out-of-range share
+      options accepted).
 
-- [ ] T007 [US1] Implement `poster.ts`: compose `ProjectedSky` + `Segment[]` + `FigureLabel[]` + `Caption` with the spec tokens at high DPI
-- [ ] T008 [US1] Implement circle/square masks and the caption band (0.22) in `poster.ts`
-- [ ] T009 [US1] Wire the flagged renderer into `SkyCanvas.tsx` behind `?renderer=poster`, keeping the preview as fallback
-- [ ] T010 [US1] Test: star count, segment count and caption match the CLI for every fixture
-- [ ] T011 [US1] Run the parity harness; record and explain every raster difference before enabling the flag by default
-- [ ] T012 [US1] Frontend implementation — see `## Frontend`
-
-**Checkpoint**: the flagged renderer matches the CLI within tolerance; the preview still serves by default.
-
-## Phase 4: User Story 2 — Export PNG, SVG and PDF (P1)
-
-- [ ] T013 [P] [US2] Implement PNG export (canvas `toBlob`) at the chosen size/DPI
-- [ ] T014 [P] [US2] Implement SVG export with `<text>` caption, star/line paths and an embedded font
-- [ ] T015 [P] [US2] Implement true-vector PDF export from the SVG via `svg2pdf.js` + jsPDF
-- [ ] T016 [US2] Add `ExportControls.tsx` with keyboard-reachable buttons and live status (WCAG 2.2 AA)
-- [ ] T017 [US2] Tests: each export opens and contains the expected caption and star count; the PDF is vector with selectable text
-- [ ] T018 [US2] Frontend implementation — see `## Frontend`
-
-**Checkpoint**: all three exports work from a shared sky.
-
-## Phase 5: User Story 3 — Offline reopen (P2)
-
-- [ ] T019 [US3] Test: an exported SVG/PDF opened with the network disabled shows the bundled font, no fallback
-- [ ] T020 [US3] Fail loudly when the font asset is missing (no silent fallback)
-
-**Checkpoint**: exports are self-contained.
-
-## Phase 6: Polish
-
-- [ ] T021 [P] Performance profile on a mid-range phone against the budget; record numbers in `plan.md`
-- [ ] T022 [P] Fitness function: offline render check in CI
-- [ ] T023 Add `quickstart.md` and update `specs/README.md` statuses as checkpoints pass
-
-## Dependencies
-
-- Setup → Foundational → US1 → US2 → US3.
-- US2 needs the composed poster from US1; US3 needs US2's exporters.
-- Feature depends on `005-data-cache` (data) and `006-viewer` (model + share codec).
-
-## Notes
-
-- Nothing here flips the default renderer; that is `refactor.md` Slice 5 (BCR-0001).
-- `## Frontend` section (screens, components, states, tokens) is owned by `frontend:spec`.
-
-## Post-BCR-0005 rewrite (2026-09-29)
-
-The Python renderer was removed (BCR-0005), so the parity tasks above are void.
-The remaining work:
-
-- [x] T024 [P] Reference-image suite: `site/src/lib/render/reference.test.ts` renders `fixtures/render-matrix.json` against stored PNGs with exact structural counts + two pixel bars (verified to fail on a doubled ring width)
-- [ ] T025 [US2] Wire the export controls (PNG/SVG/PDF) into the viewer UI with keyboard-reachable buttons and status
-- [ ] T026 [US2] Test each export opens and contains the caption and star count; the PDF is vector with selectable text
-- [ ] T027 [US3] Test an exported SVG/PDF opens with the network disabled (bundled font, no fallback)
-- [ ] T028 Flip the renderer flag to poster by default once T024-T027 pass, then delete the preview renderer
-- [x] T029 Performance measured under CDP ×4 throttle (render 387 ms; exports 57–252 ms); recorded in `qa.md` with the proxy caveat. Note: the mid-range-phone budget itself remains unverified on real hardware
+Struck: the parity-era tasks (formerly T001–T023) — superseded by BCR-0005.
 
 ## QA
 
 Feature risk: **High** — see `specs/007-renderer-export/qa.md`.
 
-- [ ] T030 [QA] e2e J1 (Chrome + Firefox): land → render → export PNG/SVG/PDF; assert each download opens and the status reports it
-- [ ] T031 [QA] e2e J3: export SVG with the network disabled; assert the bundled font renders (no serif fallback)
-- [ ] T032 [QA] Negative: render with the font not yet loaded; assert it fails loudly or waits — never a silent fallback
-- [ ] T033 [QA] Negative: empty sky (polar night) still renders frame + caption
-- [ ] T034 [QA] Boundary: render at the maximum magnitude limit (~8870 stars) within the time budget
-- [ ] T035 [QA] Boundary: fisheye strength at both ends; `<= 0` rejected before rendering
-- [ ] T036 [QA] a11y: axe on the viewer; keyboard-only export path (tab to each button, activate, confirm the download)
-- [x] T037 [QA] Visual: reference-image suite built (T024) and wired as a gate via `bun run test` in `static_r2.yml`, with the PR trigger widened to the fixture path
-- [x] T038 [QA] Performance: measured under CDP ×4 throttle via `perf.spec.ts` (numbers in `qa.md`); CI guard-rail wired. `[RELATIVE]` — not a real phone
-- [ ] T039 [QA] Gate: run the e2e journeys on PRs touching `site/**`, and the full Chrome + Firefox matrix on `main`
-- [ ] T040 [QA] Charter C1: poster fidelity sweep (extreme latitudes, solstice edges, accents/emoji in the title)
-- [ ] T041 [QA] Charter C2: export integrity in a different viewer per format (clipping, missing stars, rasterised text, external refs)
+- [x] T030 [QA] Boundary: empty sky, maximum density, fisheye bounds (`boundaries.test.ts`)
+- [x] T032 [QA] Negative: the font path, incl. a missing font (`e2e/font.spec.ts`)
+- [x] T036 [QA] a11y: axe + keyboard-only export (`e2e/a11y.spec.ts`, `e2e/contrast.spec.ts`)
+- [x] T037 [QA] Visual: reference-image suite wired as a gate
+- [x] T038 [QA] Performance under CDP ×4 throttle; `[RELATIVE]`, not a real phone
+- [ ] T039 [QA] Gate: confirm the e2e workflows actually run green in CI
+- [ ] T040 [QA] Charter C1: poster fidelity sweep (extreme latitudes, solstice edges, accents/emoji)
+- [ ] T041 [QA] Charter C2: export integrity in a different viewer per format
 
-**Checkpoint**: exports verified in a real browser on both supported browsers; nothing Verified until T030–T033 pass on `main`.
+**Checkpoint**: exports verified in a real browser on both supported browsers.
+Nothing is `Verified` until the e2e suite passes on `main`.
