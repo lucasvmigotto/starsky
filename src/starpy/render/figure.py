@@ -47,7 +47,7 @@ from matplotlib.pyplot import close as plt_close
 from matplotlib.pyplot import figure as plt_figure
 from matplotlib.pyplot import rcParams as plt_rcParams
 
-FONT_STACK: list[str] = ["Cormorant Garamond", "EB Garamond", "DejaVu Serif"]
+FONT_STACK: list[str] = ["Cormorant Garamond"]
 CAPTION_BAND_FRACTION: float = 0.22
 
 

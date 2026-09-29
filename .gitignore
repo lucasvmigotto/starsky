@@ -14,3 +14,6 @@ out.png
 !site/public/og-banner.png
 # Generated viewer data (rebuild via `python -m starpy export-static-data`)
 site/public/data/*.json
+
+# Test-generated font cache
+tests/golden/.font-cache/

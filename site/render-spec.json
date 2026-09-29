@@ -40,7 +40,7 @@
     "coordsFormat": "{abs(lat):.4f}°N|S, {abs(lon):.4f}°E|W",
     "detailTemplate": "{coords} — {place} · {local} {tz} (place segment omitted when unresolved; title line omitted when empty)"
   },
-  "fonts": ["Cormorant Garamond", "EB Garamond", "DejaVu Serif"],
+  "fonts": ["Cormorant Garamond"],
   "shareLink": {
     "fragmentParam": "s",
     "encoding": "canonical-JSON | zlib-9 | base64url-no-pad",

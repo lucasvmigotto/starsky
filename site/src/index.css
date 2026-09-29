@@ -1,11 +1,24 @@
 @import "tailwindcss";
 
+/*
+ * Fonts are bundled (BCR-0004): Cormorant Garamond ships in public/fonts/ and
+ * is declared here — no third-party font request. The body stack stays with
+ * system faces so the UI never blocks on a webfont.
+ */
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("/fonts/CormorantGaramond.woff2") format("woff2");
+}
+
 @theme {
   --color-ink: #0b0f19;
   --color-cream: #f5efe0;
   --color-rose: #b98a8a;
-  --font-display: "Cormorant Garamond", "EB Garamond", Georgia, serif;
-  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 html {

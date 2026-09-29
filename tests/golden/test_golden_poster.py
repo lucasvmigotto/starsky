@@ -5,6 +5,10 @@ renderer (or a parity flip) is a visible, reviewed diff. Projects a *fixed*
 sky (no ephemeris, no network): the golden guards the compose/render half of
 the pipeline, which is what the browser renderer must match.
 
+The render registers the bundled poster font explicitly, so the result does
+not depend on matplotlib's process-global font state (another test importing
+the font must not change this hash).
+
 Regenerate deliberately with ``STARPY_UPDATE_GOLDEN=1``.
 """
 
@@ -17,6 +21,7 @@ from polars import DataFrame as pl_DataFrame
 from pytest import mark as pytest_mark
 from pytest import skip as pytest_skip
 
+from starpy.data.fonts import register_cached_fonts
 from starpy.render.caption import format_caption
 from starpy.render.figure import CAPTION_BAND_FRACTION, compose_figure, figure_to_pil
 from starpy.schemas.inputs.render import RenderOptions
@@ -37,6 +42,7 @@ GOLDEN_CAPTION: list[str] = format_caption(
 
 def _render_golden(render_options: RenderOptions) -> pil_Image:
     """Compose the fixed sky and rasterise it (no ephemeris, no network)."""
+    register_cached_fonts(GOLDEN_DIR / ".font-cache")
     segments: pl_DataFrame = pl_DataFrame(
         {
             "abbr": ["TST", "TST"],

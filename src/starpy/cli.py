@@ -36,16 +36,16 @@ from .settings import Settings
 
 
 def warm_caches(settings: Settings) -> dict[str, int]:
-    """Predownload ephemeris/catalog/constellations/font; return row counts."""
+    """Predownload ephemeris/catalog/constellations; install the bundled font."""
     _, planets, timescale = load_ephemeris(settings.EPHEMERIS)
     catalog: pl_DataFrame = load_hipparcos(settings.EPHEMERIS)
     lines: pl_DataFrame = load_constellation_lines(settings.EPHEMERIS.CACHE_DIR)
-    font: object = ensure_font(settings.EPHEMERIS.CACHE_DIR)
+    font_path: Path = ensure_font(settings.EPHEMERIS.CACHE_DIR)
     _ = (planets, timescale)
     return {
         "stars": catalog.height,
         "segments": lines.height,
-        "font": int(font is not None),
+        "font": int(font_path.exists()),
     }
 
 

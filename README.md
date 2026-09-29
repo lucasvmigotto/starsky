@@ -10,7 +10,7 @@ never pandas), `uv` + multistage Docker, CI to GHCR/Docker Hub/HF Spaces.
 ```bash
 cp .env.example .env   # then set STARPY__GEOCODING__USER_AGENT (REQUIRED)
 uv sync --all-groups
-uv run python -m starpy cache warm     # ephemeris + catalog + lines + font
+uv run python -m starpy cache warm     # ephemeris + catalog + lines
 uv run python -m starpy                # launch Gradio (http://localhost:8080)
 ```
 
@@ -115,5 +115,5 @@ banned. Checked by `scripts/check_declarative_imports.py`.
 - Geocoding © OpenStreetMap contributors (Nominatim usage policy).
 - Stars: Hipparcos Catalogue (ESA); ephemeris: JPL DE421 (public domain).
 - Constellation lines: Stellarium IAU skyculture (CC BY-SA 4.0).
-- Font: Cormorant Garamond (SIL OFL 1.1), DejaVu Serif fallback.
+- Font: Cormorant Garamond (SIL OFL 1.1), bundled in `assets/fonts/` (no fallback).
 - Details: `THIRD_PARTY_NOTICES.md`. Static-site feasibility: `site/PLAN.md`.
