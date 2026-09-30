@@ -29,6 +29,7 @@ COPY_NAMESPACES = (
     "landing.",
     "studio.",
     "viewer.",
+    "figures.",
     "empty.",
     "legacy.",
     "invalid.",
@@ -51,8 +52,11 @@ def vision_keys() -> set[str]:
         key, value = m.group(1), m.group(2).strip()
         if not key.startswith(COPY_NAMESPACES):
             continue
-        if value.startswith("→"):
-            continue  # a pointer row, not literal copy
+        if value.startswith("→") or value.startswith("*(") or value.startswith("*("):
+            # A pointer row (renders another key) or a derived one (assembled
+            # from several keys around inline markup). Neither exists in the
+            # catalogue, so requiring it would make the check unsatisfiable.
+            continue
         keys.add(key)
     return keys
 

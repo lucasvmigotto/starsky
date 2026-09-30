@@ -10,6 +10,7 @@
  * (BCR-0005/ADR-0003 made the poster the only renderer).
  */
 import { useEffect, useMemo, useRef } from "react";
+import { t } from "../i18n/index.ts";
 import { drawFocusOverlay, renderPoster } from "../lib/render/poster.ts";
 import type { SharePayload } from "../lib/share.ts";
 import {
@@ -208,10 +209,7 @@ export default function SkyCanvas({
           if (fig !== null) onSelectFigure(fig);
         }}
       />
-      <span className="sr-only">
-        Use the list of figures beside the sky to explore each constellation
-        by keyboard.
-      </span>
+      <span className="sr-only">{t("figures.hint")}</span>
     </div>
   );
 }

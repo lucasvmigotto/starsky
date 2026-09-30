@@ -3,6 +3,7 @@ import { encodePayload } from "../lib/encode.ts";
 import { geocodePlace, OSM_ATTRIBUTION, type ResolvedPlace } from "../lib/geocode.ts";
 import type { Projection, SharePayload, Shape } from "../lib/share.ts";
 import { fragmentFromHash } from "../lib/share.ts";
+import { t } from "../i18n/index.ts";
 import { randomSampleFragment } from "../lib/site.ts";
 import { toWhenUtcIso, zonedTimeToUtc } from "../lib/time.ts";
 import { EmptyState } from "./States.tsx";
@@ -218,17 +219,17 @@ export default function LandingPage() {
     <div className="atlas-form-wrap">
       <div className="atlas-moment">
         <p className="font-display text-3xl leading-tight sm:text-4xl">
-          Map your night sky
+          {t("landing.title.legacy")}
         </p>
         <p className="mt-2 text-sm text-cream/65">
-          Pick a place and a moment — your poster-grade sky renders right here.
+          {t("landing.subtitle.legacy")}
         </p>
       </div>
 
       <form className="atlas-panel atlas-form" onSubmit={(e) => void handleSubmit(e)}>
         <fieldset className="atlas-form-group">
           <legend className="atlas-form-legend">Location</legend>
-          <div className="atlas-form-radio-row" role="radiogroup" aria-label="Input mode">
+          <div className="atlas-form-radio-row" role="radiogroup" aria-label={t("landing.mode.label")}>
             {(["coordinates", "place"] as const).map((m) => (
               <label key={m} className="atlas-form-radio">
                 <input
@@ -305,9 +306,9 @@ export default function LandingPage() {
         </fieldset>
 
         <fieldset className="atlas-form-group">
-          <legend className="atlas-form-legend">Date &amp; time</legend>
+          <legend className="atlas-form-legend">{t("landing.moment.legend")}</legend>
           <div className="atlas-form-field">
-            <label htmlFor="landing-when">Date and time</label>
+            <label htmlFor="landing-when">{t("landing.moment.legend")}</label>
             <input
               id="landing-when"
               type="datetime-local"
@@ -340,7 +341,7 @@ export default function LandingPage() {
         </fieldset>
 
         <details className="atlas-form-details">
-          <summary>Render options</summary>
+          <summary>{t("landing.render.legend")}</summary>
           <div className="atlas-form-field">
             <label htmlFor="landing-projection">Projection</label>
             <select
@@ -357,7 +358,7 @@ export default function LandingPage() {
           </div>
           <Slider
             id="landing-fisheye"
-            label="Fisheye strength"
+            label={t("landing.render.fisheye")}
             value={fisheyeStrength}
             min={0.1}
             max={3.0}
@@ -367,7 +368,7 @@ export default function LandingPage() {
           />
           <Slider
             id="landing-separation"
-            label="Minimum separation"
+            label={t("landing.render.separation")}
             value={minSeparation}
             min={0.0}
             max={0.05}
@@ -377,7 +378,7 @@ export default function LandingPage() {
           />
           <Slider
             id="landing-mag"
-            label="Limiting magnitude"
+            label={t("landing.render.magnitude")}
             value={magnitudeLimit}
             min={1.0}
             max={7.0}
@@ -404,7 +405,7 @@ export default function LandingPage() {
                   setConstellations(e.target.checked);
                 }}
               />
-              Constellation lines
+              {t("landing.render.lines")}
             </label>
             <label className="atlas-form-check">
               <input
@@ -414,12 +415,12 @@ export default function LandingPage() {
                   setConstellationLabels(e.target.checked);
                 }}
               />
-              Constellation labels
+              {t("landing.render.labels")}
             </label>
           </div>
           <Slider
             id="landing-glow"
-            label="Glow intensity"
+            label={t("landing.render.glow")}
             value={glowIntensity}
             min={0.0}
             max={3.0}
@@ -475,14 +476,14 @@ export default function LandingPage() {
       </form>
 
       <p className="atlas-form-alt">
-        Just browsing?{" "}
+        {t("landing.browse")}{" "}
         <button type="button" className="atlas-link atlas-form-linkbtn" onClick={goToSample}>
-          Load a random sky instead
+          {t("landing.browse.action")}
         </button>
         .
       </p>
       <details className="atlas-form-details atlas-form-explainer">
-        <summary>What is this page?</summary>
+        <summary>{t("landing.explain")}</summary>
         <EmptyState />
       </details>
     </div>

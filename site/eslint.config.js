@@ -153,10 +153,10 @@ export default tseslint.config(
     },
     rules: {
       "design/no-raw-token-values": "error",
-      // Warn until `000-design-system` T027 extracts the ~8 strings still inline
-      // in FiguresPanel/LandingPage/States; then promote to "error" so a new
-      // literal cannot be introduced.
-      "design/no-literal-copy": "warn",
+      // Was "warn" until every user-visible string resolved to a key
+      // (000-design-system T027). It is now an error, so a new literal cannot
+      // be introduced — which is the whole point of extracting them.
+      "design/no-literal-copy": "error",
     },
   },
   {

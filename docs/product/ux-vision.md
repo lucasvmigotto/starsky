@@ -620,6 +620,43 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.title` | The night sky over any place and moment |
 | `landing.subtitle` | Drawn from 8 000+ stars, in your browser |
 | `landing.locale.label` | Language |
+| `landing.randomSky` | Load a random sky → renders `viewer.randomSky` |
+| `landing.title.legacy` | Map your night sky |
+| `landing.subtitle.legacy` | Pick a place and a moment — your poster-grade sky renders right here. |
+| `landing.mode.label` | Input mode |
+| `landing.moment.legend` | Date and time |
+| `landing.render.legend` | Render options |
+| `landing.render.fisheye` | Fisheye strength |
+| `landing.render.separation` | Minimum separation |
+| `landing.render.magnitude` | Limiting magnitude |
+| `landing.render.lines` | Constellation lines |
+| `landing.render.labels` | Constellation labels |
+| `landing.render.glow` | Glow intensity |
+| `landing.browse` | Just browsing? |
+| `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
+| `landing.explain` | What is this page? |
+
+**Landing · the figure panel**
+
+| Key | Copy |
+|---|---|
+| `figures.legend` | Figures in this sky |
+| `figures.subtitle` | {count} figures above the horizon. Rest on a name to light it up, open one to draw closer. |
+| `figures.hint` | Use the list of figures beside the sky to explore each constellation by keyboard. *(screen-reader only)* |
+| `figures.reset` | Reset view |
+| `figures.stat` | {count} stars, brightest mag {mag} |
+| `figures.tooltip` | {count} stars · brightest mag {mag} *(the hover tooltip)* |
+| `figures.title` | Constellation figures |
+
+**Viewer · shell**
+
+| Key | Copy |
+|---|---|
+| `viewer.subtitle` | A night-sky atlas moment, recomputed in your browser |
+| `viewer.loading` | Charting the stars… |
+| `dataError.title` | Star data could not be loaded |
+| `dataError.body` | Regenerate it with `starsky catalog` and reload. |
+| `fontError.title` | The poster font could not be loaded |
 | `landing.locale.en` | English |
 | `landing.locale.ptBR` | Português (Brasil) |
 | `landing.openShared` | Open a shared sky |
@@ -681,7 +718,9 @@ starting point, not a mistake, and the copy says so. Naming "sky" rather than
 | Key | Copy |
 |---|---|
 | `empty.title` | No sky on this page yet |
-| `empty.body` | This page reads a shared moment from its address — look for a link ending in `#s=…`. |
+| `empty.bodyPrefix` | This page reads a shared moment from its address — look for a link ending in  |
+| `empty.bodySuffix` | . |
+| `empty.body` | *(assembled from bodyPrefix + a `#s=…` `<code>` + bodySuffix)* |
 | `empty.action` | Load a random sky → renders `viewer.randomSky` |
 | `legacy.title` | An older kind of link |
 | `legacy.body` | That link comes from an earlier version. Map a fresh moment instead. |
@@ -692,6 +731,20 @@ starting point, not a mistake, and the copy says so. Naming "sky" rather than
 | `fontError.title` | The poster font could not be loaded |
 | `fontError.body` | The poster is withheld rather than drawn in a substituted typeface. |
 | `loading.poster` | Drawing the sky… |
+
+**Errors — the split keys**
+
+`dataError` and `fontError` wrap inline `<code>` or nothing, so their prose is
+split so the markup stays an element rather than literal backticks. The three
+parts read as one sentence, asserted by `i18n.test.ts`.
+
+| Key | Copy |
+|---|---|
+| `dataError.bodyPrefix` | Star data could not be loaded ({detail}). Regenerate it with |
+| `dataError.command` | starsky catalog *(as `<code>`)* |
+| `dataError.bodySuffix` | and redeploy. |
+| `fontError.bodyPrefix` | The poster font could not be loaded ({detail}). |
+| `fontError.bodySuffix` | The poster is not shown, because it would render in a substituted typeface rather than the one it was designed with. |
 
 **Footer**
 

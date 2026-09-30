@@ -16,6 +16,7 @@ import FiguresPanel from "./FiguresPanel.tsx";
 import ExportControls from "./ExportControls.tsx";
 import SkyCanvas, { HOME_VIEW, type View } from "./SkyCanvas.tsx";
 import { EmptyState, InvalidState, LegacyState } from "./States.tsx";
+import { t } from "../i18n/index.ts";
 import SiteFooter from "./SiteFooter.tsx";
 
 type LinkState =
@@ -253,7 +254,7 @@ export default function ViewerPage() {
         <div>
           <p className="font-display text-2xl leading-none">Starsky</p>
           <p className="mt-1 text-xs tracking-wide text-cream/55">
-            A night-sky atlas moment, recomputed in your browser
+            {t("viewer.subtitle")}
           </p>
         </div>
       </header>
@@ -280,17 +281,16 @@ export default function ViewerPage() {
 
             {dataError && (
               <p role="alert" className="atlas-alert">
-                Star data could not be loaded ({dataError}). Regenerate it
-                with <code className="atlas-code">python -m starsky
-                catalog</code> and redeploy.
+                {t("dataError.bodyPrefix", { detail: dataError })}
+                <code className="atlas-code">{t("dataError.command")}</code>
+                {t("dataError.bodySuffix")}
               </p>
             )}
 
             {fontError && (
               <p role="alert" className="atlas-alert">
-                The poster font could not be loaded ({fontError}). The poster is
-                not shown, because it would render in a substituted typeface
-                rather than the one the poster was designed with.
+                {t("fontError.bodyPrefix", { detail: fontError })}
+                {t("fontError.bodySuffix")}
               </p>
             )}
 
@@ -333,7 +333,7 @@ export default function ViewerPage() {
             ) : (
               !dataError && (
                 <p className="atlas-loading" role="status">
-                  Charting the stars…
+                  {t("viewer.loading")}
                 </p>
               )
             )}
@@ -357,8 +357,10 @@ function FigureTooltip({
     <div className="pointer-events-none mx-auto w-fit">
       <p className="font-display text-lg leading-none">{figure.name}</p>
       <p className="mt-1 text-xs text-cream/70">
-        {figure.starIndices.length} stars · brightest mag{" "}
-        {figure.brightestMag.toFixed(1)}
+        {t("figures.tooltip", {
+          count: figure.starIndices.length,
+          mag: figure.brightestMag.toFixed(1),
+        })}
       </p>
     </div>
   );
