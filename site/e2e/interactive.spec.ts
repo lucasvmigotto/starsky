@@ -6,7 +6,7 @@
  * behaviours at risk, so they get their own journey rather than relying on the
  * export tests to notice.
  */
-import { expect, fragmentFor, test, viewerUrl } from "./fixtures.ts";
+import { expect, fragmentFor, openExport, test, viewerUrl } from "./fixtures.ts";
 
 async function openViewer(page: import("@playwright/test").Page): Promise<void> {
   await page.goto(viewerUrl(fragmentFor()));
@@ -78,6 +78,7 @@ test.describe("interactive poster", () => {
     expect(figureCount).toBeGreaterThan(0);
 
     const download = page.waitForEvent("download");
+    await openExport(page);
     await page.getByRole("button", { name: "SVG", exact: true }).click();
     const file = await download;
     const stream = await file.createReadStream();

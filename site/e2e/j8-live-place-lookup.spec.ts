@@ -21,6 +21,7 @@
  * also why no CI variable is needed for it.
  */
 import { expect, test } from "@playwright/test";
+import { openExport } from "./fixtures.ts";
 
 const LIVE = process.env["STARTSKY_LIVE_SMOKE"] === "1";
 
@@ -52,6 +53,7 @@ test.describe("J8 live place lookup", () => {
     // The resolved label reaches the caption, which is the part that proves the
     // response was parsed, not merely received.
     const download = page.waitForEvent("download");
+    await openExport(page);
     await page.getByRole("button", { name: "SVG", exact: true }).click();
     const file = await download;
     const stream = await file.createReadStream();
