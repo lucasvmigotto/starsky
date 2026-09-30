@@ -8,8 +8,13 @@
 import type { SharePayload } from "../share.ts";
 import type { jsPDF } from "jspdf";
 import type { SkyModel } from "../skymodel.ts";
-import { formatDetailLine } from "../caption.ts";
 import { SPEC } from "../spec.ts";
+import { captionLines } from "./poster.ts";
+import {
+  captionMaxWidth,
+  estimateTextWidth,
+  SVG_LENGTH_ADJUST,
+} from "./caption.ts";
 import {
   AXIS_EXTENT,
   REFERENCE_DPI,
@@ -43,6 +48,18 @@ export function buildPosterSvg(
   payload: SharePayload,
   model: SkyModel,
   sizePx: number,
+  /**
+   * Measures text at a given font size (BCR-0010). SVG has no `maxWidth`, so
+   * the caption has to be fitted here rather than left to clip at the viewBox
+   * edge — but this function is pure and has no canvas, so the caller supplies
+   * the measurement. `measureCaptionWidth` in `poster.ts` is the intended one,
+   * and both renderers then share `captionLines`, so they cannot disagree.
+   *
+   * Defaults to a rough average-glyph estimate so an SVG can still be built
+   * headlessly (tests, CLI-style use); the estimate is deliberately
+   * conservative, erring toward shrinking text that would have fit.
+   */
+  measure: (text: string, fontSizePx: number) => number = estimateTextWidth,
 ): string {
   const geometry = posterGeometry(sizePx);
   const [cx, cy] = unitToCanvas(0, 0, geometry);
@@ -106,29 +123,29 @@ export function buildPosterSvg(
     );
   }
 
-  // Caption.
+  // Caption. BCR-0010: fitted to the band so a long place name or IANA zone
+  // cannot be clipped. The *decision* (how wide, which size) comes from
+  // `captionLines`, shared with the canvas renderer, so a PNG and an SVG of one
+  // moment cannot disagree.
   const bandTop = geometry.skyPx;
   const bandMid = bandTop + geometry.bandPx / 2;
-  const detail = formatDetailLine(
-    payload.lat,
-    payload.lon,
-    payload.place,
-    payload.when_utc,
-    payload.tz,
-  );
+  const maxWidth = captionMaxWidth(sizePx);
+  const caption = captionLines(payload, geometry, measure);
+  const twoLines = caption.length > 1;
   parts.push(
     `<g font-family="Cormorant Garamond, serif" text-anchor="middle" fill="${SPEC.colors.star}">`,
   );
-  if (payload.options.title) {
+  for (const [index, line] of caption.entries()) {
+    const dy = twoLines
+      ? (index === 0 ? -0.018 : 0.028) * geometry.canvasHeight
+      : 0;
+    // `textLength` + `lengthAdjust` is SVG's equivalent of canvas `maxWidth`;
+    // without it a long caption runs past the viewBox and is clipped.
+    const fit = ` textLength="${maxWidth.toFixed(2)}" lengthAdjust="${SVG_LENGTH_ADJUST}"`;
+    const opacity =
+      line.opacity === 1 ? "" : ` fill-opacity="${line.opacity.toString()}"`;
     parts.push(
-      `<text x="${(sizePx / 2).toString()}" y="${(bandMid - 0.018 * geometry.canvasHeight).toFixed(2)}" font-size="${(pointsToPx(SPEC.caption.titleFontSize)).toFixed(2)}" dominant-baseline="middle">${escapeXml(payload.options.title)}</text>`,
-    );
-    parts.push(
-      `<text x="${(sizePx / 2).toString()}" y="${(bandMid + 0.028 * geometry.canvasHeight).toFixed(2)}" font-size="${(pointsToPx(SPEC.caption.detailFontSize)).toFixed(2)}" fill-opacity="0.92" dominant-baseline="middle">${escapeXml(detail)}</text>`,
-    );
-  } else {
-    parts.push(
-      `<text x="${(sizePx / 2).toString()}" y="${bandMid.toFixed(2)}" font-size="${pointsToPx(SPEC.caption.singleCaptionFontSize).toFixed(2)}" fill-opacity="0.92" dominant-baseline="middle">${escapeXml(detail)}</text>`,
+      `<text x="${(sizePx / 2).toString()}" y="${(bandMid + dy).toFixed(2)}" font-size="${line.fontSizePx.toFixed(2)}"${opacity} dominant-baseline="middle"${fit}>${escapeXml(line.text)}</text>`,
     );
   }
   parts.push(`</g>`);

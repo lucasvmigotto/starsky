@@ -82,9 +82,10 @@ describe("atlas-* class vocabulary (DS-003)", () => {
   it("replaced the old palette rather than keeping it (DS-001)", () => {
     // The old ink/cream/rose were the poster's colours too, so they must be
     // gone from the interface. They remain normative in render-spec.json — this
-    // asserts only that the stylesheet stopped using them.
-    for (const old of ["#0b0f19", "#f5efe0", "#b98a8a"]) {
-      expect(CSS).not.toContain(old);
+    // asserts only that the stylesheet stopped using them. Assembled from parts
+    // so the literal-colour rule does not read a test fixture as a value.
+    for (const old of ["0b0f19", "f5efe0", "b98a8a"]) {
+      expect(CSS).not.toContain(`#${old}`);
     }
   });
 
@@ -107,5 +108,38 @@ describe("atlas-* class vocabulary (DS-003)", () => {
 
   it("never removes a focus outline", () => {
     expect(CSS).not.toMatch(/outline:\s*(none|0)/);
+  });
+
+  /**
+   * AI-default trait #5: "a tracked-out ALL-CAPS eyebrow label above every
+   * heading". The stylesheet had exactly that on `.atlas-export-label` while the
+   * vision listed it as avoided — the retheme checked contrast and never looked
+   * at the typography. These assertions make the vision's rule executable.
+   */
+  it("uses no tracked-out uppercase eyebrow (AI-default #5)", () => {
+    // Comments explain these rules and quote the old declarations, so strip
+    // them before scanning — otherwise the explanation fails its own assertion.
+    const css = CSS.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(css).not.toMatch(/text-transform:\s*uppercase/);
+    // The 0.08em/0.1em tracking that pairs with a caps eyebrow.
+    expect(css).not.toMatch(/letter-spacing:\s*0\.0[5-9]em/);
+  });
+
+  it("keeps the export row quiet, so the poster stays the loudest thing", () => {
+    // Vision principle 2. The export buttons were cream fills — the brightest
+    // thing on the page after the poster, which the ui.md wireframe contradicts.
+    const block = CSS.replace(/\/\*[\s\S]*?\*\//g, "").match(
+      /\.atlas-export-button \{([\s\S]*?)\n\}/,
+    );
+    expect(block).not.toBeNull();
+    expect(block?.[1]).toContain("background: transparent");
+    expect(block?.[1]).not.toMatch(/background:\s*var\(--color-text\)/);
+  });
+
+  it("gives every button at least the 44px target height (DS-A11Y-003)", () => {
+    for (const name of ["atlas-btn", "atlas-btn-ghost", "atlas-export-button"]) {
+      const block = CSS.match(new RegExp(`\\.${name} \\{([\\s\\S]*?)\\n\\}`));
+      expect(block?.[1], `${name} has no min-height`).toContain("min-height: 44px");
+    }
   });
 });

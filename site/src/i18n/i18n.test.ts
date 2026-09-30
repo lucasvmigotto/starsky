@@ -55,7 +55,7 @@ describe("copy", () => {
     // phrase can be changed in one place. Read through `String()` because the
     // catalogue is `as const`, so the value is a literal type.
     expect(t("viewer.randomSky")).toBe("Load a random sky");
-    expect(String(enUS["empty.action"])).toBe(String(t("viewer.randomSky")));
+    expect(enUS["empty.action"]).toBe(t("viewer.randomSky"));
   });
 
   it("keeps the CTA verb equal to its result message", () => {

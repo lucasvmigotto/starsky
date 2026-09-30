@@ -23,6 +23,7 @@ import { formatDetailLine } from "../caption.ts";
 import type { SharePayload } from "../share.ts";
 import type { SkyModel, VisibleStar } from "../skymodel.ts";
 import { SPEC } from "../spec.ts";
+import { captionMaxWidth, fitCaption } from "./caption.ts";
 
 /** The unit-disc extent the CLI sets via `ax.set_xlim(-1.06, 1.06)`. */
 export const AXIS_EXTENT = 1.06;
@@ -53,6 +54,13 @@ export function posterGeometry(sizePx: number): PosterGeometry {
     dpr: 1,
   };
 }
+
+/**
+ * Inner width available to the caption text (BCR-0010). Re-exported so
+ * `export.ts` and the tests can reach it without a second definition; the
+ * implementation lives in `./caption.ts` so both renderers share one value.
+ */
+export { captionMaxWidth } from "./caption.ts";
 
 /** Unit-disc point that is a pixel coordinate in the preview model. */
 export interface PreviewGeometry {
@@ -288,6 +296,96 @@ function drawRing(
   ctx.stroke();
 }
 
+/**
+ * Measure the caption's natural width with the same face and size it will be
+ * drawn at (BCR-0010).
+ *
+ * SVG has no `maxWidth` and `buildPosterSvg` is a pure function with no canvas,
+ * so the measurement cannot live inside it. The caller composes the poster on a
+ * canvas anyway, so it measures here and passes the result in — keeping the
+ * *decision* (how wide the caption may be) shared while the measurement stays
+ * where a canvas exists.
+ */
+export function measureCaptionWidth(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  fontSizePx: number,
+): number {
+  const previous = ctx.font;
+  ctx.font = `${fontSizePx.toString()}px "Cormorant Garamond", serif`;
+  const width = ctx.measureText(text).width;
+  ctx.font = previous;
+  return width;
+}
+
+/**
+ * The caption lines for a moment, with the font size each should be drawn at so
+ * it fits the band. Shared by both renderers so a PNG and an SVG of one moment
+ * never disagree.
+ */
+export function captionLines(
+  payload: SharePayload,
+  geometry: PosterGeometry,
+  measure: (text: string, fontSizePx: number) => number,
+): ReadonlyArray<{ text: string; fontSizePx: number; opacity: number }> {
+  const maxWidth = captionMaxWidth(geometry.sizePx);
+  const detail = formatDetailLine(
+    payload.lat,
+    payload.lon,
+    payload.place,
+    payload.when_utc,
+    payload.tz,
+  );
+  if (payload.options.title) {
+    return [
+      {
+        text: payload.options.title,
+        fontSizePx: fitCaption(
+          payload.options.title,
+          pointsToPx(SPEC.caption.titleFontSize),
+          maxWidth,
+          measure,
+        ).fontSizePx,
+        opacity: 1,
+      },
+      {
+        text: detail,
+        fontSizePx: fitCaption(
+          detail,
+          pointsToPx(SPEC.caption.detailFontSize),
+          maxWidth,
+          measure,
+        ).fontSizePx,
+        opacity: 0.92,
+      },
+    ];
+  }
+  // The CLI uses fontsize 11 for the single-line caption (figure.py:227).
+  return [
+    {
+      text: detail,
+      fontSizePx: fitCaption(
+        detail,
+        pointsToPx(SPEC.caption.singleCaptionFontSize),
+        maxWidth,
+        measure,
+      ).fontSizePx,
+      opacity: 0.92,
+    },
+  ];
+}
+
+/** The y offsets the CLI uses, as fractions of the whole canvas height. */
+const TITLE_DY = -0.018;
+const DETAIL_DY = 0.028;
+
+/**
+ * Draw the caption, fitted to the band (BCR-0010).
+ *
+ * Canvas `maxWidth` scales the run down uniformly when it overflows, so no
+ * glyph is ever cut. A clipped coordinate reads as a rendering fault; a smaller
+ * one reads as a caption.
+ */
 function drawCaption(
   ctx: CanvasRenderingContext2D,
   payload: SharePayload,
@@ -297,37 +395,28 @@ function drawCaption(
   const bandMid = bandTop + geometry.bandPx / 2;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  const detail = formatDetailLine(
-    payload.lat,
-    payload.lon,
-    payload.place,
-    payload.when_utc,
-    payload.tz,
+
+  const lines = captionLines(payload, geometry, (text, fontPx) =>
+    measureCaptionWidth(ctx, text, fontPx),
   );
+
   // matplotlib's `fig.text(x, y, …)` takes FIGURE fractions; the CLI's
   // `band_center ± 0.018/0.028` are fractions of the whole canvas, so the
   // offsets become `fraction * canvasHeight` here (they already did), but the
   // font sizes are points, not canvas ratios.
-  if (payload.options.title) {
-    ctx.font = `${pointsToPx(SPEC.caption.titleFontSize).toString()}px "Cormorant Garamond", serif`;
-    ctx.fillStyle = withAlpha(SPEC.colors.star, 1);
+  const twoLines = lines.length > 1;
+  for (const [index, line] of lines.entries()) {
+    ctx.font = `${line.fontSizePx.toString()}px "Cormorant Garamond", serif`;
+    ctx.fillStyle = withAlpha(SPEC.colors.star, line.opacity);
+    const dy = twoLines
+      ? (index === 0 ? TITLE_DY : DETAIL_DY) * geometry.canvasHeight
+      : 0;
     ctx.fillText(
-      payload.options.title,
+      line.text,
       geometry.sizePx / 2,
-      bandMid - 0.018 * geometry.canvasHeight,
+      bandMid + dy,
+      captionMaxWidth(geometry.sizePx),
     );
-    ctx.font = `${pointsToPx(SPEC.caption.detailFontSize).toString()}px "Cormorant Garamond", serif`;
-    ctx.fillStyle = withAlpha(SPEC.colors.star, 0.92);
-    ctx.fillText(
-      detail,
-      geometry.sizePx / 2,
-      bandMid + 0.028 * geometry.canvasHeight,
-    );
-  } else {
-    // The CLI uses fontsize 11 for the single-line caption (figure.py:227).
-    ctx.font = `${pointsToPx(SPEC.caption.singleCaptionFontSize).toString()}px "Cormorant Garamond", serif`;
-    ctx.fillStyle = withAlpha(SPEC.colors.star, 0.92);
-    ctx.fillText(detail, geometry.sizePx / 2, bandMid);
   }
 }
 
