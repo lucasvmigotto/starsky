@@ -1,6 +1,6 @@
 # Finding — the browser degrades on a missing font; Python used to be fatal
 
-Status: **open** — documented behaviour difference, needs a decision
+Status: **fixed** — BCR-0007, implemented 2026-09-30
 Found by: `site/e2e/font.spec.ts` (007 T032), 2026-09-29
 Related: BCR-0004 (which removed the *silent* fallback on the Python side)
 
@@ -46,5 +46,7 @@ Option 1 — a cheap check at the point the poster is about to draw, restoring t
 guarantee BCR-0004 established. Option 2 is cleaner but changes the render
 lifecycle.
 
-**Not fixed here**: it changes user-visible error behaviour, so it wants your
-call. The current behaviour is now *tested and documented*, not assumed.
+**Resolved (BCR-0007)**: `ViewerPage` now checks `document.fonts.check()`
+after the fonts settle. If the poster's face did not resolve, the viewer shows
+a `role="alert"` naming the font and **withholds the poster** rather than drawing
+it in a substituted typeface. Verified in a browser with the webfont aborted.

@@ -48,11 +48,22 @@ async function fetchJson<T>(url: string): Promise<T> {
 
 const DATA_BASE = `${import.meta.env.BASE_URL}data/`;
 
+/**
+ * The poster's face, and a probe string for checking it resolved (BCR-0007).
+ *
+ * The family must match `render-spec.json`'s `fonts` entry and the `@font-face`
+ * in `index.css`; the size is arbitrary — `check()` reports whether the face is
+ * available, not whether a particular string renders.
+ */
+const POSTER_FONT_FAMILY = "Cormorant Garamond";
+const POSTER_FONT_PROBE = `16px "${POSTER_FONT_FAMILY}"`;
+
 export default function ViewerPage() {
   const [link, setLink] = useState<LinkState>(() => readLink());
   const [catalog, setCatalog] = useState<StarRow[] | null>(null);
   const [segments, setSegments] = useState<SegmentRow[] | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
+  const [fontError, setFontError] = useState<string | null>(null);
   const [hovered, setHovered] = useState<number | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [tooltip, setTooltip] = useState<number | null>(null);
@@ -78,13 +89,32 @@ export default function ViewerPage() {
   }, []);
 
   // Atlas type for the on-canvas caption; redraw once it arrives.
+  //
+  // BCR-0007: if the poster's face does not actually resolve, say so instead of
+  // drawing the caption in whatever the browser substituted. A wrong poster with
+  // no warning is the failure BCR-0004 was written to remove, and the browser
+  // reintroduced it — a font load failure is invisible to every other gate,
+  // because the reference suite renders from disk.
   useEffect(() => {
     let live = true;
     document.fonts.ready
       .then(() => {
-        if (live) setFontsReady(true);
+        if (!live) return;
+        if (document.fonts.check(POSTER_FONT_PROBE)) {
+          setFontsReady(true);
+        } else {
+          setFontError(
+            `the poster font "${POSTER_FONT_FAMILY}" did not load`,
+          );
+        }
       })
-      .catch(() => undefined);
+      .catch((error: unknown) => {
+        if (live) {
+          setFontError(
+            error instanceof Error ? error.message : "the poster font failed to load",
+          );
+        }
+      });
     return () => {
       live = false;
     };
@@ -270,7 +300,15 @@ export default function ViewerPage() {
               </p>
             )}
 
-            {model ? (
+            {fontError && (
+              <p role="alert" className="atlas-alert">
+                The poster font could not be loaded ({fontError}). The poster is
+                not shown, because it would render in a substituted typeface
+                rather than the one the poster was designed with.
+              </p>
+            )}
+
+            {model && !fontError ? (
               <div
                 className={`atlas-explorer ${loaded ? "atlas-loaded" : ""}`}
               >
