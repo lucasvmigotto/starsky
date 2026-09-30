@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "starpy shared render spec",
-  "description": "Normative visual tokens consumed by BOTH the Python renderer (src/starpy/render/) and the site (site/). Change both together; Python defaults in settings/render.py must match.",
+  "title": "starsky shared render spec",
+  "description": "Normative visual tokens for the site's renderer (the only one — see docs/product/adr/0003-render-spec-contract.md). The browser reads every token from here; nothing is hard-coded in site/src/lib/render/. Change this file and the renderer together.",
   "version": 1,
   "units": {
     "note": "All sizes below (star sizeFormula value, lineWidth, ringWidth, labelFontSize, titleFontSize, detailFontSize, singleCaptionFontSize) are POINTS, historically because matplotlib takes points. A renderer converting to pixels must use referenceDpi: px = pt * referenceDpi / 72. Before this field existed the browser scaled these by canvas ratio instead, drawing 2.8 px labels where the CLI drew ~14.6 px (parity Slice-3 finding).",

@@ -40,16 +40,16 @@ jobs:
       # Hipparcos and Stellarium sources; no ephemeris, no renderer.
       - name: Build the sky data
         run: |
-          uv run python -m starpy cache warm
-          uv run python -m starpy catalog --output-dir /tmp/starpy-data
-          test -s /tmp/starpy-data/catalog.json
-          test -s /tmp/starpy-data/constellations.json
+          uv run python -m starsky cache warm
+          uv run python -m starsky catalog --output-dir /tmp/starsky-data
+          test -s /tmp/starsky-data/catalog.json
+          test -s /tmp/starsky-data/constellations.json
           uv run python - <<'PY'
           import json
           from pathlib import Path
 
-          stars = json.loads(Path("/tmp/starpy-data/catalog.json").read_text())["stars"]
-          segs = json.loads(Path("/tmp/starpy-data/constellations.json").read_text())["segments"]
+          stars = json.loads(Path("/tmp/starsky-data/catalog.json").read_text())["stars"]
+          segs = json.loads(Path("/tmp/starsky-data/constellations.json").read_text())["segments"]
           assert len(stars) > 8000, len(stars)
           assert len(segs) > 500, len(segs)
           assert len(stars[0]) == 4 and len(segs[0]) == 4

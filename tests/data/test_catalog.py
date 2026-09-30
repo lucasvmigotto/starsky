@@ -2,7 +2,7 @@
 
 from polars import DataFrame as pl_DataFrame
 
-from starpy.data.catalog import parse_hip_main, parse_hip_main_line
+from starsky.data.catalog import parse_hip_main, parse_hip_main_line
 
 
 def make_line(

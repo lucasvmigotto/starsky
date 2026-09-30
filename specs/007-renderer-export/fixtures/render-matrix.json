@@ -15,7 +15,7 @@ This file was the browser↔CLI *parity* matrix while two renderers existed. The
 Python renderer was removed (BCR-0005), so "parity" is gone; what remains is the
 browser's own regression guard — hence the rename. To change a case
 deliberately, regenerate the references with
-`STARPY_UPDATE_REFERENCE=1 bun test src/lib/render/reference.test.ts`.
+`STARSKY_UPDATE_REFERENCE=1 bun test src/lib/render/reference.test.ts`.
 
 ```json
 {

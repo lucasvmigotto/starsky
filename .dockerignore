@@ -2,7 +2,7 @@
 #
 # Two images are built from this context and they need different things:
 #
-#   Dockerfile     the CLI *runtime* — copies only src/starpy/ and the builder's
+#   Dockerfile     the CLI *runtime* — copies only src/starsky/ and the builder's
 #                  .venv, so nothing else in the context can reach it
 #   Containerfile  the *tools* image — needs site/ (package.json + bun.lock) to
 #                  install the frontend dependencies

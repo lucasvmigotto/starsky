@@ -43,8 +43,8 @@ jobs:
         working-directory: .
         run: |
           for i in 1 2 3; do
-            uv run python -m starpy cache warm \
-              && uv run python -m starpy catalog \
+            uv run python -m starsky cache warm \
+              && uv run python -m starsky catalog \
               && break
             echo "data build attempt $i failed; retrying..."
             sleep $((i * 30))
@@ -63,18 +63,18 @@ jobs:
 
       - name: Validate viewer base URL
         run: |
-          URL="${{ vars.STARPY_STATIC_SITE_URL }}"
+          URL="${{ vars.STARSKY_STATIC_SITE_URL }}"
           if [ -z "$URL" ]; then
-            echo "::error::vars.STARPY_STATIC_SITE_URL is not set (Settings > Variables > Actions)"
+            echo "::error::vars.STARSKY_STATIC_SITE_URL is not set (Settings > Variables > Actions)"
             exit 1
           fi
           case "$URL" in
             https://*) ;;
-            *) echo "::error::STARPY_STATIC_SITE_URL must start with https:// (got: $URL)"; exit 1 ;;
+            *) echo "::error::STARSKY_STATIC_SITE_URL must start with https:// (got: $URL)"; exit 1 ;;
           esac
           case "$URL" in
             *example.com*|*localhost*|*ngrok*|*127.0.0.1*)
-              echo "::error::STARPY_STATIC_SITE_URL looks like a placeholder ($URL)"
+              echo "::error::STARSKY_STATIC_SITE_URL looks like a placeholder ($URL)"
               exit 1
               ;;
           esac
@@ -92,7 +92,7 @@ jobs:
       - name: Build
         run: bun run build
         env:
-          VITE_FULL_APP_URL: ${{ vars.STARPY_STATIC_SITE_URL }}
+          VITE_FULL_APP_URL: ${{ vars.STARSKY_STATIC_SITE_URL }}
 
       # Crawlers need absolute OG URLs: fail if the build left a placeholder.
       # Tags span two lines (property line, then content line).

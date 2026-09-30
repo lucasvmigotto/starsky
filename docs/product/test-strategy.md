@@ -1,6 +1,6 @@
 Reconstructed by project:introspec on 2026-09-29; rewritten by qa:strategy on 2026-09-29 against the static-first target (BCRs 0001–0005, constitution v1.1.0).
 
-# starpy — test strategy
+# starsky — test strategy
 
 Status: Draft
 

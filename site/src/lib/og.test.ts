@@ -7,7 +7,7 @@ import { describe, expect, it } from "bun:test";
  * Social preview contract: crawlers read static index.html (no JS), so the
  * OG/Twitter tags must exist in source with the build-time base-URL
  * placeholder (`%VITE_FULL_APP_URL%`, substituted by Vite from
- * `vars.STARPY_STATIC_SITE_URL`). The R2 workflow additionally greps the
+ * `vars.STARSKY_STATIC_SITE_URL`). The R2 workflow additionally greps the
  * built dist for absolute https:// URLs.
  */
 const INDEX_HTML = readFileSync(

@@ -63,7 +63,7 @@ def build_static_data(
 @click_group(invoke_without_command=True)
 @click_pass_context
 def main(ctx: click_Context) -> None:
-    """starpy: build the sky data the browser app consumes."""
+    """starsky: build the sky data the browser app consumes."""
     if ctx.invoked_subcommand is None:
         click_echo(ctx.get_help())
 

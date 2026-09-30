@@ -41,6 +41,6 @@ browser would say why.
 
 ## Exit criteria
 
-CI data build green; counts above the floor; no pandas; `python -m starpy` binds
+CI data build green; counts above the floor; no pandas; `python -m starsky` binds
 nothing. No browser component, so e2e (browser) does not apply — Verified here
 means the CI integration job passes on `main`.

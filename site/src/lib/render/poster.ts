@@ -1,7 +1,7 @@
 /**
  * Browser poster renderer — the static-first replacement for matplotlib.
  *
- * Mirrors `src/starpy/render/figure.py`'s `compose_figure` layout so the two
+ * Mirrors `src/starsky/render/figure.py`'s `compose_figure` layout so the two
  * renderers agree within the tolerance in
  * `site/src/lib/render/README.md` and `specs/007-renderer-export/contracts/render-spec.md`:
  *

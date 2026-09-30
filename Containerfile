@@ -7,12 +7,12 @@
 # (`.devcontainer/devcontainer.json`) is the comfortable layer; this one is the
 # reproducible one, and when the two disagree, this image is right.
 #
-# It carries BOTH toolchains because starpy ships two artifacts from one repo
+# It carries BOTH toolchains because starsky ships two artifacts from one repo
 # (the Python data CLI and the Bun site) and splitting the tools layer would
 # mean running half the checks twice, in two containers, to no benefit.
 #
 # Build:
-#   $CONTAINER_ENGINE build -f Containerfile --target tools -t starpy-tools \
+#   $CONTAINER_ENGINE build -f Containerfile --target tools -t starsky-tools \
 #     --build-arg PYTHON_VERSION=$(awk '/^python/{print $2}' .tool-versions) \
 #     --build-arg BUN_VERSION=$(awk '/^bun/{print $2}' .tool-versions) .
 #
@@ -55,7 +55,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # rendering matches the product's bundled face rather than a fallback.
 RUN --mount=type=bind,source=assets/fonts/CormorantGaramond.ttf,target=/tmp/CormorantGaramond.ttf \
     install -Dm644 /tmp/CormorantGaramond.ttf \
-        /usr/local/share/fonts/starpy/CormorantGaramond.ttf \
+        /usr/local/share/fonts/starsky/CormorantGaramond.ttf \
     && fc-cache -f >/dev/null \
     && fc-list | grep -qi cormorant
 
@@ -103,8 +103,8 @@ RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
 RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
     --mount=type=bind,source=pyproject.toml,target=/src/pyproject.toml \
     --mount=type=bind,source=README.md,target=/src/README.md \
-    sh -c 'mkdir -p /src/src/starpy \
-        && touch /src/src/starpy/__init__.py \
+    sh -c 'mkdir -p /src/src/starsky \
+        && touch /src/src/starsky/__init__.py \
         && cd /src \
         && uv pip install --python /opt/venv/bin/python --no-deps -e .'
 

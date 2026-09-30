@@ -4,7 +4,7 @@ import { decodeShareFragment, type SharePayload } from "./share.ts";
 
 /**
  * Cross-language vector: fragment generated with the repo Python encoder
- * (`starpy.share.spec.encode_payload`) for the payload below
+ * (`starsky.share.spec.encode_payload`) for the payload below
  * (lat 40.7580, lon -73.9855, Times Square, 2026-01-01T00:00:00Z, UTC,
  * all render defaults, title "Our Night"). Coincidentally identical to the
  * decode VECTOR in `share.test.ts`.

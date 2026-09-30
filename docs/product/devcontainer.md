@@ -1,4 +1,4 @@
-# starpy — development environment
+# starsky — development environment
 
 Status: Draft
 
@@ -12,7 +12,7 @@ rules from `containers.md`.
 |---|---|---|
 | Human devcontainer | `.devcontainer/devcontainer.json` | a person at the keyboard |
 | `tools` image | `Containerfile` (target `tools`) | agents and CI — the reference environment |
-| CLI runtime image | `Dockerfile` | production: the `starpy catalog` data job |
+| CLI runtime image | `Dockerfile` | production: the `starsky catalog` data job |
 | Task recipes | `Makefile` | everyone; also called by CI |
 
 `containers.md` §2: when the human devcontainer and the `tools` image disagree,
@@ -21,7 +21,7 @@ show that drift.
 
 ## One devcontainer, not two
 
-starpy ships **two artifacts** — the Python CLI (a Docker image) and the site
+starsky ships **two artifacts** — the Python CLI (a Docker image) and the site
 (a Bun bundle). The Phase 1.1 rule splits a repo's devcontainers when it is an
 **API + client** pair. This is not one: there is no server, the site is static,
 and the two artifacts never call each other at runtime.
@@ -82,11 +82,11 @@ volume re-downloads it — the CPython fetch is ~35 MB.
 
 | Volume | Holds |
 |---|---|
-| `starpy-uv-cache` | uv's package cache |
-| `starpy-uv-data` | uv's managed interpreters and tools |
-| `starpy-bun-cache` | Bun's install cache |
-| `starpy-cache` | the sky-data parquet caches the CLI writes |
-| `starpy-extensions` | VS Code extensions |
+| `starsky-uv-cache` | uv's package cache |
+| `starsky-uv-data` | uv's managed interpreters and tools |
+| `starsky-bun-cache` | Bun's install cache |
+| `starsky-cache` | the sky-data parquet caches the CLI writes |
+| `starsky-extensions` | VS Code extensions |
 
 A new named volume is **root-owned**, so `developer` cannot write into it on
 first run. `postCreateCommand` runs a one-time `chown` rather than leaving a

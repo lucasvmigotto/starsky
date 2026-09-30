@@ -17,7 +17,7 @@ depends on a third party.
 | US2 sky model | unit | `skymodel.test.ts` (horizon cut, declutter, figures) |
 | US2 zoom / focus / reduced-motion | e2e | **planned** |
 | FR-001 codec byte-compatibility | unit | `encode.test.ts` "byte-identical to the Python encoder output" — note: the Python encoder is deleted (BCR-0005), so this now asserts the frozen output, which is exactly the compatibility guarantee needed |
-| FR-003 consumes `starpy catalog` output | integration | CI asserts the JSON shape; **client-side parse untested** |
+| FR-003 consumes `starsky catalog` output | integration | CI asserts the JSON shape; **client-side parse untested** |
 
 ## Boundary and negative cases
 

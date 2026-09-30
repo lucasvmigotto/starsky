@@ -46,7 +46,7 @@ FROM ${RUNTIME_IMAGE} AS app
 
 WORKDIR /app
 
-COPY ./src/starpy/ /app/starpy/
+COPY ./src/starsky/ /app/starsky/
 
 COPY \
     --from=builder \
@@ -56,16 +56,16 @@ COPY \
 COPY \
     --from=builder \
     /cache \
-    /tmp/starpy-cache
+    /tmp/starsky-cache
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV HOME="/tmp"
 ENV PYTHONUNBUFFERED=1
 
-VOLUME ["/tmp/starpy-cache"]
+VOLUME ["/tmp/starsky-cache"]
 
 USER 65532:65532
 
 ENTRYPOINT ["/app/.venv/bin/python"]
 
-CMD ["-m", "starpy", "catalog", "--output-dir", "/out"]
+CMD ["-m", "starsky", "catalog", "--output-dir", "/out"]

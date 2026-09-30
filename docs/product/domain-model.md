@@ -1,22 +1,22 @@
 Reconstructed by project:introspec on 2026-09-29 from 51287a78a915da74fab965cc2c27a85e4616d0e0
 
-# starpy — domain model (as implemented)
+# starsky — domain model (as implemented)
 
 Status: Draft
 
 ## Contexts
 
-Single bounded context: **Poster generation**. No sub-contexts observed — one service, no events leaving it (`asyncapi.yaml` N/A). [OBSERVED: repo-wide single `src/starpy/` package; no broker deps in `pyproject.toml:8-21`]
+Single bounded context: **Poster generation**. No sub-contexts observed — one service, no events leaving it (`asyncapi.yaml` N/A). [OBSERVED: repo-wide single `src/starsky/` package; no broker deps in `pyproject.toml:8-21`]
 
-Infrastructure-only (not domain): Gradio Blocks wiring, Click plumbing, Skyfield `Loader`, file caches, Docker/HF/CI. [OBSERVED: `src/starpy/main.py:17-43`; `src/starpy/cli.py:75-82`]
+Infrastructure-only (not domain): Gradio Blocks wiring, Click plumbing, Skyfield `Loader`, file caches, Docker/HF/CI. [OBSERVED: `src/starsky/main.py:17-43`; `src/starsky/cli.py:75-82`]
 
 ## Aggregates (as implemented)
 
 ### PosterRequest (transient — never persisted as rows)
 
-- Root inputs: `Coordinates(lat [-90,90], lon [-180,180])` [OBSERVED: `src/starpy/schemas/inputs/location.py:13-15`], optional `place` text + `ResolvedPlace(display_name, lat, lon)` [OBSERVED: `location.py:18-21`], `Observation(when: datetime, tz="UTC")` with `utc()` via `ZoneInfo` [OBSERVED: `observation.py:11-20`], `RenderOptions` [OBSERVED: `render.py:10-20`].
+- Root inputs: `Coordinates(lat [-90,90], lon [-180,180])` [OBSERVED: `src/starsky/schemas/inputs/location.py:13-15`], optional `place` text + `ResolvedPlace(display_name, lat, lon)` [OBSERVED: `location.py:18-21`], `Observation(when: datetime, tz="UTC")` with `utc()` via `ZoneInfo` [OBSERVED: `observation.py:11-20`], `RenderOptions` [OBSERVED: `render.py:10-20`].
 - Invariants:
-  - Location: `--place` wins when given; else `--lat/--lon` required or `UsageError("Provide --lat/--lon or --place.")`. [OBSERVED: `src/starpy/cli.py:52-64`] GUI mirrors via `mode radio coordinates|place`. [OBSERVED: `src/starpy/gui/components/sky.py:64-69`]
+  - Location: `--place` wins when given; else `--lat/--lon` required or `UsageError("Provide --lat/--lon or --place.")`. [OBSERVED: `src/starsky/cli.py:52-64`] GUI mirrors via `mode radio coordinates|place`. [OBSERVED: `src/starsky/gui/components/sky.py:64-69`]
   - Time: `when` parsed `fromisoformat` (CLI `BadParameter` on failure [OBSERVED: `cli.py:67-72`]; GUI `coerce_when` accepts datetime/epoch/iso [OBSERVED: `callbacks/skymap.py:22-30`]); naive attached to `tz_name`, converted `astimezone(UTC)`. [OBSERVED: `astro/observer.py:7-11`]
   - Options ranges: `fisheye_strength (0,3]`, `min_separation [0,0.1]`, `magnitude_limit [1,8]`, `glow_intensity [0,3]`, `projection stereographic|fisheye`, `shape circle|square`. [OBSERVED: `schemas/inputs/render.py:10-20`]
 

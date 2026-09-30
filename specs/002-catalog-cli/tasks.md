@@ -9,17 +9,17 @@ Tests are required for every story (constitution IV).
 - [ ] T001 [US1] Test: `catalog` on a warm cache writes both JSON files with the documented shape
 - [ ] T002 [US1] Test: `--mag-limit` filters the star list
 - [ ] T003 [US1] Test: `--output-dir` is created when missing
-- [ ] T004 [US1] Implement `starpy catalog` (exists — `src/starpy/cli.py`; add the tests above)
+- [ ] T004 [US1] Implement `starsky catalog` (exists — `src/starsky/cli.py`; add the tests above)
 
 ## Phase 2: User Story 2 — Warm the caches (P2)
 
 - [ ] T005 [US2] Test: `cache warm` leaves both parquet caches
 - [ ] T006 [US2] Test: a second `cache warm` performs no download
-- [ ] T007 [US2] Implement `starpy cache warm` (exists; add the tests above)
+- [ ] T007 [US2] Implement `starsky cache warm` (exists; add the tests above)
 
 ## Phase 3: Polish
 
-- [ ] T008 Test: bare `python -m starpy` prints help and binds nothing
+- [ ] T008 Test: bare `python -m starsky` prints help and binds nothing
 
 ## QA
 

@@ -35,11 +35,11 @@ const LABELS: Record<Format, string> = {
 };
 
 function safeFilename(payload: SharePayload): string {
-  const base = (payload.options.title ?? payload.place ?? "starpy-poster")
+  const base = (payload.options.title ?? payload.place ?? "starsky-poster")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  return base.length > 0 ? base : "starpy-poster";
+  return base.length > 0 ? base : "starsky-poster";
 }
 
 export default function ExportControls({ payload, model }: Props) {

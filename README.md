@@ -1,4 +1,4 @@
-# 🔭 starpy — personalized night-sky posters
+# 🔭 starsky — personalized night-sky posters
 
 A static, client-only night-sky poster generator. The **site** (`site/`) is the
 whole application: it renders the poster in the browser and exports PNG, SVG and
@@ -12,7 +12,7 @@ React + TypeScript 7 + Bun; deployed to Cloudflare R2.
 
 ```
 Hipparcos catalog ─┐
-                   ├─ starpy (CLI) ──► catalog.json, constellations.json ──┐
+                   ├─ starsky (CLI) ──► catalog.json, constellations.json ──┐
 Stellarium IAU ────┘                                                      │
                                                                           ▼
                                        site/ (React + TS) ──► poster PNG / SVG / PDF
@@ -26,12 +26,12 @@ anything.
 
 ```bash
 uv sync --all-groups
-uv run python -m starpy cache warm      # download catalog + lines into the cache
-uv run python -m starpy catalog         # write site/public/data/*.json
+uv run python -m starsky cache warm      # download catalog + lines into the cache
+uv run python -m starsky catalog         # write site/public/data/*.json
 ```
 
 `catalog` flags: `--mag-limit` (default 6.5) and `--output-dir` (default
-`site/public/data`). Bare `python -m starpy` prints help and opens no socket.
+`site/public/data`). Bare `python -m starsky` prints help and opens no socket.
 
 ## Site — development
 
@@ -51,26 +51,32 @@ That file is the renderer's normative contract; there is no second renderer.
 
 ## Configuration
 
-`STARPY__<SECTION>__<KEY>` (see `.env.example`):
+`STARSKY__<SECTION>__<KEY>` (see `.env.example`):
 
 | Key | Purpose |
 | --- | --- |
-| `STARPY__CATALOG__CACHE_DIR` | Where the Hipparcos and Stellarium parquet caches live. |
-| `STARPY__LOG__LEVEL` | CLI log level. |
+| `STARSKY__CATALOG__CACHE_DIR` | Where the Hipparcos and Stellarium parquet caches live. |
+| `STARSKY__LOG__LEVEL` | CLI log level. |
+
+> **Renamed from `starpy` (BCR-0009).** The project, the Python package and the
+> environment prefix were renamed when Python stopped being the protagonist: the
+> browser is the whole application now, and Python only builds its sky data.
+> **`STARPY__*` variables are no longer read** — update your `.env` to
+> `STARSKY__*`. The name change was deliberate and has no compatibility alias.
 
 ## Docker
 
 The image is a one-shot data job, not a service:
 
 ```bash
-docker build -t starpy .
-docker run --rm -v "$PWD/out:/out" starpy    # writes catalog.json + constellations.json
+docker build -t starsky .
+docker run --rm -v "$PWD/out:/out" starsky    # writes catalog.json + constellations.json
 ```
 
 Without DHI access, build with the public fallback:
 
 ```bash
-docker build -t starpy \
+docker build -t starsky \
   --build-arg BUILDER_IMAGE=ghcr.io/astral-sh/uv:python3.14-trixie \
   --build-arg RUNTIME_IMAGE=python:3.14-slim-trixie .
 ```

@@ -29,8 +29,8 @@ def require_user_agent(user_agent: str) -> str:
     if not user_agent.strip():
         raise ValueError(
             "A descriptive Nominatim User-Agent is required "
-            "(set STARPY__GEOCODING__USER_AGENT, e.g. "
-            "'starpy/0.1.0 (contact@example.com)'). "
+            "(set STARSKY__GEOCODING__USER_AGENT, e.g. "
+            "'starsky/0.1.0 (contact@example.com)'). "
             "See https://operations.osmfoundation.org/policies/nominatim/"
         )
     return user_agent

@@ -9,7 +9,7 @@ Status: `002` and `005` are **Implemented** (the CLI data tool ships today).
 | # | Feature | Priority | Depends | Frontend | Backend | Notes |
 |---|---|---|---|---|---|---|
 | 000 | design-system | P2 | — | Planned | — | Reserved for `frontend:spec` |
-| 002 | catalog-cli | P1 | 005 | N/A | Implemented | `starpy catalog` + `cache warm`; the CLI's whole product (BCR-0005) |
+| 002 | catalog-cli | P1 | 005 | N/A | Implemented | `starsky catalog` + `cache warm`; the CLI's whole product (BCR-0005) |
 | 003 | — | — | — | — | — | **Retired by BCR-0001** (Gradio removed); see `003-gradio-app/DEPRECATED.md` |
 | 005 | data-cache | P1 | — | N/A | Implemented | Hipparcos + Stellarium → parquet; ephemeris gone (BCR-0005) |
 | 006 | viewer | P1 | 005 | Implemented | N/A | Landing + `#s=` viewer, share codec, place lookup |

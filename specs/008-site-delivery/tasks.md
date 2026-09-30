@@ -32,7 +32,7 @@ the story-level acceptance tests.
 
 - [ ] T011 [P] [US3] `scripts/check_bundle_budget.sh`: bundle ≤ 500 KB, data ≤ 400 KB brotli
 - [ ] T012 [P] [US3] Secret scan over `dist/`
-- [ ] T013 [P] [US3] `no_server` check: fail on a `gradio` import or any listener; `python -m starpy` must bind nothing
+- [ ] T013 [P] [US3] `no_server` check: fail on a `gradio` import or any listener; `python -m starsky` must bind nothing
 - [ ] T014 [US3] Wire all five fitness functions into `site_ci.yml`/`ci.yml`
 - [ ] T015 [US3] Test each check by violating it on a scratch branch and seeing CI fail
 

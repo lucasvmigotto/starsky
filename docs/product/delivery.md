@@ -1,4 +1,4 @@
-# starpy — delivery
+# starsky — delivery
 
 Status: Draft
 
@@ -64,7 +64,7 @@ not attempted.
 gh release download <tag> -p sbom.cdx.json
 
 # its provenance
-gh attestation verify sbom.cdx.json --repo lucasvmigotto/starpy
+gh attestation verify sbom.cdx.json --repo lucasvmigotto/starsky
 ```
 
 ### Exception process
@@ -78,7 +78,7 @@ exception fails the build. Currently **none**.
 | Name | Used by |
 |---|---|
 | `CLOUDFLARE_R2_ACCOUNT_ACCESS_KEY`, `CLOUDFLARE_R2_ACCOUNT_SECRET`, `CLOUDFLARE_R2_ENDPOINT`, `CLOUDFLARE_R2_BUCKET` | `static_r2.yml` deploy |
-| `STARPY_STATIC_SITE_URL` (variable) | site build (absolute OG URLs) |
+| `STARSKY_STATIC_SITE_URL` (variable) | site build (absolute OG URLs) |
 | `DOCKER_HUB_PAT` | `dockerhub.yml` |
 | `GITHUB_TOKEN` | GHCR push, release, attestations (OIDC) |
 
@@ -94,7 +94,7 @@ bad deploy is reverted by re-pointing the R2 prefix (see `docs/product/adr/0002`
    version pointer back. Assets are immutable and hashed, so the previous build
    keeps serving until the pointer moves.
 2. **CLI image**: re-tag the previous digest (`ghcr.yml` publishes per-`main`).
-3. **Data**: `starpy catalog` is deterministic for a given source snapshot;
+3. **Data**: `starsky catalog` is deterministic for a given source snapshot;
    re-run it at the older commit.
 
 ## Known gaps

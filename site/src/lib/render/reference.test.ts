@@ -12,7 +12,7 @@
  *
  * Regenerate the references deliberately (after reviewing every diff):
  *
- *     STARPY_UPDATE_REFERENCE=1 bun test src/lib/render/reference.test.ts
+ *     STARSKY_UPDATE_REFERENCE=1 bun test src/lib/render/reference.test.ts
  *
  * **What this does NOT cover.** It runs on `@napi-rs/canvas`, not Chrome or
  * Firefox, so it cannot see browser-specific rasterisation, font fallback, or
@@ -90,7 +90,7 @@ const ROOT = join(HERE, "..", "..", "..", "..");
 const REFERENCE_DIR = join(HERE, "__references__");
 const DATA_DIR = join(ROOT, "site", "public", "data");
 const REFERENCE_PREVIEW = { diskCx: 400, diskCy: 400, diskR: 368 };
-const UPDATE = process.env["STARPY_UPDATE_REFERENCE"] === "1";
+const UPDATE = process.env["STARSKY_UPDATE_REFERENCE"] === "1";
 
 function readMatrix(): Matrix {
   const raw = readFileSync(

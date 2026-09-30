@@ -16,6 +16,6 @@ class CatalogSettings(BaseSettings_):
     """Where the downloaded catalog artifacts live."""
 
     CACHE_DIR: Path = pydantic_Field(
-        default=Path("/tmp/starpy-cache/catalog"),
+        default=Path("/tmp/starsky-cache/catalog"),
         description="Directory holding the Hipparcos and Stellarium parquet caches.",
     )

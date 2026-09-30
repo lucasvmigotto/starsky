@@ -2,16 +2,16 @@ Reconstructed by project:introspec on 2026-09-29; re-scoped by project:refactor 
 
 # Feature Specification: data-cache
 
-**Feature Branch**: `feat/data-cache` | **Created**: 2026-09-29 | **Status**: Draft | **Input**: `src/starpy/data/*`, `src/starpy/settings/catalog.py`.
+**Feature Branch**: `feat/data-cache` | **Created**: 2026-09-29 | **Status**: Draft | **Input**: `src/starsky/data/*`, `src/starsky/settings/catalog.py`.
 
 ## User Scenarios & Testing
 
 ### User Story 1 - Warm the two sources (Priority: P1)
 
 `cache warm` downloads the star catalogue and the constellation lines once, then
-serves them from parquet caches on later runs. [OBSERVED: `src/starpy/cli.py`]
+serves them from parquet caches on later runs. [OBSERVED: `src/starsky/cli.py`]
 
-**Why this priority**: it feeds `starpy catalog`, which is the CLI's only
+**Why this priority**: it feeds `starsky catalog`, which is the CLI's only
 product after BCR-0005.
 
 **Acceptance Scenarios**:
@@ -38,7 +38,7 @@ product after BCR-0005.
 ### Functional Requirements
 
 - **FR-001**: MUST cache `hipparcos.parquet` and `constellations.parquet` under
-  `STARPY__CATALOG__CACHE_DIR`.
+  `STARSKY__CATALOG__CACHE_DIR`.
 - **FR-002**: MUST NOT fetch the JPL ephemeris (BCR-0005): nothing consumes it.
 - **FR-003**: MUST sort the catalogue by magnitude after loading.
 - **FR-004**: MUST NOT use pandas.

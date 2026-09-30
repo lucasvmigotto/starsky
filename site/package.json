@@ -1,9 +1,9 @@
 {
-  "name": "starpy-site",
+  "name": "starsky-site",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "starpy static explorer + poster renderer (Cloudflare R2 static host).",
+  "description": "starsky static explorer + poster renderer (Cloudflare R2 static host).",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
