@@ -40,6 +40,12 @@ export default defineConfig({
     // the product does not claim Safari support.
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    // A mobile viewport, Chromium-only (`qa:e2e`'s default matrix). The poster
+    // is a portrait artifact and the export controls must stay reachable on a
+    // phone; the journeys that matter at this width are the ones tagged
+    // `@mobile` or that assert layout, and the rest simply re-run to catch
+    // viewport-dependent breakage.
+    { name: "mobile-chromium", use: { ...devices["Pixel 7"] } },
   ],
   webServer: process.env["E2E_BASE_URL"]
     ? undefined

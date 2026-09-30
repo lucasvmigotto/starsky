@@ -88,6 +88,14 @@ browsers still come from the image, not `playwright install` on the runner.
 claimed** — there is no `standalone-webkit` image; adding it is a documented
 Playwright-container exception, not a silent gap.
 
+**Mobile viewport:** the `mobile-chromium` project runs the same journeys at a
+Pixel 7 viewport, Chromium-only (the default matrix in `qa:e2e`). CI runs the
+fast project on PRs and the full three-project matrix on `main`.
+
+**Stability, measured 2026-09-30:** the suite was run with `--repeat-each=10`
+— **300 passes, 0 failures, no flake**. That is the evidence `qa:e2e` requires
+before a feature can be marked Verified. Re-run it whenever a journey is added.
+
 ## Gates per pipeline stage
 
 | Stage | Must pass | Rationale |
