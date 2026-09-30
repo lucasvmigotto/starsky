@@ -52,3 +52,31 @@ Feature risk: **High** — see `specs/007-renderer-export/qa.md`.
 
 **Checkpoint**: exports verified in a real browser on both supported browsers.
 Nothing is `Verified` until the e2e suite passes on `main`.
+
+## Frontend
+
+Spec: [`ui.md`](ui.md). Design system: [`../000-design-system/`](../000-design-system/).
+
+**Contract mock**: N/A — exports are pure in-browser functions of the current
+payload (ADR-0001). Nothing to mock.
+
+### Phase F1: User Story 2 — the export surface (P1)
+
+- [ ] FT001 Test: the Viewer has exactly one download control — the footer's "Save image" is gone (D15)
+- [ ] FT002 Test: an export in progress disables all three format buttons
+- [ ] FT003 Test: a failed export names the format and leaves the map untouched
+- [ ] FT004 [P] Rework `ExportControls.tsx` against the design-system tokens; keep `role="status"` and `aria-live="polite"`
+- [ ] FT005 [P] Remove the footer "Save image" and its handler from `ViewerPage.tsx`
+- [ ] FT006 Verify every export target is ≥44×44 after the retheme
+- [ ] FT007 Wire `viewer.export.*` copy keys, incl. `{filename}` and `{format}` interpolation
+
+**Checkpoint**: AC1–AC8 in `ui.md` pass; `j3-offline-export` still green.
+
+### Phase F2: Polish
+
+- [ ] FT008 a11y: axe on the export row; completion announced without focus moving
+- [ ] FT009 [P] e2e: assert one download control; a failed export shows the error copy
+- [ ] FT010 Regression: `render-spec.json` conformance (`spec.test.ts:32`) and the literal hex assertions remain green — this feature changes no poster token
+
+**Checkpoint**: no second download control anywhere; conformance green;
+`007/qa.md` updated if export latency moved.

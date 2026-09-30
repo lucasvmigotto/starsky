@@ -654,6 +654,13 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `viewer.caption` | {coords} — {place} · {local} {tz} |
 | `viewer.copyLink` | Copy link |
 | `viewer.linkCopied` | Link copied |
+| `viewer.randomSky` | Load a random sky |
+
+`viewer.randomSky` is the **canonical** key for this action, not
+`empty.action`: D10 requires one phrase in every place it appears (the empty
+state, the landing page and the footer), so the key belongs to the action rather
+than to one screen. `empty.action` is a screen-local reference to it, kept only
+so an empty state can override the wording later without touching three files.
 | `viewer.linkFailed` | Could not copy the link. Select the address bar and copy it. |
 | `viewer.export.png` | PNG |
 | `viewer.export.svg` | SVG |
@@ -675,7 +682,7 @@ starting point, not a mistake, and the copy says so. Naming "sky" rather than
 |---|---|
 | `empty.title` | No sky on this page yet |
 | `empty.body` | This page reads a shared moment from its address — look for a link ending in `#s=…`. |
-| `empty.action` | Load a random sky |
+| `empty.action` | Load a random sky → renders `viewer.randomSky` |
 | `legacy.title` | An older kind of link |
 | `legacy.body` | That link comes from an earlier version. Map a fresh moment instead. |
 | `invalid.title` | This link holds no sky |
