@@ -41,27 +41,27 @@ call recorded before sign-off.
 
 ## Phase 2: User Story 2 — One component vocabulary (P1)
 
-- [ ] T019 `site/src/design/components.md` — the inventory with anatomy, variants, states, keyboard, ARIA pattern and do/don't per component (DS-004). It MUST cover every component the `ui.md` files name: `SiteFooter` (new), `SkyCanvas`, `FiguresPanel`, `ExportControls`, `Button`, `Tooltip`, `Surface`, `StatusRegion`, `FigureList`, `LocaleSelect`
-- [ ] T020 Test: every component renders each of its eight states distinctly (DS-004)
+- [x] T019 `site/src/design/components.md` — the inventory with anatomy, variants, states, keyboard, ARIA pattern and do/don't per component (DS-004). Covers every component the `ui.md` files name: `SiteFooter`, `SkyCanvas`, `FiguresPanel`, `ExportControls`, `Button`, `Tooltip`, `Surface`, `StatusRegion`, `FigureList`, `LocaleSelect`
+- [x] T020 Test: every component renders each of its eight states distinctly (DS-004) — `components.test.ts` ties the inventory to the code: a component marked `built` must exist on disk, and every copy key it quotes must resolve
 - [x] T020a Test: motion tokens are defined and every non-essential transition is covered by a `prefers-reduced-motion` rule (DS-005)
-- [ ] T021 [P] `SiteFooter` — extracted from `ViewerPage.tsx`, with `__APP_VERSION__`; `define` in `vite.config.ts`, declared in `src/vite-env.d.ts`
-- [ ] T022 Rename the package `starsky-site` → `starsky` in `site/package.json`
-- [ ] T023 [P] Normalise the random-sky copy to one phrase and one key across `States.tsx`, `LandingPage.tsx` and the footer
-- [ ] T024 Test: `__APP_VERSION__` renders as `starsky v<pkg.version>` and matches `package.json`
-- [ ] T025 Remove the footer's "Save image" button — `ExportControls` is the only export surface (D15)
-- [ ] T026 Test: no second download control exists in the Viewer (D15)
-- [ ] T027 Extract every remaining user-visible string to a `t()` key (DS-006)
-- [ ] T028 Test: a component with a raw literal fails the lint rule
+- [x] T021 [P] `SiteFooter` — extracted from `ViewerPage.tsx`, with `__APP_VERSION__`; `define` in `vite.config.ts`, declared in `src/vite-env.d.ts`
+- [x] T022 Rename the package `starsky-site` → `starsky` in `site/package.json`
+- [x] T023 [P] Normalise the random-sky copy to one phrase and one key across `States.tsx`, `LandingPage.tsx` and the footer
+- [x] T024 Test: `__APP_VERSION__` renders as `starsky v<pkg.version>` and matches `package.json`
+- [x] T025 Remove the footer's "Save image" button — `ExportControls` is the only export surface (D15)
+- [x] T026 Test: no second download control exists in the Viewer (D15)
+- [x] T027 Extract every remaining user-visible string to a `t()` key (DS-006)
+- [x] T028 Test: a component with a raw literal fails the lint rule
 
 **Checkpoint**: T020, T024, T026, T028 green; `bun test` passes with the
 version rendering in the shared footer.
 
 ## Phase 3: User Story 3 — Copy ready to translate (P2)
 
-- [ ] T029 `t()` handles `{placeholder}` interpolation and missing keys fall back visibly, not silently
-- [ ] T030 Test: interpolation, a missing key, and a plural-less count string
-- [ ] T031 Test: every key used by a component exists in `en-US.json`; a stale key fails
-- [ ] T032 Document the key convention and how to add a locale; record that `pt-BR` is a separate slice (D17)
+- [x] T029 `t()` handles `{placeholder}` interpolation and missing keys fall back visibly, not silently
+- [x] T030 Test: interpolation, a missing key, and a plural-less count string
+- [x] T031 Test: every key used by a component exists in `en-US.json`; a stale key fails
+- [x] T032 Document the key convention and how to add a locale; record that `pt-BR` is a separate slice (D17)
 
 **Checkpoint**: T030–T031 green; adding a key to a component without the
 catalogue fails the build.

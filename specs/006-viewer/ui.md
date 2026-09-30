@@ -121,7 +121,7 @@ The map is the largest element at every width. Below 40rem the figure list
 becomes a horizontal scroller so the map keeps its aspect ratio.
 
 **Components**: `SkyCanvas`, `FiguresPanel`, `ExportControls` (`007`),
-`SiteFooter`, `Button`, `Tooltip`, `FigureList`.
+`SiteFooter`, `Button`, `Tooltip`.
 
 ## Data
 
