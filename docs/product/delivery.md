@@ -106,6 +106,21 @@ bad deploy is reverted by re-pointing the R2 prefix (see `docs/product/adr/0002`
 3. **Data**: `starsky catalog` is deterministic for a given source snapshot;
    re-run it at the older commit.
 
+### Place lookup sends no credentials, and needs none
+
+Nominatim's policy asks for identification. The **browser cannot send a
+`User-Agent`** — it is a forbidden header — so `site/src/lib/geocode.ts` relies
+on the automatic `Referer` instead, which is the documented browser-side
+compromise. The request fires at most once per form submit, in place mode only,
+which keeps it inside the service's ~1 req/s expectation.
+
+Consequently **no CI secret or variable exists for it.** The
+`STARSKY_USER_AGENT_CONTACT` setting was retired along with the Python geocoder
+(BCR-0005): nothing reads it, and nothing could. Live coverage is restored
+where the integration now lives — `site/e2e/j8-live-place-lookup.spec.ts`, an
+opt-in journey that runs on `main` (see `site_e2e.yml`'s `live-smoke` job)
+against the real service.
+
 ## Known gaps
 
 - The workflows have not yet been observed green on GitHub (pushed 2026-09-29);

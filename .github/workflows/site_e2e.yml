@@ -106,3 +106,70 @@ jobs:
           path: |
             site/test-results
           retention-days: 7
+
+  # The one integration with no live check: every journey in the suite above
+  # intercepts Nominatim, so nothing exercises the real contract. This does.
+  #
+  # Separate job on purpose: a third party being slow or down must not turn the
+  # standard suite red, and it should be obvious from the job name which one
+  # failed. `main` only — a live call on every PR would be both flaky and rude
+  # to a free service.
+  #
+  # Gated on fork status, not on a variable: the `if:` context cannot read
+  # repository variables or secrets (learned the hard way in `1abd28f`).
+  live-smoke:
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+
+      - name: Build the sky data
+        working-directory: .
+        run: |
+          for i in 1 2 3; do
+            uv run python -m starsky cache warm \
+              && uv run python -m starsky catalog \
+              && break
+            echo "data build attempt $i failed; retrying..."
+            sleep $((i * 30))
+          done
+          test -f site/public/data/catalog.json
+
+      - name: Install dependencies
+        working-directory: site
+        run: |
+          mkdir -p /tmp/bun/bin /tmp/bun/build && cd /tmp/bun/build
+          curl -fsSL -o bun.zip \
+            "https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip"
+          python3 -c 'import zipfile; zipfile.ZipFile("bun.zip").extractall(".")'
+          cp bun-linux-x64/bun /tmp/bun/bin/bun && chmod +x /tmp/bun/bin/bun
+          /tmp/bun/bin/bun install --frozen-lockfile
+
+      - name: Build the site
+        working-directory: site
+        run: /tmp/bun/bin/bun run build
+
+      - name: Live place lookup
+        working-directory: site
+        env:
+          CI: "true"
+          STARTSKY_LIVE_SMOKE: "1"
+          E2E_SERVE_CMD: node e2e/serve.mjs 4173
+        run: npx playwright test e2e/j8-live-place-lookup.spec.ts --project=chromium
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: live-smoke-artifacts
+          path: |
+            site/test-results
+          retention-days: 7
