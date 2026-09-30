@@ -6,6 +6,7 @@
  * text stays selectable and the artwork stays vector — never a raster page.
  */
 import type { SharePayload } from "../share.ts";
+import type { jsPDF } from "jspdf";
 import type { SkyModel } from "../skymodel.ts";
 import { formatDetailLine } from "../caption.ts";
 import { SPEC } from "../spec.ts";
@@ -177,11 +178,78 @@ export async function exportPdf(
     unit: "px",
     format: [sizePx, geometry.canvasHeight],
   });
+
+  // Embed the poster's own face (BCR-0006). Without this jsPDF falls back to the
+  // 14 standard PDF fonts and the caption renders as Times on every reader,
+  // which the export contract forbids. The subset is ~108 KB of the 1.2 MB
+  // variable TTF, covering every glyph the poster can draw.
+  await registerPosterFontForPdf(doc);
+
   const parser = new DOMParser();
   const element = parser.parseFromString(svg, "image/svg+xml")
     .documentElement;
-  await svg2pdf(element, doc, { x: 0, y: 0, width: sizePx, height: geometry.canvasHeight });
+  await svg2pdf(element, doc, {
+    x: 0,
+    y: 0,
+    width: sizePx,
+    height: geometry.canvasHeight,
+  });
   return doc.output("blob");
+}
+
+/**
+ * The family name the SVG asks for, and the names jsPDF needs.
+ *
+ * `buildPosterSvg` writes `font-family="Cormorant Garamond, serif"`, and
+ * `svg2pdf` resolves that string against jsPDF's registered fonts — so the
+ * family must be registered under exactly this name or the substitution
+ * silently continues.
+ */
+const PDF_FONT_FAMILY = "Cormorant Garamond";
+const PDF_FONT_VFS_NAME = "CormorantGaramond-subset.ttf";
+const PDF_FONT_URL = "fonts/CormorantGaramond-subset.ttf";
+
+/** Fetched once per session; the subset is small but not free. */
+let pdfFontBase64: Promise<string> | null = null;
+
+function loadPosterFontBase64(): Promise<string> {
+  pdfFontBase64 ??= (async (): Promise<string> => {
+    const url = `${import.meta.env.BASE_URL}${PDF_FONT_URL}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(
+        `could not load the PDF font at ${url} (HTTP ${response.status.toString()})`,
+      );
+    }
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    // jsPDF's VFS takes a binary string, so convert in chunks to avoid
+    // blowing the argument limit on a large array.
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode(
+        ...bytes.subarray(i, Math.min(i + chunk, bytes.length)),
+      );
+    }
+    return btoa(binary);
+  })();
+  return pdfFontBase64;
+}
+
+/** Register the bundled subset with jsPDF under the SVG's family name. */
+async function registerPosterFontForPdf(doc: jsPDF): Promise<void> {
+  const base64 = await loadPosterFontBase64();
+  doc.addFileToVFS(PDF_FONT_VFS_NAME, base64);
+  // Identity-H: a composite font carrying exactly the subset's glyphs. The
+  // poster's text includes a degree sign and an em dash, which WinAnsi cannot
+  // represent faithfully.
+  doc.addFont(
+    PDF_FONT_VFS_NAME,
+    PDF_FONT_FAMILY,
+    "normal",
+    undefined,
+    "Identity-H",
+  );
 }
 
 /** Trigger a browser download for a blob. */
