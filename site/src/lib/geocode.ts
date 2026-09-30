@@ -1,6 +1,6 @@
 /**
  * Browser-side Nominatim geocoding. Mirrors the contract of
- * `src/starpy/geocoding/nominatim.py` (endpoint, params, `short_place_name`
+ * `src/starsky/geocoding/nominatim.py` (endpoint, params, `short_place_name`
  * label logic) but is deliberately distinct from the server-side client:
  *
  * - Browser `fetch` cannot set a `User-Agent` header (forbidden header

@@ -55,8 +55,8 @@ jobs:
         working-directory: .
         run: |
           for i in 1 2 3; do
-            uv run python -m starpy cache warm \
-              && uv run python -m starpy catalog \
+            uv run python -m starsky cache warm \
+              && uv run python -m starsky catalog \
               && break
             echo "data build attempt $i failed; retrying..."
             sleep $((i * 30))

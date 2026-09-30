@@ -1,7 +1,7 @@
-# Third-Party Notices (starpy)
+# Third-Party Notices (starsky)
 
 Every bundled/downloaded third-party asset, its license, and GPL-3.0
-compatibility. `starpy` itself is GPL-3.0-only (`LICENSE`).
+compatibility. `starsky` itself is GPL-3.0-only (`LICENSE`).
 
 ## Star catalog — Hipparcos Main Catalogue (ESA 1997, CDS I/239)
 

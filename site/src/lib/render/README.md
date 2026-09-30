@@ -37,7 +37,7 @@ let a visibly different poster through. The changed-fraction bar catches it
 Regenerate after reviewing every diff:
 
 ```bash
-STARPY_UPDATE_REFERENCE=1 bun test src/lib/render/reference.test.ts
+STARSKY_UPDATE_REFERENCE=1 bun test src/lib/render/reference.test.ts
 ```
 
 **What it does not cover.** It runs on `@napi-rs/canvas`, not Chrome or Firefox,

@@ -6,7 +6,7 @@ Deciders: lucas
 
 ## Context and drivers
 
-The product is a self-hosted, single-user night-sky poster generator. Today its only server is the Gradio UI (`src/starpy/main.py`, bound `0.0.0.0:8080` by default) and the CLI/rendering core already runs headless. Ranked drivers: **correctness** of the poster, **offline/self-contained** runtime, **cost** (free tier), 99.9 % availability, resilience to viral spikes.
+The product is a self-hosted, single-user night-sky poster generator. Today its only server is the Gradio UI (`src/starsky/main.py`, bound `0.0.0.0:8080` by default) and the CLI/rendering core already runs headless. Ranked drivers: **correctness** of the poster, **offline/self-contained** runtime, **cost** (free tier), 99.9 % availability, resilience to viral spikes.
 
 ## Considered options
 
@@ -16,7 +16,7 @@ The product is a self-hosted, single-user night-sky poster generator. Today its 
 
 ## Decision outcome
 
-Adopt option 3. One deployable (a Vite-built React/TS bundle + JSON data + font) on a CDN; no server process, no database, no identity. The browser renders the poster and exports PNG/SVG/PDF (BCR-0002) and is the only renderer (ADR-0003, BCR-0005); Python 3.14 is a data CLI — `starpy catalog` and `starpy cache warm` — with no renderer and no server.
+Adopt option 3. One deployable (a Vite-built React/TS bundle + JSON data + font) on a CDN; no server process, no database, no identity. The browser renders the poster and exports PNG/SVG/PDF (BCR-0002) and is the only renderer (ADR-0003, BCR-0005); Python 3.14 is a data CLI — `starsky catalog` and `starsky cache warm` — with no renderer and no server.
 
 ## Consequences
 
@@ -26,4 +26,4 @@ Bad: the browser must reach parity with matplotlib for poster quality (the main 
 
 ## Confirmation
 
-CI proves `python -m starpy` opens no socket and no module imports `gradio`; the R2 deploy serves the full workflow; the parity harness passes before the default flip.
+CI proves `python -m starsky` opens no socket and no module imports `gradio`; the R2 deploy serves the full workflow; the parity harness passes before the default flip.

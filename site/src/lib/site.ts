@@ -1,7 +1,7 @@
 /**
  * Curated sample moments so visitors can wander a real sky with one click.
  * Each fragment was generated with the repo encoder
- * (`starpy.share.spec.encode_payload`) from default render options; only
+ * (`starsky.share.spec.encode_payload`) from default render options; only
  * moment/place/title vary. Mix of titled and untitled moments, both
  * hemispheres.
  */
@@ -31,7 +31,7 @@ export function randomSampleFragment(exclude: string | null = null): string {
 
 /**
  * The site's own public base URL, used for absolute OG/Twitter image URLs.
- * CI sets `VITE_FULL_APP_URL` from the `STARPY_STATIC_SITE_URL` repository
+ * CI sets `VITE_FULL_APP_URL` from the `STARSKY_STATIC_SITE_URL` repository
  * variable; the placeholder below is only a local-build default and is
  * asserted away in CI ("Assert absolute OG tags").
  */

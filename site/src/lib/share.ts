@@ -67,7 +67,7 @@ export function base64UrlToBytes(fragment: string): Uint8Array {
 /**
  * Decode a `#s=` fragment: base64url-no-pad -> zlib stream inflate ->
  * canonical JSON -> validated SharePayload. Mirrors
- * `src/starpy/share/spec.py::decode_payload` (raw zlib, not gzip).
+ * `src/starsky/share/spec.py::decode_payload` (raw zlib, not gzip).
  */
 export function decodeShareFragment(fragment: string): SharePayload {
   const bytes = base64UrlToBytes(fragment);

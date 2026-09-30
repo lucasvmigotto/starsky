@@ -7,37 +7,37 @@
 **Status**: Draft
 
 **Input**: BCR-0005. The CLI's product is the sky data the browser consumes
-(`src/starpy/cli.py`, `src/starpy/data/`); it no longer renders (ADR-0003).
+(`src/starsky/cli.py`, `src/starsky/data/`); it no longer renders (ADR-0003).
 
 ## User Scenarios & Testing
 
 ### User Story 1 - Build the sky data (Priority: P1)
 
-`starpy catalog` writes `catalog.json` (stars) and `constellations.json`
+`starsky catalog` writes `catalog.json` (stars) and `constellations.json`
 (segments) for the site, from the cached Hipparcos and Stellarium sources.
 
 **Why this priority**: this is the CLI's entire reason to exist after BCR-0005;
 the site cannot render without it.
 
-**Independent Test**: run `uv run python -m starpy catalog --output-dir /tmp/x`
+**Independent Test**: run `uv run python -m starsky catalog --output-dir /tmp/x`
 and assert both files exist, parse, and carry the expected shape.
 
 **Acceptance Scenarios**:
 
-1. **Given** warm caches, **When** `starpy catalog` runs, **Then** it writes
+1. **Given** warm caches, **When** `starsky catalog` runs, **Then** it writes
    `catalog.json` with `{"stars": [[hip, ra_deg, dec_deg, mag], …]}` filtered by
    `--mag-limit` (default 6.5). [OBSERVED: `cli.py`]
-2. **Given** warm caches, **When** `starpy catalog` runs, **Then** it writes
+2. **Given** warm caches, **When** `starsky catalog` runs, **Then** it writes
    `constellations.json` with `{"segments": [[abbr, name, hip_a, hip_b], …]}`.
    [OBSERVED: `cli.py`]
 3. **Given** `--output-dir` pointing at a missing directory, **When** it runs,
    **Then** the directory is created.
-4. **Given** no arguments, **When** `python -m starpy` runs, **Then** it prints
+4. **Given** no arguments, **When** `python -m starsky` runs, **Then** it prints
    help and **opens no socket**. [BCR-0005; constitution I]
 
 ### User Story 2 - Warm the caches (Priority: P2)
 
-`starpy cache warm` downloads the Hipparcos catalogue (`hip_main.dat`, parsed to
+`starsky cache warm` downloads the Hipparcos catalogue (`hip_main.dat`, parsed to
 parquet) and the Stellarium IAU lines (`index.json`, parsed to parquet) into the
 cache dir, and reports counts. No ephemeris: the browser computes alt/az itself.
 
@@ -47,7 +47,7 @@ cache dir, and reports counts. No ephemeris: the browser computes alt/az itself.
 **Acceptance Scenarios**:
 
 1. **Given** a cold cache, **When** `cache warm` runs, **Then** both parquet
-   files exist under `STARPY__CATALOG__CACHE_DIR`.
+   files exist under `STARSKY__CATALOG__CACHE_DIR`.
 2. **Given** a warm cache, **When** it runs again, **Then** it does not
    re-download.
 
@@ -62,7 +62,7 @@ cache dir, and reports counts. No ephemeris: the browser computes alt/az itself.
 
 ### Functional Requirements
 
-- **FR-001**: `starpy catalog` MUST be the promoted default subcommand, with
+- **FR-001**: `starsky catalog` MUST be the promoted default subcommand, with
   `--mag-limit` (6.5) and `--output-dir` (`site/public/data`).
 - **FR-002**: The CLI MUST NOT import a rendering or ephemeris library, and MUST
   NOT open a listening socket (constitution I). [BCR-0005]
@@ -80,11 +80,11 @@ cache dir, and reports counts. No ephemeris: the browser computes alt/az itself.
 
 ## Success Criteria
 
-- **SC-001**: `starpy catalog` on `main` produces the same counts as the
+- **SC-001**: `starsky catalog` on `main` produces the same counts as the
   reference run: **8870 stars, 843 segments** at mag ≤ 6.5 (2026-09-29).
 - **SC-002**: CI builds the data on every push and fails if the shape or the
   minimum counts regress.
-- **SC-003**: `python -m starpy` binds nothing.
+- **SC-003**: `python -m starsky` binds nothing.
 
 ## Assumptions
 

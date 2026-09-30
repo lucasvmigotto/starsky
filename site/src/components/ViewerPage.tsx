@@ -120,7 +120,7 @@ export default function ViewerPage() {
     };
   }, []);
 
-  // Static catalog + line data (regenerate via `python -m starpy catalog`).
+  // Static catalog + line data (regenerate via `python -m starsky catalog`).
   useEffect(() => {
     let live = true;
     Promise.all([
@@ -255,7 +255,7 @@ export default function ViewerPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "starpy-sky.png";
+      a.download = "starsky-sky.png";
       a.click();
       URL.revokeObjectURL(url);
     }, "image/png");
@@ -265,7 +265,7 @@ export default function ViewerPage() {
     <div className="atlas-page">
       <header className="atlas-header">
         <div>
-          <p className="font-display text-2xl leading-none">Starpy</p>
+          <p className="font-display text-2xl leading-none">Starsky</p>
           <p className="mt-1 text-xs tracking-wide text-cream/55">
             A night-sky atlas moment, recomputed in your browser
           </p>
@@ -295,7 +295,7 @@ export default function ViewerPage() {
             {dataError && (
               <p role="alert" className="atlas-alert">
                 Star data could not be loaded ({dataError}). Regenerate it
-                with <code className="atlas-code">python -m starpy
+                with <code className="atlas-code">python -m starsky
                 catalog</code> and redeploy.
               </p>
             )}

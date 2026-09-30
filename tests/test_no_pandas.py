@@ -1,4 +1,4 @@
-"""Dependency-hygiene guard: starpy's core never imports pandas.
+"""Dependency-hygiene guard: starsky's core never imports pandas.
 
 Runs in a fresh interpreter so unrelated dev-time imports cannot populate
 ``sys.modules`` in the pytest process first.
@@ -12,9 +12,9 @@ from sys import executable as sys_executable
 def test_no_pandas_imported() -> None:
     code: str = (
         "import sys; "
-        "import starpy.data, starpy.settings, starpy.cli; "
+        "import starsky.data, starsky.settings, starsky.cli; "
         "assert 'pandas' not in sys.modules, "
-        "'pandas imported by starpy core'; "
+        "'pandas imported by starsky core'; "
         "print('ok')"
     )
     completed: subprocess_CompletedProcess[str] = subprocess_run(

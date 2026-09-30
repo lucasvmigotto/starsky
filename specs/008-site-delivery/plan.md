@@ -77,7 +77,7 @@ assets/fonts/              # NEW: shared font for Python CLI + site
 ```
 
 **Structure Decision**: keep the existing two-module layout (`site/` client,
-`src/starpy/` CLI); add one shared font location and CI checks. No new service.
+`src/starsky/` CLI); add one shared font location and CI checks. No new service.
 
 ## Complexity Tracking
 

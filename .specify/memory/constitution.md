@@ -14,7 +14,7 @@ Sync Impact Report
 - Follow-up TODOs: none
 -->
 
-# starpy Constitution
+# starsky Constitution
 
 ## Core Principles
 

@@ -30,7 +30,7 @@ difference blocked shipping. The Python render was, in the owner's words,
 sizing, glow, lines, labels, ring, caption and the unit rules
 (`units.referenceDpi`). There is no second implementation to agree with, so no
 parity tolerance and no drift between renderers. The Python side builds the
-data (`starpy catalog`) and nothing else.
+data (`starsky catalog`) and nothing else.
 
 ## Consequences
 
@@ -39,12 +39,12 @@ cli/httpx/polars/pydantic and the CLI's only job is reproducible data; a whole
 class of "these two must match" maintenance disappears; the 30 MB ephemeris
 cold start is gone.
 
-Bad: no headless CLI rendering. Anyone scripting `starpy render` must use the
+Bad: no headless CLI rendering. Anyone scripting `starsky render` must use the
 browser (or drive it) — accepted 2026-09-29. The `render-spec.json` name is now
 slightly grander than its role.
 
 ## Confirmation
 
 `grep` finds no matplotlib/skyfield/PIL in `src/`; the site builds and exports
-PNG/SVG/PDF with no Python at runtime; `starpy catalog` reproduces the exact
+PNG/SVG/PDF with no Python at runtime; `starsky catalog` reproduces the exact
 star and segment counts (8870 / 843 at mag ≤ 6.5 on 2026-09-29).

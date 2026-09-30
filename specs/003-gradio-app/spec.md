@@ -2,7 +2,7 @@ Reconstructed by project:introspec on 2026-09-29 from 51287a78a915da74fab965cc2c
 
 # Feature Specification: gradio-app
 
-**Feature Branch**: `feat/gradio-app` | **Created**: 2026-09-29 | **Status**: Draft | **Input**: `src/starpy/gui/**`, `src/starpy/main.py`, `app.py`, `tests/gui/*`.
+**Feature Branch**: `feat/gradio-app` | **Created**: 2026-09-29 | **Status**: Draft | **Input**: `src/starsky/gui/**`, `src/starsky/main.py`, `app.py`, `tests/gui/*`.
 
 ## User Scenarios & Testing
 

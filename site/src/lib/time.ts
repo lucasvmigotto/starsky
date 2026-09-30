@@ -1,5 +1,5 @@
 /**
- * Browser equivalent of `utc_from_local` in `src/starpy/astro/observer.py`:
+ * Browser equivalent of `utc_from_local` in `src/starsky/astro/observer.py`:
  * interpret wall-clock components as being in the named IANA zone and return
  * the corresponding UTC instant. Resolves the zone offset via
  * `Intl.DateTimeFormat` round-trips (two fixed-point iterations handle DST

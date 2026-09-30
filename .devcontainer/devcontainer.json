@@ -1,5 +1,5 @@
 {
-    "name": "starpy",
+    "name": "starsky",
     "//image": "The user's own curated base: non-root `developer` (UID 1000), passwordless sudo, zsh + dottod dotfiles, Nerd Fonts — the same shell as the workstation. Debian trixie, matching Dockerfile and CI.",
     "image": "ghcr.io/lucasvmigotto/devenv:debian-trixie",
     "//features": "Two features, not three: `uv` manages the Python interpreter itself (`uv sync` provisions the version pyproject.toml requires), so a separate python feature would be redundant work — verified 2026-09-30. Both features come from one maintained org; versions come from .tool-versions (references/containers.md §3b).",
@@ -19,27 +19,27 @@
     ],
     "mounts": [
         {
-            "source": "starpy-uv-cache",
+            "source": "starsky-uv-cache",
             "target": "/home/developer/.cache/uv",
             "type": "volume"
         },
         {
-            "source": "starpy-uv-data",
+            "source": "starsky-uv-data",
             "target": "/home/developer/.local/share/uv",
             "type": "volume"
         },
         {
-            "source": "starpy-bun-cache",
+            "source": "starsky-bun-cache",
             "target": "/home/developer/.bun/install/cache",
             "type": "volume"
         },
         {
-            "source": "starpy-cache",
-            "target": "/tmp/starpy-cache",
+            "source": "starsky-cache",
+            "target": "/tmp/starsky-cache",
             "type": "volume"
         },
         {
-            "source": "starpy-extensions",
+            "source": "starsky-extensions",
             "target": "/home/developer/.vscode-server/extensions",
             "type": "volume"
         }
@@ -50,7 +50,7 @@
     },
     "//postCreateCommand": "A named volume is created root-owned, so `developer` cannot write into it on first run — chown once, permanently, rather than repeat a manual fix every rebuild. uv sync then provisions the interpreter (the ~35 MB download lands in the uv-data volume) and the dependencies.",
     "postCreateCommand": {
-        "cache-ownership": "sudo chown -R developer:developer /home/developer/.cache/uv /home/developer/.local/share/uv /home/developer/.bun /tmp/starpy-cache",
+        "cache-ownership": "sudo chown -R developer:developer /home/developer/.cache/uv /home/developer/.local/share/uv /home/developer/.bun /tmp/starsky-cache",
         "python-deps": "uv sync --all-groups",
         "site-deps": "cd site && bun install --frozen-lockfile"
     },

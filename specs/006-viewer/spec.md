@@ -2,7 +2,7 @@ Reconstructed by project:introspec on 2026-09-29 from 51287a78a915da74fab965cc2c
 
 # Feature Specification: viewer
 
-**Feature Branch**: `feat/viewer` | **Created**: 2026-09-29 | **Status**: Draft | **Input**: Reconstructed from `src/starpy/share/*`, `src/starpy/schemas/share.py`, `site/**`, `site/render-spec.json`. (Renamed from `share-static-viewer`; the poster renderer and exports moved to feature 007 per BCR-0002.)
+**Feature Branch**: `feat/viewer` | **Created**: 2026-09-29 | **Status**: Draft | **Input**: Reconstructed from `src/starsky/share/*`, `src/starsky/schemas/share.py`, `site/**`, `site/render-spec.json`. (Renamed from `share-static-viewer`; the poster renderer and exports moved to feature 007 per BCR-0002.)
 
 ## User Scenarios & Testing
 
@@ -32,7 +32,7 @@ Gradio Share or landing submit → `SharePayload(v=1,lat,lon,place,when_utc,tz,o
 
 - **FR-001**: MUST keep Python/TS codecs byte-compatible (same canonical JSON + zlib-9 + base64url). [OBSERVED: `render-spec.json:44-48`; `encode.ts:35-79`]
 - **FR-002**: MUST keep `SPEC` tokens in sync with Python (`size=14*10**(mag/-2.5)` clamp [0.6,14], glow ≤3.5, lines 0.7/0.7, labels upper 7pt, band 0.22). [OBSERVED: `spec.ts:42-45`; `render-spec.json:12-42`]
-- **FR-003**: MUST consume the trimmed `catalog.json`/`constellations.json` produced by `starpy catalog` (feature 002).
+- **FR-003**: MUST consume the trimmed `catalog.json`/`constellations.json` produced by `starsky catalog` (feature 002).
 
 ## Success Criteria
 

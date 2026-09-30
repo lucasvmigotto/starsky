@@ -57,7 +57,7 @@ build: ## Build the CLI package and the site bundle
 # --- environment --------------------------------------------------------------
 
 up: ## Build the tools image
-	$(ENGINE) build -f Containerfile --target tools $(BUILD_ARGS) -t starpy-tools .
+	$(ENGINE) build -f Containerfile --target tools $(BUILD_ARGS) -t starsky-tools .
 
 doctor: ## Compare the toolchains: .tool-versions vs the tools image
 	@printf 'declared in .tool-versions: python=%s bun=%s\n' '$(PY_VERSION)' '$(BUN_VERSION)'
@@ -69,5 +69,5 @@ shell: ## Interactive shell in the tools service
 	$(COMPOSE) run --rm tools sh
 
 clean: ## Remove the tools image and its cache volumes
-	-$(ENGINE) rmi -f starpy-tools >/dev/null 2>&1
-	-$(ENGINE) volume rm -f starpy-tools-uv starpy-tools-bun >/dev/null 2>&1
+	-$(ENGINE) rmi -f starsky-tools >/dev/null 2>&1
+	-$(ENGINE) volume rm -f starsky-tools-uv starsky-tools-bun >/dev/null 2>&1

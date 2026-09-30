@@ -1,5 +1,5 @@
 [project]
-name = "starpy"
+name = "starsky"
 version = "1.0.0"
 description = "Personalized night-sky poster generator — the site renders; the CLI builds its sky data."
 readme = "README.md"
@@ -27,7 +27,7 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-root = "src"
-module-name = "starpy"
+module-name = "starsky"
 
 [tool.ruff]
 target-version = "py314"

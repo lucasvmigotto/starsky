@@ -2,7 +2,7 @@ import { deflate } from "pako";
 import type { SharePayload } from "./share.ts";
 
 /**
- * Client-side mirror of `src/starpy/share/spec.py::encode_payload`:
+ * Client-side mirror of `src/starsky/share/spec.py::encode_payload`:
  * canonical JSON -> zlib level 9 -> URL-safe base64 (no padding).
  *
  * Byte-compatibility notes (both required for fragments identical to the

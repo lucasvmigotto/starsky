@@ -28,7 +28,7 @@ version pointer back. Target: within 5 minutes (ADR-0004).
 
 | Name | Check | Fails when |
 |---|---|---|
-| `no_server` | no `gradio`/socket use in Python; `python -m starpy` binds nothing | any listener or Gradio import |
+| `no_server` | no `gradio`/socket use in Python; `python -m starsky` binds nothing | any listener or Gradio import |
 | `contract_conformance` | `render-spec.json` parsed by Python + TS tests | renderer/spec mismatch |
 | `bundle_budget` | `scripts/check_bundle_budget.sh` | bundle > 500 KB or data > 400 KB brotli |
 | `no_secrets` | scan `dist/` for token/key patterns | any secret-like string |
