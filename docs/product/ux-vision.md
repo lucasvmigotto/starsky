@@ -67,7 +67,7 @@ Kept, evolved or replaced — the `frontend:build` stage needs this list.
 
 | Element | Today | Verdict |
 |---|---|---|
-| Routing | `HashRouter`, one wildcard route; `#s=` holds the payload | **Keep.** No SPA fallback on the static host, and the share fragment must not fight router paths. The two surfaces are states of one hash, not two paths. |
+| Routing | `HashRouter`, one wildcard route; `#s=` holds the payload | **Keep, extend.** No SPA fallback on the static host, and the share fragment must not fight router paths. Studio adds `#studio=`; both stay in one hash, not two router paths. |
 | Landing | A form — coordinates/place, date/time, tz, render options | **Replace with Studio.** The form is the Studio's controls; the landing becomes the choice between the two surfaces. |
 | Viewer | Map + constellation list + hover scrim + focus overlay | **Keep and elevate.** It is the product. |
 | Tokens | `--color-ink #0b0f19`, `--color-cream #f5efe0`, `--color-rose #b98a8a` | **Replace.** See *Visual direction* — the palette sat on an AI-default. |
@@ -139,14 +139,15 @@ No navigation chrome. Two surfaces, entered by intent, sharing one hash.
 ```
 /                         landing — choose a surface
 │
-├── Viewer        #s=<payload>        a shared or composed moment
+├── Viewer        #s=<payload>        a shared or canonical moment
 │                 ├── the map (primary, largest element)
 │                 ├── moment caption — title, local time, projection
 │                 ├── figure list — constellations, selectable
 │                 ├── share actions — copy link
+│                 ├── make your own — → #studio=
 │                 └── export — PNG · SVG · PDF (secondary)
 │
-└── Studio        #s=<draft>         build and tune a moment
+└── Studio        #studio=<draft>     build and tune a moment
                   ├── the map (still primary, live)
                   ├── location — coordinates | place
                   ├── moment — date, time, timezone
@@ -158,6 +159,16 @@ No navigation chrome. Two surfaces, entered by intent, sharing one hash.
 map that must stay dominant. A tab bar would imply more destinations than
 exist; a sidebar would steal width the map needs. The Viewer is the resting
 state; Studio is reached by an explicit, labelled action.
+
+**Why Studio has its own fragment (`#studio=`), and the Viewer keeps `#s=`.**
+Studio is a *distinct surface with its own address*, so a tuned draft is
+shareable before anyone copies a link. The fragment must stay separate for a
+reason beyond convenience: **`#s=` is the canonical artifact** — the sky a
+friend sent. If a tuned draft overwrote the same fragment, "the sky I was sent"
+and "the sky I tweaked" would become indistinguishable, and the one thing worth
+protecting (a shared memory) would be silently replaced. Separate prefixes make
+that impossible by construction, and `#s=` stays byte-compatible with every
+link already in the wild.
 
 **The landing is not a form.** It is the choice: *open a shared sky* (paste a
 link) or *map a moment* (Studio). A visitor with a link — P1 — must never be
@@ -190,18 +201,26 @@ that decide whether the visitor sees anything.
 
 ### F2 — Map a moment (P2, P3)
 
-Entry: landing → "Map a moment", or an existing Viewer → "Adjust this sky".
+Entry: landing → "Map a moment" (`#studio=`), or the Viewer → "Make your own
+from this sky", which seeds Studio from the shared payload.
 1. Choose coordinates or place.
 2. Enter coordinates, *or* a place name → geocode → resolved coordinates
    shown for confirmation before anything renders.
 3. Enter date, time, timezone (auto-detected, explicit wins).
 4. **The map draws from step 2 onward** — before submission.
-5. Tune appearance; every change redraws and updates the share link.
-6. Share the link, or export.
+5. Tune appearance; every change redraws and updates the `#studio=` fragment.
+6. Copy the link — which yields a **`#s=`** link, not a `#studio=` one, so what
+   is shared is the finished sky rather than an editing session.
 
 **Flagged for removal:** step 3's timezone can be inferred from the resolved
 place; the explicit field stays as the override, but the empty-state copy should
 not imply it is required.
+
+**Step 6 is where the fragment split pays off.** A visitor tuning a draft and
+then sharing it must produce the canonical `#s=` link — otherwise the recipient
+opens `#studio=` and lands in an editor rather than on the map they were sent.
+`frontend:build` implements "share" as `#studio=…` → decode → re-encode as
+`#s=…` → navigate.
 
 ### F3 — Keep it (P2, P3)
 
@@ -565,6 +584,9 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 |---|---|
 | `landing.title` | The night sky over any place and moment |
 | `landing.subtitle` | Drawn from 8 000+ stars, in your browser |
+| `landing.locale.label` | Language |
+| `landing.locale.en` | English |
+| `landing.locale.ptBR` | Português (Brasil) |
 | `landing.openShared` | Open a shared sky |
 | `landing.openShared.help` | Paste a link that ends in `#s=…` |
 | `landing.mapMoment` | Map a moment |
@@ -604,7 +626,13 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `viewer.export.working` | Drawing at full resolution… |
 | `viewer.export.done` | Saved {filename} |
 | `viewer.export.failed` | The {format} export failed ({detail}). The map is unaffected — try again. |
-| `viewer.adjust` | Adjust this sky |
+| `viewer.makeYourOwn` | Make your own from this sky |
+
+`viewer.makeYourOwn` deliberately names the **sky**. The earlier wording,
+"Adjust this sky", implied the shared sky was wrong and needed fixing — but a
+visitor who received a link is not repairing anything. The shared sky is a
+starting point, not a mistake, and the copy says so. Naming "sky" rather than
+"link" or "poster" also keeps the object of "this" unambiguous.
 
 **States**
 
@@ -635,17 +663,40 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 
 ## Localization
 
-- **Target locales: `en` first.** Keys above are the contract for adding more.
-- **Text expansion: 40% allowance** on buttons and legend text — Portuguese and
-  German are the likely next targets and both expand.
-- **Do not translate:** the `#s=` fragment format; coordinate formats (the
-  artifact writes them and the UI must match the artifact); the version string;
-  the GPL and CC BY-SA notices, which are legal text.
-- **Numbers stay Latin digits** even where a locale prefers otherwise, because
-  the poster's caption uses them.
-- **`Intl.DateTimeFormat` with an explicit `timeZone`** is already used in
-  `caption.ts`; the i18n layer must not reintroduce a locale-dependent default.
-- **`<html lang>`** is set per locale, not just `en`.
+- **Locales: `en-US` default, `pt-BR` secondary.** The keys above are the
+  contract; `pt-BR` ships as its own slice after the retheme, so neither change
+  is buried in the other's diff.
+- **No i18n framework is installed today** — every string is inline JSX
+  (`LandingPage.tsx` alone holds ~15). Copy lands extraction-ready against these
+  keys even before the framework is chosen.
+- **The UI localizes; the poster does not.** `formatDetailLine`
+  (`site/src/lib/caption.ts`) feeds *both* the UI caption and the poster
+  artifact (`export.ts:112`, `poster.ts:300`), and
+  `reference.test.ts:229` asserts the caption equals a stored string in
+  `render-matrix.json`. A locale-dependent caption would make the **same
+  `#s=` link render a different poster in São Paulo than in London**, and fail
+  the reference test for any non-`en-US` visitor. A share link is a promise
+  that everyone sees the same sky.
+  - **UI chrome**: the active locale (`pt-BR` → `12 de jun. de 2024, 21:40`).
+  - **Artifact**: fixed `en-US`, permanently — a product constraint, not a
+    default that may drift.
+  - `formatLocalTime` currently passes `undefined` to
+    `Intl.DateTimeFormat`, which means "whatever the visitor's browser wants":
+    neither `en-US` nor deterministic. Both call sites get an **explicit**
+    locale parameter.
+- **Text expansion: 40% allowance** on buttons and legend text — Portuguese is
+  the near target and expands on both.
+- **Do not translate:** the `#s=` / `#studio=` fragment formats; coordinate
+  formats (`40.7580°N, 73.9855°W` — the artifact writes them and the UI must
+  match); the version string; the GPL and CC BY-SA notices, which are legal
+  text; constellation proper names, which the poster draws in Cormorant and
+  which must match the star catalog's IAU names.
+- **Numbers stay Latin digits** in every locale, because the poster's caption
+  uses them.
+- **`Intl.DateTimeFormat` always receives an explicit `timeZone`** — already
+  the pattern in `caption.ts`; the i18n layer must not reintroduce a
+  locale-dependent default.
+- **`<html lang>`** follows the active locale, not a hardcoded `en`.
 
 ---
 
@@ -659,20 +710,29 @@ CLI and are specified in `specs/002-catalog-cli` and `specs/005-data-cache`.
 
 ## Open questions
 
-1. **`starsky-site` is at `1.0.0`** while the product has never been released.
-   Is that the intended first public version, or should the footer's `version`
-   track a repo-wide version shared with `pyproject.toml`?
-2. **The brief's `[ASSUMPTION]`s** — metrics, out-of-scope list — are still
-   assumed. This vision promotes the audience question to decided (from the
-   owner's answer); the rest still need `project:init` confirmation.
-3. **`ExportControls` vs. the footer's "Save image"** — the Viewer offers
-   "Save image" in the footer and PNG/SVG/PDF in the controls. Consolidating to
-   one export surface is a `frontend:build` call; the vision specifies one
-   surface, with the copy keys above.
-4. **Studio's entry from the Viewer** ("Adjust this sky") implies the Viewer
-   owns a Studio session. Confirm whether tuning should be a *mode* of the
-   Viewer or a distinct surface with its own URL — the IA above treats it as
-   one surface in two states.
+*All four are resolved. They are recorded rather than deleted, so the reasoning
+survives the answer.*
+
+1. **~~Version source and package name.~~ RESOLVED (owner, 2026-09-30).** The
+   footer version comes from **`site/package.json`** via
+   `define: { __APP_VERSION__ }` — not from `pyproject.toml`. The package is
+   renamed **`starsky-site` → `starsky`**, so the package name and the footer
+   string agree. `frontend:build` task.
+2. **~~The brief's `[ASSUMPTION]`s.~~ RESOLVED (owner, 2026-09-30).** Scope is
+   **decided**: no accounts, no payments, no library, no app. This promotes the
+   brief's scope assumption to confirmed and removes the third-surface risk —
+   the two-surface IA is now *complete*, not merely sufficient. **Metrics remain
+   assumed**; nothing else in the brief is blocked on `project:init`.
+3. **~~Two export surfaces.~~ RESOLVED.** **One surface: `ExportControls`.** The
+   footer's "Save image" is removed. It duplicated a single action under a
+   second name — against the microcopy rule that an action keeps its name — and
+   as a `button`-triggered download it cannot be middle-clicked, exposes no
+   URL, and is invisible to anyone scanning for a download.
+   `ExportControls` already has the right shape (`role="status"`, keyboard
+   reachability, a test). `frontend:build` task.
+4. **~~Studio as a mode, or its own URL?~~ RESOLVED.** **Its own URL:**
+   `#studio=`, with the Viewer keeping `#s=` untouched. "Make your own from this
+   sky" replaces "Adjust this sky", which implied the shared sky was wrong.
 
 ---
 
@@ -692,3 +752,33 @@ CLI and are specified in `specs/002-catalog-cli` and `specs/005-data-cache`.
 | D10 | One verb phrase for the random-sky action | Three existing variants | An action with two names reads as two actions. |
 | D11 | Footer links the repository root | devenv's `tree/<version>` link | devenv assumes a tag per version; `1.0.0` has no tag, so that link would 404. |
 | D12 | Live-updating map in Studio | Submit-then-reveal | Every control must have a visible consequence; principle 2 depends on the map staying dominant. |
+| D13 | Studio gets `#studio=`; the Viewer keeps `#s=` | One shared fragment | A tuned draft would overwrite the canonical artifact, and "the sky I was sent" would stop being distinguishable from "the sky I tweaked". Separate prefixes make it impossible by construction and keep `#s=` byte-compatible with existing links. |
+| D14 | "Make your own from this sky" | "Adjust this sky" | "Adjust" implies the shared sky was wrong. A visitor who received a link is not repairing anything. |
+| D15 | One export surface (`ExportControls`) | Footer "Save image" + controls | One action must have one name. A `button` download also cannot be middle-clicked, exposes no URL, and is invisible when scanning for a download. |
+| D16 | The poster stays `en-US` permanently | Localizing the artifact | `reference.test.ts:229` pins the caption; a locale-dependent caption would render the same `#s=` link differently per visitor and fail the test. A share link promises everyone the same sky. |
+| D17 | `pt-BR` after the retheme, as its own slice | Both in one change | A ~60-file diff mixing palette and copy is where design regressions hide. Split, each stays reviewable; the keys exist now either way. |
+| D18 | `site/package.json` is the version source, renamed to `starsky` | `pyproject.toml`; keeping `starsky-site` | One source for a static-only site, and the package name then matches what the footer prints. |
+
+---
+
+## Carried to `frontend:build`
+
+Tasks this vision creates, so they are not lost between stages.
+
+1. **Retheme** to the dark palette and tokens above; keep the `atlas-*` class
+   names, replace their values. Set `color-scheme: dark` on `:root` — this is
+   the fix for the 2.11:1 default-button failure currently patched per element.
+2. **Add `aria-live` announcements** for "poster ready" and "figure selected".
+   Export status and place resolution already announce; these two do not.
+3. **Add `#studio=`** — distinct from `#s=`, with Studio's controls beside a
+   live map, and share that re-encodes to `#s=`.
+4. **Rename the package** `starsky-site` → `starsky`; add `__APP_VERSION__` to
+   `vite.config.ts`, declare it, and render `starsky v{__APP_VERSION__}` in a
+   **shared `SiteFooter`** (currently inlined in `ViewerPage.tsx`), linking the
+   repository root.
+5. **Remove the footer's "Save image"** — `ExportControls` is the only export
+   surface.
+6. **Normalize the random-sky copy** to one phrase, one key.
+7. **Extract every key-screen string** against the copy tables, extraction-ready.
+8. **Then, as a separate slice:** the i18n framework, `pt-BR`, locale switching,
+   and explicit locales at both `Intl.DateTimeFormat` call sites.
