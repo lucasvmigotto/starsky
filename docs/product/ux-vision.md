@@ -70,7 +70,7 @@ Kept, evolved or replaced — the `frontend:build` stage needs this list.
 | Routing | `HashRouter`, one wildcard route; `#s=` holds the payload | **Keep, extend.** No SPA fallback on the static host, and the share fragment must not fight router paths. Studio adds `#studio=`; both stay in one hash, not two router paths. |
 | Landing | A form — coordinates/place, date/time, tz, render options | **Replace with Studio.** The form is the Studio's controls; the landing becomes the choice between the two surfaces. |
 | Viewer | Map + constellation list + hover scrim + focus overlay | **Keep and elevate.** It is the product. |
-| Tokens | `--color-ink #0b0f19`, `--color-cream #f5efe0`, `--color-rose #b98a8a` | **Replace.** See *Visual direction* — the palette sat on an AI-default. |
+| Tokens | `--color-ink #0b0f19`, `--color-cream #f5efe0`, `--color-rose #b98a8a` | **Replace — in the UI only.** See *Two palettes*: `render-spec.json` keeps these exact values for the poster and is normative. The old CSS values were the *same* three colours as the poster's, which is what made the overlap easy to miss. |
 | Display face | Cormorant Garamond, `font-display` | **Keep, with a defined role.** Load-bearing: BCR-0006/0007 withhold the poster if it fails to load. |
 | `atlas-*` class names | ~50 classes | **Keep the names, replace the values.** Renaming them churns 506 lines and the e2e suite for no user-visible gain; retheming is a token change. |
 | Copy | "Map your night sky"; three variants of the random-sky action | **Evolve.** One verb phrase everywhere; see *Microcopy patterns*. |
@@ -344,6 +344,41 @@ Celestial cartography — engraved star charts and the brass instruments that
 produced them. The shared feature is **verdigris**, the blue-green patina of
 oxidised copper. That is where the accent comes from, and it is *cool*, which
 is what a night sky is.
+
+### Two palettes, and why they differ
+
+**`site/render-spec.json` owns the poster's colours** and is normative per
+constitution principle II. It is currently:
+
+```json
+"colors": { "background": "#0b0f19", "star": "#f5efe0",
+            "line": "#b98a8a", "ring": "#f5efe0" }
+```
+
+**The interface does not inherit them, and this is deliberate (D19).** The
+poster is a physical artifact — a print, a file someone keeps — and prints do
+not take the browser's theme. Keeping them separate means:
+
+- a poster renders identically for every visitor, which principle III requires
+  and which the frozen reference PNGs (`reference.test.ts`) depend on;
+- changing the interface never changes the exported artifact, so a shared link
+  cannot be silently invalidated by a CSS edit.
+
+The consequence is real and must be stated rather than discovered: **the
+poster's rose constellation lines (`#b98a8a`) will sit beside verdigris accents
+(`#8ec9b4`).** They are related but not identical. This is accepted, with one
+boundary:
+
+> **`color.accent` is for interactive chrome only — never for anything that
+> represents a constellation in the map.** A selected figure's highlight in the
+> `FiguresPanel` is chrome (verdigris border, verdigris scrim). But anything
+> drawn *inside* the canvas takes its colour from `render-spec.json` and never
+> from a UI token.
+
+If the rose/verdigris tension proves too strong once seen, the correct fix is a
+**BCR against `render-spec.json`** — not a CSS tweak. Changing the poster's
+palette regenerates every reference PNG and alters the artifact for every
+existing share link, so it is a product decision in its own right.
 
 ### Draft palette — dark only
 
@@ -758,6 +793,7 @@ survives the answer.*
 | D16 | The poster stays `en-US` permanently | Localizing the artifact | `reference.test.ts:229` pins the caption; a locale-dependent caption would render the same `#s=` link differently per visitor and fail the test. A share link promises everyone the same sky. |
 | D17 | `pt-BR` after the retheme, as its own slice | Both in one change | A ~60-file diff mixing palette and copy is where design regressions hide. Split, each stays reviewable; the keys exist now either way. |
 | D18 | `site/package.json` is the version source, renamed to `starsky` | `pyproject.toml`; keeping `starsky-site` | One source for a static-only site, and the package name then matches what the footer prints. |
+| D19 | **The UI palette is independent of the poster's**; `render-spec.json` is untouched | Repainting the poster to match the new palette | `render-spec.json` is normative (constitution II) and pinned by `spec.test.ts:32`, by literal hex assertions in `boundaries.test.ts`/`poster.test.ts`, and by stored reference PNGs. Changing it is a BCR that regenerates every fixture and alters the artifact for every existing share link. The poster is a print; it does not take the browser's theme. Accepted cost: rose lines beside verdigris chrome, bounded by "accent is chrome only, never a constellation in the map". |
 
 ---
 
@@ -782,3 +818,7 @@ Tasks this vision creates, so they are not lost between stages.
 7. **Extract every key-screen string** against the copy tables, extraction-ready.
 8. **Then, as a separate slice:** the i18n framework, `pt-BR`, locale switching,
    and explicit locales at both `Intl.DateTimeFormat` call sites.
+
+**Never in this work:** any change to `site/render-spec.json`. The retheme is
+CSS only. A token change there is a BCR, not a task (see D19) — the conformance
+test, the literal hex assertions and the reference PNGs all guard it.
