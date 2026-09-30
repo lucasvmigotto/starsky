@@ -36,6 +36,14 @@ version pointer back. Target: within 5 minutes (ADR-0004).
 
 ## Secrets (names only)
 
-R2 sync reuses the existing names: `CLOUDFLARE_R2_ACCOUNT_ACCESS_KEY`,
-`CLOUDFLARE_R2_ACCOUNT_SECRET`, `CLOUDFLARE_R2_ENDPOINT`, `CLOUDFLARE_R2_BUCKET`.
+R2 sync uses the shared naming scheme (`devsecops:pipeline`): the identifiers are
+repository **variables**, and only the secret is a secret.
+
+| Name | Kind |
+|---|---|
+| `CLOUDFLARE_R2_ACCOUNT_ID` | variable (the access-key id) |
+| `CLOUDFLARE_R2_ACCOUNT_SECRET` | secret |
+| `CLOUDFLARE_R2_ENDPOINT_S3_CLIENT` | variable (the S3-API endpoint) |
+| `CLOUDFLARE_R2_BUCKET_ID` | variable |
+
 HF OIDC secrets are removed with the Space (BCR-0003).

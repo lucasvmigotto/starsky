@@ -93,9 +93,16 @@ Runtime runs as UID/GID 65532.
 | `ghcr.yml` / `dockerhub.yml` | publish the CLI image. |
 | `release.yml` | tag and release. |
 
-Secrets are by name only: `CLOUDFLARE_R2_ACCOUNT_ACCESS_KEY`,
-`CLOUDFLARE_R2_ACCOUNT_SECRET`, `CLOUDFLARE_R2_ENDPOINT`,
-`CLOUDFLARE_R2_BUCKET`, `DOCKER_HUB_PAT`.
+Deploy config is by name only. The R2 identifiers are repository **variables**;
+only the secret is a secret:
+
+| Name | Kind |
+|---|---|
+| `CLOUDFLARE_R2_ACCOUNT_ID` | variable (the access-key id) |
+| `CLOUDFLARE_R2_ACCOUNT_SECRET` | secret |
+| `CLOUDFLARE_R2_ENDPOINT_S3_CLIENT` | variable |
+| `CLOUDFLARE_R2_BUCKET_ID` | variable |
+| `DOCKER_HUB_PAT` | secret |
 
 ## Dev
 
