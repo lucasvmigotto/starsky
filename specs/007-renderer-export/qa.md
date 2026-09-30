@@ -103,4 +103,22 @@ not a measurement of one. The architecture's ≤ 2 s phone budget therefore stay
 4× throttle on CI", not "under 2 s on a phone". The assertions are loose
 guard-rails (a ~20× regression trips them), deliberately not false precision.
 
+### Mobile viewport (added with `qa:e2e`, 2026-09-30)
+
+The `mobile-chromium` project runs the same journeys at a Pixel 7 viewport. Its
+performance numbers are the closest proxy yet to the phone claim, because the
+render is the same work at a size a phone actually uses:
+
+| Operation | Desktop (Chrome, ×4) | **Mobile (Pixel 7, ×4)** |
+|---|---|---|
+| poster render (1600 px) | 387 ms | **4345 ms** |
+| export PNG | 252 ms | **798 ms** |
+| export SVG | 57 ms | **79 ms** |
+| export PDF | 223 ms | **997 ms** |
+
+The render is ~11× slower at the phone viewport under the same throttle, which
+is exactly why the desktop number should not be quoted as the phone result. It
+stays inside the 8000 ms guard-rail. Nothing here should be read as "under 2 s on
+a phone" — that still needs a real device.
+
 To run it: `cd site && bun run test:e2e -- e2e/perf.spec.ts --project=chromium`.

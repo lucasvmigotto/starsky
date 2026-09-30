@@ -87,7 +87,16 @@ jobs:
         env:
           CI: "true"
           E2E_SERVE_CMD: node e2e/serve.mjs 4173
-        run: npx playwright test
+        # PRs get the fast project only; `main` (the release gate) and any
+        # manual run get the full matrix — Chromium, Firefox and the mobile
+        # viewport. Keeps PR feedback quick without weakening the gate that
+        # matters (test-strategy.md, gates per pipeline stage).
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx playwright test --project=chromium
+          else
+            npx playwright test
+          fi
 
       - name: Upload failure artifacts
         if: failure()
