@@ -57,4 +57,48 @@ test.describe("J3 offline export", () => {
     );
     expect(external).toEqual([]);
   });
+
+  test("the exported PDF is vector, carries real text and embeds the font", async ({
+    page,
+  }) => {
+    // 007 T031 — exporting and then *opening* the file standalone. The contract
+    // (contracts/render-spec.md) requires: true vector, selectable text, and an
+    // embedded font so the poster's typography survives on any reader.
+    // See finding-pdf-font-not-embedded.md — the font half fails today.
+    await page.goto(viewerUrl(fragmentFor()));
+    await expect(
+      page.getByRole("img", { name: /night sky poster/i }),
+    ).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "PDF", exact: true }).click();
+    const file = await download;
+    const stream = await file.createReadStream();
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(chunk as Buffer);
+    }
+    const pdf = Buffer.concat(chunks);
+    const raw = pdf.toString("latin1");
+
+    // A real document, not an empty stream.
+    expect(pdf.subarray(0, 5).toString("latin1")).toBe("%PDF-");
+    expect(pdf.length).toBeGreaterThan(5_000);
+
+    // Vector: no full-page raster image.
+    expect(raw).not.toMatch(/\/Subtype\s*\/Image/);
+
+    // Selectable text: real glyph-showing operators, not outlines.
+    expect(raw).toMatch(/BT[\s\S]{0,400}?(Tj|TJ)/);
+
+    // Embedded font. This is the contract's requirement and the current gap:
+    // jsPDF falls back to the standard fonts (Helvetica/Courier), which every
+    // reader substitutes, so the poster's own face never reaches the file.
+    expect(
+      raw,
+      "the PDF embeds no font — the poster's typography is lost. " +
+        "See specs/007-renderer-export/finding-pdf-font-not-embedded.md",
+    ).toMatch(/\/FontFile2|\/FontFile3|\/FontFile/);
+  });
 });

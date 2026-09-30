@@ -28,14 +28,12 @@ Tests are required for every story (constitution IV).
 ## Open
 
 - [x] **T028 Flip the renderer default to poster, then delete the preview path.** Done (`be118cf`): the poster is the only renderer, the preview path and the `?renderer` flag are deleted, zoom/pan became a blit of a cached composition, and hover a scrim + focus overlay. Reference images matched unchanged; 54 e2e journeys pass on Chromium and Firefox (verified visually, not only asserted).
-- [ ] **T030 e2e: empty sky in a browser.** The unit boundary covers the SVG
-      path; a browser journey for a polar-night payload is still missing.
-- [ ] **T031 e2e: exported SVG/PDF opened standalone** with the network disabled
-      (partly covered by J3, which asserts the SVG's self-containment).
-- [ ] **Decide the two open findings**:
-      `finding-font-degradation.md` (silent fallback on a missing font) and
-      `../006-viewer/finding-unvalidated-options.md` (out-of-range share
-      options accepted).
+- [x] **T030 e2e: a sparse sky in a browser.** Done (`j7-sparse-sky.spec.ts`): the tightest magnitude limit the schema allows still renders frame, ring and caption. The truly-empty case stays pinned in `boundaries.test.ts`, which can build one synthetically.
+- [x] **T031 e2e: exported files opened standalone.** Done (`j3-offline-export.spec.ts`): the SVG asserts self-containment offline; the PDF asserts vector, real text and an **embedded font**. The font assertion **fails today** — see `finding-pdf-font-not-embedded.md`; the test states the contract rather than accepting the current output.
+- [ ] **Decide the open findings**:
+      `finding-pdf-font-not-embedded.md` (the PDF uses standard fonts, no embedded face),
+      `finding-font-degradation.md` (silent fallback on a missing webfont),
+      `../006-viewer/finding-unvalidated-options.md` (out-of-range share options accepted).
 
 Struck: the parity-era tasks (formerly T001–T023) — superseded by BCR-0005.
 
