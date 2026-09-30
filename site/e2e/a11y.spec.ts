@@ -12,7 +12,13 @@
  * **computed** colours instead — values, not axe's interpretation of them.
  */
 import AxeBuilder from "@axe-core/playwright";
-import { expect, fragmentFor, test, viewerUrl } from "./fixtures.ts";
+import {
+  expect,
+  fragmentFor,
+  openExport,
+  test,
+  viewerUrl,
+} from "./fixtures.ts";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
@@ -54,6 +60,7 @@ test.describe("accessibility", () => {
 
   test("a keyboard user can reach and trigger an export", async ({ page }) => {
     await page.goto(viewerUrl(fragmentFor()));
+    await openExport(page);
     const svg = page.getByRole("button", { name: "SVG", exact: true });
     await expect(svg).toBeVisible();
 

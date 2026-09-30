@@ -40,6 +40,25 @@ export function viewerUrl(fragment: string): string {
   return `/#s=${fragment}`;
 }
 
+/**
+ * Reveal the export formats.
+ *
+ * The Viewer collapses them behind one trigger (vision principle 3 — export is
+ * the last step, and three permanent buttons out-shouted the poster). Anything
+ * that clicks a format must open this first, so the helpers live here rather
+ * than being repeated per journey.
+ */
+export async function openExport(
+  page: import("@playwright/test").Page,
+): Promise<void> {
+  const trigger = page.getByRole("button", { name: "Export", exact: true });
+  await expect(trigger).toBeVisible();
+  if ((await trigger.getAttribute("aria-expanded")) === "false") {
+    await trigger.click();
+  }
+  await expect(page.getByRole("button", { name: "PNG", exact: true })).toBeVisible();
+}
+
 /** A shared `test` that fails the test on any unexpected console error. */
 export const test = base.extend<{ consoleErrors: string[] }>({
   consoleErrors: [

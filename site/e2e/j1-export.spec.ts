@@ -5,16 +5,38 @@
  * buttons actually produce a **download** in a real browser — the check no
  * other layer can make, and the one that has never been run.
  */
-import { expect, fragmentFor, test, viewerUrl } from "./fixtures.ts";
+import { expect, fragmentFor, openExport, test, viewerUrl } from "./fixtures.ts";
 
 test.describe("J1 poster export", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(viewerUrl(fragmentFor()));
     // The poster is ready when the canvas is present and non-trivial.
     await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
+    await openExport(page);
     await expect(
       page.getByRole("button", { name: "PNG", exact: true }),
     ).toBeEnabled();
+  });
+
+  test("collapses the formats behind one trigger", async ({ page }) => {
+    // Export is the last step, so it must not compete with the poster
+    // (vision principles 2 and 3).
+    const trigger = page.getByRole("button", { name: "Close export" });
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    for (const label of ["PNG", "SVG", "PDF"]) {
+      await expect(
+        page.getByRole("button", { name: label, exact: true }),
+      ).toBeVisible();
+    }
+    // The group is named by the trigger that discloses it.
+    await expect(page.getByRole("group", { name: /export/i })).toBeVisible();
+  });
+
+  test("hides the formats again when the trigger is closed", async ({ page }) => {
+    await page.getByRole("button", { name: "Close export" }).click();
+    await expect(
+      page.getByRole("button", { name: "PNG", exact: true }),
+    ).toBeHidden();
   });
 
   test("renders the poster and offers all three formats", async ({ page }) => {
@@ -23,9 +45,6 @@ test.describe("J1 poster export", () => {
         page.getByRole("button", { name: label, exact: true }),
       ).toBeVisible();
     }
-    await expect(
-      page.getByRole("group", { name: /export poster/i }),
-    ).toBeVisible();
   });
 
   test("downloads a PNG", async ({ page }) => {

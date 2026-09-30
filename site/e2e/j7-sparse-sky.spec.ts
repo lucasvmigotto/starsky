@@ -11,7 +11,7 @@
  * The e2e suite runs against the built site; `reference.test.ts` is where the
  * truly-empty case is pinned.
  */
-import { expect, test, viewerUrl } from "./fixtures.ts";
+import { expect, openExport, test, viewerUrl } from "./fixtures.ts";
 import { BASE_PAYLOAD } from "./fixtures.ts";
 import { encodePayload } from "../src/lib/encode.ts";
 
@@ -44,6 +44,7 @@ test.describe("J7 sparse sky", () => {
     // The caption still carries the coordinates: the frame survives an empty
     // sky, which is the whole point of the case.
     const download = page.waitForEvent("download");
+    await openExport(page);
     await page.getByRole("button", { name: "SVG", exact: true }).click();
     const file = await download;
     const stream = await file.createReadStream();

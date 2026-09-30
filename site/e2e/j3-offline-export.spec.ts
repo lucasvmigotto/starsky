@@ -5,7 +5,13 @@
  * A silent fallback to a system serif is exactly what BCR-0004 removed, so
  * this asserts the font actually arrived rather than merely that a file did.
  */
-import { expect, fragmentFor, test, viewerUrl } from "./fixtures.ts";
+import {
+  expect,
+  fragmentFor,
+  openExport,
+  test,
+  viewerUrl,
+} from "./fixtures.ts";
 
 test.describe("J3 offline export", () => {
   test("exports an SVG with the network disabled and the font loaded", async ({
@@ -24,6 +30,7 @@ test.describe("J3 offline export", () => {
     await context.setOffline(true);
 
     const download = page.waitForEvent("download");
+    await openExport(page);
     await page.getByRole("button", { name: "SVG", exact: true }).click();
     const file = await download;
 
@@ -72,6 +79,7 @@ test.describe("J3 offline export", () => {
     await page.evaluate(() => document.fonts.ready);
 
     const download = page.waitForEvent("download");
+    await openExport(page);
     await page.getByRole("button", { name: "PDF", exact: true }).click();
     const file = await download;
     const stream = await file.createReadStream();

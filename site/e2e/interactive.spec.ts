@@ -13,7 +13,9 @@ async function openViewer(page: import("@playwright/test").Page): Promise<void> 
   await expect(
     page.getByRole("img", { name: /night sky poster/i }),
   ).toBeVisible();
-  await expect(page.getByRole("group", { name: /export poster/i })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Export" }),
+  ).toBeVisible();
 }
 
 test.describe("interactive poster", () => {

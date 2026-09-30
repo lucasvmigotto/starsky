@@ -12,7 +12,13 @@
  * (a 10x regression fails) rather than a false precision.
  */
 import { writeFileSync, mkdirSync } from "node:fs";
-import { expect, fragmentFor, test, viewerUrl } from "./fixtures.ts";
+import {
+  expect,
+  fragmentFor,
+  openExport,
+  test,
+  viewerUrl,
+} from "./fixtures.ts";
 
 const THROTTLE_RATE = 4;
 const RENDER_BUDGET_MS = 2_000;
@@ -64,6 +70,7 @@ test.describe("performance (throttled proxy)", () => {
     ).toBeVisible();
 
     const results: Record<string, number> = {};
+    await openExport(page);
     for (const label of ["PNG", "SVG", "PDF"]) {
       const start = Date.now();
       const download = page.waitForEvent("download");
