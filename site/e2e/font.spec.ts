@@ -43,31 +43,26 @@ test.describe("font integrity", () => {
     }
   });
 
-  test("a missing font does not silently degrade the poster", async ({
+  test("a missing font is surfaced, not silently rendered around", async ({
     page,
   }) => {
-    // Simulate the asset being unavailable — the failure mode BCR-0004 exists
-    // to prevent. The app must not quietly render a fallback face.
+    // Simulate the asset being unavailable — the failure mode BCR-0004 exists to
+    // prevent, and BCR-0007 makes visible.
+    //
+    // Abort both the webfont the canvas uses and the subset the PDF embeds: a
+    // partial failure would still leave the poster looking right, which is
+    // exactly the silent degradation this guards against.
     await page.route("**/*.woff2", async (route) => {
       await route.abort();
     });
 
     await page.goto(viewerUrl(fragmentFor()));
 
-    const family = await page.evaluate(async () => {
-      await document.fonts.ready;
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return "";
-      ctx.font = '16px "Cormorant Garamond"';
-      return ctx.font;
-    });
-
-    // The declared family is still requested; what matters is that the app did
-    // not crash and the poster still renders (degraded, but not blank).
-    expect(family).toContain("Cormorant Garamond");
+    // The visitor is told, and the poster is withheld rather than drawn in a
+    // substituted face.
+    await expect(page.getByRole("alert")).toContainText(/poster font/i);
     await expect(
       page.getByRole("img", { name: /night sky poster/i }),
-    ).toBeVisible();
+    ).toBeHidden();
   });
 });

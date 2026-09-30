@@ -102,7 +102,79 @@ export function decodeShareFragment(fragment: string): SharePayload {
   ) {
     throw new ShareDecodeError("Invalid share payload: missing fields");
   }
-  return data as SharePayload;
+  validateOptions(data as unknown as SharePayload);
+  return data as unknown as SharePayload;
+}
+
+/**
+ * The bounds a share payload's options must fall inside (BCR-0008).
+ *
+ * These are the same values the landing form's controls enforce, and they are
+ * declared here so the two cannot drift: a limit changed in one place without
+ * the other is a bug, and the tests exercise both ends.
+ *
+ * A shared link is user-controllable input, so out-of-range values are
+ * **rejected** rather than clamped — clamping would silently change what a link
+ * asked for. The old Python renderer rejected them too.
+ */
+const OPTION_RANGES = {
+  fisheye_strength: { min: 0.1, max: 3.0 },
+  min_separation: { min: 0.0, max: 0.05 },
+  magnitude_limit: { min: 1.0, max: 7.0 },
+  glow_intensity: { min: 0.0, max: 3.0 },
+} as const satisfies Record<string, { min: number; max: number }>;
+
+const COORDINATE_RANGES = {
+  lat: { min: -90, max: 90 },
+  lon: { min: -180, max: 180 },
+} as const satisfies Record<string, { min: number; max: number }>;
+
+const PROJECTIONS = ["stereographic", "fisheye"] as const;
+const SHAPES = ["circle", "square"] as const;
+
+/** Reject a payload whose options fall outside their declared bounds. */
+export function validateOptions(payload: SharePayload): void {
+  for (const [field, range] of Object.entries(COORDINATE_RANGES)) {
+    const value = (payload as unknown as Record<string, unknown>)[field];
+    if (
+      typeof value !== "number" ||
+      !Number.isFinite(value) ||
+      value < range.min ||
+      value > range.max
+    ) {
+      throw new ShareDecodeError(
+        `Invalid share payload: ${field} must be between ${range.min.toString()} and ${range.max.toString()}`,
+      );
+    }
+  }
+
+  const options = payload.options as unknown as Record<string, unknown>;
+  for (const [field, range] of Object.entries(OPTION_RANGES)) {
+    const value = options[field];
+    if (
+      typeof value !== "number" ||
+      !Number.isFinite(value) ||
+      value < range.min ||
+      value > range.max
+    ) {
+      throw new ShareDecodeError(
+        `Invalid share payload: ${field} must be between ${range.min.toString()} and ${range.max.toString()}`,
+      );
+    }
+  }
+
+  const projection = options["projection"];
+  if (!PROJECTIONS.includes(projection as (typeof PROJECTIONS)[number])) {
+    throw new ShareDecodeError(
+      `Invalid share payload: projection must be one of ${PROJECTIONS.join(", ")}`,
+    );
+  }
+  const shape = options["shape"];
+  if (!SHAPES.includes(shape as (typeof SHAPES)[number])) {
+    throw new ShareDecodeError(
+      `Invalid share payload: shape must be one of ${SHAPES.join(", ")}`,
+    );
+  }
 }
 
 /** Extract the `s` fragment from a location hash like `#s=...`. */

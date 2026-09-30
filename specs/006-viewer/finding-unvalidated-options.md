@@ -1,6 +1,6 @@
 # Finding — share payload options are type-checked but not range-checked
 
-Status: **open** — needs a decision (fix now, or accept and document)
+Status: **fixed** — BCR-0008, implemented 2026-09-30
 Found by: `site/src/lib/render/boundaries.test.ts` (007 T035), 2026-09-29
 
 ## What happens
@@ -47,6 +47,7 @@ Option 1. It is the smallest change that makes a crafted link fail loudly
 instead of rendering a wrong poster, and it restores parity with the range
 rules the Python renderer used to enforce.
 
-**Not fixed here**: this is item 1's test work, and changing decode behaviour
-changes what links the product accepts — a user-visible contract, so it wants
-your call before I touch it.
+**Resolved (BCR-0008)**: `decodeShareFragment` now rejects out-of-range
+options with a `ShareDecodeError` naming the field and its bounds, using the same
+values the landing form's controls enforce. Verified that every committed
+`SAMPLE_FRAGMENTS` entry and a defaults payload still decode.
