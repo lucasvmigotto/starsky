@@ -75,12 +75,21 @@ exception fails the build. Currently **none**.
 
 ### Required secrets and variables (names only)
 
-| Name | Used by |
-|---|---|
-| `CLOUDFLARE_R2_ACCOUNT_ACCESS_KEY`, `CLOUDFLARE_R2_ACCOUNT_SECRET`, `CLOUDFLARE_R2_ENDPOINT`, `CLOUDFLARE_R2_BUCKET` | `static_r2.yml` deploy |
-| `STARSKY_STATIC_SITE_URL` (variable) | site build (absolute OG URLs) |
-| `DOCKER_HUB_PAT` | `dockerhub.yml` |
-| `GITHUB_TOKEN` | GHCR push, release, attestations (OIDC) |
+The R2 names follow the scheme shared across these projects
+(`devsecops:pipeline`): the account id, endpoint and bucket are **identifiers**,
+so they live as repository **variables**; only the secret is a secret.
+`CLOUDFLARE_R2_ACCOUNT_ID` holds the **access-key id** — the S3 client reads it
+as `AWS_ACCESS_KEY_ID`.
+
+| Name | Kind | Used by |
+|---|---|---|
+| `CLOUDFLARE_R2_ACCOUNT_ID` | variable | `static_r2.yml` deploy (access-key id) |
+| `CLOUDFLARE_R2_ACCOUNT_SECRET` | **secret** | `static_r2.yml` deploy (secret half) |
+| `CLOUDFLARE_R2_ENDPOINT_S3_CLIENT` | variable | `static_r2.yml` deploy (the S3-API endpoint) |
+| `CLOUDFLARE_R2_BUCKET_ID` | variable | `static_r2.yml` deploy |
+| `STARSKY_STATIC_SITE_URL` | variable | site build (absolute OG URLs) |
+| `DOCKER_HUB_PAT` | secret | `dockerhub.yml` |
+| `GITHUB_TOKEN` | (automatic) | GHCR push, release, attestations (OIDC) |
 
 ## Environments and promotion
 

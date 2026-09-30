@@ -52,8 +52,10 @@ of implementation language.
 - **GHCR / Docker Hub**: images follow `github.repository`, so the rename is
   automatic once the repo is renamed (done). The old packages remain until
   deleted by hand.
-- **R2**: the bucket name comes from the `CLOUDFLARE_R2_BUCKET` secret; the
+- **R2**: the bucket comes from the `CLOUDFLARE_R2_BUCKET_ID` variable; the
   object prefix inside it is the owner's to change, outside this repository.
+  (The R2 configuration names were later normalised to the shared scheme — see
+  `delivery.md`.)
 - **History**: BCRs 0001–0008, `refactor.md` and `introspec.md` keep the old name
   where they describe the past. Editing them would falsify the record.
 

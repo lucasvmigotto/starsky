@@ -127,25 +127,32 @@ jobs:
           name: viewer-dist
           path: dist
 
-      - name: Validate R2 secrets
+      - name: Validate R2 configuration
+        # Names follow the scheme shared across these projects
+        # (`devsecops:pipeline`): the account id, endpoint and bucket are
+        # identifiers, so they live as repository *variables*; only the secret
+        # is a secret. Keeping the identifiers visible makes them reviewable
+        # and diffable, and keeps the secret store to the one value that needs
+        # it.
         run: |
           missing=0
-          for var in CLOUDFLARE_R2_ACCOUNT_ACCESS_KEY CLOUDFLARE_R2_ACCOUNT_SECRET CLOUDFLARE_R2_ENDPOINT CLOUDFLARE_R2_BUCKET; do
+          for var in CLOUDFLARE_R2_ACCOUNT_ID CLOUDFLARE_R2_ACCOUNT_SECRET \
+                     CLOUDFLARE_R2_ENDPOINT_S3_CLIENT CLOUDFLARE_R2_BUCKET_ID; do
             if [ -z "${!var}" ]; then
-              echo "::error::$var secret is not set (Settings > Secrets > Actions)"
+              echo "::error::$var is not set (Settings > Secrets and variables > Actions)"
               missing=1
             fi
           done
           [ "$missing" -eq 0 ]
-          case "${CLOUDFLARE_R2_ENDPOINT}" in
+          case "${CLOUDFLARE_R2_ENDPOINT_S3_CLIENT}" in
             https://*) echo "R2 endpoint OK" ;;
-            *) echo "::error::CLOUDFLARE_R2_ENDPOINT must start with https://"; exit 1 ;;
+            *) echo "::error::CLOUDFLARE_R2_ENDPOINT_S3_CLIENT must start with https://"; exit 1 ;;
           esac
         env:
-          CLOUDFLARE_R2_ACCOUNT_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_ACCESS_KEY }}
+          CLOUDFLARE_R2_ACCOUNT_ID: ${{ vars.CLOUDFLARE_R2_ACCOUNT_ID }}
           CLOUDFLARE_R2_ACCOUNT_SECRET: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_SECRET }}
-          CLOUDFLARE_R2_ENDPOINT: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
-          CLOUDFLARE_R2_BUCKET: ${{ secrets.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_ENDPOINT_S3_CLIENT: ${{ vars.CLOUDFLARE_R2_ENDPOINT_S3_CLIENT }}
+          CLOUDFLARE_R2_BUCKET_ID: ${{ vars.CLOUDFLARE_R2_BUCKET_ID }}
 
       - name: Ensure AWS CLI
         run: |
@@ -159,33 +166,37 @@ jobs:
       # unhashed data/*.json payloads: no-cache (content changes per deploy).
       - name: Sync static site to Cloudflare R2
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_ACCESS_KEY }}
+          # The S3 client reads its credentials from AWS_*; the repository
+          # variables hold the R2 identifiers, not cloud credentials by name.
+          AWS_ACCESS_KEY_ID: ${{ vars.CLOUDFLARE_R2_ACCOUNT_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_SECRET }}
           AWS_DEFAULT_REGION: auto
           AWS_EC2_METADATA_DISABLED: "true"
+          R2_ENDPOINT: ${{ vars.CLOUDFLARE_R2_ENDPOINT_S3_CLIENT }}
+          R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET_ID }}
         run: |
-          aws s3 sync dist "s3://${{ secrets.CLOUDFLARE_R2_BUCKET }}" \
-            --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
+          aws s3 sync dist "s3://$R2_BUCKET" \
+            --endpoint-url "$R2_ENDPOINT" \
             --delete \
             --exclude "index.html" \
             --exclude "data/*.json" \
             --exclude "favicon.svg" \
             --cache-control "public, max-age=31536000, immutable"
           # Stable filename but mutable content: no-cache like index.html.
-          aws s3 cp dist/favicon.svg "s3://${{ secrets.CLOUDFLARE_R2_BUCKET }}/favicon.svg" \
-            --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
+          aws s3 cp dist/favicon.svg "s3://$R2_BUCKET/favicon.svg" \
+            --endpoint-url "$R2_ENDPOINT" \
             --cache-control "no-cache" \
             --content-type "image/svg+xml"
           # Stable filename but mutable content: no-cache like index.html.
-          aws s3 cp dist/og-banner.png "s3://${{ secrets.CLOUDFLARE_R2_BUCKET }}/og-banner.png" \
-            --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
+          aws s3 cp dist/og-banner.png "s3://$R2_BUCKET/og-banner.png" \
+            --endpoint-url "$R2_ENDPOINT" \
             --cache-control "no-cache" \
             --content-type "image/png"
-          aws s3 cp dist/index.html "s3://${{ secrets.CLOUDFLARE_R2_BUCKET }}/index.html" \
-            --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
+          aws s3 cp dist/index.html "s3://$R2_BUCKET/index.html" \
+            --endpoint-url "$R2_ENDPOINT" \
             --cache-control "no-cache" \
             --content-type "text/html; charset=utf-8"
-          aws s3 sync dist/data "s3://${{ secrets.CLOUDFLARE_R2_BUCKET }}/data" \
-            --endpoint-url "${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
+          aws s3 sync dist/data "s3://$R2_BUCKET/data" \
+            --endpoint-url "$R2_ENDPOINT" \
             --delete \
             --cache-control "no-cache"
