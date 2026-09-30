@@ -57,9 +57,75 @@ afterEach(() => {
   cleanup();
 });
 
+/**
+ * Open the disclosure so the format buttons are in the tree.
+ *
+ * They are hidden by default (vision principle 3 — export is the last step),
+ * and `hidden` removes them from the accessibility tree, so a `getByRole` that
+ * does not open first correctly finds nothing.
+ */
+function openFormats(): void {
+  const trigger = screen.getByRole("button", { name: /export/i });
+  if (trigger.getAttribute("aria-expanded") === "false") {
+    act(() => {
+      trigger.click();
+    });
+  }
+}
+
 describe("ExportControls", () => {
+  it("starts collapsed, so export does not compete with the poster", () => {
+    render(<ExportControls payload={makePayload()} model={MODEL} />);
+    const trigger = screen.getByRole("button", { name: "Export" });
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    for (const label of ["PNG", "SVG", "PDF"]) {
+      expect(screen.queryByRole("button", { name: label })).toBeNull();
+    }
+  });
+
+  it("reveals the formats when the trigger is activated", () => {
+    render(<ExportControls payload={makePayload()} model={MODEL} />);
+    openFormats();
+    // The trigger now reads "Close export", so match on that, not "Export".
+    const trigger = screen.getByRole("button", { name: "Close export" });
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+    for (const label of ["PNG", "SVG", "PDF"]) {
+      expect(screen.getByRole("button", { name: label })).toBeDefined();
+    }
+  });
+
+  it("points aria-controls at the panel it discloses", () => {
+    // The disclosure pattern: without aria-controls the trigger announces an
+    // expansion with no referent.
+    render(<ExportControls payload={makePayload()} model={MODEL} />);
+    const trigger = screen.getByRole("button", { name: "Export" });
+    const controls = trigger.getAttribute("aria-controls");
+    expect(controls).toBeTruthy();
+    expect(document.getElementById(controls as string)).not.toBeNull();
+  });
+
+  it("toggles closed again", () => {
+    render(<ExportControls payload={makePayload()} model={MODEL} />);
+    openFormats();
+    act(() => {
+      screen.getByRole("button", { name: "Close export" }).click();
+    });
+    expect(screen.getByRole("button", { name: "Export" })).toBeDefined();
+    expect(screen.queryByRole("button", { name: "PNG" })).toBeNull();
+  });
+
+  it("does not persist the open state — a shared link must not carry it", () => {
+    // The hash is the share payload; writing UI state into it would change
+    // what a link means.
+    render(<ExportControls payload={makePayload()} model={MODEL} />);
+    openFormats();
+    const before = window.location.hash;
+    expect(before).not.toContain("export");
+  });
+
   it("renders the three formats as real buttons", () => {
     render(<ExportControls payload={makePayload()} model={MODEL} />);
+    openFormats();
     for (const label of ["PNG", "SVG", "PDF"]) {
       const button = screen.getByRole("button", { name: label });
       expect(button.tagName).toBe("BUTTON");
@@ -69,7 +135,10 @@ describe("ExportControls", () => {
 
   it("labels the group accessibly", () => {
     render(<ExportControls payload={makePayload()} model={MODEL} />);
-    const group = screen.getByRole("group", { name: /export poster/i });
+    openFormats();
+    // Named by the trigger, which is also what discloses it — one control
+    // rather than a label element plus a group.
+    const group = screen.getByRole("group", { name: /export/i });
     expect(group).toBeDefined();
   });
 
@@ -81,6 +150,7 @@ describe("ExportControls", () => {
 
   it("keeps every button keyboard reachable (no positive tabindex)", () => {
     render(<ExportControls payload={makePayload()} model={MODEL} />);
+    openFormats();
     for (const label of ["PNG", "SVG", "PDF"]) {
       const button = screen.getByRole("button", { name: label });
       expect(button.getAttribute("tabindex")).toBeNull();
@@ -90,6 +160,7 @@ describe("ExportControls", () => {
 
   it("marks the clicked format busy and disables the group while working", () => {
     render(<ExportControls payload={makePayload()} model={MODEL} />);
+    openFormats();
     const svg = screen.getByRole("button", { name: "SVG" });
     // The SVG path is synchronous, so a sync act() flushes it fully.
     act(() => {
@@ -114,6 +185,7 @@ describe("ExportControls", () => {
     };
     try {
       render(<ExportControls payload={makePayload()} model={MODEL} />);
+      openFormats();
       const svg = screen.getByRole("button", { name: "SVG" });
       act(() => {
         svg.click();

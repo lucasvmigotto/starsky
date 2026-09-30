@@ -53,7 +53,19 @@ const REQUIRED: ReadonlyArray<readonly [string, readonly string[]]> = [
       "atlas-form-label",
     ],
   ],
-  ["export", ["atlas-export", "atlas-export-actions", "atlas-export-label", "atlas-export-button", "atlas-export-status"]],
+  [
+    "export",
+    [
+      "atlas-export",
+      // The disclosure trigger replaced the `atlas-export-label` eyebrow: the
+      // label *is* the control now, so a separate label element was redundant
+      // (and the eyebrow was an AI-default the vision bans).
+      "atlas-export-trigger",
+      "atlas-export-actions",
+      "atlas-export-button",
+      "atlas-export-status",
+    ],
+  ],
   ["inline code in prose", ["atlas-code"]],
 ];
 
@@ -136,8 +148,28 @@ describe("atlas-* class vocabulary (DS-003)", () => {
     expect(block?.[1]).not.toMatch(/background:\s*var\(--color-text\)/);
   });
 
+  it("gives the export trigger the accent, so one control reads as actionable", () => {
+    // Ghosting the formats left them looking like plain labels. The single
+    // trigger carries the affordance instead.
+    const block = CSS.replace(/\/\*[\s\S]*?\*\//g, "").match(
+      /\.atlas-export-trigger \{([\s\S]*?)\n\}/,
+    );
+    expect(block?.[1]).toContain("var(--color-accent)");
+  });
+
+  it("keeps `hidden` winning over the actions' flex display", () => {
+    // Without this the collapsed formats stay on screen: `display: flex` beats
+    // the `hidden` attribute's UA `display: none`.
+    expect(CSS).toMatch(/\.atlas-export-actions\[hidden\]\s*\{\s*display:\s*none/);
+  });
+
   it("gives every button at least the 44px target height (DS-A11Y-003)", () => {
-    for (const name of ["atlas-btn", "atlas-btn-ghost", "atlas-export-button"]) {
+    for (const name of [
+      "atlas-btn",
+      "atlas-btn-ghost",
+      "atlas-export-button",
+      "atlas-export-trigger",
+    ]) {
       const block = CSS.match(new RegExp(`\\.${name} \\{([\\s\\S]*?)\\n\\}`));
       expect(block?.[1], `${name} has no min-height`).toContain("min-height: 44px");
     }

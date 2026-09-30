@@ -52,10 +52,12 @@ describe("copy", () => {
 
   it("uses one verb phrase for the random-sky action (D10)", () => {
     // The three current variants are the bug; the canonical key exists so the
-    // phrase can be changed in one place. Read through `String()` because the
-    // catalogue is `as const`, so the value is a literal type.
+    // phrase can be changed in one place. Widen both sides to `string`: the
+    // catalogue is `as const`, so `enUS[...]` is a literal type and comparing
+    // it against `t()`'s `string` return has no matching overload.
     expect(t("viewer.randomSky")).toBe("Load a random sky");
-    expect(enUS["empty.action"]).toBe(t("viewer.randomSky"));
+    const action: string = enUS["empty.action"];
+    expect(action).toBe<string>(t("viewer.randomSky"));
   });
 
   it("keeps the CTA verb equal to its result message", () => {

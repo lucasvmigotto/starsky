@@ -247,20 +247,6 @@ export default function ViewerPage() {
     setTooltip(index);
   }, []);
 
-  const downloadPng = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "starsky-sky.png";
-      a.click();
-      URL.revokeObjectURL(url);
-    }, "image/png");
-  }, []);
-
   return (
     <div className="atlas-page">
       <header className="atlas-header">
@@ -374,17 +360,13 @@ export default function ViewerPage() {
             </>
           )}
         </p>
-        {link.kind === "ready" && (
-          <p className="mt-2">
-            <button
-              type="button"
-              onClick={downloadPng}
-              className="atlas-btn-subtle"
-            >
-              Save image
-            </button>
-          </p>
-        )}
+        {/*
+        The footer's "Save image" was removed (vision D15): one action, one
+        name. It was also the only zoom-dependent export — it grabbed the
+        on-screen canvas, so after panning it saved the zoomed, clipped view.
+        `ExportControls` composes its own canvas, so PNG has always exported the
+        whole poster regardless of the view.
+      */}
       </footer>
     </div>
   );

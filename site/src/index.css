@@ -531,17 +531,32 @@ select.atlas-form-input option {
 }
 
 /*
- * Sentence case, not a tracked-out uppercase eyebrow.
+ * Export: one disclosure trigger, formats revealed on demand.
  *
- * The stylesheet had `letter-spacing: 0.08em; text-transform: uppercase` here,
- * which is AI-default trait #5 verbatim ("a tracked-out ALL-CAPS eyebrow label
- * above every heading") — and `docs/product/ux-vision.md` lists it as avoided.
- * The retheme checked contrast ratios and never looked at the typography, so
- * the rule was written and then not applied.
+ * Three permanently-visible buttons made this row the loudest thing on the
+ * page after the poster, inverting vision principle 2. Ghosting them fixed the
+ * volume but made them read as plain labels — a control that looks like text
+ * gets read, not clicked. A single trigger in the accent restores the
+ * affordance while removing the competition.
  */
-.atlas-export-label {
-  font-size: 0.8rem;
-  color: color-mix(in srgb, var(--color-text) 0.6);
+.atlas-export-trigger {
+  font: inherit;
+  font-size: 0.875rem;
+  min-height: 44px;
+  padding: 0.5rem 1.1rem;
+  color: var(--color-accent);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 0.5);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition:
+    background var(--motion-duration-short) var(--motion-ease),
+    border-color var(--motion-duration-short) var(--motion-ease);
+}
+
+.atlas-export-trigger:hover {
+  background: color-mix(in srgb, var(--color-accent) 0.1);
+  border-color: color-mix(in srgb, var(--color-accent) 0.85);
 }
 
 .atlas-export-actions {
@@ -549,6 +564,11 @@ select.atlas-form-input option {
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 0.75rem;
+}
+
+/* `hidden` must win over the flex display above. */
+.atlas-export-actions[hidden] {
+  display: none;
 }
 
 .atlas-export-button {

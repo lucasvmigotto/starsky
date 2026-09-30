@@ -45,6 +45,18 @@ function safeFilename(payload: SharePayload): string {
 export default function ExportControls({ payload, model }: Props) {
   const [busy, setBusy] = useState<Format | null>(null);
   const [status, setStatus] = useState<string>("");
+  /**
+   * Collapsed by default (vision principle 3): export is the last step, after
+   * reading the map and sharing it. Three permanently-visible buttons made the
+   * row the loudest thing on the page after the poster, which inverts
+   * principle 2 ("the interface never outshines the poster").
+   *
+   * **Never persisted.** The hash is the share payload, so writing "expanded"
+   * into it would change what a shared link means. It reverts on reload.
+   */
+  const [open, setOpen] = useState(false);
+  const panelId = "export-formats";
+  const triggerId = "export-trigger";
 
   const handleExport = async (format: Format): Promise<void> => {
     if (busy !== null) return;
@@ -82,13 +94,30 @@ export default function ExportControls({ payload, model }: Props) {
 
   return (
     <div className="atlas-export">
-      <p className="atlas-export-label" id="export-label">
-        Export poster
-      </p>
+      {/*
+       * One trigger rather than three always-visible buttons. `aria-expanded`
+       * + `aria-controls` is the disclosure pattern: the formats are still
+       * reachable by Tab once revealed, and no menu keyboard model is needed.
+       */}
+      <button
+        type="button"
+        id={triggerId}
+        className="atlas-export-trigger"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => {
+          setOpen((value) => !value);
+        }}
+      >
+        {open ? "Close export" : "Export"}
+      </button>
+
       <div
+        id={panelId}
         className="atlas-export-actions"
         role="group"
-        aria-labelledby="export-label"
+        aria-labelledby={triggerId}
+        hidden={!open}
       >
         {(["png", "svg", "pdf"] as const).map((format) => (
           <button
