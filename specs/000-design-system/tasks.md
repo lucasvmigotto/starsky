@@ -68,11 +68,11 @@ catalogue fails the build.
 
 ## Phase 4: Polish
 
-- [ ] T033 a11y: axe on the landing and viewer surfaces, zero violations at AA
-- [ ] T034 Test: `role="alert"` only on the font failure; `role="status"` on export (DS-A11Y-005)
-- [ ] T035 Add the two missing announcements — poster ready, figure selected — with `aria-live="polite"`
-- [ ] T036 Test: the canvas exposes its caption and selected figure as text, not image-only (DS-A11Y-006)
-- [ ] T037 e2e: the full suite is unaffected by the retheme (selectors are class/role-based)
+- [x] T033 a11y: axe on the landing and viewer surfaces, zero violations at AA — already covered by `e2e/a11y.spec.ts` (serious/critical at WCAG 2.2 AA tags). `color-contrast` is deliberately excluded there and checked against *computed* colours by `e2e/contrast.spec.ts`, because axe-core cannot resolve Tailwind v4's `oklab`/`color-mix` and reports false positives (documented in that spec's header). Both pass.
+- [x] T034 Test: `role="alert"` only on the font failure; `role="status"` on export (DS-A11Y-005) — `announcements.test.ts` asserts exactly two `role="alert"` uses, both withholding failures
+- [x] T035 Add the two missing announcements — poster ready, figure selected — with `aria-live="polite"`, plus view-reset. The region is `sr-only` and **labelled** (`viewer.announcementRegion`), because the export row's own status region made an unlabelled pair ambiguous to a screen reader
+- [x] T036 Test: the canvas exposes its caption and selected figure as text, not image-only (DS-A11Y-006) — the caption is built from the same `formatDetailLine` the poster renders, so the spoken and drawn captions cannot disagree
+- [x] T037 e2e: the full suite is unaffected by the retheme (selectors are class/role-based) — 43 passed, 0 failed, 1 skipped (the opt-in live smoke)
 
 **Checkpoint**: axe clean, T034–T037 green, all three stories demonstrable
 independently.

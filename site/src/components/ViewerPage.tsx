@@ -73,6 +73,17 @@ export default function ViewerPage() {
   const [loaded, setLoaded] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animRef = useRef(0);
+  /**
+   * Announced async outcomes (000-design-system T035).
+   *
+   * A canvas that appears silently, and a figure that lights up without saying
+   * so, are both invisible to anyone not looking at the screen. The export row
+   * already announced via its own `role="status"`; these two were the gap.
+   *
+   * Polite, not assertive: nothing here is an error. The font failure stays
+   * `role="alert"` because it withholds the poster (BCR-0007).
+   */
+  const [announcement, setAnnouncement] = useState("");
 
   // Track `#s=` across in-page navigation and pastes.
   useEffect(() => {
@@ -142,6 +153,7 @@ export default function ViewerPage() {
         );
         setSegments(con.segments);
         setLoaded(true);
+        setAnnouncement(t("viewer.announced.ready"));
       })
       .catch((error: unknown) => {
         if (live) {
@@ -217,6 +229,7 @@ export default function ViewerPage() {
   const resetView = useCallback(() => {
     setSelected(null);
     setHovered(null);
+    setAnnouncement(t("viewer.announced.viewReset"));
     setTooltip(null);
     animateView(HOME_VIEW);
   }, [animateView]);
@@ -238,6 +251,11 @@ export default function ViewerPage() {
       const fig = model.figures[index];
       setSelected(index);
       setTooltip(null);
+      // Announce what was focused *and* what now fills the view, since the
+      // zoom is the whole point of selecting.
+      setAnnouncement(
+        t("viewer.announced.figureSelected", { name: fig.name }),
+      );
       animateView({ scale: 2.4, fx: fig.centroidX, fy: fig.centroidY });
     },
     [model, animateView],
@@ -339,6 +357,24 @@ export default function ViewerPage() {
             )}
 
             {model && <ExportControls payload={payload} model={model} />}
+
+            {/*
+              Async outcomes (000-design-system T035). `sr-only` keeps it out of
+              the visual layout — an empty box with reserved space would shift
+              the page, and the message is for a screen reader only.
+
+              `aria-label` names the region. The export row has its own status
+              region, and two unlabelled ones are ambiguous to a screen-reader
+              user: you cannot tell which is talking.
+            */}
+            <p
+              className="sr-only"
+              role="status"
+              aria-live="polite"
+              aria-label={t("viewer.announcementRegion")}
+            >
+              {announcement}
+            </p>
           </>
         )}
       </main>

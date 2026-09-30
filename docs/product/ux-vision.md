@@ -654,6 +654,17 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 |---|---|
 | `viewer.subtitle` | A night-sky atlas moment, recomputed in your browser |
 | `viewer.loading` | Charting the stars… |
+
+**Viewer · announcements** (`role="status"`, `aria-live="polite"`, `sr-only`)
+
+| Key | Copy |
+|---|---|
+| `viewer.announced.ready` | Night sky poster ready. |
+| `viewer.announced.figureSelected` | Showing {name}. |
+| `viewer.announced.viewReset` | Showing the whole sky again. |
+| `viewer.announcementRegion` | Sky viewer status *(the region's `aria-label`, so it is distinguishable from the export row's)* |
+| `viewer.canvasLabel` | Night sky poster titled {title} |
+| `viewer.canvasLabel.untitled` | Night sky poster |
 | `dataError.title` | Star data could not be loaded |
 | `dataError.body` | Regenerate it with `starsky catalog` and reload. |
 | `fontError.title` | The poster font could not be loaded |

@@ -82,6 +82,6 @@ describe("copy", () => {
   it("has no key the vision does not define", () => {
     // Guard against a typo'd key that would silently never be used: every key
     // here is asserted against the vision by `scripts/check_i18n_keys.py`.
-    expect(copyKeys().length).toBe(81);
+    expect(copyKeys().length).toBe(87);
   });
 });

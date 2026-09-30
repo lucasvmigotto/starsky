@@ -61,7 +61,12 @@ test.describe("J1 poster export", () => {
     }
     expect(bytes).toBeGreaterThan(10_000);
 
-    await expect(page.getByRole("status")).toContainText(/PNG/i);
+    // Scope to the export row's own status region: the Viewer has a second one for
+    // its sky announcements (T035), so a bare `getByRole("status")` is
+    // ambiguous now that both exist.
+    await expect(
+      page.locator(".atlas-export-status"),
+    ).toContainText(/PNG/i);
   });
 
   test("downloads an SVG containing the title as text", async ({ page }) => {

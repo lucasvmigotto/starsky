@@ -11,6 +11,7 @@
  */
 import { useEffect, useMemo, useRef } from "react";
 import { t } from "../i18n/index.ts";
+import { formatDetailLine } from "../lib/caption.ts";
 import { drawFocusOverlay, renderPoster } from "../lib/render/poster.ts";
 import type { SharePayload } from "../lib/share.ts";
 import {
@@ -59,6 +60,25 @@ export default function SkyCanvas({
 }: Props) {
   const activeRef = useRef({ view, hovered, selected });
   activeRef.current = { view, hovered, selected };
+
+  /**
+   * The caption as plain text, for the screen-reader copy (T036).
+   *
+   * Built from the same `formatDetailLine` the poster renders with, so the
+   * spoken caption and the drawn one cannot disagree — the UI and the artifact
+   * showing different coordinates is exactly what vision principle 4 forbids.
+   */
+  const caption = formatDetailLine(
+    payload.lat,
+    payload.lon,
+    payload.place,
+    payload.when_utc,
+    payload.tz,
+  );
+
+  /** The focused figure's name, so "showing Orion" is announced and readable. */
+  const focusedName =
+    selected !== null ? (model.figures[selected]?.name ?? null) : null;
 
   // Compose the poster once per (payload, model, dpr). Recomposing 400+ stars
   // per hover or per zoom frame would blow the render budget; the composition
@@ -179,10 +199,17 @@ export default function SkyCanvas({
         }}
         className="block rounded-sm"
         role="img"
+        /*
+          The caption and the focused figure are exposed as *text* below, not
+          only in this label (000-design-system T036, DS-A11Y-006). An
+          `aria-label` replaces the element's content, so a caption rendered
+          inside the figure would be invisible to a screen reader; keeping it as
+          sibling text is what makes the map's own words reachable.
+        */
         aria-label={
           payload.options.title
-            ? `Night sky poster titled ${payload.options.title}`
-            : "Night sky poster"
+            ? t("viewer.canvasLabel", { title: payload.options.title })
+            : t("viewer.canvasLabel.untitled")
         }
         onMouseMove={(e) => {
           const [lx, ly] = screenToLogical(e.clientX, e.clientY);
@@ -210,6 +237,18 @@ export default function SkyCanvas({
         }}
       />
       <span className="sr-only">{t("figures.hint")}</span>
+      {/*
+        The caption as text (T036). Visually hidden because the poster already
+        draws it, but a screen reader gets the coordinates, the place and the
+        moment as words — which is the only way the map's identity is legible
+        to anyone who cannot see it.
+      */}
+      <span className="sr-only">{caption}</span>
+      {focusedName !== null && (
+        <span className="sr-only">
+          {t("viewer.announced.figureSelected", { name: focusedName })}
+        </span>
+      )}
     </div>
   );
 }
