@@ -1,0 +1,12 @@
+# Single source of truth for toolchain versions.
+#
+# Read by: the devcontainers (via the image tags), compose.tools.yml build args,
+# and CI (through the same build args). The `doctor` recipe compares the versions
+# actually present in each layer against this file and fails on drift.
+#
+# Why one file: before this existed the repo had four different Bun versions in
+# play — CI used `latest`, the devenv catalog shipped 1.3.9, a host had 1.4.0 and
+# the e2e container installed 1.4.2 — so "it passed locally" meant very little.
+
+python 3.14
+bun 1.4.2

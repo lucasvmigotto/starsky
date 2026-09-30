@@ -24,11 +24,39 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "bun:test";
-import { createCanvas, loadImage } from "@napi-rs/canvas";
+import { GlobalFonts, createCanvas, loadImage } from "@napi-rs/canvas";
 import { formatDetailLine } from "../caption.ts";
 import { buildSkyModel, type SegmentRow, type StarRow } from "../skymodel.ts";
 import type { SharePayload } from "../share.ts";
 import { renderPoster } from "./poster.ts";
+
+// Register the bundled poster font with the canvas library, as the Python
+// renderer used to with `fontManager.addfont`.
+//
+// Without this the canvas silently substitutes a system sans-serif: measured
+// 2026-09-30, the host and the container drew `ANDROMEDA` in *different* sans
+// faces, so the suite compared the wrong typeface against the wrong typeface —
+// and its references encoded neither the product's face nor a stable
+// environment. The browser is unaffected (it loads the face via `@font-face`);
+// this is the Node/canvas path only.
+//
+// Four levels up: site/src/lib/render/ → repo root.
+const POSTER_FONT = new URL(
+  "../../../../assets/fonts/CormorantGaramond.ttf",
+  import.meta.url,
+).pathname;
+if (!GlobalFonts.has("Cormorant Garamond")) {
+  const registered = GlobalFonts.registerFromPath(
+    POSTER_FONT,
+    "Cormorant Garamond",
+  );
+  if (registered === null) {
+    throw new Error(
+      `could not register the bundled poster font at ${POSTER_FONT}; ` +
+        "the suite would otherwise compare fallback glyphs",
+    );
+  }
+}
 
 interface CaseExpected {
   stars: number;
