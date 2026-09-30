@@ -49,7 +49,6 @@ jobs:
       # the job's home; the data build runs in the repo root.
       - name: Install uv
         uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
-        with:
 
       - name: Build the sky data
         working-directory: .
@@ -112,15 +111,22 @@ jobs:
   #
   # Separate job on purpose: a third party being slow or down must not turn the
   # standard suite red, and it should be obvious from the job name which one
-  # failed. `main` only — a live call on every PR would be both flaky and rude
-  # to a free service.
+  # failed.
   #
-  # Gated on fork status, not on a variable: the `if:` context cannot read
-  # repository variables or secrets (learned the hard way in `1abd28f`).
+  # `main` only, plus a deliberate manual dispatch — never on a pull request or a
+  # `dev` push. Whether a change is correct is settled by the suite above, which
+  # intercepts Nominatim; a live call has no bearing on it, and putting one in a
+  # pre-merge check is both flaky and rude to a free service.
+  #
+  # No fork condition, unlike the step this replaces (`1abd28f`): the job never
+  # runs on a pull request, and it needs no secret or variable. The browser
+  # cannot send a `User-Agent`, so identification is the automatic `Referer` —
+  # place lookup has no CI config at all.
   live-smoke:
+    name: Live place lookup (real Nominatim)
     if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble
