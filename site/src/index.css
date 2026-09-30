@@ -129,6 +129,15 @@ body {
   color: color-mix(in srgb, var(--color-text) 0.55);
 }
 
+/* Version + source, then the legal attribution. Two quiet lines, no eyebrow. */
+.atlas-footer-meta {
+  max-width: 68ch;
+}
+
+.atlas-footer-meta + .atlas-footer-meta {
+  margin-top: 0.35rem;
+}
+
 .atlas-moment {
   text-align: center;
   margin-bottom: 1.75rem;

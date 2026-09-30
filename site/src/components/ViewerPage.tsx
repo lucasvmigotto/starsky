@@ -7,7 +7,6 @@ import {
   ShareVersionError,
   type SharePayload,
 } from "../lib/share.ts";
-import { randomSampleFragment } from "../lib/site.ts";
 import {
   useSkyModel,
   type SegmentRow,
@@ -17,6 +16,7 @@ import FiguresPanel from "./FiguresPanel.tsx";
 import ExportControls from "./ExportControls.tsx";
 import SkyCanvas, { HOME_VIEW, type View } from "./SkyCanvas.tsx";
 import { EmptyState, InvalidState, LegacyState } from "./States.tsx";
+import SiteFooter from "./SiteFooter.tsx";
 
 type LinkState =
   | { kind: "empty" }
@@ -343,31 +343,7 @@ export default function ViewerPage() {
         )}
       </main>
 
-      <footer className="atlas-footer">
-        <p>
-          Poster-grade preview drawn from{" "}
-          <code className="atlas-code">catalog.json</code>, rendered entirely
-          in your browser.
-          {link.kind === "empty" && (
-            <>
-              {" "}·{" "}
-              <a
-                className="atlas-link"
-                href={`#s=${randomSampleFragment()}`}
-              >
-                random sky
-              </a>
-            </>
-          )}
-        </p>
-        {/*
-        The footer's "Save image" was removed (vision D15): one action, one
-        name. It was also the only zoom-dependent export — it grabbed the
-        on-screen canvas, so after panning it saved the zoomed, clipped view.
-        `ExportControls` composes its own canvas, so PNG has always exported the
-        whole poster regardless of the view.
-      */}
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
