@@ -1,6 +1,7 @@
 # Finding — the tools image had no font backend, so text rendered blank
 
-Status: **fixed** in the tools image; decision needed on the references
+Status: **fixed** in the tools image; the references stay host-generated for now —
+decision taken 2026-10-01, see *Decision* below
 Found by: `make test` in the `tools` image, 2026-09-30
 
 ## What happens
@@ -61,6 +62,31 @@ should be regenerated **inside the tools image**.
 should happen only once the container's text rendering is confirmed correct —
 otherwise a genuinely wrong poster could be blessed as the baseline. The
 regeneration is a deliberate step, with the diff reviewed.
+
+## Decision (2026-10-01) — keep the host references, move the environment question
+
+The references are **left as they are**, and the regeneration is not scheduled as
+a 007 task. Two facts decided it:
+
+1. **CI does not disagree with them.** `Site CI` runs `bun run test` on a plain
+   runner, where the suite passes on every push — so the pixel bars are currently
+   enforced against the same environment that produced the baselines. Nothing is
+   red because of this.
+2. **The tools image is green now.** The font backend is installed and the build
+   asserts `fc-list | grep -qi cormorant`, so the cause above is closed. What
+   remains is a *choice of reference environment*, not a broken test.
+
+Regenerating would swap the approved baseline for a different rendering of the
+same poster and make the diff un-reviewable at this point. The gap it would close
+is small: the suite's text metrics are font-backend-sensitive, so it is
+environment-coupled by design and the environment is asserted only where it
+matters (the live font, the embedded-face checks).
+
+**If it is taken up later**, it belongs to `008-site-delivery`, which already owns
+making the `tools` image the delivery environment — at that point regenerate
+inside the image, review the PNG diff by eye, and record the mean-absolute-delta
+per case here. Do not do it as a side effect of unrelated poster work: a changed
+baseline and a changed poster in the same commit cannot be told apart.
 
 ## Correction to an earlier claim
 

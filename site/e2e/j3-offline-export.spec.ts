@@ -71,7 +71,9 @@ test.describe("J3 offline export", () => {
     // 007 T031 — exporting and then *opening* the file standalone. The contract
     // (contracts/render-spec.md) requires: true vector, selectable text, and an
     // embedded font so the poster's typography survives on any reader.
-    // See finding-pdf-font-not-embedded.md — the font half fails today.
+    // The font half was red until BCR-0006 (8a346bd) embedded the face; it now
+    // passes. The assertion below is unchanged — it always stated the contract
+    // rather than accepting jsPDF's standard-font fallback.
     await page.goto(viewerUrl(fragmentFor()));
     await expect(
       page.getByRole("img", { name: /night sky poster/i }),
@@ -100,9 +102,10 @@ test.describe("J3 offline export", () => {
     // Selectable text: real glyph-showing operators, not outlines.
     expect(raw).toMatch(/BT[\s\S]{0,400}?(Tj|TJ)/);
 
-    // Embedded font. This is the contract's requirement and the current gap:
-    // jsPDF falls back to the standard fonts (Helvetica/Courier), which every
-    // reader substitutes, so the poster's own face never reaches the file.
+    // Embedded font. The contract requires the poster's own face in the file, not
+    // one every reader substitutes: jsPDF's default is the 14 standard fonts
+    // (Helvetica/Courier), which would silently drop the typography. Kept as the
+    // regression guard for BCR-0006.
     expect(
       raw,
       "the PDF embeds no font — the poster's typography is lost. " +
