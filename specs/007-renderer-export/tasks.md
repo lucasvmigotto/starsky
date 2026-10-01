@@ -55,9 +55,11 @@ Feature risk: **High** — see `specs/007-renderer-export/qa.md`.
 - [ ] T040 [QA] Charter C1: poster fidelity sweep (extreme latitudes, solstice edges, accents/emoji)
 - [ ] T041 [QA] Charter C2: export integrity in a different viewer per format
 
-**Checkpoint**: exports verified in a real browser on both supported browsers.
-Green on `dev`; still nothing is `Verified` until the suite passes on `main`, and
-T040/T041 remain open above.
+**Checkpoint**: exports verified in a real browser on both supported browsers —
+met on `dev`. The `main` half of this line was removed on 2026-10-01: `main` is
+the pre-refactor tree, so it has no `site/` and no `site_e2e.yml`, and the suite
+can never run there. The release gate is 008's promotion path, not a push to
+`main`. T040/T041 remain open above, so 007 is still not `Verified`.
 
 ## Frontend
 
@@ -70,25 +72,38 @@ payload (ADR-0001). Nothing to mock.
 
 > **Status (2026-10-01).** F1 and F2 shipped in the design-system pass
 > (`8b52a5b`, `fcd0f51`, `ceb7db3`) but this list was never reconciled, so it read
-> as ten open tasks. Checked against the code: **six are done, four are not.**
-> The four gaps are named on the task that owns each, so the next session does not
-> re-derive them. None of the four is a behaviour bug — three are missing
-> assertions and one is unwired i18n.
+> as ten open tasks. Checked against the code, then closed the real gaps on
+> `feat/007-export-polish`: **all ten are now done.**
+>
+> Two corrections to the first pass of this reconciliation, both worth keeping:
+>
+> - FT006 was reported as "half done — nothing asserts the 44px target". That was
+>   wrong. `design/atlas-classes.test.ts:166` asserts it. The mistake was grepping
+>   one plausible file (`components.test.ts`) instead of searching; the assertion
+>   was in a sibling. A task can be closed by work that already shipped, and a
+>   single-file grep cannot tell you which.
+> - FT007 was reported as the only real code gap, which was right, but the note
+>   implied the catalogue already covered the component. It did not: three of the
+>   strings the component ships have no key at all.
 
 - [x] FT001 Test: the Viewer has exactly one download control — the footer's "Save image" is gone (D15). Done: `e2e/footer.spec.ts` "has no download control — one export surface (D15)", green.
 - [x] FT002 Test: an export in progress disables all three format buttons. Done: `disabled={busy !== null}` on all three, plus the component test "disables the group while working".
 - [x] FT003 Test: a failed export names the format and leaves the map untouched. Done: the `catch` sets `"<FORMAT> export failed: …"` and mutates no model state; covered by "surfaces an export failure in the live region".
 - [x] FT004 [P] Rework `ExportControls.tsx` against the design-system tokens; keep `role="status"` and `aria-live="polite"`. Done: `atlas-export*` classes throughout, and the live region kept verbatim.
 - [x] FT005 [P] Remove the footer "Save image" and its handler from `ViewerPage.tsx`. Done: no `Save image` in `SiteFooter.tsx` or `ViewerPage.tsx`.
-- [ ] FT006 Verify every export target is ≥44×44 after the retheme. **Half done:** the CSS is correct (`.atlas-export-trigger` and `.atlas-export-button` both `min-height: 44px`, `index.css:551,583`) but *nothing asserts it* — the verification this task asks for is a missing test in `design/components.test.ts`.
-- [ ] FT007 Wire `viewer.export.*` copy keys, incl. `{filename}` and `{format}` interpolation. **Not done:** all seven keys exist in `i18n/en-US.ts:71-77` and `8641ac9` wired every other surface, but `ExportControls.tsx` still hardcodes `"Export"`, `"PNG"`, `"Preparing …"`, `"downloaded."`. The one component left off the copy extraction.
+- [x] FT006 Verify every export target is ≥44×44 after the retheme. **Already done** — and an earlier note here said otherwise, which was my error: I grepped `design/components.test.ts` for `44`, found nothing, and concluded the assertion was missing. It lives in `design/atlas-classes.test.ts:166` ("gives every button at least the 44px target height (DS-A11Y-003)"), which asserts `min-height: 44px` on all four button classes including `atlas-export-trigger` and `atlas-export-button`. `design/components.md:47` names that file as the guard. The lesson is recorded in FT007 below: a grep in one file is not a search.
+- [x] FT007 Wire `viewer.export.*` copy keys, incl. `{filename}` and `{format}` interpolation. Done: `ExportControls.tsx` now resolves every user-facing string through `t()`; the `{filename}` and `{format}` slots carry the real values. Four of the seven strings had keys all along and went unused — the component had its own `LABELS` map and its own "Preparing…"/"downloaded." literals. Three keys did not exist and were added to the vision *and* the catalogue (`viewer.export.open`/`.close`/`.preparing`, 87→90), because the catalogue is generated from the vision and `check_i18n_keys.py` asserts the two agree in both directions. The copy is the component's existing wording, recorded rather than invented.
+
+  Two things this surfaced, both left visible rather than quietly fixed:
+  - **The trigger labels the format group.** `aria-labelledby={triggerId}` means that when the panel is open the group is announced as "Close export" — a group named after the control that closes it. A passing test asserts the group is named `/export/i`, which is true of the wrong string too. Worth its own fix; out of scope here.
+  - **A test was pinned to the old literal.** `ExportControls.test.tsx` asserted the success status contains `"SVG"`, which only held because the component said "SVG downloaded." The approved copy is `viewer.export.done` ("Saved {filename}"), which names the file. The assertion now resolves the key instead of pinning a string, so the component and the catalogue cannot drift apart again unnoticed.
 
 **Checkpoint**: AC1–AC8 in `ui.md` pass; `j3-offline-export` still green.
 
 ### Phase F2: Polish
 
-- [ ] FT008 a11y: axe on the export row; completion announced without focus moving. **Half done:** axe on the viewer and keyboard-reachable export both pass in `e2e/a11y.spec.ts`; *no test asserts that completion leaves focus where it was*.
-- [ ] FT009 [P] e2e: assert one download control; a failed export shows the error copy. **Half done:** the one-control half is FT001's passing test; there is no e2e that forces an export failure and asserts the error copy.
+- [x] FT008 a11y: axe on the export row; completion announced without focus moving. Done: the axe half was already covered by `e2e/a11y.spec.ts` (the viewer has no serious or critical violations; a keyboard user can reach and trigger an export). The focus half was genuinely unasserted — added "announces completion without stealing focus", which focuses the format button the way a keyboard user would, completes the export, and asserts the live region carries the result *and* that `document.activeElement` is still that same button. A completion message that moved focus would yank the user out of the format row mid-sequence.
+- [x] FT009 [P] e2e: assert one download control; a failed export shows the error copy. Done: the one-control half was FT001's passing test. The missing half is a new `test.describe("J1 export failure")` in `j1-export.spec.ts` that breaks the page before load with `URL.createObjectURL` throwing — the only call that turns a Blob into a download (`lib/render/export.ts:274`), so the export fails at the last possible moment, after the poster has rendered. It asserts the copy names the format, carries the "map is unaffected" reassurance, that the poster is *actually* still on screen, that no download reached disk, and that the button returns to enabled rather than stuck busy. The stub technique came from the existing unit test that already injected the same failure.
 - [x] FT010 Regression: `render-spec.json` conformance (`spec.test.ts:32`) and the literal hex assertions remain green — this feature changes no poster token. Done: both run in `Site CI`'s `bun run test`, green on every push since the retheme.
 
 **Checkpoint**: no second download control anywhere; conformance green;
