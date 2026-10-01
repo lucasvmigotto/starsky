@@ -97,8 +97,53 @@ jobs:
           exit-code: "0"
           severity: CRITICAL,HIGH
 
+  # Decides whether SAST can run, and says so out loud in the run when it cannot.
+  #
+  # The check is an API call rather than a `github.event...` lookup on purpose.
+  # The schedule event's payload is not a repository webhook, so a condition read
+  # from the event would silently skip the weekly deep scan. Reading the setting
+  # from the API makes every trigger — push, pull request, schedule, manual —
+  # behave identically.
+  codeql-status:
+    name: CodeQL availability
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Read the code scanning setting
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          status="$(curl -fsSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO" \
+            | python3 -c 'import json,sys; print((json.load(sys.stdin).get("security_and_analysis") or {}).get("code_scanning", {}).get("status", "unknown"))')"
+          echo "code scanning: $status"
+          if [ "$status" = "enabled" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=CodeQL did not run::Code scanning is disabled" \
+              "for this repository, so the SAST job is skipped, not passed." \
+              "Enable code scanning (Settings > Code security > Code scanning)" \
+              "to turn SAST on. Trivy below is unaffected and still runs."
+          fi
+
   # SAST. Python for the CLI, JavaScript/TypeScript for the site.
+  #
+  # Guarded rather than removed: CodeQL uploads its results through code scanning,
+  # so with that setting off the Analyze step fails on every push. Whether SAST can
+  # run is a repository-level choice (GHAS on a private repo), not a workflow one —
+  # so the job states that precondition and the job above reports it. When code
+  # scanning is enabled this job runs unchanged.
   codeql:
+    needs: codeql-status
+    if: needs.codeql-status.outputs.enabled == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
