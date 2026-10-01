@@ -98,6 +98,14 @@ jobs:
         env:
           CI: "true"
           E2E_SERVE_CMD: node e2e/serve.mjs 4173
+          # Firefox refuses to launch when $HOME is owned by another user, and a
+          # container job runs as root with HOME=/github/home (owned by
+          # `pwuser`). Every Firefox project therefore died at
+          # `browserType.launch` while chromium and mobile-chromium passed —
+          # Firefox's own error names this workaround. Scoped to this step: the
+          # earlier ones want the job's home, where `setup-uv` and the bun
+          # install put their caches.
+          HOME: /root
         # PRs get the fast project only; `main` (the release gate) and any
         # manual run get the full matrix — Chromium, Firefox and the mobile
         # viewport. Keeps PR feedback quick without weakening the gate that
