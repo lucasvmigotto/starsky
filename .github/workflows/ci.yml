@@ -29,6 +29,13 @@ jobs:
       - name: Declarative import style
         run: uv run python scripts/check_declarative_imports.py src tests
 
+      # A workflow file that Actions rejects fails at *pre-dispatch*: the run
+      # exists, then dies in 0s with zero jobs and no log line to follow. That
+      # is how `static_r2.yml` sat red from 2026-09-30 to 2026-10-01 on an empty
+      # `with:`. A static check turns an invisible failure into a named file.
+      - name: Workflow schema
+        run: uv run python scripts/check_workflow_schema.py
+
       - name: Type check (ty)
         run: uv run ty check src tests
 
