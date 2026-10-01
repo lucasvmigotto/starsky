@@ -67,12 +67,24 @@ jobs:
         # Bun is the project's package manager but the Playwright image ships
         # only Node, and it has no `unzip` — so the official installer fails.
         # Fetch the release zip and extract it with Python, which is present.
+        #
+        # **Every path here is absolute on purpose.** A previous version did
+        # `cd /tmp/bun/build` and then ran `bun install`, so the install
+        # executed in a scratch directory with no package.json — the exact
+        # "run outside a dir with package.json" failure. Never `cd` before a
+        # command that needs the project's manifest.
         run: |
-          mkdir -p /tmp/bun/bin /tmp/bun/build && cd /tmp/bun/build
-          curl -fsSL -o bun.zip \
-            "https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip"
-          python3 -c 'import zipfile; zipfile.ZipFile("bun.zip").extractall(".")'
-          cp bun-linux-x64/bun /tmp/bun/bin/bun && chmod +x /tmp/bun/bin/bun
+          mkdir -p /tmp/bun/bin /tmp/bun/build
+          # Version from `.tool-versions` (the single source the devcontainer,
+          # the tools image and the other workflows read) — not `latest`,
+          # which is the drift that file exists to prevent.
+          bun_version="$(awk '/^bun /{print $2}' "$GITHUB_WORKSPACE/.tool-versions")"
+          echo "bun $bun_version (from .tool-versions)"
+          curl -fsSL -o /tmp/bun/build/bun.zip \
+            "https://github.com/oven-sh/bun/releases/download/bun-v${bun_version}/bun-linux-x64.zip"
+          python3 -c 'import zipfile; zipfile.ZipFile("/tmp/bun/build/bun.zip").extractall("/tmp/bun/build")'
+          cp /tmp/bun/build/bun-linux-x64/bun /tmp/bun/bin/bun
+          chmod +x /tmp/bun/bin/bun
           /tmp/bun/bin/bun --version
           /tmp/bun/bin/bun install --frozen-lockfile
 
@@ -152,11 +164,14 @@ jobs:
       - name: Install dependencies
         working-directory: site
         run: |
-          mkdir -p /tmp/bun/bin /tmp/bun/build && cd /tmp/bun/build
-          curl -fsSL -o bun.zip \
-            "https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip"
-          python3 -c 'import zipfile; zipfile.ZipFile("bun.zip").extractall(".")'
-          cp bun-linux-x64/bun /tmp/bun/bin/bun && chmod +x /tmp/bun/bin/bun
+          mkdir -p /tmp/bun/bin /tmp/bun/build
+          bun_version="$(awk '/^bun /{print $2}' "$GITHUB_WORKSPACE/.tool-versions")"
+          echo "bun $bun_version (from .tool-versions)"
+          curl -fsSL -o /tmp/bun/build/bun.zip \
+            "https://github.com/oven-sh/bun/releases/download/bun-v${bun_version}/bun-linux-x64.zip"
+          python3 -c 'import zipfile; zipfile.ZipFile("/tmp/bun/build/bun.zip").extractall("/tmp/bun/build")'
+          cp /tmp/bun/build/bun-linux-x64/bun /tmp/bun/bin/bun
+          chmod +x /tmp/bun/bin/bun
           /tmp/bun/bin/bun install --frozen-lockfile
 
       - name: Build the site

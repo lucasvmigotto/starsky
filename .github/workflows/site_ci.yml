@@ -61,9 +61,14 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          # Version comes from .tool-versions — the single source the
+          # Version comes from `.tool-versions` — the single source the
           # devcontainer and the tools image also read.
-          bun-version-file: .tool-versions
+          #
+          # Explicitly repo-rooted: `defaults.run.working-directory` below does
+          # NOT apply to `uses:` steps, so this action runs from the workspace
+          # root while every `run:` step runs from `site/`. Writing the bare
+          # filename worked only because the root happens to hold the file.
+          bun-version-file: ./.tool-versions
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
