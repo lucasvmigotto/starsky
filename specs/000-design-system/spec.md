@@ -4,7 +4,12 @@
 
 **Created**: 2026-09-30
 
-**Status**: Draft
+**Status**: Implemented
+
+**Built**: 2026-09-30 (`b86e00e` tokens + i18n, `2deb1d3` retheme, `fcd0f51`
+footer, `8b52a5b` export disclosure, `8641ac9` copy extraction, `ceb7db3` screen
+reader announcements). All 39 tasks are ticked; the header status was reconciled on
+2026-10-01, which is what the code and `specs/README.md` already said.
 
 **Input**: `docs/product/ux-vision.md` (Status: Draft, 19 decisions). Produced by
 `frontend:spec`. Every token, component and rule below is finalised from the

@@ -4,6 +4,20 @@ Feature: `002-catalog-cli` | Branch: `feat/catalog-cli` | Input: `specs/002-cata
 
 Tests are required for every story (constitution IV).
 
+> **Reconciled 2026-10-01 — read before trusting a box below.** This feature
+> **ships today** (`specs/README.md`: Implemented) and the work was done through
+> the static-first refactor, not by ticking this list: the list is
+> `project:introspec`'s reconstruction of what the code *already* did, so all 12
+> boxes were never checked while the code was written. The code is the record;
+> this list is not.
+>
+> Verified present: `starsky catalog` and `starsky cache warm` in
+> `src/starsky/cli.py`, the Hipparcos/constellation loaders in
+> `src/starsky/data/`, and the test suite under `tests/`.
+>
+> Reconciling the boxes properly means checking each one against the code, which
+> is a `speckit:converge` pass — not a bulk tick. Deliberately left alone here.
+
 ## Phase 1: User Story 1 — Build the sky data (P1) 🎯 MVP
 
 - [ ] T001 [US1] Test: `catalog` on a warm cache writes both JSON files with the documented shape

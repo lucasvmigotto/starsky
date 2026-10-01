@@ -4,6 +4,23 @@ Feature: `006-viewer` | Branch: `feat/viewer` | Input: `specs/006-viewer/`
 
 Tests are required for every story (constitution IV).
 
+> **Reconciled 2026-10-01 — read before trusting a box below.** This feature
+> **ships today** (`specs/README.md`: Implemented) and all 29 boxes are unticked,
+> again because the list is `project:introspec`'s reconstruction of existing code
+> rather than the list the work was built from.
+>
+> This is the **largest drift in the tree**, and it is now provable rather than
+> merely stale: the viewer is covered by 14 e2e specs under `site/e2e/` —
+> `j2-share-link`, `j4-place-lookup`, `j7-sparse-sky`, `j8-live-place-lookup`,
+> `a11y`, `announcements`, `contrast`, `font`, `interactive`, `ds-screenshots`
+> and the `j1`/`j3` export pairs — and the whole set is **green in CI on `dev`**
+> (run 36920761213, `9235634`). Also present: `LandingPage.tsx`,
+> `ViewerPage.tsx`, `SkyCanvas.tsx`, `FiguresPanel.tsx`, the share codec in
+> `site/src/lib/encode.ts` and place lookup in `site/src/lib/geocode.ts`.
+>
+> A proper reconciliation is a `speckit:converge` pass over 29 tasks, with the
+> green suite as the evidence base. Deliberately not ticked in bulk here.
+
 ## Phase 1: User Story 1 — Copyable sky link (P1) 🎯 MVP
 
 - [ ] T001 [US1] Test: encode/decode round-trip — exists (`encode.test.ts`, `share.test.ts`)
