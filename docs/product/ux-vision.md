@@ -716,7 +716,25 @@ so an empty state can override the wording later without touching three files.
 | `viewer.export.working` | Drawing at full resolution… |
 | `viewer.export.done` | Saved {filename} |
 | `viewer.export.failed` | The {format} export failed ({detail}). The map is unaffected — try again. |
+| `viewer.export.open` | Export |
+| `viewer.export.close` | Close export |
+| `viewer.export.preparing` | Preparing {format}… |
 | `viewer.makeYourOwn` | Make your own from this sky |
+
+The disclosure trigger carries **two** keys rather than one key plus a suffix,
+because it is also what names the format group (`aria-labelledby`), and a group
+announced as "Close export" is a group named after the control that closes it.
+`viewer.export.open` is the name the group takes in its resting state.
+
+`viewer.export.working` is the *status line* ("Drawing at full resolution…"),
+which is why a separate `viewer.export.preparing` exists for the button that is
+busy: a 44px control cannot carry a sentence, and the two are read at different
+moments — one when the work starts, the other when it reports.
+
+These three rows were added on 2026-10-01 to close 007's FT007. The strings are
+not new copy: they are what `ExportControls.tsx` already shipped as literals
+before the catalogue was extracted, recorded here so the key and the component
+stop disagreeing.
 
 `viewer.makeYourOwn` deliberately names the **sky**. The earlier wording,
 "Adjust this sky", implied the shared sky was wrong and needed fixing — but a

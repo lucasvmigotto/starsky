@@ -7,6 +7,7 @@
  * reachable (constitution VI).
  */
 import { useState } from "react";
+import { t } from "../i18n/index.ts";
 import type { SharePayload } from "../lib/share.ts";
 import type { SkyModel } from "../lib/skymodel.ts";
 import { DISK_CX, DISK_CY, DISK_R } from "../lib/skymodel.ts";
@@ -28,11 +29,23 @@ interface Props {
 
 type Format = "png" | "svg" | "pdf";
 
-const LABELS: Record<Format, string> = {
-  png: "PNG",
-  svg: "SVG",
-  pdf: "PDF",
+/**
+ * Each format's visible name is a catalogue key, not a literal (007 FT007).
+ *
+ * The same resolved string serves two jobs: the button's own label, and the
+ * `{format}` slot in the failure message — so a translator changes "PDF" once
+ * and both the button and the error agree.
+ */
+const LABEL_KEYS: Record<Format, string> = {
+  png: "viewer.export.png",
+  svg: "viewer.export.svg",
+  pdf: "viewer.export.pdf",
 };
+
+/** The visible name of a format. */
+function labelOf(format: Format): string {
+  return t(LABEL_KEYS[format]);
+}
 
 function safeFilename(payload: SharePayload): string {
   const base = (payload.options.title ?? payload.place ?? "starsky-poster")
@@ -61,7 +74,7 @@ export default function ExportControls({ payload, model }: Props) {
   const handleExport = async (format: Format): Promise<void> => {
     if (busy !== null) return;
     setBusy(format);
-    setStatus(`Preparing ${LABELS[format]}…`);
+    setStatus(t("viewer.export.working"));
     try {
       const filename = `${safeFilename(payload)}.${format}`;
       if (format === "svg") {
@@ -80,12 +93,15 @@ export default function ExportControls({ payload, model }: Props) {
         );
         downloadBlob(await exportPng(canvas), filename);
       }
-      setStatus(`${LABELS[format]} downloaded.`);
+      setStatus(t("viewer.export.done", { filename }));
     } catch (error) {
       setStatus(
-        `${LABELS[format]} export failed: ${
-          error instanceof Error ? error.message : "unknown error"
-        }`,
+        t("viewer.export.failed", {
+          format: labelOf(format),
+          // The detail is data, not copy: it comes from the exporter or the
+          // browser, and the template around it is what the catalogue owns.
+          detail: error instanceof Error ? error.message : "unknown error",
+        }),
       );
     } finally {
       setBusy(null);
@@ -109,7 +125,7 @@ export default function ExportControls({ payload, model }: Props) {
           setOpen((value) => !value);
         }}
       >
-        {open ? "Close export" : "Export"}
+        {open ? t("viewer.export.close") : t("viewer.export.open")}
       </button>
 
       <div
@@ -130,7 +146,9 @@ export default function ExportControls({ payload, model }: Props) {
             disabled={busy !== null}
             aria-busy={busy === format}
           >
-            {busy === format ? `Preparing ${LABELS[format]}…` : LABELS[format]}
+            {busy === format
+              ? t("viewer.export.preparing", { format: labelOf(format) })
+              : labelOf(format)}
           </button>
         ))}
       </div>

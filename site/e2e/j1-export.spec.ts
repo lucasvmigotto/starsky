@@ -105,3 +105,59 @@ test.describe("J1 poster export", () => {
     expect(pdf.length).toBeGreaterThan(5_000);
   });
 });
+
+/**
+ * 007 FT009 — the failure half of "a failed export shows the error copy".
+ *
+ * Separate `describe` because it has to break the page *before* it loads:
+ * `URL.createObjectURL` is the only call in the client that turns a Blob into a
+ * download (`lib/render/export.ts:274`), so making it throw fails an export at
+ * the last possible moment — after the poster has been rendered — which is the
+ * interesting case. Nothing else in the app touches that API, so the stub cannot
+ * affect page load.
+ */
+test.describe("J1 export failure", () => {
+  test("names the format, promises the map is intact, and stays recoverable", async ({
+    page,
+  }) => {
+    const downloads: string[] = [];
+    page.on("download", (file) => {
+      downloads.push(file.suggestedFilename());
+    });
+    await page.addInitScript(() => {
+      URL.createObjectURL = () => {
+        throw new Error("blob blocked by test");
+      };
+    });
+
+    await page.goto(viewerUrl(fragmentFor()));
+    const poster = page.getByRole("img", { name: /night sky poster/i });
+    await expect(poster).toBeVisible();
+    await openExport(page);
+
+    const pdf = page.getByRole("button", { name: "PDF", exact: true });
+    await expect(pdf).toBeEnabled();
+    await pdf.click();
+
+    // Scoped to the export row: the Viewer has a second status region for sky
+    // announcements, so a bare getByRole("status") is ambiguous.
+    const status = page.locator(".atlas-export-status");
+    // The format is named, so the user knows which of the three failed…
+    await expect(status).toContainText("PDF");
+    await expect(status).toContainText(/failed/i);
+    // …and the message carries the reassurance the catalogue promises: the
+    // failure is in the download, never in the rendered map.
+    await expect(status).toContainText(/map is unaffected/i);
+    // The poster is still on screen. The claim in the copy is checked, not
+    // just printed.
+    await expect(poster).toBeVisible();
+
+    // Nothing was published to the user's disk.
+    expect(downloads).toEqual([]);
+
+    // And the control is not stuck: a failed export must leave the row usable,
+    // or the poster is unrecoverable without a page reload.
+    await expect(pdf).toBeEnabled();
+    await expect(pdf).toHaveAttribute("aria-busy", "false");
+  });
+});

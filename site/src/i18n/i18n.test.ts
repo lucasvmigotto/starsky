@@ -82,6 +82,8 @@ describe("copy", () => {
   it("has no key the vision does not define", () => {
     // Guard against a typo'd key that would silently never be used: every key
     // here is asserted against the vision by `scripts/check_i18n_keys.py`.
-    expect(copyKeys().length).toBe(87);
+    // 87 → 90 on 2026-10-01 for 007's FT007 (`viewer.export.open`/`.close`/
+    // `.preparing`, the three literals ExportControls still hardcoded).
+    expect(copyKeys().length).toBe(90);
   });
 });

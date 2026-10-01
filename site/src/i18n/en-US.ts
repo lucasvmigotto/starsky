@@ -75,6 +75,9 @@ export const enUS = {
   "viewer.export.done": "Saved {filename}",
   "viewer.export.failed":
     "The {format} export failed ({detail}). The map is unaffected — try again.",
+  "viewer.export.open": "Export",
+  "viewer.export.close": "Close export",
+  "viewer.export.preparing": "Preparing {format}…",
 
   "empty.title": "No sky on this page yet",
   "figures.legend": "Figures in this sky",

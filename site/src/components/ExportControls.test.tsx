@@ -22,6 +22,7 @@ const { act } = await import("react");
 
 import type { SharePayload } from "../lib/share.ts";
 import type { SkyModel } from "../lib/skymodel.ts";
+import { t } from "../i18n/index.ts";
 
 function makePayload(): SharePayload {
   return {
@@ -168,12 +169,41 @@ describe("ExportControls", () => {
     });
     // What must hold is that the control returns to idle and reports a result
     // rather than hanging in a busy state.
+    //
+    // Asserted against the resolved copy key rather than the string "SVG": the
+    // approved wording is `viewer.export.done` ("Saved {filename}"), which names
+    // the file, not the format. Pinning the literal here is what let FT007 slip
+    // through in the first place — the component and the catalogue could
+    // disagree and this test would still be the one holding the old phrasing.
     expect((svg as HTMLButtonElement).disabled).toBe(false);
-    expect(screen.getByRole("status").textContent).toContain("SVG");
+    expect(screen.getByRole("status").textContent).toBe(
+      t("viewer.export.done", { filename: "export-night.svg" }),
+    );
   });
 
   it("uses the export size independent of the preview size", () => {
     expect(EXPORT_SIZE_PX).toBe(1600);
+  });
+
+  it("announces completion without stealing focus (007 FT008)", () => {
+    // The polite live region is the whole mechanism: a completion message that
+    // moved focus would yank the user out of the format row mid-sequence, and
+    // on a screen reader it would interrupt whatever they were doing next. The
+    // user pressed a button, the user keeps their place, the message speaks.
+    render(<ExportControls payload={makePayload()} model={MODEL} />);
+    openFormats();
+    const svg = screen.getByRole("button", { name: "SVG" });
+    // Focus the control the way a keyboard user would, so the assertion is about
+    // the component not moving focus rather than about focus never being set.
+    (svg as HTMLButtonElement).focus();
+    expect(document.activeElement).toBe(svg);
+    act(() => {
+      svg.click();
+    });
+    const status = screen.getByRole("status").textContent ?? "";
+    expect(status).toBe(t("viewer.export.done", { filename: "export-night.svg" }));
+    // Still the same element — not the document body, not the trigger.
+    expect(document.activeElement).toBe(svg);
   });
 
   it("surfaces an export failure in the live region instead of doing nothing", () => {
