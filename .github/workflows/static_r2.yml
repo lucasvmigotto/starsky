@@ -33,7 +33,12 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
-        with:
+        # No `with:` pin: setup-uv reads .tool-versions, the single source
+        # the devcontainer and the tools image also read. An *empty* `with:` is
+        # not the same as none — Actions requires a mapping, so a null value
+        # fails workflow-file validation before any job is created, which is
+        # what made this workflow fail in 0s with 0 jobs on every push from
+        # 2026-09-30. `scripts/check_workflow_schema.py` now fails on it.
 
       # Sky data (public/data/*.json) is gitignored: build it with the CLI
       # before the site build. Retried: the catalog hosts can flake from CI.
