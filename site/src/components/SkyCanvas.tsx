@@ -9,7 +9,7 @@
  * The preview renderer that used to live here was deleted with the default flip
  * (BCR-0005/ADR-0003 made the poster the only renderer).
  */
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { t } from "../i18n/index.ts";
 import { formatDetailLine } from "../lib/caption.ts";
 import { drawFocusOverlay, renderPoster } from "../lib/render/poster.ts";
@@ -62,6 +62,40 @@ export default function SkyCanvas({
   activeRef.current = { view, hovered, selected };
 
   /**
+   * Device pixels per CSS pixel, capped like the composition.
+   *
+   * State rather than a fresh `window.devicePixelRatio` read, because browser
+   * zoom changes the ratio *without* reloading — and a poster composed for the
+   * old ratio is then blitted under the new one. The listener below is what
+   * makes zooming the browser re-render the map instead of breaking it until
+   * the next reload.
+   */
+  const [dpr, setDpr] = useState(() =>
+    typeof window === "undefined"
+      ? 1
+      : Math.min(3, window.devicePixelRatio || 1),
+  );
+
+  useEffect(() => {
+    let mq: MediaQueryList | null = null;
+    const resubscribe = () => {
+      setDpr(Math.min(3, window.devicePixelRatio || 1));
+      mq?.removeEventListener("change", resubscribe);
+      // A query on the *current* ratio fires exactly when the ratio stops
+      // being current, so re-subscribing on every fire tracks zoom in both
+      // directions with no polling.
+      mq = window.matchMedia(
+        `(resolution: ${window.devicePixelRatio.toString()}dppx)`,
+      );
+      mq.addEventListener("change", resubscribe);
+    };
+    resubscribe();
+    return () => {
+      mq?.removeEventListener("change", resubscribe);
+    };
+  }, []);
+
+  /**
    * The caption as plain text, for the screen-reader copy (T036).
    *
    * Built from the same `formatDetailLine` the poster renders with, so the
@@ -85,7 +119,6 @@ export default function SkyCanvas({
   // is the expensive part, the blit is not.
   const poster = useMemo(() => {
     if (typeof document === "undefined") return null;
-    const dpr = Math.min(3, window.devicePixelRatio || 1);
     const offscreen = document.createElement("canvas");
     offscreen.width = Math.round(CANVAS_W * dpr);
     offscreen.height = Math.round(CANVAS_H * dpr);
@@ -94,8 +127,9 @@ export default function SkyCanvas({
     renderPoster(ctx, payload, model, CANVAS_W, dpr, PREVIEW);
     return offscreen;
     // `fontsReady` is a dependency so the composition re-runs with the real
-    // face once the webfont has loaded.
-  }, [payload, model, fontsReady]);
+    // face once the webfont has loaded; `dpr` so a browser-zoom change
+    // recomposes instead of blitting stale pixels until the next reload.
+  }, [payload, model, fontsReady, dpr]);
 
   const drawRef = useRef(() => {});
   drawRef.current = () => {
@@ -105,7 +139,6 @@ export default function SkyCanvas({
     if (!ctx) return;
     const { view: v, hovered: hov, selected: sel } = activeRef.current;
 
-    const dpr = Math.min(3, window.devicePixelRatio || 1);
     if (canvas.width !== poster.width || canvas.height !== poster.height) {
       canvas.width = poster.width;
       canvas.height = poster.height;
@@ -122,6 +155,14 @@ export default function SkyCanvas({
     ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
     // Zoom transform, then a single blit of the composed poster.
+    //
+    // The source rect is the *whole offscreen in device pixels*. It used to
+    // read `0, 0, CANVAS_W, CANVAS_H` — logical pixels — which is the full
+    // image only at dpr 1. Anywhere else it cropped the top-left 1/dpr of the
+    // poster and stretched it over the frame, so HiDPI and browser-zoomed
+    // visitors got a map "zoomed into the left upper corner" on first paint.
+    // The destination stays logical: the `setTransform(dpr, …)` above maps it
+    // back to device pixels.
     ctx.save();
     ctx.translate(DISK_CX, DISK_CY);
     ctx.scale(v.scale, v.scale);
@@ -130,8 +171,8 @@ export default function SkyCanvas({
       poster,
       0,
       0,
-      CANVAS_W,
-      CANVAS_H,
+      poster.width,
+      poster.height,
       0,
       0,
       CANVAS_W,
