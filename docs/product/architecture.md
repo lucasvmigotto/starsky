@@ -110,7 +110,7 @@ graph TB
 
 - **One artifact**: `dist/` (app) + `data/*.json` + font, all uploaded to R2 behind Cloudflare's CDN. Immutable assets under `/assets/<hash>`; data under `/data/<version>/` with a short manifest for cache-busting.
 - **Environments**: production (R2 `site` target) and preview (PR build, optional R2 prefix or Pages preview). Local `bun run dev` with Vite; `bun run preview` for the built bundle.
-- **CI**: `ci.yml` (Python lint/type/test + data export golden), `site_ci.yml` (Bun: lint, typecheck, `bun test`, build, OG assert), `static_r2.yml` → rename `site_r2.yml` (R2 sync on `main`).
+- **CI**: `ci.yml` (Python lint/type/test + data export golden), `site_ci.yml` (Bun: lint, typecheck, `bun test`, build, OG assert), `site_r2.yml` (R2 sync on `main`; renamed from `static_r2.yml` by 008 T002).
 - **No IaC needed** beyond CI config: R2 bucket + CDN is the only infrastructure; `devsecops:iac` can stay N/A or become a tiny OpenTofu root for the bucket + DNS.
 
 ### Data view

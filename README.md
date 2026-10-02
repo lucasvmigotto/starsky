@@ -88,7 +88,7 @@ Runtime runs as UID/GID 65532.
 | Workflow | Purpose |
 | --- | --- |
 | `ci.yml` | ruff, `ty`, pytest, and a real `cache warm` + `catalog` build asserting the JSON shape. |
-| `static_r2.yml` | site lint, `tsgo` typecheck, `bun test`, build, and deploy to R2 on `main`. |
+| `site_r2.yml` | site lint, `tsgo` typecheck, `bun test`, build, and deploy to R2 on `main`. |
 
 | `ghcr.yml` / `dockerhub.yml` | publish the CLI image. |
 | `release.yml` | tag and release. |

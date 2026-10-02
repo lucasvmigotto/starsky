@@ -12,7 +12,7 @@ Owner: `devsecops:pipeline` (security section by `devsecops:supply-chain`).
 | `site_ci.yml` | push/PR touching `site/**` or the render fixtures | Site: lint, `tsgo` typecheck, 91 unit/component/reference tests, build, bundle+data budgets, no-secrets scan |
 | `site_e2e.yml` | push to `main`/`dev`, PR touching `site/**` | 54 Playwright journeys on **Chromium and Firefox**: J1–J4, a11y, contrast, font integrity, interactive poster, perf |
 | `security.yml` | push to `main`/`dev`, all PRs, weekly | dependency review, Trivy (secrets, vulns, config), CodeQL (Python + TS) |
-| `static_r2.yml` | push to `main` touching `site/**`, PR | Builds the sky data + site and deploys to Cloudflare R2 |
+| `site_r2.yml` | push to `main` touching `site/**`, PR, manual | Builds the sky data + site and deploys to Cloudflare R2 |
 | `ghcr.yml` / `dockerhub.yml` | push to `main` | Publish the CLI data-tool image |
 | `release.yml` | manual | Tag from `pyproject.toml`, generate + attest an SBOM, create the Release |
 
@@ -83,10 +83,10 @@ as `AWS_ACCESS_KEY_ID`.
 
 | Name | Kind | Used by |
 |---|---|---|
-| `CLOUDFLARE_R2_ACCOUNT_ID` | variable | `static_r2.yml` deploy (access-key id) |
-| `CLOUDFLARE_R2_ACCOUNT_SECRET` | **secret** | `static_r2.yml` deploy (secret half) |
-| `CLOUDFLARE_R2_ENDPOINT_S3_CLIENT` | variable | `static_r2.yml` deploy (the S3-API endpoint) |
-| `CLOUDFLARE_R2_BUCKET_ID` | variable | `static_r2.yml` deploy |
+| `CLOUDFLARE_R2_ACCOUNT_ID` | variable | `site_r2.yml` deploy (access-key id) |
+| `CLOUDFLARE_R2_ACCOUNT_SECRET` | **secret** | `site_r2.yml` deploy (secret half) |
+| `CLOUDFLARE_R2_ENDPOINT_S3_CLIENT` | variable | `site_r2.yml` deploy (the S3-API endpoint) |
+| `CLOUDFLARE_R2_BUCKET_ID` | variable | `site_r2.yml` deploy |
 | `STARSKY_STATIC_SITE_URL` | variable | site build (absolute OG URLs) |
 | `DOCKER_HUB_PAT` | secret | `dockerhub.yml` |
 | `GITHUB_TOKEN` | (automatic) | GHCR push, release, attestations (OIDC) |
@@ -99,7 +99,7 @@ bad deploy is reverted by re-pointing the R2 prefix (see `docs/product/adr/0002`
 
 ## Rollback runbook
 
-1. **Site**: re-run `static_r2.yml` on the last good commit, or flip the data
+1. **Site**: re-run `site_r2.yml` on the last good commit, or flip the data
    version pointer back. Assets are immutable and hashed, so the previous build
    keeps serving until the pointer moves.
 2. **CLI image**: re-tag the previous digest (`ghcr.yml` publishes per-`main`).

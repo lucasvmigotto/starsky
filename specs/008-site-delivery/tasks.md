@@ -11,7 +11,9 @@ the story-level acceptance tests.
 
 ## Phase 2: User Story 1 — Deploy to R2 from CI (P1) 🎯 MVP
 
-- [ ] T002 [P] [US1] Rename `static_r2.yml` to `site_r2.yml`; update paths (`site/**`) and job references
+- [x] T002 [P] [US1] Rename `static_r2.yml` to `site_r2.yml`; update paths (`site/**`) and job references. Done — `git mv`, and the workflow's `name`, `concurrency` group and both self-referencing `paths` entries now say `site_r2`. The `site/**` and `specs/007-.../fixtures/**` filters were already correct on `dev`; the rename is the only thing `main` is still missing, and no `static_site` reference survived. Docs updated: `delivery.md`, `architecture.md`, `README.md`. **Deliberately not edited**: `bcr/0003`, `introspec.md` and `refactor.md` all name `static_r2.yml`, because each is a dated record of a past state and BCR-0003 sets the precedent — "do not silently edit history".
+
+  **This is the release unblock, not a rename.** `main` carries the pre-refactor copy, which asks for `vars.STARPY_STATIC_SITE_URL` — a name BCR-0009's rename retired — and `main` has no `site/` to build, so its `verify` job fails and `deploy` is skipped. The renamed file needs only five config items and all five exist on the repository (verified 2026-10-02). Until `main` receives it, nothing deploys and the R2 bucket serves the 2026-09-18 build.
 - [ ] T003 [US1] Restructure the deploy: `cache warm` + `catalog` (retry) → `bun run build` → sync assets under `/assets/<sha>/`, data under `/data/<version>/` + manifest, `index.html` last
 - [ ] T004 [US1] Set cache headers per `contracts/delivery.md`
 - [ ] T005 [US1] Add the rollback step (re-point the version prefix) and document it
