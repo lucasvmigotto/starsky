@@ -227,6 +227,14 @@ body {
   margin: 0 auto;
   width: fit-content;
   max-width: calc(100% - 1.5rem);
+  /*
+   * Informational only: it names the hovered figure and duplicates panel
+   * content, so it must never capture the pointer. Under the cursor it fires
+   * mouseleave on the canvas, which clears the hover that showed it — a
+   * flicker loop for any visitor hovering lines near the top of the disc, and
+   * a race for any test reading its text.
+   */
+  pointer-events: none;
 }
 
 .atlas-btn {

@@ -51,8 +51,15 @@ means the renderer is unchanged — not that the site works in a browser.
   i.e. `size × referenceDpi / 72` px (verified empirically: size 0.6→1 px,
   5.57→11 px, 14.0→29 px). `REFERENCE_DPI` captures this; the Python renderer is
   gone but the geometry it defined is the poster's geometry.
-- The sky axes span `[-1.06, 1.06]` (`AXIS_EXTENT`).
+- The sky axes span `[-1.06, 1.06]` (`AXIS_EXTENT`, owned by `skymodel.ts`
+  beside `DISK_R` so the model and the drawing cannot drift apart again).
+- Orientation is north-up, east-right, in canvas convention (down-positive):
+  `project()` returns north as negative y and `unitToCanvas` preserves the
+  sign — no flip is due anywhere. A minus on the drawing side mirrors the
+  whole sky against the model the hit-test reads; that is exactly what
+  `orientation.test.ts` and the northern-sky e2e journey pin.
 - Figure centroids are stored in **preview** pixels (the 800×1000 model), so
-  callers pass the preview geometry (400/400/368), not poster pixels.
+  callers pass the preview geometry (`DISK_CX`/`DISK_CY`/`DISK_R`), not poster
+  pixels. The radius is derived (`half / AXIS_EXTENT`), never a literal.
 - `shape: "circle"` applies a circular alpha mask (`destination-in`) to the sky
   only; the caption band stays opaque.

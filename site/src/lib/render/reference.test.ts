@@ -26,7 +26,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "bun:test";
 import { GlobalFonts, createCanvas, loadImage } from "@napi-rs/canvas";
 import { formatDetailLine } from "../caption.ts";
-import { buildSkyModel, type SegmentRow, type StarRow } from "../skymodel.ts";
+import { buildSkyModel, DISK_CX, DISK_CY, DISK_R, type SegmentRow, type StarRow } from "../skymodel.ts";
 import type { SharePayload } from "../share.ts";
 import { renderPoster } from "./poster.ts";
 
@@ -89,7 +89,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..", "..", "..", "..");
 const REFERENCE_DIR = join(HERE, "__references__");
 const DATA_DIR = join(ROOT, "site", "public", "data");
-const REFERENCE_PREVIEW = { diskCx: 400, diskCy: 400, diskR: 368 };
+const REFERENCE_PREVIEW = { diskCx: DISK_CX, diskCy: DISK_CY, diskR: DISK_R };
 const UPDATE = process.env["STARSKY_UPDATE_REFERENCE"] === "1";
 
 function readMatrix(): Matrix {

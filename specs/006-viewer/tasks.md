@@ -38,6 +38,8 @@ Tests are required for every story (constitution IV).
 
 - [ ] T008 Test: coordinates at ±90 and ±180 are handled
 - [ ] T009 Test: a very long place name truncates rather than overflowing the caption
+- [x] T014 [US2] Fix: the renderer drew the mirror image of its own model, so canvas hover named the mirror of the cursor (`finding-mirrored-sky.md`) — `unitToCanvas` preserves the canvas-convention sign, one derived `DISK_R`, orientation pinned by `orientation.test.ts` + the northern-sky e2e journey
+- [x] T015 [US2] Fix: the hover tooltip captured the pointer, flickering away any hover near the top of the disc — `.atlas-tooltip` is `pointer-events: none`
 
 ## QA
 
