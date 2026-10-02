@@ -29,12 +29,40 @@ import { BASE_PAYLOAD } from "./fixtures.ts";
 const TITLE_INPUT = "#landing-title";
 const DISCLOSURE = "Render options";
 
+/**
+ * Wait until the poster face is genuinely measurable.
+ *
+ * Not just "the canvas has something to measure" — the face has to be applied.
+ * `document.fonts.ready` resolves when pending loads settle, which is not the
+ * same instant the canvas honours the family, and probing in between measures a
+ * fallback and reports ASCII letters as undrawable. That bug shipped once and
+ * stripped the letters out of every title on the page (CI, 2026-10-02).
+ *
+ * Probed through a real element rather than `page.evaluate`, because the check
+ * that matters is the one the page itself makes.
+ */
+async function waitForDrawableFont(
+  page: import("@playwright/test").Page,
+): Promise<void> {
+  await page.waitForFunction(() => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (ctx === null) return false;
+    ctx.font = '48px "Cormorant Garamond"';
+    // A present glyph must not advance like U+FFFF.
+    return (
+      Math.abs(ctx.measureText("N").width - ctx.measureText("￿").width) > 0.01
+    );
+  });
+}
+
 /** Fill the landing form's title and submit it. */
 async function submitWithTitle(
   page: import("@playwright/test").Page,
   title: string,
 ): Promise<void> {
   await page.goto("/");
+  await waitForDrawableFont(page);
   await page.getByText(DISCLOSURE, { exact: true }).click();
   await page.locator(TITLE_INPUT).fill(title);
   await page.getByRole("button", { name: /show my sky/i }).click();
@@ -81,12 +109,26 @@ test.describe("a title the poster face cannot draw", () => {
       page.getByRole("img", { name: /night sky poster/i }),
     ).toBeVisible();
 
-    // And the adjustment is stated rather than hidden.
+    // The adjustment is stated rather than hidden, and it names *only* the emoji.
+    // That last part is the real assertion: the poster renders on an ASCII title,
+    // so if the probe were measuring a fallback it would strip these letters too
+    // and the notice would name them. It did, once — CI, 2026-10-02, reported
+    // `h`, `S` and `u` of "E2E Night" / "Times Square" as undrawable.
     const note = page.getByRole("status").filter({ hasText: /cannot draw/i });
     await expect(note).toBeVisible();
-    await expect(note).toContainText("🌌");
 
-    // The title that renders is the adjusted one, so the poster and the exports
+    // Assert on the *listed* characters, not on substrings of the sentence: the
+    // copy around them ("which the poster face cannot draw") is full of ASCII
+    // letters, so a per-letter `not.toContainText` would be meaningless. The
+    // removed set must be exactly the emoji.
+    const text = (await note.textContent()) ?? "";
+    const listed = /contained (.*?), which/.exec(text)?.[1] ?? "";
+    expect(
+      listed.trim(),
+      `the notice named ${JSON.stringify(listed)} — only the emoji should be removed`,
+    ).toBe("🌌");
+
+    // And what renders is the adjusted title, so the poster and its exports
     // agree with what the visitor was told.
     await expect(page.getByText("E2E Night")).toBeVisible();
     await expect(page.getByText("🌌")).toHaveCount(0);
@@ -103,7 +145,11 @@ test.describe("a title the poster face cannot draw", () => {
 
     await expect(page.getByText("E2E Céu Austral")).toBeVisible();
     // No warning: announcing an adjustment that did not happen would train
-    // people to ignore the notice.
-    await expect(page.getByRole("status").filter({ hasText: /cannot draw/i })).toHaveCount(0);
+    // people to ignore the notice. This also guards the probe against
+    // over-reporting — the fix for the mass-rejection bug fails *open*, so this
+    // is the assertion that keeps it from quietly disabling the feature.
+    await expect(
+      page.getByRole("status").filter({ hasText: /cannot draw/i }),
+    ).toHaveCount(0);
   });
 });

@@ -91,17 +91,20 @@ describe("unsupportedInPosterFont", () => {
   });
 
   it("mass-rejects when the face has not loaded, which is why fontsReady exists", () => {
-    // The trap this guards. A face still loading reports *every* character as
-    // unsupported, so probing too early refuses every title in the product —
-    // including plain "Noite Austral". The assertion is deliberately the ugly
-    // one: it is meant to look wrong, because it is what the bug looks like.
-    const title = "Noite Austral";
-    const flagged = unsupportedInPosterFont(title, NOT_LOADED);
-    expect(flagged).toEqual(uniqueCharacters(title));
-    expect(flagged).toHaveLength(12); // "a" appears twice.
+    // The trap this guards. A face still loading measures as notdef for
+    // *every* character, so probing too early refuses every title in the
+    // product. Measured in CI on 2026-10-02, when this actually happened:
+    // `E2E Night` came back flagged as `E 2 N i g h t` and `Times Square` as
+    // `T m S q u a r`, and those letters were stripped out of every poster.
+    // The assertions below are deliberately ugly — they are meant to look
+    // wrong, because that is what the bug looks like.
+    expect(unsupportedInPosterFont("E2E Night", NOT_LOADED)).toEqual(
+      uniqueCharacters("E2E Night"),
+    );
     // With the real face the same title is fine: the difference is the font
     // being loaded, not the input.
-    expect(unsupportedInPosterFont(title, faceProbe)).toEqual([]);
+    expect(unsupportedInPosterFont("E2E Night", faceProbe)).toEqual([]);
+    expect(unsupportedInPosterFont("Times Square", faceProbe)).toEqual([]);
   });
 });
 

@@ -71,12 +71,20 @@ function measuringContext(): CanvasRenderingContext2D | null {
   if (context !== undefined) return context;
   try {
     const canvas = document.createElement("canvas");
-    context = canvas.getContext("2d");
-    if (context === null) return null;
-    // The face ALONE. With `serif` appended, the browser would fall back for a
-    // missing glyph and measure the substitute — reporting the emoji as
+    const ctx = canvas.getContext("2d");
+    if (ctx === null) return null;
+    // The face ALONE. With `serif` appended, the browser falls back for a
+    // missing glyph and measures the substitute — reporting the emoji as
     // drawable, which is the bug `document.fonts.check` has.
-    context.font = `${String(PROBE_SIZE_PX)}px "Cormorant Garamond"`;
+    ctx.font = `${String(PROBE_SIZE_PX)}px "Cormorant Garamond"`;
+    // Only cache once the face is actually applied. A canvas created before the
+    // font resolves keeps measuring in the fallback, and caching that would pin
+    // every later probe to the wrong typeface — see the self-check in
+    // `fontCanDraw`, which is what catches it if this ever regresses.
+    if (!ctx.measureText("N").width) {
+      return null;
+    }
+    context = ctx;
     return context;
   } catch {
     context = null;
@@ -99,15 +107,34 @@ export function fontCanDraw(character: string): boolean {
   const ctx = measuringContext();
   if (ctx === null) return true;
   try {
-    return (
-      Math.abs(ctx.measureText(character).width - ctx.measureText(NOTDEF).width) >
-      // Sub-pixel: a present glyph can be within a hair of notdef at small
-      // sizes, but the two are never equal to the precision measureText gives.
-      0.01
-    );
+    // **Self-check first.** If a plain ASCII letter measures as notdef, the
+    // measurement is not telling us about the font — the canvas is measuring in
+    // a fallback, or the face is not applied yet — and every answer from it is
+    // noise. Measured in CI on 2026-10-02: exactly this, reporting `h`, `S` and
+    // `u` of "E2E Night" / "Times Square" as undrawable while `N`, `i`, `g` and
+    // `t` in the same string measured fine. That is not a coverage answer, and
+    // acting on it stripped the letters out of every title on the page.
+    //
+    // So when the probe cannot be trusted, it reports *drawable* for
+    // everything: the visitor gets today's behaviour (a poster with a box in it)
+    // rather than a mangled title. Failing open is right here because the
+    // alternative is destroying input that was fine.
+    if (measuresAsNotdef(ctx, "N")) return true;
+
+    return !measuresAsNotdef(ctx, character);
   } catch {
     return true;
   }
+}
+
+/** True when `character` advances exactly like the font's notdef glyph. */
+function measuresAsNotdef(ctx: CanvasRenderingContext2D, character: string): boolean {
+  return (
+    Math.abs(ctx.measureText(character).width - ctx.measureText(NOTDEF).width) <=
+    // Sub-pixel: a present glyph can sit within a hair of notdef, but the two
+    // are never equal to the precision measureText returns.
+    0.01
+  );
 }
 
 /** Resolve once the poster face is loaded, so `fontCanDraw` is not guessing. */

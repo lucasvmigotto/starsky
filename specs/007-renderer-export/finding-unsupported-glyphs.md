@@ -108,18 +108,36 @@ what the caption-width constraint does its arithmetic on.
 Both wait on `document.fonts.ready` first. An unloaded face measures as notdef
 for every character, which would refuse every title in the product.
 
-> **The first implementation used `document.fonts.check()` and it was wrong.**
-> CI caught it on 2026-10-02: the e2e asserted the adjustment notice appeared for
-> a shared `E2E 🌌 Night` and it did not. `check()` treats the question as "can
-> *any* available font render this", so on a machine with an emoji font installed
-> — which the Playwright image has — it answered *yes* for 🌌. That is precisely
-> the disagreement this work exists to report, answered backwards, and it failed
-> silently: no error, no warning, just a poster with a box in it. The unit tests
-> passed throughout, because they injected a fake probe and so could only ever
-> test the branching. Worth remembering: **a probe of this kind has to be
-> exercised against the real font in a real browser**, which is why
-> `undrawable-title.spec.ts` exists even though the branching is already covered
-> by 13 unit cases.
+> **Both implementations of the probe were wrong, and each was caught by CI
+> rather than by a test.** Two failures in a row, worth recording as a pair
+> because they fail in *opposite* directions.
+>
+> **First: `document.fonts.check()`, which reported too much coverage.** The e2e
+> asserted the adjustment notice appeared for a shared `E2E 🌌 Night` and it did
+> not. `check()` treats the question as "can *any* available font render this",
+> so on a machine with an emoji font installed — which the Playwright image has
+> — it answered *yes* for 🌌. The disagreement this work exists to report,
+> answered backwards, and silently: no error, no warning, just a poster with a
+> box in it.
+>
+> **Second: measuring the advance against notdef, which reported too little.**
+> This one broke the *product*, not just the feature: `j1`, `j2` and `j7` began
+> failing on **plain ASCII titles**. The notice read *"This title contained h S
+> u"* — from `E2E Night` and `Times Square`. Letters, reported undrawable, while
+> `N`, `i`, `g` and `t` in the same string measured fine. That is not a coverage
+> answer; the measurement was running against a fallback because the canvas had
+> not picked up the face yet.
+>
+> The lesson is not "test more" — 253 unit tests were green through both. It is
+> that **a probe which decides what a user is allowed to type has to prove it
+> can tell a known-good character from a known-bad one, in the environment it
+> will actually run in.** So `fontCanDraw` now self-checks before it answers:
+> if plain `N` measures as notdef, the measurement is not about the font and the
+> probe reports *drawable* for everything. It **fails open** — the visitor gets
+> today's behaviour (a box in the poster) rather than a mangled title, because
+> destroying input that was fine is the worse of the two. The spec asserts the
+> removed set is *exactly* the emoji, which is what would catch either direction
+> regressing.
 
 Stripping closes the gap it leaves — `Noite 🌌 Austral` becomes `Noite Austral`,
 not `Noite  Austral`. A double space reads on the poster as a typo in the
