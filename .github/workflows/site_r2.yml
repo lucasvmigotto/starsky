@@ -1,21 +1,33 @@
-name: Static viewer to R2
+name: Site to R2
 
+# Renamed from `static_r2.yml` (008 T002). The old name described the era when
+# the client was a `static_site/` directory; since the static-first refactor it
+# builds `site/`, and "static" no longer distinguishes it from anything.
+#
+# The rename is also what makes a release deployable at all, which is why it is
+# the first slice of US1 rather than a cosmetic tidy: `main` still carries the
+# pre-refactor copy of this workflow, which asks for `vars.STARPY_STATIC_SITE_URL`
+# — a name BCR-0009's rename retired. That job cannot pass validation, so no
+# push to any branch deploys anything. This file needs only five config items
+# (`secrets.CLOUDFLARE_R2_ACCOUNT_SECRET` plus four `vars.CLOUDFLARE_R2_*` /
+# `vars.STARSKY_STATIC_SITE_URL`), and all five exist on the repository
+# (verified 2026-10-02).
 on:
   push:
     branches: ["main"]
     paths:
       - "site/**"
       - "specs/007-renderer-export/fixtures/**"
-      - ".github/workflows/static_r2.yml"
+      - ".github/workflows/site_r2.yml"
   pull_request:
     paths:
       - "site/**"
       - "specs/007-renderer-export/fixtures/**"
-      - ".github/workflows/static_r2.yml"
+      - ".github/workflows/site_r2.yml"
   workflow_dispatch:
 
 concurrency:
-  group: static-r2-${{ github.ref }}
+  group: site-r2-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
