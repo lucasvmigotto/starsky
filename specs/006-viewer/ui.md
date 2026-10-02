@@ -166,6 +166,24 @@ is no account (Q2).
   fragment, so back is undo, and the copy says so rather than hiding it.
 - **Escape** closes the zoom/selection overlay; **arrow keys** move between
   figures; the figure list is a roving-tabindex listbox.
+- **The poster is the map, and it moves.** Drag to pan, wheel or pinch to zoom
+  about the cursor, two fingers to do both at once. Scale 1 is the whole poster
+  and is also the floor: zoomed out past that there is only empty canvas behind
+  it, so at that zoom the view is pinned home and panning is a no-op. The
+  focus is bounded to the poster's own extent, which is what stops a flick from
+  throwing the sky away for good.
+- **Dragging and clicking are different gestures.** A pointer that travels past
+  a few pixels is a drag; the click that ends it must not reach the hit-test,
+  or panning the map keeps opening the constellations the visitor moved past.
+- **The same navigation without a pointer.** The poster takes focus and answers
+  to the arrow keys (shift for a coarser pass), `+`/`-` and `0`; three buttons
+  under the poster say *Zoom in*, *Zoom out* and *Show the whole sky*, disabled
+  at the bounds. Drag and wheel are invisible — a visitor cannot tell a poster
+  moves at all until something tells them.
+- **The focus overlay moves with the view.** The veil and the redrawn figure
+  are positioned in poster coordinates, so both are drawn inside the same
+  transform as the blit. Drawn outside it, a zoomed view dims only the middle
+  of the frame and sets the focused figure's name twice, slightly offset.
 - **No keyboard shortcuts for export** — it is one click away and must not be
   mistriggered.
 

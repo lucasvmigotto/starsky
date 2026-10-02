@@ -93,13 +93,19 @@ describe("posterGeometry", () => {
 });
 
 describe("unitToCanvas", () => {
-  it("centres the origin and inverts y (matplotlib axes)", () => {
+  it("centres the origin and preserves the canvas convention (north up)", () => {
+    // The input is what `project()` returns: canvas-convention, down-positive,
+    // north-negative. No flip is due — a minus here mirrors the whole sky
+    // against the model the hit-test reads, and hovering picks the mirror
+    // image of the cursor. See `orientation.test.ts`.
     const g = posterGeometry(800);
     const [cx, cy] = unitToCanvas(0, 0, g);
     expect(cx).toBeCloseTo(400, 6);
     expect(cy).toBeCloseTo(400, 6);
-    const [, top] = unitToCanvas(0, 1, g);
-    expect(top).toBeLessThan(cy);
+    const [, north] = unitToCanvas(0, -1, g);
+    expect(north).toBeLessThan(cy);
+    const [, south] = unitToCanvas(0, 1, g);
+    expect(south).toBeGreaterThan(cy);
   });
 
   it("places unit radius at 1/AXIS_EXTENT of the half-extent", () => {

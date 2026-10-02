@@ -7,7 +7,7 @@
  */
 import type { SharePayload } from "../share.ts";
 import type { jsPDF } from "jspdf";
-import type { SkyModel } from "../skymodel.ts";
+import { DISK_CX, DISK_CY, DISK_R, type SkyModel } from "../skymodel.ts";
 import { SPEC } from "../spec.ts";
 import { captionLines } from "./poster.ts";
 import {
@@ -101,12 +101,12 @@ export function buildPosterSvg(
     parts.push(
       `<g fill="${SPEC.colors.star}" fill-opacity="${SPEC.constellations.labelAlpha.toString()}" font-family="Cormorant Garamond, serif" font-size="${(pointsToPx(SPEC.constellations.labelFontSize)).toFixed(2)}" text-anchor="middle">`,
     );
-    const previewCx = 400;
-    const previewCy = 400;
-    const previewR = 368;
+    const previewCx = DISK_CX;
+    const previewCy = DISK_CY;
+    const previewR = DISK_R;
     for (const figure of model.figures) {
       const ux = (figure.centroidX - previewCx) / previewR;
-      const uy = (previewCy - figure.centroidY) / previewR;
+      const uy = (figure.centroidY - previewCy) / previewR;
       const [x, y] = unitToCanvas(ux, uy, geometry);
       const label = figure.name.toUpperCase();
       parts.push(

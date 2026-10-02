@@ -22,11 +22,13 @@
 import { formatDetailLine } from "../caption.ts";
 import type { SharePayload } from "../share.ts";
 import type { SkyModel, VisibleStar } from "../skymodel.ts";
+import { AXIS_EXTENT } from "../skymodel.ts";
 import { SPEC } from "../spec.ts";
 import { captionMaxWidth, fitCaption } from "./caption.ts";
 
-/** The unit-disc extent the CLI sets via `ax.set_xlim(-1.06, 1.06)`. */
-export const AXIS_EXTENT = 1.06;
+/** The unit-disc extent the sky axes span. Re-exported so every consumer keeps
+ * importing it from here; the value lives in `skymodel.ts` beside `DISK_R`. */
+export { AXIS_EXTENT } from "../skymodel.ts";
 
 /** Extra margin around the disc, mirroring matplotlib's axes padding. */
 export const RING_COLOR = SPEC.colors.ring;
@@ -83,6 +85,13 @@ function withAlpha(hex: string, alpha: number): string {
  * The CLI draws the sky axes in a square region of side `skyPx` with limits
  * ±AXIS_EXTENT; so unit coordinate `u` maps to centre + `u / AXIS_EXTENT`
  * half-extent.
+ *
+ * The input is canvas-convention, down-positive — exactly what `project()`
+ * returns (north is negative y, which draws above the centre). No flip is due
+ * here. A minus on the y line mirrors the whole sky against the model the
+ * hit-test reads, so hovering picks the mirror image of the cursor; that is
+ * what the old code did, and `orientation.test.ts` pins the corrected
+ * behaviour.
  */
 export function unitToCanvas(
   u: number,
@@ -92,7 +101,7 @@ export function unitToCanvas(
   const cx = geometry.sizePx / 2;
   const cy = geometry.skyPx / 2;
   const half = geometry.sizePx / 2;
-  return [cx + (u / AXIS_EXTENT) * half, cy - (v / AXIS_EXTENT) * half];
+  return [cx + (u / AXIS_EXTENT) * half, cy + (v / AXIS_EXTENT) * half];
 }
 
 /**
@@ -207,8 +216,12 @@ export function drawFocusOverlay(
   }
 
   if (options.constellations && options.constellation_labels) {
+    // Back through the preview mapping the centroid was built with, so the
+    // label lands where the figure's own lines are: with the unified scale
+    // (`DISK_R = half / AXIS_EXTENT`) this round-trips exactly onto the
+    // centroid pixels.
     const ux = (figure.centroidX - preview.diskCx) / preview.diskR;
-    const uy = (preview.diskCy - figure.centroidY) / preview.diskR;
+    const uy = (figure.centroidY - preview.diskCy) / preview.diskR;
     const [lx, ly] = unitToCanvas(ux, uy, geometry);
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -273,9 +286,10 @@ function drawLabels(
   ctx.fillStyle = withAlpha(SPEC.colors.line, SPEC.constellations.labelAlpha);
   for (const figure of model.figures) {
     // Figure centroids are stored as preview pixels; map back to the unit
-    // disc (the preview's DISK_R) before placing on the poster.
+    // disc (the preview's DISK_R) before placing on the poster. Same
+    // round-trip as the focus overlay: plus on y, exact at the unified scale.
     const ux = (figure.centroidX - preview.diskCx) / preview.diskR;
-    const uy = (preview.diskCy - figure.centroidY) / preview.diskR;
+    const uy = (figure.centroidY - preview.diskCy) / preview.diskR;
     const [x, y] = unitToCanvas(ux, uy, geometry);
     // render-spec pins labelUppercase: true (guarded by spec.test.ts).
     const label = figure.name.toUpperCase();
