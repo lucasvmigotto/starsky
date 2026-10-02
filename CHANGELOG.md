@@ -1,0 +1,18 @@
+# Changelog
+
+## Unreleased
+
+### Added
+
+- Poster navigation: drag to pan, scroll to zoom, pinch on touch, arrow keys
+  with `+`/`-`/`0`, and zoom controls under the poster.
+
+### Fixed
+
+- The poster no longer opens zoomed into its upper-left corner on HiDPI or
+  browser-zoomed displays; browser zoom re-renders instead of breaking until
+  reload.
+- The renderer no longer draws the mirror image of its own model, so canvas
+  hover names the constellation under the cursor.
+- The zoomed focus veil covers the frame instead of ghosting a disc over it;
+  the hover tooltip no longer captures the pointer.

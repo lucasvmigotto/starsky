@@ -1,51 +1,90 @@
 name: Tag and Release
 
-# CI/CD-owned tagging: run manually from the Actions tab. The tag is taken
-# from pyproject.toml (single source of truth, never `v`-prefixed) and the
-# GitHub Release is created in the same run. Source-only release; container
-# tags are a separate follow-up.
+# Every push to main releases if the commits since the last tag warrant it.
+# scripts/release.py decides: feat → minor; fix, perf, refactor → patch;
+# "type!:" or BREAKING CHANGE → major; anything else → no release. A release
+# bumps the version carriers (site/package.json, pyproject.toml, uv.lock),
+# promotes CHANGELOG.md's "## Unreleased" (or generates a section), commits
+# "chore(release): X.Y.Z", tags X.Y.Z (never `v`-prefixed) and publishes a
+# GitHub Release with the SBOM attached.
+#
+# The bot pushes that commit and tag straight to main with GITHUB_TOKEN:
+# branch protection or a ruleset that requires pull requests (or doesn't let
+# github-actions[bot] bypass it) rejects the push. Pushes made with
+# GITHUB_TOKEN don't trigger workflows, so the release commit can't loop; the
+# chore(release) condition below is a second guard.
+#
+# --initial 1.1.0 only matters before the first tag exists (there are no tags
+# yet); afterwards the tag decides and the flag is inert.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  # For build provenance: keyless OIDC signing, no long-lived key.
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
-  tag-and-release:
+  release:
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
-      contents: write
-      # For build provenance: keyless OIDC signing, no long-lived key.
+      contents: write # push the release commit and tag, create the release
       id-token: write
       attestations: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # the commits since the last tag
+          fetch-tags: true
+          persist-credentials: true # the push below uses the checkout's GITHUB_TOKEN
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
-        # No `with:` pin: setup-uv reads .tool-versions, the single source
-        # the devcontainer and the tools image also read.
-
-      - name: Read version from pyproject.toml
-        id: version
+      - name: Plan
+        id: plan
         run: |
-          VERSION=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          set +e
+          python3 scripts/release.py --dry-run --initial 1.1.0
+          code=$?
+          set -e
+          case "$code" in
+            0) echo "release=true" >>"$GITHUB_OUTPUT" ;;
+            3) echo "release=false" >>"$GITHUB_OUTPUT"; echo "No release needed." ;;
+            *) exit "$code" ;;
+          esac
 
-      - name: Create and push tag
+      - name: Release
+        id: release
+        if: ${{ steps.plan.outputs.release == 'true' }}
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if git rev-parse "$VERSION" >/dev/null 2>&1; then
-            echo "Tag $VERSION already exists; refusing to re-release." >&2
+          git config user.name "github-actions[bot]"
+          git config user.email "41898496+github-actions[bot]@users.noreply.github.com"
+          version="$(python3 scripts/release.py --initial 1.1.0)"
+          echo "version=$version" >>"$GITHUB_OUTPUT"
+          python3 scripts/release.py --notes "$version" >"$RUNNER_TEMP/notes.md"
+          if git rev-parse "$version" >/dev/null 2>&1; then
+            echo "Tag $version already exists; refusing to re-release." >&2
             exit 1
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "$VERSION" -m "starsky $VERSION"
-          git push origin "$VERSION"
+          git add CHANGELOG.md site/package.json pyproject.toml uv.lock
+          git commit -m "chore(release): $version"
+          git tag -a "$version" -m "starsky $version"
+          # Rejected (and nothing published) if main moved since this run started;
+          # the next run releases those commits too.
+          git push --atomic origin HEAD:refs/heads/main "refs/tags/$version"
 
       - name: Generate SBOM
+        if: ${{ steps.plan.outputs.release == 'true' }}
         # CycloneDX over both lockfiles. Trivy is already used by the security
         # workflow, so this adds no new tool to the trust surface.
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
@@ -56,14 +95,16 @@ jobs:
           scan-ref: .
 
       - name: Attest the SBOM
-        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        if: ${{ steps.plan.outputs.release == 'true' }}
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447842ac1eab6504dd8 # v4.2.2
         with:
           subject-path: sbom.cdx.json
 
       - name: Create GitHub Release
+        if: ${{ steps.plan.outputs.release == 'true' }}
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
-          tag_name: ${{ steps.version.outputs.version }}
-          name: ${{ steps.version.outputs.version }}
-          generate_release_notes: true
+          tag_name: ${{ steps.release.outputs.version }}
+          name: ${{ steps.release.outputs.version }}
+          body_path: ${{ runner.temp }}/notes.md
           files: sbom.cdx.json
