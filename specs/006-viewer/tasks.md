@@ -39,6 +39,23 @@ Tests are required for every story (constitution IV).
 - [ ] T008 Test: coordinates at ±90 and ±180 are handled
 - [ ] T009 Test: a very long place name truncates rather than overflowing the caption
 
+> **T029/T030 added 2026-10-02** after `finding-unreachable-view.md`. The poster
+> had no navigation at all — no pan, no zoom, no keyboard path — and the focus
+> overlay was drawn outside the transform it belongs inside, so a zoomed view dimmed
+> only part of the frame and set the focused figure's name twice. Both fixed.
+>
+> The reason this was invisible for so long is worth carrying into any future
+> probe: `view.scale` is component state, not DOM, so every test asserted a
+> *proxy* for it, and the proxy in use (the reset button appearing) was satisfied
+> by `setSelected` with no transform anywhere. A live probe then reported zoom
+> and drag "working" when both were only hover changing the pixels. T029's checks
+> are each chosen so they cannot pass for the wrong reason — equal-not-unequal
+> for the no-op, `window.scrollY === 0` for the wheel, disabled-state for the
+> view, canvas luminance at specific corners for the veil.
+
+- [x] T029 [US2] Test/component: pan and zoom the poster — drag, wheel (anchored), two-finger pinch, arrow keys and `+`/`-`/`0`; view maths in `lib/view.ts` with `view.test.ts`; the overlay drawn inside the blit's transform
+- [x] T030 [US2] Component: discoverable view controls under the poster — zoom in, zoom out, fit, disabled at the bounds; the poster focusable and described; five new copy keys (vision table updated in the same change, **needs sign-off**)
+
 ## QA
 
 - [ ] T010 [QA] e2e J2: shared-link round-trip — valid, corrupt, absent, wrong-version (`specs/006-viewer/qa.md`)

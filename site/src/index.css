@@ -278,9 +278,33 @@ body {
   cursor: pointer;
 }
 
-.atlas-btn-subtle:hover {
+.atlas-btn-subtle:hover:not(:disabled) {
   color: color-mix(in srgb, var(--color-text) 0.85);
   border-color: color-mix(in srgb, var(--color-text) 0.4);
+}
+
+/*
+ * Disabled because the action is already true — zoomed all the way in, or back
+ * at the whole poster. Not `cursor: progress`: nothing is pending, and a
+ * spinner-cursor on a control that will never become available reads as a bug.
+ */
+.atlas-btn-subtle:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/*
+ * The view controls sit under the poster, centred, inside the poster's own grid
+ * item. Direct manipulation is the primary way to move the map; these three
+ * are the affordance that says it can be moved at all, so they belong with the
+ * poster rather than down in the export row.
+ */
+.atlas-viewcontrols {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
 }
 
 .atlas-link {
