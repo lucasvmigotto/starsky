@@ -146,3 +146,121 @@ describe("geometry stays on the disc", () => {
     expect(edge).toBeLessThan(g.sizePx);
   });
 });
+
+/**
+ * Charter C1 (T040) — "extreme latitudes, the equinox/solstice edges". Swept on
+ * 2026-10-02 against the real ~1.8k-star catalog at every latitude from +90 to
+ * −90 and at both solstices and both equinoxes: no non-finite coordinate, no
+ * blank canvas, star counts varying smoothly (1770–1921). Nothing broke, so
+ * these cases are pinned here to keep them from breaking later.
+ *
+ * Synthetic stars rather than the catalog on purpose: a boundary test that
+ * needs `uv run starsky catalog` cannot run in a bare `bun run test`, and
+ * `reference.test.ts` already owns the catalog-dependent path.
+ */
+describe("extreme latitudes (T040 charter C1)", () => {
+  // A spread across the whole sphere, including both poles, so a projection that
+  // blows up at one altitude has something to blow up on.
+  const SPHERE = Array.from({ length: 72 }, (_, i) => ({
+    hip: i + 1,
+    raDeg: (i * 5) % 360,
+    decDeg: -90 + (i * 180) / 36,
+    mag: 2,
+  }));
+
+  it("projects finitely at the poles themselves, where the projection is singular", () => {
+    // A stereographic projection is normally undefined at the pole: every
+    // right ascension collapses to one point and the divisor goes to zero.
+    // The real catalog was already fine; a synthetic sphere is the harsher
+    // case, because it puts stars exactly on the axis.
+    for (const lat of [90, -90]) {
+      const model = buildSkyModel({ ...payload(), lat }, SPHERE, []);
+      expect(model.stars.length).toBeGreaterThan(0);
+      for (const star of model.stars) {
+        expect(Number.isFinite(star.unitX), `unitX at lat ${String(lat)}`).toBe(true);
+        expect(Number.isFinite(star.unitY), `unitY at lat ${String(lat)}`).toBe(true);
+        expect(Math.hypot(star.unitX, star.unitY)).toBeLessThanOrEqual(1.001);
+      }
+    }
+  });
+
+  it("projects finitely just short of the poles", () => {
+    for (const lat of [89.9, 89, -89, -89.9]) {
+      const model = buildSkyModel({ ...payload(), lat }, SPHERE, []);
+      for (const star of model.stars) {
+        expect(Number.isFinite(star.unitX), `unitX at lat ${String(lat)}`).toBe(true);
+        expect(Math.hypot(star.unitX, star.unitY)).toBeLessThanOrEqual(1.001);
+      }
+    }
+  });
+
+  it("projects finitely at the solstices and equinoxes at a high latitude", () => {
+    // Solstice/equinox change which stars are up, and at 85°N almost everything
+    // circles the pole — the two effects compound.
+    for (const when of [
+      "2026-06-21T12:00:00Z", // June solstice
+      "2026-12-21T12:00:00Z", // December solstice
+      "2026-03-20T12:00:00Z", // March equinox
+      "2026-09-22T12:00:00Z", // September equinox
+    ]) {
+      const model = buildSkyModel(
+        { ...payload(), lat: 85, when_utc: when },
+        SPHERE,
+        [],
+      );
+      for (const star of model.stars) {
+        expect(Number.isFinite(star.unitX), `unitX at ${when}`).toBe(true);
+        expect(Math.hypot(star.unitX, star.unitY)).toBeLessThanOrEqual(1.001);
+      }
+    }
+  });
+});
+
+/**
+ * Charter C1 (T040) — "`min_separation` extremes". Swept 2026-10-02 over
+ * 0 → 0.2 against the real catalog: monotonic and sensible (2122 stars at 0,
+ * 1866 at the 0.008 default, 541 at 0.05, 53 at 0.2), with the figure count
+ * constant because figures are built before decluttering.
+ */
+describe("declutter extremes (T040 charter C1)", () => {
+  // A deliberately tight cluster: every star within a few arcminutes of the
+  // next, so a non-zero separation has something to merge.
+  const CLUSTER = Array.from({ length: 40 }, (_, i) => ({
+    hip: i + 1,
+    raDeg: 10 + i * 0.001,
+    decDeg: 20 + i * 0.001,
+    mag: 3,
+  }));
+
+  it("min_separation 0 is a no-op: declutter keeps every star", () => {
+    const model = buildSkyModel(payload({ min_separation: 0 }), CLUSTER, []);
+    expect(model.stars.length).toBe(CLUSTER.length);
+  });
+
+  it("a larger separation keeps no more stars than a smaller one", () => {
+    let previous = CLUSTER.length + 1;
+    for (const separation of [0, 0.008, 0.05, 0.2]) {
+      const model = buildSkyModel(
+        payload({ min_separation: separation }),
+        CLUSTER,
+        [],
+      );
+      expect(
+        model.stars.length,
+        `separation ${String(separation)} kept ${String(model.stars.length)}, previous ${String(previous)}`,
+      ).toBeLessThanOrEqual(previous);
+      previous = model.stars.length;
+    }
+    // And the sweep is a real one: the top of the range does drop stars.
+    expect(previous).toBeLessThan(CLUSTER.length);
+  });
+
+  it("builds figures from all visible stars, not the decluttered set", () => {
+    // The spec requires figures from every star above the horizon; declutter is
+    // a drawing-time concern. If this fails, a figure has started depending on a
+    // star that was merged away.
+    const loose = buildSkyModel(payload({ min_separation: 0 }), CLUSTER, []);
+    const tight = buildSkyModel(payload({ min_separation: 0.2 }), CLUSTER, []);
+    expect(tight.figures.length).toBe(loose.figures.length);
+  });
+});
