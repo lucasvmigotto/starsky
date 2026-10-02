@@ -19,7 +19,14 @@
  * judge: that the form rejects, the viewer adjusts, the notice appears, and the
  * poster that results matches what the visitor was told.
  */
-import { BASE_PAYLOAD, expect, fragmentFor, test, viewerUrl } from "./fixtures.ts";
+import {
+  BASE_PAYLOAD,
+  expect,
+  fragmentFor,
+  openExport,
+  test,
+  viewerUrl,
+} from "./fixtures.ts";
 
 // Ids, matching `j4-place-lookup.spec.ts`. Not `getByLabel`: the title field
 // lives inside the collapsed "Render options" `<details>`, so it is in the DOM
@@ -131,6 +138,63 @@ test.describe("a title the poster face cannot draw", () => {
     // counting `🌌` across the page finds it there. Scoped to the title
     // instead — the caption/header echo the adjusted string and nothing else.
     await expect(page.getByRole("img", { name: /E2E Night/ })).toBeVisible();
+  });
+
+  /**
+   * The PDF half of the finding, which the C2 sweep could not reach: `exportPdf`
+   * loads the face through `fetch`, so it only runs in a browser.
+   *
+   * The risk is specific. BCR-0006 made the PDF embed a *subset* of the face
+   * "carrying exactly the glyphs the poster can draw" (`export.ts:260`), and a
+   * character the face does not contain has no outline to subset. So the
+   * question is not only "is the title stripped on this path" — which the test
+   * above answers — but **does the export still produce a valid, vector,
+   * font-embedded PDF when a glyph was dropped**. A subsetter handed a missing
+   * glyph could plausibly throw, or silently emit a broken font.
+   */
+  test("the PDF export survives a title whose glyph was dropped", async ({
+    page,
+  }) => {
+    const fragment = fragmentFor({
+      ...BASE_PAYLOAD,
+      options: { ...BASE_PAYLOAD.options, title: "E2E 🌌 Night" },
+    });
+    await page.goto(viewerUrl(fragment));
+    await expect(
+      page.getByRole("img", { name: /night sky poster/i }),
+    ).toBeVisible();
+    // Wait for the adjustment, so the export carries the stripped title.
+    await expect(
+      page.getByRole("status").filter({ hasText: /cannot draw/i }),
+    ).toBeVisible();
+
+    await openExport(page);
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "PDF", exact: true }).click();
+    const file = await download;
+    expect(file.suggestedFilename()).toMatch(/\.pdf$/);
+
+    const stream = await file.createReadStream();
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(chunk as Buffer);
+    }
+    const pdf = Buffer.concat(chunks);
+    const raw = pdf.toString("latin1");
+
+    // Same three contracts `j3` asserts, on the harder input: a real PDF, still
+    // vector, and still carrying an embedded font rather than falling back to a
+    // standard one.
+    expect(pdf.subarray(0, 5).toString("latin1")).toBe("%PDF-");
+    expect(raw).not.toMatch(/\/Subtype\s*\/Image/);
+    expect(raw, "the font must still be embedded after subsetting").toMatch(
+      /\/FontFile2|\/FontFile3|\/FontFile/,
+    );
+    // And the text is still selectable — a broken subset would show up here
+    // first, as outlines or as nothing at all.
+    expect(raw).toMatch(/BT[\s\S]{0,400}?(Tj|TJ)/);
+    // The stripped title is what got drawn, so the artefact matches the poster.
+    expect(pdf.length).toBeGreaterThan(5_000);
   });
 
   test("a shared link whose title is drawable is left alone and unannounced", async ({

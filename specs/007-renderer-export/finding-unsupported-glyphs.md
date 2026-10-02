@@ -170,12 +170,21 @@ visible, and `getByLabel(/title/i).fill()` fails with a bare 30s timeout that
 names nothing. It addresses `#landing-title` after opening the disclosure, as
 `j4-place-lookup.spec.ts` already did for the other optional fields.
 
-## Not covered
+## Closed since the sweep
 
-- **The PDF path with a missing glyph** is untested. `exportPdf` loads the font
-  through `fetch`, so it cannot run outside a browser; the browsers are not
-  cached on the machine this sweep ran on. The green `j3-offline-export.spec.ts`
-  covers the *embedded font* for a plain title, not a missing glyph.
-- **What a browser actually draws** for the emoji is unverified. Browsers apply
-  their own last-resort fallback, so the canvas finding may not transfer. The
-  PNG result is the one that is certain, because PNG is rasterised here.
+**The PDF path with a missing glyph** was the one gap the sweep could not reach:
+`exportPdf` loads the face through `fetch`, so it only runs in a browser, and no
+browser was available on the machine that sweep ran on. It is now covered —
+`undrawable-title.spec.ts` exports a PDF from a title whose glyph was dropped and
+asserts the three contracts `j3` asserts, on the harder input: a real PDF, still
+vector (no `/Subtype /Image`), and still carrying an **embedded** font. The last
+one was the actual risk: BCR-0006 embeds a subset of the face carrying "exactly
+the glyphs the poster can draw", and a character with no outline has nothing to
+subset, so a subsetter handed a missing glyph could plausibly throw or emit a
+broken font. It does neither — 15/15 across Chromium, Firefox and mobile.
+
+**What a browser actually draws** for an emoji is still unverified, and now
+moot on every path a visitor can reach: the authoring path refuses the title, and
+the decode path strips it, so no emoji reaches a browser render. The remaining
+question would only matter if the product later bundled a fallback face, at which
+point `glyph-coverage.test.ts` fails and says the finding is stale.
