@@ -18,6 +18,81 @@ async function openViewer(page: import("@playwright/test").Page): Promise<void> 
   ).toBeVisible();
 }
 
+/** The poster's box, or a hard failure — every test here needs it. */
+async function posterBox(
+  page: import("@playwright/test").Page,
+): Promise<NonNullable<Awaited<ReturnType<typeof canvasBox>>>>
+{
+  return (await canvasBox(page)) ?? Promise.reject(new Error("poster has no box"));
+}
+
+async function canvasBox(page: import("@playwright/test").Page) {
+  return page.getByRole("img", { name: /night sky poster/i }).boundingBox();
+}
+
+/**
+ * Mean luminance of a square patch of the poster, addressed as a fraction of
+ * its width and height so a caller names a region rather than a pixel.
+ *
+ * Read from the canvas rather than from a screenshot so that nothing drawn
+ * *around* the poster — a tooltip, a caret, a scrollbar — can move the number.
+ * There is no cross-origin taint to worry about: the poster is drawn with
+ * canvas operations, not loaded as an image.
+ */
+async function meanLuma(
+  page: import("@playwright/test").Page,
+  at: { x: number; y: number },
+  size = 48,
+): Promise<number> {
+  return page.evaluate(
+    ({ at, size }) => {
+      const canvas = document.querySelector("canvas");
+      if (!(canvas instanceof HTMLCanvasElement)) return Number.NaN;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return Number.NaN;
+      const side = Math.min(size, canvas.width, canvas.height);
+      const x = Math.max(
+        0,
+        Math.min(canvas.width - side, Math.round(canvas.width * at.x) - side / 2),
+      );
+      const y = Math.max(
+        0,
+        Math.min(canvas.height - side, Math.round(canvas.height * at.y) - side / 2),
+      );
+      const data = ctx.getImageData(x, y, side, side).data;
+      let sum = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        sum +=
+          0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+      }
+      return sum / (data.length / 4);
+    },
+    { at, size },
+  );
+}
+
+/**
+ * Everything drawn inside a box, as bytes, for "did this region change".
+ *
+ * `animations: "disabled"` finishes the explorer's reveal animation — which
+ * translates the poster 10px on its way in — so two shots are comparable at any
+ * moment. Waiting for the animation instead does not work: its fill is
+ * `forwards`, and a settled transform reports as `matrix(1, 0, 0, 1, 0, 0)`,
+ * not the `none` that was written, so a `toHaveCSS("transform", "none")` wait
+ * times out on a poster that has already arrived.
+ */
+async function shot(
+  page: import("@playwright/test").Page,
+  clip: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  },
+): Promise<Buffer> {
+  return page.screenshot({ clip, animations: "disabled" });
+}
+
 test.describe("interactive poster", () => {
   test("selecting a figure marks it pressed", async ({ page }) => {
     await openViewer(page);
@@ -69,6 +144,189 @@ test.describe("interactive poster", () => {
     await expect(canvas).toBeVisible();
   });
 
+  test("hovering draws the highlight where the cursor is", async ({
+    page,
+  }) => {
+    /*
+     * The orientation regression. The renderer once drew the mirror image of
+     * its own model: the tooltip named the model-correct figure while the
+     * highlight drew mirrored across the disc — hovering the bottom lit up
+     * the top. Names alone cannot see this (the tooltip reads the model, so
+     * it is correct in both worlds); only drawn pixels near the cursor can.
+     *
+     * The overlay redraws the hovered figure's segments thicker and brighter
+     * on top of an otherwise darkening veil, so pixels near the cursor must
+     * get brighter when the highlight lands on them. A mirrored highlight
+     * lands far away and the veil can only darken.
+     */
+    await openViewer(page);
+    const canvas = page.getByRole("img", { name: /night sky poster/i });
+    const box = await canvas.boundingBox();
+    expect(box).not.toBeNull();
+    if (!box) return;
+    // A non-nullable binding for the evaluate closures below; the guard
+    // above does not narrow through them.
+    const bb: { x: number; y: number; width: number; height: number } = box;
+    const tip = page.locator(".atlas-tooltip");
+
+    // CSS positions of drawn content (stars, lines, labels) inside a logical
+    // y-band. Read before hovering: the first hover veils the disc and would
+    // dim the scan. The ring is skipped by radius: at ~377px from the centre
+    // it sits outside the hit-test gate, so its pixels can never pick.
+    async function contentPoints(
+      y0: number,
+      y1: number,
+    ): Promise<Array<{ x: number; y: number }>> {
+      return page.evaluate(
+        ({ box: bb, y0, y1 }) => {
+          const c = document.querySelector("canvas");
+          if (!(c instanceof HTMLCanvasElement)) return [];
+          const ctx = c.getContext("2d");
+          if (!ctx) return [];
+          const sx = c.width / 800;
+          const sy = c.height / 1000;
+          const data = ctx.getImageData(
+            0,
+            Math.round(y0 * sy),
+            c.width,
+            Math.round((y1 - y0) * sy),
+          ).data;
+          const w = c.width;
+          const points: Array<{ x: number; y: number }> = [];
+          // Bounded, and spatially spread: row-major order would fill the cap
+          // from a single bright blob (one unpickable field star starves the
+          // whole sweep), so gather across the band, then stride-sample.
+          const found: Array<{ x: number; y: number }> = [];
+          for (let row = 0; row < (y1 - y0) * sy; row += 4) {
+            for (let col = 0; col < w; col += 4) {
+              const lx = col / sx;
+              const ly = y0 + row / sy;
+              if (Math.hypot(lx - 400, ly - 400) > 365) continue;
+              const i = (row * w + col) * 4;
+              const luma =
+                0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+              if (luma > 90) {
+                found.push({
+                  x: bb.x + (lx / 800) * bb.width,
+                  y: bb.y + (ly / 1000) * bb.height,
+                });
+                if (found.length >= 400) break;
+              }
+            }
+            if (found.length >= 400) break;
+          }
+          // Twelve candidates maximum: the test must fit the 30s timeout on
+          // slow mobile emulation, and the loop below stops at the first
+          // measurement.
+          const stride = Math.max(1, Math.floor(found.length / 12));
+          found.forEach((p, k) => {
+            if (k % stride === 0 && points.length < 12) points.push(p);
+          });
+          return points;
+        },
+        { box: bb, y0, y1 },
+      );
+    }
+
+    // Pixels near the cursor that the highlight made brighter. Read the bare
+    // poster, hover, read again, diff in-page so no image ever crosses the
+    // wire.
+    async function brightenedNear(
+      point: { x: number; y: number },
+    ): Promise<number | null> {
+      await page.mouse.move(2, 2);
+      await expect(tip).toBeHidden({ timeout: 2_000 });
+      const bare = await page.evaluate(
+        ({ box: bb, point }) => {
+          const c = document.querySelector("canvas");
+          if (!(c instanceof HTMLCanvasElement)) return [];
+          const ctx = c.getContext("2d");
+          if (!ctx) return [];
+          const sx = c.width / bb.width;
+          const sy = c.height / bb.height;
+          const cx = Math.round((point.x - bb.x) * sx);
+          const cy = Math.round((point.y - bb.y) * sy);
+          const half = Math.round(40 * sx);
+          const data = ctx.getImageData(
+            Math.max(0, cx - half),
+            Math.max(0, cy - half),
+            half * 2,
+            half * 2,
+          ).data;
+          const out: number[] = [];
+          for (let i = 0; i < data.length; i += 4) {
+            out.push(
+              0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2],
+            );
+          }
+          return out;
+        },
+        { box: bb, point },
+      );
+      await page.mouse.move(point.x, point.y);
+      try {
+        // Generous on purpose: each hover re-renders the page and redraws
+        // the canvas, which on emulated mobile CPUs lands well past a
+        // snappy 150ms. Hits resolve as soon as the tooltip mounts; only
+        // misses pay the full wait, and candidates are capped.
+        await expect(tip).toBeVisible({ timeout: 600 });
+      } catch {
+        // Bright pixels need not be lines (a label, a lone star outside
+        // tolerance); this candidate cannot carry the assertion.
+        return null;
+      }
+      return page.evaluate(
+        ({ box: bb, point, bare }) => {
+          const c = document.querySelector("canvas");
+          if (!(c instanceof HTMLCanvasElement)) return 0;
+          const ctx = c.getContext("2d");
+          if (!ctx) return 0;
+          const sx = c.width / bb.width;
+          const sy = c.height / bb.height;
+          const cx = Math.round((point.x - bb.x) * sx);
+          const cy = Math.round((point.y - bb.y) * sy);
+          const half = Math.round(40 * sx);
+          const data = ctx.getImageData(
+            Math.max(0, cx - half),
+            Math.max(0, cy - half),
+            half * 2,
+            half * 2,
+          ).data;
+          let brighter = 0;
+          for (let i = 0, j = 0; i < data.length; i += 4, j += 1) {
+            const luma =
+              0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+            if (luma - (bare[j] ?? 0) > 40) brighter += 1;
+          }
+          return brighter;
+        },
+        { box: bb, point, bare },
+      );
+    }
+
+    // A half-plane is convex: a straight segment between two southern points
+    // cannot reach the top band, so content hovered there belongs to a
+    // northern figure in any world — the question is only where its
+    // highlight draws.
+    const points = await contentPoints(60, 320);
+    expect(
+      points.length,
+      "no drawn content in the northern band to hover",
+    ).toBeGreaterThan(0);
+    let measured: number | null = null;
+    for (const point of points) {
+      measured = await brightenedNear(point);
+      if (measured !== null) break;
+    }
+    expect(
+      measured,
+      "hovered drawn content but nothing was picked — no highlight to measure",
+    ).not.toBeNull();
+    // A redrawn double-width segment crossing the 80px clip is hundreds of
+    // pixels; a mirrored highlight leaves zero (the veil only darkens).
+    expect(measured ?? 0).toBeGreaterThan(40);
+  });
+
   test("the poster matches the exported SVG's structure", async ({ page }) => {
     // The point of the flip: what is on screen and what is exported come from
     // one composition. Assert the viewer's canvas and the exported SVG agree on
@@ -90,5 +348,259 @@ test.describe("interactive poster", () => {
     const labels = svg.match(/<text /g) ?? [];
     // Every figure is labelled, plus the caption line(s).
     expect(labels.length).toBeGreaterThanOrEqual(figureCount);
+  });
+});
+
+/**
+ * Moving the map.
+ *
+ * The poster was a blit with a transform and no way to change the transform:
+ * hovering lit a constellation up, and that was the whole of it. Everything
+ * here is about a visitor being able to go somewhere, and about the ways that
+ * silently stop working — a passive wheel listener, a drag that ends in a
+ * click, an overlay drawn outside the transform.
+ */
+test.describe("navigating the poster", () => {
+  const zoomIn = (page: import("@playwright/test").Page) =>
+    page.getByRole("button", { name: /zoom in/i });
+  const zoomOut = (page: import("@playwright/test").Page) =>
+    page.getByRole("button", { name: /zoom out/i });
+  /** The view controls' own reset, distinct from the panel's `figures.reset`. */
+  const fit = (page: import("@playwright/test").Page) =>
+    page.getByRole("button", { name: /show the whole sky/i });
+
+  /** Park the pointer off the poster so no live tooltip tints a screenshot. */
+  async function park(page: import("@playwright/test").Page): Promise<void> {
+    await page.mouse.move(2, 2);
+  }
+
+  test("dragging pans, and there is nothing to pan to at the home view", async ({
+    page,
+  }) => {
+    await openViewer(page);
+    const box = await posterBox(page);
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+
+    // Scale 1 fills the frame exactly, so the whole poster is already on
+    // screen: the fit control reads as unavailable and a drag must not shift
+    // anything. Asserting equality rather than "not equal" is the point —
+    // it is the only way to tell a deliberate no-op from a pan too small to
+    // notice.
+    await expect(fit(page)).toBeDisabled();
+    await park(page);
+    const home = await shot(page, box);
+
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx + 90, cy + 60, { steps: 10 });
+    await page.mouse.up();
+    await park(page);
+
+    expect(await shot(page, box)).toEqual(home);
+    await expect(fit(page)).toBeDisabled();
+  });
+
+  test("dragging pans once there is somewhere to pan to", async ({ page }) => {
+    await openViewer(page);
+    const box = await posterBox(page);
+    await zoomIn(page).click();
+    await zoomIn(page).click();
+    await park(page);
+    const before = await shot(page, box);
+
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx + 80, cy, { steps: 10 });
+    await page.mouse.up();
+    await park(page);
+
+    expect(await shot(page, box)).not.toEqual(before);
+    // The view no longer sits at home, so the fit control must be live.
+    await expect(fit(page)).toBeEnabled();
+  });
+
+  test("the wheel zooms and keeps the page still", async ({ page }) => {
+    await openViewer(page);
+    const box = await posterBox(page);
+    await park(page);
+    const before = await shot(page, box);
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.3);
+    await page.mouse.wheel(0, -300);
+    await expect(fit(page)).toBeEnabled();
+    await park(page);
+
+    expect(await shot(page, box)).not.toEqual(before);
+    /*
+     * React registers its own wheel handler passively, where `preventDefault`
+     * is ignored — so an `onWheel` implementation looks correct and scrolls the
+     * page away anyway. This is the assertion that would catch that.
+     */
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  });
+
+  test("the poster answers to the keyboard", async ({ page }) => {
+    await openViewer(page);
+    const canvas = page.getByRole("img", { name: /night sky poster/i });
+    const reset = fit(page);
+    await expect(reset).toBeDisabled();
+
+    await canvas.focus();
+    // Arrows have nothing to pan at the home view, and must not scroll the
+    // page either — the map claims those keys, so it has to use them.
+    await page.keyboard.press("ArrowRight");
+    await expect(reset).toBeDisabled();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+    await page.keyboard.press("+");
+    await expect(reset).toBeEnabled();
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("0");
+    await expect(reset).toBeDisabled();
+  });
+
+  test("the view controls move the view and undo it", async ({ page }) => {
+    await openViewer(page);
+    // Scale 1 is the floor, so there is nothing to zoom out *from* yet.
+    await expect(zoomOut(page)).toBeDisabled();
+    await expect(fit(page)).toBeDisabled();
+
+    await zoomIn(page).click();
+    await expect(fit(page)).toBeEnabled();
+    await expect(zoomOut(page)).toBeEnabled();
+
+    await zoomIn(page).click();
+    await fit(page).click();
+    await expect(fit(page)).toBeDisabled();
+    await expect(zoomOut(page)).toBeDisabled();
+  });
+
+  test("dragging across a figure does not open it", async ({ page }) => {
+    await openViewer(page);
+    const box = await posterBox(page);
+    // Zoom first. At the home view the drag is a no-op, so the click that ends
+    // it would land where it started — a different situation from the one
+    // under test.
+    await zoomIn(page).click();
+    await zoomIn(page).click();
+
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx + 120, cy, { steps: 10 });
+    await page.mouse.up();
+
+    // Every drag ends in a click. If that click reached the hit-test, panning
+    // the map would keep selecting constellations the visitor only moved past.
+    await expect(page.locator('.atlas-figure[aria-pressed="true"]')).toHaveCount(
+      0,
+    );
+    // The panel offers a reset only once something is focused; it must not have
+    // appeared. (The view controls' own control is named differently on
+    // purpose — see `viewer.resetView`.)
+    await expect(
+      page.getByRole("button", { name: /reset view/i }),
+    ).toBeHidden();
+  });
+
+  test("two fingers move and scale the poster together", async ({ page }) => {
+    await openViewer(page);
+    const box = await posterBox(page);
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    await park(page);
+    const before = await shot(page, box);
+
+    // Synthesised rather than driven through a real touch screen: Playwright's
+    // touch API taps but does not drag two fingers, and this is the only way
+    // to reach the pinch branch.
+    await page.evaluate(
+      ({ cx, cy }) => {
+        const canvas = document.querySelector("canvas");
+        if (!canvas) return;
+        const fire = (type: string, id: number, x: number, y: number) =>
+          canvas.dispatchEvent(
+            new PointerEvent(type, {
+              pointerId: id,
+              pointerType: "touch",
+              isPrimary: id === 1,
+              clientX: x,
+              clientY: y,
+              bubbles: true,
+              cancelable: true,
+            }),
+          );
+        fire("pointerdown", 1, cx - 40, cy);
+        fire("pointerdown", 2, cx + 40, cy);
+        fire("pointermove", 1, cx - 90, cy);
+        fire("pointermove", 2, cx + 90, cy);
+        fire("pointerup", 1, cx - 90, cy);
+        fire("pointerup", 2, cx + 90, cy);
+      },
+      { cx, cy },
+    );
+
+    await park(page);
+    // A pinch outward is a zoom in, so the view has left home.
+    await expect(fit(page)).toBeEnabled();
+    expect(await shot(page, box)).not.toEqual(before);
+  });
+
+  test("the focus veil dims what is on screen, not the poster's own box", async ({
+    page,
+  }) => {
+    await openViewer(page);
+    /*
+     * The regression. The veil was drawn *outside* the zoom transform while the
+     * blit was drawn inside it, so a zoomed view dimmed only the middle of the
+     * frame and drew the focused figure's name twice, slightly offset.
+     */
+    await zoomIn(page).click();
+    await zoomIn(page).click(); // 1.5^2 = 2.25, pivoted on the disc centre
+
+    // At this scale the corners of the frame show sky far outside the disc's
+    // own extent — exactly the region an untransformed veil would miss.
+    const corners = [
+      { x: 0.06, y: 0.86 },
+      { x: 0.94, y: 0.14 },
+    ];
+
+    // Resting on a figure *in the panel* sets the highlight without moving the
+    // view, so the geometry these corners sample stays exactly as computed.
+    const figure = page.locator(".atlas-figure").first();
+    const lit: number[] = [];
+    const clear: number[] = [];
+    for (const corner of corners) {
+      await park(page);
+      clear.push(await meanLuma(page, corner));
+      await figure.hover();
+      lit.push(await meanLuma(page, corner));
+    }
+
+    for (const [i, corner] of corners.entries()) {
+      expect(
+        lit[i] ?? 0,
+        `corner ${JSON.stringify(corner)} should dim when a figure is focused`,
+      ).toBeLessThan((clear[i] ?? 0) * 0.8);
+    }
+  });
+
+  test("@mobile the poster claims touch gestures instead of the page", async ({
+    page,
+  }) => {
+    await openViewer(page);
+    /*
+     * On a phone the poster fills most of the viewport, so if the browser
+     * claims one-finger vertical drags to scroll, panning the map is
+     * impossible exactly where it is most wanted.
+     */
+    await expect(page.getByRole("img", { name: /night sky poster/i })).toHaveCSS(
+      "touch-action",
+      "none",
+    );
   });
 });

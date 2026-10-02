@@ -44,9 +44,23 @@ export const CANVAS_W = 800;
 export const CANVAS_H = 1000;
 export const BAND_FRACTION = 0.22;
 export const SKY_H = CANVAS_W; // square sky region on top
+/**
+ * The unit-disc extent the sky axes span (`[-AXIS_EXTENT, AXIS_EXTENT]` on both
+ * axes with equal aspect). It lives here, not in the renderer, because the
+ * model and the drawing must agree on it: the hit-test maps the pointer
+ * through these pixels while the poster draws through `unitToCanvas`, and two
+ * sources for one scale is how hovering picked the mirror image of the cursor.
+ */
+export const AXIS_EXTENT = 1.06;
 export const DISK_CX = CANVAS_W / 2;
 export const DISK_CY = SKY_H / 2;
-export const DISK_R = 368;
+/**
+ * Unit-disc radius in poster pixels — derived, not chosen. A second literal
+ * here (it used to be 368) drifts from the ring the renderer draws at
+ * `(1 / AXIS_EXTENT) * (sizePx / 2)`, and then the cursor and the drawing
+ * disagree about where every star is.
+ */
+export const DISK_R = CANVAS_W / 2 / AXIS_EXTENT;
 
 export function buildSkyModel(
   payload: SharePayload,

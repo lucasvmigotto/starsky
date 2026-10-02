@@ -25,6 +25,18 @@ disk and the `SPEC` constant must match field for field.
 - **PDF** — true vector via `svg2pdf.js` + jsPDF from the SVG; embedded font,
   selectable text, no full-page raster.
 
+## Orientation (normative)
+
+The sky is north-up, east-right, in canvas convention (y down-positive):
+`project()` returns north as negative y, and every mapping from unit space to
+pixels preserves the sign — no flip is due anywhere in the chain. A minus on
+any mapping mirrors that layer against all the others, and because PNG, SVG
+and PDF can share the same mirror while the hit-test reads the model, the
+failure presents as hovering naming the mirror image of the cursor. Pinned by
+`site/src/lib/render/orientation.test.ts` (model pixels coincide with drawn
+pixels; north draws above centre) and the northern-sky journey in
+`site/e2e/interactive.spec.ts`.
+
 ## Visual regression (replaces the old parity harness)
 
 There is no second implementation, so no cross-renderer tolerance. The guard is

@@ -61,6 +61,18 @@ export const enUS = {
   "viewer.announcementRegion": "Sky viewer status",
   "viewer.canvasLabel": "Night sky poster titled {title}",
   "viewer.canvasLabel.untitled": "Night sky poster",
+  // The canvas is operable: it takes focus, so it has to say what it answers
+  // to. Pointer gestures are named for the screen reader that cannot perform
+  // them, and the keys for the ones that have keys.
+  "viewer.canvasHint":
+    "Night sky map. Drag to move it, scroll to zoom. With the map focused, use the arrow keys to move, plus and minus to zoom, and 0 to show the whole sky.",
+  // The three view controls under the poster. A map that only moves under a
+  // drag is undiscoverable, and the same navigation has to work without a
+  // pointer at all.
+  "viewer.viewControls": "View controls",
+  "viewer.zoomIn": "Zoom in",
+  "viewer.zoomOut": "Zoom out",
+  "viewer.resetView": "Show the whole sky",
   "viewer.caption": "{coords} — {place} · {local} {tz}",
   "viewer.copyLink": "Copy link",
   "viewer.linkCopied": "Link copied",
