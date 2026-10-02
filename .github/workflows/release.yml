@@ -33,7 +33,9 @@ concurrency:
 
 jobs:
   release:
-    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
+    # Dispatches have no head commit; only pushes do. Either way, releases
+    # cut from main alone — never from a branch the workflow was dispatched on.
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore(release):')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -96,7 +98,10 @@ jobs:
 
       - name: Attest the SBOM
         if: ${{ steps.plan.outputs.release == 'true' }}
-        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447842ac1eab6504dd8 # v4.2.2
+        # The v4.2.2 SHA (4d10147) is unresolvable by the runner — two
+        # consecutive runs failed action resolution with it while the tag
+        # itself resolves. v4.1.1 until a resolvable v4.2.x SHA is confirmed.
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         with:
           subject-path: sbom.cdx.json
 
