@@ -1,6 +1,6 @@
 # Finding — the poster face has no emoji or CJK, so the three exports disagree
 
-Status: **open** — needs a product decision, not a code fix
+Status: **fixed** — 007 T042, `feat/007-reject-undrawable-titles`
 Found by: charter C1 and C2 (007 T040/T041), 2026-10-02
 Severity: **Medium** — every poster is affected only if the visitor uses one of
 these characters in a title or place name; the failure is silent and the
@@ -83,25 +83,35 @@ them):
 | element census stable across titles | 1880 circles, 408 lines, 52 text nodes in all four cases |
 | clipped text | none observed; the caption-width constraint holds |
 
-## The decision this needs
+## The decision, and what was done
 
-Three ways out, none of them obvious, and not this document's to pick:
+Three ways out were laid out. **The first was chosen** (2026-10-02): make the
+failure visible rather than ship a box. The two paths split on purpose, because
+the visitor's situation differs.
 
-1. **Reject a title the face cannot draw**, in the spirit of BCR-0007. A visitor
-   gets a clear message naming the offending character instead of a box in their
-   poster. Cost: a title someone can legitimately type is refused. Note this
-   needs a *place*-name path too — place names are catalogue-driven, so this is
-   mostly about the title.
-2. **Bundle a fallback face** for the ranges above Latin-1. Cost: bundle budget
-   (currently a 500 KB brotli ceiling, and the face is most of it), plus the
-   decision of which ranges to cover.
-3. **Accept it and document it** — state that output is Latin-1 plus punctuation
-   and platform-dependent beyond that. Cost: the three formats still disagree,
-   which is the part that is actually wrong rather than merely limited.
+- **Authoring refuses.** `LandingPage` awaits the face, probes the title, and on
+  any undrawable character sets the existing inline `role="alert"` error naming
+  it — `fontError.titleUnsupported`. Nothing was created, so nothing is lost.
+- **Decode adjusts and says so.** `ViewerPage` strips the character once the
+  face is loaded, renders the poster anyway, and states the adjustment
+  (`fontError.titleAdjusted`). The recipient cannot fix the sender's title, and a
+  link that refuses to render is a worse failure than an adjusted one. Silence
+  would not be acceptable: a poster quietly differing from what was shared is
+  the same dishonesty as the notdef box, one level up.
 
-Option 1 is the smallest change that makes the failure visible, and visibility is
-what every previous font BCR bought. Option 3 is honest but leaves two of the
-three exports lying.
+Both probe **`"Cormorant Garamond"` alone**, never the `"… , serif"` stack the
+poster actually uses. Asking about the stack consults the generic fallback, so on
+any machine with an emoji font installed it answers "yes, 🌌 is fine" — the
+disagreement, reported in the wrong direction. Both also wait on
+`document.fonts.ready`: an unloaded face reports *every* character as
+unsupported, which would refuse every title in the product.
+
+Stripping closes the gap it leaves — `Noite 🌌 Austral` becomes `Noite Austral`,
+not `Noite  Austral`. A double space reads on the poster as a typo in the
+sender's typing rather than as our adjustment.
+
+The third option (bundle a fallback face) stays available and is still the answer
+if the product ever wants emoji titles to work rather than be refused.
 
 ## What is pinned now
 
@@ -109,10 +119,15 @@ three exports lying.
 directions: the Latin-1 + punctuation set the product emits **is** covered, and
 the emoji/CJK set **is not**, with a message saying the finding is stale if that
 stops being true. It also guards the probe — if the notdef advance ever equalled
-a real glyph's, every assertion would pass vacuously.
+a real glyph's, every assertion would pass vacuously. That test is why bundling
+a fallback face later is a deliberate act rather than a silent improvement: it
+will fail, and say why.
 
-Behaviour is unchanged. No title is refused, no fallback face is added; this
-records the gap so it cannot be rediscovered from a finished poster.
+`site/src/lib/render/glyphs.test.ts` covers the branching with an injected probe,
+including the two ways this can go wrong in production: refusing a title the face
+*can* draw, and accepting one it cannot. `site/e2e/undrawable-title.spec.ts`
+covers both paths against the real bundled face, because the mechanism *is*
+`document.fonts.check` and a fake proves the branching rather than the face.
 
 ## Not covered
 
