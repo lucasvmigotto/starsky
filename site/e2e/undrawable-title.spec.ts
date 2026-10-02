@@ -13,13 +13,13 @@
  *     one — but an *unmentioned* adjustment would be the same dishonesty one
  *     level up.
  *
- * These are e2e rather than unit tests on purpose: the whole mechanism is
- * `document.fonts.check` against the real bundled face, which does not exist
- * under bun. A unit test with a fake probe proves the branching, not that the
- * face agrees — `glyph-coverage.test.ts` covers the face from the other side.
+ * The coverage answer now comes from parsing the bundled font's `cmap`, which
+ * is deterministic and identical in every environment, so the *decision* is unit
+ * tested in `glyphs.test.ts`. What is left here is the part only a browser can
+ * judge: that the form rejects, the viewer adjusts, the notice appears, and the
+ * poster that results matches what the visitor was told.
  */
-import { expect, fragmentFor, test, viewerUrl } from "./fixtures.ts";
-import { BASE_PAYLOAD } from "./fixtures.ts";
+import { BASE_PAYLOAD, expect, fragmentFor, test, viewerUrl } from "./fixtures.ts";
 
 // Ids, matching `j4-place-lookup.spec.ts`. Not `getByLabel`: the title field
 // lives inside the collapsed "Render options" `<details>`, so it is in the DOM
@@ -29,40 +29,12 @@ import { BASE_PAYLOAD } from "./fixtures.ts";
 const TITLE_INPUT = "#landing-title";
 const DISCLOSURE = "Render options";
 
-/**
- * Wait until the poster face is genuinely measurable.
- *
- * Not just "the canvas has something to measure" — the face has to be applied.
- * `document.fonts.ready` resolves when pending loads settle, which is not the
- * same instant the canvas honours the family, and probing in between measures a
- * fallback and reports ASCII letters as undrawable. That bug shipped once and
- * stripped the letters out of every title on the page (CI, 2026-10-02).
- *
- * Probed through a real element rather than `page.evaluate`, because the check
- * that matters is the one the page itself makes.
- */
-async function waitForDrawableFont(
-  page: import("@playwright/test").Page,
-): Promise<void> {
-  await page.waitForFunction(() => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (ctx === null) return false;
-    ctx.font = '48px "Cormorant Garamond"';
-    // A present glyph must not advance like U+FFFF.
-    return (
-      Math.abs(ctx.measureText("N").width - ctx.measureText("￿").width) > 0.01
-    );
-  });
-}
-
 /** Fill the landing form's title and submit it. */
 async function submitWithTitle(
   page: import("@playwright/test").Page,
   title: string,
 ): Promise<void> {
   await page.goto("/");
-  await waitForDrawableFont(page);
   await page.getByText(DISCLOSURE, { exact: true }).click();
   await page.locator(TITLE_INPUT).fill(title);
   await page.getByRole("button", { name: /show my sky/i }).click();

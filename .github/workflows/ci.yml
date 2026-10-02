@@ -36,6 +36,14 @@ jobs:
       - name: Workflow schema
         run: uv run python scripts/check_workflow_schema.py
 
+      # The client's glyph table is generated from the bundled poster font's
+      # `cmap`. A stale table means titles are refused (or not) against a face
+      # the site no longer ships, and it would be invisible: the table is data,
+      # so nothing fails until a visitor types something.
+      - name: Glyph coverage table is current
+        working-directory: site
+        run: uv run python scripts/generate_glyph_coverage.py --check
+
       - name: Type check (ty)
         run: uv run ty check src tests
 

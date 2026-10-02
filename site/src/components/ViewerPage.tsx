@@ -149,13 +149,14 @@ export default function ViewerPage() {
   // shared is the same dishonesty one level up. The authoring path rejects
   // instead, because there the visitor typed the title and can fix it.
   //
-  // Runs after the font is ready, since probing an unloaded face reports every
-  // character as unsupported and would strip every shared title.
+  // No readiness gate: `unsupportedInPosterFont` reads the font's `cmap`, which
+  // is a property of the file rather than of what the browser has loaded, so it
+  // is correct on the first render and identical in every environment. An
+  // earlier version waited on `document.fonts.ready` because the probe measured
+  // a canvas; that wait is exactly what let the letters of "E2E Night" be
+  // stripped (see `lib/render/glyphs.ts`).
   useEffect(() => {
-    // `fontsReady`, not `loaded`: the probe measures the face, so it must wait
-    // for the face. Gating on the *data* instead would measure an unloaded font
-    // and strip every title.
-    if (!fontsReady || link.kind !== "ready" || adjusted !== null) return;
+    if (link.kind !== "ready" || adjusted !== null) return;
     const original = link.payload.options.title;
     const place = link.payload.place;
     const nextTitle = stripUnsupported(original ?? "");
@@ -176,7 +177,7 @@ export default function ViewerPage() {
         title: nextTitle === null ? original : nextTitle || null,
       },
     });
-  }, [fontsReady, link, adjusted]);
+  }, [link, adjusted]);
 
   // Static catalog + line data (regenerate via `python -m starsky catalog`).
   useEffect(() => {

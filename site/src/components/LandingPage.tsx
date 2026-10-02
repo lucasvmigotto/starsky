@@ -2,7 +2,6 @@ import { useState, type SubmitEvent as ReactSubmitEvent } from "react";
 import { encodePayload } from "../lib/encode.ts";
 import { geocodePlace, OSM_ATTRIBUTION, type ResolvedPlace } from "../lib/geocode.ts";
 import {
-  fontsReady,
   unsupportedCharacterMessage,
   unsupportedInPosterFont,
 } from "../lib/render/glyphs.ts";
@@ -205,7 +204,6 @@ export default function LandingPage() {
     // the opposite trade, because there the recipient cannot fix the sender's
     // title. See `lib/render/glyphs.ts` and
     // `specs/007-renderer-export/finding-unsupported-glyphs.md`.
-    await fontsReady();
     const undrawable = unsupportedInPosterFont(cleanTitle);
     if (undrawable.length > 0) {
       setError(unsupportedCharacterMessage(undrawable[0]));
