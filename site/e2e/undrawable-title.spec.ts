@@ -28,13 +28,36 @@ import { BASE_PAYLOAD, expect, fragmentFor, test, viewerUrl } from "./fixtures.t
 // anything that names the real problem.
 const TITLE_INPUT = "#landing-title";
 const DISCLOSURE = "Render options";
+const WHEN_INPUT = "#landing-when";
+const LAT_INPUT = "#landing-lat";
+const LON_INPUT = "#landing-lon";
 
-/** Fill the landing form's title and submit it. */
+/**
+ * Fill the landing form's title and submit it.
+ *
+ * **Coordinates mode, and an explicit moment.** Both are load-bearing:
+ *
+ * - Coordinates avoid the geocode entirely, so the test does not depend on
+ *   Nominatim being reachable. The page defaults to *place* mode with "Times
+ *   Square, New York, NY" pre-filled, which makes submitting a network call.
+ * - The moment is not optional. `DEFAULTS.when` is `""`, and `handleSubmit`
+ *   checks the date *first* — `parseDateTimeLocal("")` returns null and it
+ *   bails with "Pick a date and time for the sky." before the geocode, and
+ *   long before the glyph check this spec is about. Two of these tests failed
+ *   for exactly that reason (CI, 2026-10-02), which is a reminder that an
+ *   assertion failing on a *different* error is a test bug, not a product bug.
+ *
+ * The timezone is left alone: `DEFAULTS.tz` is already "UTC".
+ */
 async function submitWithTitle(
   page: import("@playwright/test").Page,
   title: string,
 ): Promise<void> {
   await page.goto("/");
+  await page.getByRole("radio", { name: "coordinates", exact: true }).check();
+  await page.locator(LAT_INPUT).fill("40.7580");
+  await page.locator(LON_INPUT).fill("-73.9855");
+  await page.locator(WHEN_INPUT).fill("2026-01-01T00:00");
   await page.getByText(DISCLOSURE, { exact: true }).click();
   await page.locator(TITLE_INPUT).fill(title);
   await page.getByRole("button", { name: /show my sky/i }).click();
@@ -103,7 +126,11 @@ test.describe("a title the poster face cannot draw", () => {
     // And what renders is the adjusted title, so the poster and its exports
     // agree with what the visitor was told.
     await expect(page.getByText("E2E Night")).toBeVisible();
-    await expect(page.getByText("🌌")).toHaveCount(0);
+    // Deliberately *not* asserting the emoji is absent from the page: the
+    // notice names the character it dropped, which is the whole point, so
+    // counting `🌌` across the page finds it there. Scoped to the title
+    // instead — the caption/header echo the adjusted string and nothing else.
+    await expect(page.getByRole("img", { name: /E2E Night/ })).toBeVisible();
   });
 
   test("a shared link whose title is drawable is left alone and unannounced", async ({
