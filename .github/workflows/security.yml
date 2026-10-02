@@ -68,7 +68,7 @@ jobs:
 
       # Secrets first: this is the one control that blocks outright.
       - name: Secret scan (working tree)
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
         with:
           scan-type: fs
           scanners: secret
@@ -79,7 +79,7 @@ jobs:
       # Dependencies: block only when a fix exists, so the repo is not held
       # hostage by an unfixed advisory upstream.
       - name: Dependency scan (lockfiles)
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
         with:
           scan-type: fs
           scanners: vuln
@@ -90,7 +90,7 @@ jobs:
 
       # Config/Dockerfile: warn-only for now (no IaC to scan, two Dockerfiles).
       - name: Misconfiguration scan (Dockerfiles)
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
         with:
           scan-type: config
           format: table
@@ -158,12 +158,12 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3
+        uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
         with:
           languages: ${{ matrix.language }}
           queries: security-extended
 
       - name: Analyze
-        uses: github/codeql-action/analyze@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3
+        uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
         with:
           category: "/language:${{ matrix.language }}"
