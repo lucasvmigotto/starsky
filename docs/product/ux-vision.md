@@ -761,6 +761,31 @@ starting point, not a mistake, and the copy says so. Naming "sky" rather than
 | `fontError.body` | The poster is withheld rather than drawn in a substituted typeface. |
 | `loading.poster` | Drawing the sky… |
 
+**Errors — an undrawable character**
+
+The poster face covers Latin-1 accents and punctuation but has no glyph for
+emoji or CJK, so those characters render as a notdef box — silently, and
+differently in each export. The two paths treat that differently on purpose,
+because the visitor's situation differs:
+
+| Key | Copy |
+|---|---|
+| `fontError.titleUnsupported` | The poster face cannot draw {character}. Remove it, or choose a title the face has glyphs for. |
+| `fontError.titleAdjusted` | This title contained {characters}, which the poster face cannot draw. It has been left out so the poster matches its exports. |
+
+The **first** is a form error: the visitor typed the title and has not made
+anything yet, so refusing costs them nothing and names the character so they can
+act. The **second** is a note on a sky somebody else shared. The recipient
+cannot fix the sender's title, and a link that refuses to render is a worse
+failure than a title that lost a character — so the character is dropped, the
+poster still renders, and the adjustment is stated rather than hidden. Without
+that sentence the poster would quietly differ from what was shared, which is the
+same dishonesty as the notdef box, one level up.
+
+Deliberately *not* rejecting on the decode path: BCR-0007 withholds a poster when
+the font cannot load at all, which is a different failure. Here the poster is
+mostly right, and a dead link is not a better answer than an adjusted title.
+
 **Errors — the split keys**
 
 `dataError` and `fontError` wrap inline `<code>` or nothing, so their prose is

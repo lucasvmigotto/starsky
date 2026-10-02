@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatLocalTime } from "../lib/caption.ts";
 import {
+  stripUnsupported,
+  titleAdjustedMessage,
+  unsupportedInPosterFont,
+} from "../lib/render/glyphs.ts";
+import {
   decodeShareFragment,
   fragmentFromHash,
   ShareDecodeError,
@@ -84,6 +89,10 @@ export default function ViewerPage() {
    * `role="alert"` because it withholds the poster (BCR-0007).
    */
   const [announcement, setAnnouncement] = useState("");
+  // The adjusted payload, or null while the shared title is drawable as sent.
+  const [adjusted, setAdjusted] = useState<SharePayload | null>(null);
+  const [titleAdjusted, setTitleAdjusted] = useState<string | null>(null);
+
 
   // Track `#s=` across in-page navigation and pastes.
   useEffect(() => {
@@ -132,6 +141,40 @@ export default function ViewerPage() {
     };
   }, []);
 
+  // A shared title can carry a character the poster face has no glyph for
+  // (emoji, CJK). It would render as a notdef box — silently, and differently
+  // in each export. Here we neither refuse the link nor hide the problem: the
+  // character is dropped so the poster and its exports agree, and the
+  // recipient is told, because a poster that quietly differs from what was
+  // shared is the same dishonesty one level up. The authoring path rejects
+  // instead, because there the visitor typed the title and can fix it.
+  //
+  // Runs after the font is ready, since probing an unloaded face reports every
+  // character as unsupported and would strip every shared title.
+  useEffect(() => {
+    if (!fontsReady || link.kind !== "ready" || adjusted !== null) return;
+    const original = link.payload.options.title;
+    const place = link.payload.place;
+    const nextTitle = stripUnsupported(original ?? "");
+    const nextPlace = place === null ? null : stripUnsupported(place);
+    const placeChanged =
+      nextPlace !== null && place !== null && nextPlace !== place;
+    if (nextTitle === null && !placeChanged) return;
+    const removed = [
+      ...unsupportedInPosterFont(original ?? ""),
+      ...unsupportedInPosterFont(place ?? ""),
+    ];
+    setTitleAdjusted(titleAdjustedMessage(removed));
+    setAdjusted({
+      ...link.payload,
+      place: placeChanged ? nextPlace || null : place,
+      options: {
+        ...link.payload.options,
+        title: nextTitle === null ? original : nextTitle || null,
+      },
+    });
+  }, [fontsReady, link, adjusted]);
+
   // Static catalog + line data (regenerate via `python -m starsky catalog`).
   useEffect(() => {
     let live = true;
@@ -167,7 +210,7 @@ export default function ViewerPage() {
     };
   }, []);
 
-  const payload = link.kind === "ready" ? link.payload : null;
+  const payload = adjusted ?? (link.kind === "ready" ? link.payload : null);
   const model = useSkyModel(
     payload ?? {
       v: 1,
@@ -302,6 +345,12 @@ export default function ViewerPage() {
                 {t("dataError.bodyPrefix", { detail: dataError })}
                 <code className="atlas-code">{t("dataError.command")}</code>
                 {t("dataError.bodySuffix")}
+              </p>
+            )}
+
+            {titleAdjusted && (
+              <p role="status" className="atlas-alert">
+                {titleAdjusted}
               </p>
             )}
 

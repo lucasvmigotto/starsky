@@ -123,6 +123,10 @@ export const enUS = {
   "fontError.bodyPrefix": "The poster font could not be loaded ({detail}). ",
   "fontError.bodySuffix":
     " The poster is not shown, because it would render in a substituted typeface rather than the one it was designed with.",
+  "fontError.titleUnsupported":
+    "The poster face cannot draw {character}. Remove it, or choose a title the face has glyphs for.",
+  "fontError.titleAdjusted":
+    "This title contained {characters}, which the poster face cannot draw. It has been left out so the poster matches its exports.",
 
   "loading.poster": "Drawing the sky…",
 

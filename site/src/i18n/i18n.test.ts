@@ -83,7 +83,9 @@ describe("copy", () => {
     // Guard against a typo'd key that would silently never be used: every key
     // here is asserted against the vision by `scripts/check_i18n_keys.py`.
     // 87 → 90 on 2026-10-01 for 007's FT007 (`viewer.export.open`/`.close`/
-    // `.preparing`, the three literals ExportControls still hardcoded).
-    expect(copyKeys().length).toBe(90);
+    // `.preparing`, the three literals ExportControls still hardcoded);
+    // 90 → 92 for the undrawable-character report (`fontError.titleUnsupported`
+    // on the authoring path, `fontError.titleAdjusted` on the decode path).
+    expect(copyKeys().length).toBe(92);
   });
 });

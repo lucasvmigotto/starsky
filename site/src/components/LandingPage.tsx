@@ -1,6 +1,11 @@
 import { useState, type SubmitEvent as ReactSubmitEvent } from "react";
 import { encodePayload } from "../lib/encode.ts";
 import { geocodePlace, OSM_ATTRIBUTION, type ResolvedPlace } from "../lib/geocode.ts";
+import {
+  fontsReady,
+  unsupportedCharacterMessage,
+  unsupportedInPosterFont,
+} from "../lib/render/glyphs.ts";
 import type { Projection, SharePayload, Shape } from "../lib/share.ts";
 import { fragmentFromHash } from "../lib/share.ts";
 import { t } from "../i18n/index.ts";
@@ -192,6 +197,21 @@ export default function LandingPage() {
     }
 
     const cleanTitle = title.trim();
+
+    // The poster face has no glyph for emoji or CJK, so those characters would
+    // render as a notdef box — silently, and differently in each export. Here the
+    // visitor typed the title and has made nothing yet, so refusing costs them
+    // nothing and naming the character lets them fix it. The decode path makes
+    // the opposite trade, because there the recipient cannot fix the sender's
+    // title. See `lib/render/glyphs.ts` and
+    // `specs/007-renderer-export/finding-unsupported-glyphs.md`.
+    await fontsReady();
+    const undrawable = unsupportedInPosterFont(cleanTitle);
+    if (undrawable.length > 0) {
+      setError(unsupportedCharacterMessage(undrawable[0]));
+      return;
+    }
+
     const payload: SharePayload = {
       v: 1,
       lat: flat,
