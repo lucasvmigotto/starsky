@@ -665,6 +665,11 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `viewer.announcementRegion` | Sky viewer status *(the region's `aria-label`, so it is distinguishable from the export row's)* |
 | `viewer.canvasLabel` | Night sky poster titled {title} |
 | `viewer.canvasLabel.untitled` | Night sky poster |
+| `viewer.canvasHint` | Night sky map. Drag to move it, scroll to zoom. With the map focused, use the arrow keys to move, plus and minus to zoom, and 0 to show the whole sky. *(screen-reader only, the canvas's `aria-describedby`)* |
+| `viewer.viewControls` | View controls *(the button group's `aria-label`)* |
+| `viewer.zoomIn` | Zoom in |
+| `viewer.zoomOut` | Zoom out |
+| `viewer.resetView` | Show the whole sky |
 | `dataError.title` | Star data could not be loaded |
 | `dataError.body` | Regenerate it with `starsky catalog` and reload. |
 | `fontError.title` | The poster font could not be loaded |

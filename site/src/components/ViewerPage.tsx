@@ -17,9 +17,12 @@ import {
   type SegmentRow,
   type StarRow,
 } from "../lib/skymodel.ts";
+import { DISK_CX, DISK_CY } from "../lib/skymodel.ts";
+import { HOME_VIEW, zoomAt, type View } from "../lib/view.ts";
 import FiguresPanel from "./FiguresPanel.tsx";
 import ExportControls from "./ExportControls.tsx";
-import SkyCanvas, { HOME_VIEW, type View } from "./SkyCanvas.tsx";
+import SkyCanvas from "./SkyCanvas.tsx";
+import ViewControls from "./ViewControls.tsx";
 import { EmptyState, InvalidState, LegacyState } from "./States.tsx";
 import { t } from "../i18n/index.ts";
 import SiteFooter from "./SiteFooter.tsx";
@@ -78,6 +81,13 @@ export default function ViewerPage() {
   const [loaded, setLoaded] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animRef = useRef(0);
+  /**
+   * The view as it stands right now, for callbacks that must not close over a
+   * stale copy — the zoom buttons in particular, which would otherwise zoom
+   * from wherever the view was when the handler was last created.
+   */
+  const activeViewRef = useRef(view);
+  activeViewRef.current = view;
   /**
    * Announced async outcomes (000-design-system T035).
    *
@@ -281,6 +291,43 @@ export default function ViewerPage() {
     animateView(HOME_VIEW);
   }, [animateView]);
 
+  /*
+   * A pointer, wheel or keyboard gesture, applied directly.
+   *
+   * Not `animateView`: the pointer is the easing curve, and a tween under a
+   * finger only ever fights it — which is how a map ends up feeling like it is
+   * sliding away from you instead of under you. Cancelling any tween in flight
+   * matters for the same reason; otherwise it keeps writing `view` over the
+   * gesture for the rest of its 650ms.
+   */
+  const handleViewGesture = useCallback((next: View) => {
+    cancelAnimationFrame(animRef.current);
+    /*
+     * A manual move leaves whatever was selected somewhere the visitor is now
+     * looking away from, so keeping it pressed in the panel would be claiming a
+     * focus the view no longer shows. It also drops the focus overlay, which
+     * would otherwise sit on top of unrelated sky.
+     */
+    setSelected(null);
+    setView(next);
+  }, []);
+
+  const zoomBy = useCallback(
+    (factor: number) => {
+      handleViewGesture(
+        zoomAt(activeViewRef.current, DISK_CX, DISK_CY, factor),
+      );
+    },
+    [handleViewGesture],
+  );
+
+  const zoomIn = useCallback(() => {
+    zoomBy(1.5);
+  }, [zoomBy]);
+  const zoomOut = useCallback(() => {
+    zoomBy(1 / 1.5);
+  }, [zoomBy]);
+
   // Esc releases a focused figure.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -379,6 +426,8 @@ export default function ViewerPage() {
                     canvasRef={canvasRef}
                     onHoverFigure={handleHoverFigure}
                     onSelectFigure={handleSelect}
+                    onViewGesture={handleViewGesture}
+                    onResetView={resetView}
                     fontsReady={fontsReady}
                   />
                   {tooltip !== null && model.figures[tooltip] && (
@@ -388,6 +437,17 @@ export default function ViewerPage() {
                       />
                     </div>
                   )}
+                  {/*
+                    Inside the poster's grid item rather than beside it: at two
+                    columns a third child would take a column of its own and
+                    push the figure list out of the layout.
+                  */}
+                  <ViewControls
+                    view={view}
+                    onZoomIn={zoomIn}
+                    onZoomOut={zoomOut}
+                    onReset={resetView}
+                  />
                 </div>
                 <FiguresPanel
                   figures={model.figures}

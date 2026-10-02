@@ -85,7 +85,10 @@ describe("copy", () => {
     // 87 → 90 on 2026-10-01 for 007's FT007 (`viewer.export.open`/`.close`/
     // `.preparing`, the three literals ExportControls still hardcoded);
     // 90 → 92 for the undrawable-character report (`fontError.titleUnsupported`
-    // on the authoring path, `fontError.titleAdjusted` on the decode path).
-    expect(copyKeys().length).toBe(92);
+    // on the authoring path, `fontError.titleAdjusted` on the decode path);
+    // 92 → 97 for the view controls the poster needed once it could be panned
+    // and zoomed (`viewer.canvasHint`, `.viewControls`, `.zoomIn`, `.zoomOut`,
+    // `.resetView`).
+    expect(copyKeys().length).toBe(97);
   });
 });
