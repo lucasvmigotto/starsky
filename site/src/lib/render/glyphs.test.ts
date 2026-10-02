@@ -42,6 +42,14 @@ function faceProbe(character: string): boolean {
 /** A probe for a face that has loaded nothing — the trap `fontsReady` avoids. */
 const NOT_LOADED = (): boolean => false;
 
+/**
+ * The probe interface is injected everywhere, which is what let the first
+ * implementation — `document.fonts.check` — ship with 13 green unit tests and
+ * still be wrong in every browser. These prove the *branching*; the
+ * discrimination is proved in `site/e2e/undrawable-title.spec.ts`, against the
+ * real font, because only a real browser can say whether the algorithm tells an
+ * emoji from an accent.
+ */
 describe("uniqueCharacters", () => {
   it("keeps first-appearance order and drops repeats", () => {
     expect(uniqueCharacters("abcabc")).toEqual(["a", "b", "c"]);

@@ -152,6 +152,9 @@ export default function ViewerPage() {
   // Runs after the font is ready, since probing an unloaded face reports every
   // character as unsupported and would strip every shared title.
   useEffect(() => {
+    // `fontsReady`, not `loaded`: the probe measures the face, so it must wait
+    // for the face. Gating on the *data* instead would measure an unloaded font
+    // and strip every title.
     if (!fontsReady || link.kind !== "ready" || adjusted !== null) return;
     const original = link.payload.options.title;
     const place = link.payload.place;

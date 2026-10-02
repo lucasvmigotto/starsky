@@ -21,13 +21,22 @@
 import { expect, fragmentFor, test, viewerUrl } from "./fixtures.ts";
 import { BASE_PAYLOAD } from "./fixtures.ts";
 
-/** Fill the landing form and submit it. */
+// Ids, matching `j4-place-lookup.spec.ts`. Not `getByLabel`: the title field
+// lives inside the collapsed "Render options" `<details>`, so it is in the DOM
+// but not visible until the disclosure is opened — and a `getByLabel` that
+// resolves to a hidden input fails on `fill` with a 30s timeout rather than
+// anything that names the real problem.
+const TITLE_INPUT = "#landing-title";
+const DISCLOSURE = "Render options";
+
+/** Fill the landing form's title and submit it. */
 async function submitWithTitle(
   page: import("@playwright/test").Page,
   title: string,
 ): Promise<void> {
   await page.goto("/");
-  await page.getByLabel(/title/i).fill(title);
+  await page.getByText(DISCLOSURE, { exact: true }).click();
+  await page.locator(TITLE_INPUT).fill(title);
   await page.getByRole("button", { name: /show my sky/i }).click();
 }
 
@@ -40,11 +49,12 @@ test.describe("a title the poster face cannot draw", () => {
     const alert = page.getByRole("alert");
     await expect(alert).toBeVisible();
     await expect(alert).toContainText("🌌");
-    // And nothing was created: no navigation, so the visitor keeps their input.
-    await expect(page.getByLabel(/title/i)).toHaveValue("E2E 🌌");
+    // And nothing was created: no poster rendered, and the visitor keeps their
+    // input so they can edit it rather than retype it.
     await expect(
       page.getByRole("img", { name: /night sky poster/i }),
     ).toHaveCount(0);
+    await expect(page.locator(TITLE_INPUT)).toHaveValue("E2E 🌌");
   });
 
   test("the form still accepts a title of accents", async ({ page }) => {

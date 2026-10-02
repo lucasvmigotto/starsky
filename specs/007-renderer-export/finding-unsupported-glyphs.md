@@ -99,12 +99,27 @@ the visitor's situation differs.
   would not be acceptable: a poster quietly differing from what was shared is
   the same dishonesty as the notdef box, one level up.
 
-Both probe **`"Cormorant Garamond"` alone**, never the `"… , serif"` stack the
-poster actually uses. Asking about the stack consults the generic fallback, so on
-any machine with an emoji font installed it answers "yes, 🌌 is fine" — the
-disagreement, reported in the wrong direction. Both also wait on
-`document.fonts.ready`: an unloaded face reports *every* character as
-unsupported, which would refuse every title in the product.
+Both **measure** rather than ask, via a canvas set to `"Cormorant Garamond"`
+*alone*, comparing each character's advance with the font's notdef advance
+(U+FFFF). Advance, not pixels: a notdef box is a *shape*, so rasterising and
+comparing would also pass on a glyph that merely resembles one. Advance is also
+what the caption-width constraint does its arithmetic on.
+
+Both wait on `document.fonts.ready` first. An unloaded face measures as notdef
+for every character, which would refuse every title in the product.
+
+> **The first implementation used `document.fonts.check()` and it was wrong.**
+> CI caught it on 2026-10-02: the e2e asserted the adjustment notice appeared for
+> a shared `E2E 🌌 Night` and it did not. `check()` treats the question as "can
+> *any* available font render this", so on a machine with an emoji font installed
+> — which the Playwright image has — it answered *yes* for 🌌. That is precisely
+> the disagreement this work exists to report, answered backwards, and it failed
+> silently: no error, no warning, just a poster with a box in it. The unit tests
+> passed throughout, because they injected a fake probe and so could only ever
+> test the branching. Worth remembering: **a probe of this kind has to be
+> exercised against the real font in a real browser**, which is why
+> `undrawable-title.spec.ts` exists even though the branching is already covered
+> by 13 unit cases.
 
 Stripping closes the gap it leaves — `Noite 🌌 Austral` becomes `Noite Austral`,
 not `Noite  Austral`. A double space reads on the poster as a typo in the
@@ -125,9 +140,17 @@ will fail, and say why.
 
 `site/src/lib/render/glyphs.test.ts` covers the branching with an injected probe,
 including the two ways this can go wrong in production: refusing a title the face
-*can* draw, and accepting one it cannot. `site/e2e/undrawable-title.spec.ts`
-covers both paths against the real bundled face, because the mechanism *is*
-`document.fonts.check` and a fake proves the branching rather than the face.
+*can* draw, and accepting one it cannot. That is not sufficient on its own — it
+is what let the `document.fonts.check` version ship — so
+`site/e2e/undrawable-title.spec.ts` exercises both paths against the real bundled
+face in a real browser, which is the only place the *discrimination* can be
+checked.
+
+That spec also had to learn something about the form: the title field lives
+inside the collapsed "Render options" `<details>`, so it is in the DOM but not
+visible, and `getByLabel(/title/i).fill()` fails with a bare 30s timeout that
+names nothing. It addresses `#landing-title` after opening the disclosure, as
+`j4-place-lookup.spec.ts` already did for the other optional fields.
 
 ## Not covered
 

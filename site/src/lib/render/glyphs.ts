@@ -11,26 +11,33 @@
  * subset. Found by charter C1/C2; see
  * `specs/007-renderer-export/finding-unsupported-glyphs.md`.
  *
- * ## Why `document.fonts.check` and not a hard-coded list
+ * ## How drawability is decided: measure, do not ask
  *
- * The face is the source of truth, and querying it means a future font swap
- * needs no change here. The subtle part is **which family to ask about**:
+ * The obvious tool is `document.fonts.check('1em "Cormorant Garamond"', ch)`.
+ * **It does not work**, and it fails in the most misleading direction possible:
+ * Chrome treats the question as "can *any* available font render this", so on a
+ * machine with an emoji font installed it answers *yes* for 🌌 — true of the
+ * desktop, false of the artefact. That is precisely the disagreement this module
+ * exists to report, answered backwards. Measured in CI on 2026-10-02: with a
+ * shared title of `E2E 🌌 Night`, `check()` reported the emoji as drawable and
+ * no adjustment was made.
  *
- *     check('1em "Cormorant Garamond"', ch)   ← what we mean
- *     check('1em "Cormorant Garamond", serif', ch)   ← what the poster uses
+ * So this measures instead. A canvas is asked to set the face *alone* — no
+ * `serif` fallback in the list — and the character's advance is compared with
+ * the font's notdef advance (U+FFFF, near-certainly absent). A missing glyph
+ * advances exactly like notdef; a present one does not.
  *
- * The second form also consults the generic fallback, so on any machine with an
- * emoji font installed it answers "yes, 🌌 is fine" — which is exactly the
- * disagreement we are trying to surface, reported in the wrong direction. Ask
- * about the face alone and the answer is about the artefact we actually ship.
+ * Advance rather than pixels, deliberately: a notdef box is a *shape*, so
+ * rasterising and comparing would also pass on a glyph that merely resembles
+ * one. Advance is what the caption-width constraint does its arithmetic on, so
+ * it is also the failure that would actually distort a poster.
  *
  * ## The font must be loaded first
  *
- * `check()` reports what is *available now*. A face still loading answers
- * "unsupported" for every character, so a caller that probes too early rejects
- * every title — including plain ASCII ones. `fontsReady()` exists so callers
- * can await the load; the unit suite injects a probe instead and never touches
- * `document`.
+ * A face still loading measures as notdef for every character, so a caller that
+ * probes too early refuses every title — including plain ASCII ones.
+ * `fontsReady()` exists so callers can await the load; the unit suite injects a
+ * probe instead and never touches `document` or a canvas.
  */
 import { t } from "../../i18n/index.ts";
 
@@ -51,16 +58,53 @@ export function uniqueCharacters(text: string): string[] {
  * worse failure of the two: one visitor cannot make a poster, versus one poster
  * with a box in it.
  */
-export function fontCanDraw(character: string): boolean {
-  // `typeof document` covers non-browser callers (bun, SSR); the try covers a
-  // browser with no Font Access API, where calling `.check` throws. Both fall
-  // back to today's behaviour — render, and let the notdef show — because
-  // rejecting a title is the worse failure: one visitor cannot make a poster,
-  // versus one poster with a box in it.
-  if (typeof document === "undefined") return true;
+/** The size used for measuring. Only the ratio matters, not the value. */
+const PROBE_SIZE_PX = 48;
+
+/** U+FFFF: a code point no font is expected to have. */
+const NOTDEF = "￿";
+
+/** Lazily built, so importing this module never touches a canvas. */
+let context: CanvasRenderingContext2D | null | undefined;
+
+function measuringContext(): CanvasRenderingContext2D | null {
+  if (context !== undefined) return context;
   try {
-    // The face alone — never the `serif` fallback. See the module docstring.
-    return document.fonts.check('1em "Cormorant Garamond"', character);
+    const canvas = document.createElement("canvas");
+    context = canvas.getContext("2d");
+    if (context === null) return null;
+    // The face ALONE. With `serif` appended, the browser would fall back for a
+    // missing glyph and measure the substitute — reporting the emoji as
+    // drawable, which is the bug `document.fonts.check` has.
+    context.font = `${String(PROBE_SIZE_PX)}px "Cormorant Garamond"`;
+    return context;
+  } catch {
+    context = null;
+    return null;
+  }
+}
+
+/**
+ * The default probe: can the poster face, on its own, render this character?
+ *
+ * Returns `true` for everything when there is no canvas or no measurable font,
+ * so a caller that cannot answer degrades to today's behaviour — render, and let
+ * the notdef show — rather than locking the product out. Refusing a title is the
+ * worse failure: one visitor cannot make a poster, versus one poster with a box
+ * in it. Note this needs `fontsReady()` first, or every character measures as
+ * notdef and every title is refused.
+ */
+export function fontCanDraw(character: string): boolean {
+  if (typeof document === "undefined") return true;
+  const ctx = measuringContext();
+  if (ctx === null) return true;
+  try {
+    return (
+      Math.abs(ctx.measureText(character).width - ctx.measureText(NOTDEF).width) >
+      // Sub-pixel: a present glyph can be within a hair of notdef at small
+      // sizes, but the two are never equal to the precision measureText gives.
+      0.01
+    );
   } catch {
     return true;
   }
@@ -69,8 +113,14 @@ export function fontCanDraw(character: string): boolean {
 /** Resolve once the poster face is loaded, so `fontCanDraw` is not guessing. */
 export async function fontsReady(): Promise<void> {
   if (typeof document === "undefined") return;
+  // Typed as always present, so the check has to be runtime-shaped: a browser
+  // without the Font Access API has no `fonts.ready` to await, and awaiting
+  // `undefined` would settle immediately and leave the probe measuring an
+  // unloaded face.
+  const ready = (document as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready;
+  if (!ready) return;
   try {
-    await document.fonts.ready;
+    await ready;
   } catch {
     // A font that never loads is BCR-0007's case, handled where it renders.
   }
