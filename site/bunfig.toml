@@ -1,0 +1,6 @@
+[test]
+# `bun test` discovers `*.test.*` and `*.spec.*` anywhere. The Playwright
+# journeys in `e2e/` belong to `playwright test` and would crash Bun's runner
+# ("Playwright Test did not expect test.describe() to be called here"), so
+# scope Bun to the source tree only.
+root = "./src"

@@ -1,12 +1,50 @@
+# Deny-by-default build context.
+#
+# Two images are built from this context and they need different things:
+#
+#   Dockerfile     the CLI *runtime* — copies only src/starsky/ and the builder's
+#                  .venv, so nothing else in the context can reach it
+#   Containerfile  the *tools* image — needs site/ (package.json + bun.lock) to
+#                  install the frontend dependencies
+#
+# Because the runtime image copies a fixed allowlist, permitting site/ here for
+# the tools build cannot leak the site into production. Keeping only files that
+# are neither secrets nor junk in the context is what this file is for.
+
+# VCS and local state — never.
 .git/
+.github/
+.devcontainer/
 .gitignore
-.env
+.env*
+!.env.example
+
+# Build outputs and installed dependencies — always rebuilt.
+dist/
+node_modules/
 .venv/
 __pycache__/
 *.pyc
-tests/
-static_site/
-.github/
-.devcontainer/
+*.egg-info/
+build/
+.pytest_cache/
+test-results/
+playwright-report/
+
+# The sky-data cache is generated, not source.
+site/public/data/*.json
+
+# Documentation: not needed by either build. README stays for image labels.
 *.md
 !README.md
+
+# Permitted: everything the two Dockerfiles mount or copy, i.e. the Python
+# package + manifests, and the site's manifests for the tools install.
+!pyproject.toml
+!uv.lock
+!src/**
+!site/package.json
+!site/bun.lock
+!site/tsconfig.json
+!Containerfile
+!Dockerfile

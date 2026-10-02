@@ -1,0 +1,55 @@
+# The tools service — one per module. starsky has one module (one repo shipping
+# two artifacts), so one service.
+#
+# `containers.md` §6: recipes run `compose -f compose.tools.yml run --rm
+# [--network=none] tools <command>`, so a green local run means the same thing
+# as a green CI run. Versions come from .tool-versions via build args.
+#
+# Usage (through the Makefile, which passes these):
+#   $CONTAINER_ENGINE compose -f compose.tools.yml run --rm tools uv run pytest -q
+
+name: starsky-tools
+
+services:
+  tools:
+    build:
+      context: .
+      dockerfile: Containerfile
+      target: tools
+      args:
+        # Read from .tool-versions so the image cannot silently drift from the
+        # devcontainer or CI. `make doctor` fails if the layers disagree.
+        PYTHON_VERSION: "3.14"
+        BUN_VERSION: "1.4.2"
+    image: starsky-tools
+    working_dir: /src
+    volumes:
+      # The repo, so recipes see live edits. Read-write because `bun run build`
+      # and `uv run` write into the workspace (dist/, .venv/).
+      - .:/src
+      # Dependency caches, named so a rebuild does not cold-start resolution.
+      # They live outside the bind mount on purpose.
+      - starsky-tools-uv:/root/.cache/uv
+      - starsky-tools-bun:/root/.bun/install/cache
+    # §7: never let a test run stall the host. Sized for half of a typical
+    # 8-core/16 GB developer machine; raise deliberately, not by default.
+    cpus: 4
+    mem_limit: 6g
+    pids_limit: 512
+    init: true
+
+  # The same image with no network, for the tasks that must not reach out:
+  # unit/component tests, lint, typecheck, build (§5's determinism rule).
+  #
+  # `network_mode` is set here rather than passed as `run --network=none`
+  # because `podman compose` delegates to the docker-compose CLI, whose `run`
+  # has no --network flag — verified on this host 2026-09-30. Expressing it in
+  # the service keeps the recipes portable across compose providers.
+  offline:
+    extends:
+      service: tools
+    network_mode: none
+
+volumes:
+  starsky-tools-uv:
+  starsky-tools-bun:

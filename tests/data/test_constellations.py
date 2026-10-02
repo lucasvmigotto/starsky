@@ -4,7 +4,7 @@ from typing import Any
 
 from polars import DataFrame as pl_DataFrame
 
-from starpy.data.constellations import parse_iau_index
+from starsky.data.constellations import parse_iau_index
 
 
 def test_polyline_pairs() -> None:

@@ -1,1 +1,1 @@
-"""Tests package (mirrors src/starpy)."""
+"""Tests package (mirrors src/starsky)."""

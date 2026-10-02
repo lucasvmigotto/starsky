@@ -1,0 +1,224 @@
+name: Site to R2
+
+# Renamed from `static_r2.yml` (008 T002). The old name described the era when
+# the client was a `static_site/` directory; since the static-first refactor it
+# builds `site/`, and "static" no longer distinguishes it from anything.
+#
+# The rename is also what makes a release deployable at all, which is why it is
+# the first slice of US1 rather than a cosmetic tidy: `main` still carries the
+# pre-refactor copy of this workflow, which asks for `vars.STARPY_STATIC_SITE_URL`
+# — a name BCR-0009's rename retired. That job cannot pass validation, so no
+# push to any branch deploys anything. This file needs only five config items
+# (`secrets.CLOUDFLARE_R2_ACCOUNT_SECRET` plus four `vars.CLOUDFLARE_R2_*` /
+# `vars.STARSKY_STATIC_SITE_URL`), and all five exist on the repository
+# (verified 2026-10-02).
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "site/**"
+      - "specs/007-renderer-export/fixtures/**"
+      - ".github/workflows/site_r2.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - "specs/007-renderer-export/fixtures/**"
+      - ".github/workflows/site_r2.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: site-r2-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        # No `with:` pin: setup-uv reads .tool-versions, the single source
+        # the devcontainer and the tools image also read. An *empty* `with:` is
+        # not the same as none — Actions requires a mapping, so a null value
+        # fails workflow-file validation before any job is created, which is
+        # what made this workflow fail in 0s with 0 jobs on every push from
+        # 2026-09-30. `scripts/check_workflow_schema.py` now fails on it.
+
+      # Sky data (public/data/*.json) is gitignored: build it with the CLI
+      # before the site build. Retried: the catalog hosts can flake from CI.
+      - name: Build the sky data
+        # Override the job default (site): `uv run` needs the repo
+        # root where pyproject.toml lives.
+        working-directory: .
+        run: |
+          for i in 1 2 3; do
+            uv run python -m starsky cache warm \
+              && uv run python -m starsky catalog \
+              && break
+            echo "data build attempt $i failed; retrying..."
+            sleep $((i * 30))
+          done
+          test -f site/public/data/catalog.json
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          # Version comes from `.tool-versions` — the single source the
+          # devcontainer and the tools image also read.
+          #
+          # Explicitly repo-rooted: `defaults.run.working-directory` below does
+          # NOT apply to `uses:` steps, so this action runs from the workspace
+          # root while every `run:` step runs from `site/`. Writing the bare
+          # filename worked only because the root happens to hold the file.
+          bun-version-file: ./.tool-versions
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Validate viewer base URL
+        run: |
+          URL="${{ vars.STARSKY_STATIC_SITE_URL }}"
+          if [ -z "$URL" ]; then
+            echo "::error::vars.STARSKY_STATIC_SITE_URL is not set (Settings > Variables > Actions)"
+            exit 1
+          fi
+          case "$URL" in
+            https://*) ;;
+            *) echo "::error::STARSKY_STATIC_SITE_URL must start with https:// (got: $URL)"; exit 1 ;;
+          esac
+          case "$URL" in
+            *example.com*|*localhost*|*ngrok*|*127.0.0.1*)
+              echo "::error::STARSKY_STATIC_SITE_URL looks like a placeholder ($URL)"
+              exit 1
+              ;;
+          esac
+          echo "Viewer base URL OK: $URL"
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Test
+        run: bun run test
+
+      - name: Build
+        run: bun run build
+        env:
+          VITE_FULL_APP_URL: ${{ vars.STARSKY_STATIC_SITE_URL }}
+
+      # Crawlers need absolute OG URLs: fail if the build left a placeholder.
+      # Tags span two lines (property line, then content line).
+      - name: Assert absolute OG tags
+        run: |
+          grep -A1 'property="og:url"' dist/index.html | grep -q 'content="https://'
+          grep -A1 'property="og:image"' dist/index.html | grep -q 'content="https://.*/og-banner.png"'
+          grep -A1 'name="twitter:image"' dist/index.html | grep -q 'content="https://.*/og-banner.png"'
+          test -f dist/og-banner.png
+          grep -q 'rel="icon"' dist/index.html
+          test -f dist/favicon.svg
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: viewer-dist
+          path: site/dist
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-24.04
+    # Named environment: deployment history today, optional manual
+    # approvals later (add required reviewers under Settings > Environments).
+    environment: static-viewer
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: viewer-dist
+          path: dist
+
+      - name: Validate R2 configuration
+        # Names follow the scheme shared across these projects
+        # (`devsecops:pipeline`): the account id, endpoint and bucket are
+        # identifiers, so they live as repository *variables*; only the secret
+        # is a secret. Keeping the identifiers visible makes them reviewable
+        # and diffable, and keeps the secret store to the one value that needs
+        # it.
+        run: |
+          missing=0
+          for var in CLOUDFLARE_R2_ACCOUNT_ID CLOUDFLARE_R2_ACCOUNT_SECRET \
+                     CLOUDFLARE_R2_ENDPOINT_S3_CLIENT CLOUDFLARE_R2_BUCKET_ID; do
+            if [ -z "${!var}" ]; then
+              echo "::error::$var is not set (Settings > Secrets and variables > Actions)"
+              missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ]
+          case "${CLOUDFLARE_R2_ENDPOINT_S3_CLIENT}" in
+            https://*) echo "R2 endpoint OK" ;;
+            *) echo "::error::CLOUDFLARE_R2_ENDPOINT_S3_CLIENT must start with https://"; exit 1 ;;
+          esac
+        env:
+          CLOUDFLARE_R2_ACCOUNT_ID: ${{ vars.CLOUDFLARE_R2_ACCOUNT_ID }}
+          CLOUDFLARE_R2_ACCOUNT_SECRET: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_SECRET }}
+          CLOUDFLARE_R2_ENDPOINT_S3_CLIENT: ${{ vars.CLOUDFLARE_R2_ENDPOINT_S3_CLIENT }}
+          CLOUDFLARE_R2_BUCKET_ID: ${{ vars.CLOUDFLARE_R2_BUCKET_ID }}
+
+      - name: Ensure AWS CLI
+        run: |
+          if ! command -v aws >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq awscli
+          fi
+          aws --version
+
+      # Hashed Vite assets: immutable, long-lived. Entry HTML and the
+      # unhashed data/*.json payloads: no-cache (content changes per deploy).
+      - name: Sync static site to Cloudflare R2
+        env:
+          # The S3 client reads its credentials from AWS_*; the repository
+          # variables hold the R2 identifiers, not cloud credentials by name.
+          AWS_ACCESS_KEY_ID: ${{ vars.CLOUDFLARE_R2_ACCOUNT_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_SECRET }}
+          AWS_DEFAULT_REGION: auto
+          AWS_EC2_METADATA_DISABLED: "true"
+          R2_ENDPOINT: ${{ vars.CLOUDFLARE_R2_ENDPOINT_S3_CLIENT }}
+          R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET_ID }}
+        run: |
+          aws s3 sync dist "s3://$R2_BUCKET" \
+            --endpoint-url "$R2_ENDPOINT" \
+            --delete \
+            --exclude "index.html" \
+            --exclude "data/*.json" \
+            --exclude "favicon.svg" \
+            --cache-control "public, max-age=31536000, immutable"
+          # Stable filename but mutable content: no-cache like index.html.
+          aws s3 cp dist/favicon.svg "s3://$R2_BUCKET/favicon.svg" \
+            --endpoint-url "$R2_ENDPOINT" \
+            --cache-control "no-cache" \
+            --content-type "image/svg+xml"
+          # Stable filename but mutable content: no-cache like index.html.
+          aws s3 cp dist/og-banner.png "s3://$R2_BUCKET/og-banner.png" \
+            --endpoint-url "$R2_ENDPOINT" \
+            --cache-control "no-cache" \
+            --content-type "image/png"
+          aws s3 cp dist/index.html "s3://$R2_BUCKET/index.html" \
+            --endpoint-url "$R2_ENDPOINT" \
+            --cache-control "no-cache" \
+            --content-type "text/html; charset=utf-8"
+          aws s3 sync dist/data "s3://$R2_BUCKET/data" \
+            --endpoint-url "$R2_ENDPOINT" \
+            --delete \
+            --cache-control "no-cache"

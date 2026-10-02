@@ -10,12 +10,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          python-version: "3.14"
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        # No `with:` pin: setup-uv reads .tool-versions, the single source
+        # the devcontainer and the tools image also read.
 
       - name: Sync dependencies
         run: uv sync --all-groups --frozen
@@ -27,32 +27,46 @@ jobs:
         run: uv run ruff format --check src tests
 
       - name: Declarative import style
-        run: uv run python scripts/check_declarative_imports.py src tests app.py
+        run: uv run python scripts/check_declarative_imports.py src tests
+
+      # A workflow file that Actions rejects fails at *pre-dispatch*: the run
+      # exists, then dies in 0s with zero jobs and no log line to follow. That
+      # is how `static_r2.yml` sat red from 2026-09-30 to 2026-10-01 on an empty
+      # `with:`. A static check turns an invisible failure into a named file.
+      - name: Workflow schema
+        run: uv run python scripts/check_workflow_schema.py
+
+      # The client's glyph table is generated from the bundled poster font's
+      # `cmap`. A stale table means titles are refused (or not) against a face
+      # the site no longer ships, and it would be invisible: the table is data,
+      # so nothing fails until a visitor types something.
+      - name: Glyph coverage table is current
+        working-directory: site
+        run: uv run python scripts/generate_glyph_coverage.py --check
 
       - name: Type check (ty)
         run: uv run ty check src tests
 
-      - name: Tests (fast)
-        run: uv run pytest -q -m "not integration"
+      - name: Tests
+        run: uv run pytest -q
 
-      - name: Tests (integration)
-        run: uv run pytest -q -m integration
-
-      - name: No-pandas guard
-        run: uv run pytest tests/test_no_pandas.py -q
-
-      # Live Nominatim path (needs the STARPY_USER_AGENT_CONTACT secret).
-      # Secrets exist on pushes and same-repo PRs, never on fork PRs, so
-      # gating on fork status keeps fork CI green. (The `secrets` context
-      # is not allowed inside `if:` expressions.)
-      - name: Live place render smoke
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-        env:
-          STARPY__GEOCODING__USER_AGENT: ${{ secrets.STARPY_USER_AGENT_CONTACT }}
+      # The CLI's whole job is the data the browser fetches (BCR-0005), so CI
+      # builds it and asserts the shape the client depends on. Downloads the
+      # Hipparcos and Stellarium sources; no ephemeris, no renderer.
+      - name: Build the sky data
         run: |
-          uv run python -m starpy cache warm
-          uv run python -m starpy render \
-            --place "Times Square, New York, NY" \
-            --when "2026-01-01T00:00" --tz UTC \
-            --shape circle --output smoke.png
-          uv run python -c "from PIL import Image; Image.open('smoke.png').verify()"
+          uv run python -m starsky cache warm
+          uv run python -m starsky catalog --output-dir /tmp/starsky-data
+          test -s /tmp/starsky-data/catalog.json
+          test -s /tmp/starsky-data/constellations.json
+          uv run python - <<'PY'
+          import json
+          from pathlib import Path
+
+          stars = json.loads(Path("/tmp/starsky-data/catalog.json").read_text())["stars"]
+          segs = json.loads(Path("/tmp/starsky-data/constellations.json").read_text())["segments"]
+          assert len(stars) > 8000, len(stars)
+          assert len(segs) > 500, len(segs)
+          assert len(stars[0]) == 4 and len(segs[0]) == 4
+          print(f"ok: {len(stars)} stars, {len(segs)} segments")
+          PY

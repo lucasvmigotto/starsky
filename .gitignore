@@ -6,11 +6,18 @@ build/
 **/__pycache__/
 **/*.pyc
 .venv/
-/tmp/starpy-cache/
+/tmp/starsky-cache/
 /tmp/opencode/
 out.png
 *.png
-!tests/golden/*.png
-!static_site/public/og-banner.png
-# Generated viewer data (rebuild via `python -m starpy export-static-data`)
-static_site/public/data/*.json
+!site/public/og-banner.png
+# Reference images for the renderer's regression suite (must be versioned)
+!site/src/lib/render/__references__/*.png
+# Generated sky data for the site (rebuild via `python -m starsky catalog`)
+site/public/data/*.json
+# Reference images for the renderer's regression suite (must be versioned)
+!site/src/lib/render/__references__/*.png
+
+# Playwright artifacts
+site/test-results/
+site/playwright-report/

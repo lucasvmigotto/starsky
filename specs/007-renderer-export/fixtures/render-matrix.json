@@ -1,0 +1,97 @@
+# Render matrix — the reference-image suite's inputs
+
+The fixture set the visual-regression suite (`site/src/lib/render/reference.test.ts`)
+renders:
+
+- **structural**: star / segment / figure counts and the caption string must
+  match `expected` exactly;
+- **pixel**: each rendered PNG must stay within `tolerance` of the stored
+  reference in `site/src/lib/render/__references__/`.
+
+Inputs per case: `id`, `lat`, `lon`, `place`, `when_utc` (ISO-8601 UTC), `tz`,
+`options`, `size_px`, `expected`.
+
+This file was the browser↔CLI *parity* matrix while two renderers existed. The
+Python renderer was removed (BCR-0005), so "parity" is gone; what remains is the
+browser's own regression guard — hence the rename. To change a case
+deliberately, regenerate the references with
+`STARSKY_UPDATE_REFERENCE=1 bun test src/lib/render/reference.test.ts`.
+
+```json
+{
+  "version": 2,
+  "tolerance": {
+    "channel_mean_abs": 6,
+    "changed_fraction": 0.01,
+    "notes": "Per-channel 0-255 over RGB, alpha ignored, against the stored reference. This is a SELF-comparison (same renderer, same canvas library), not a cross-renderer one, so it can be far tighter than the old parity bar of 25. Two bars, because one is not enough: `changed_fraction` counts pixels differing by more than 2 and is the real guard (a mean over the whole image dilutes a change confined to thin features — measured: quadrupling the ring width moved 20356 px but only pushed meanAbs from 0 to 7.97; sliding the tolerance alone would have let a visibly different poster through). 1% is ~3700 px of a 320x390 render; a legitimate re-render changes 0. `channel_mean_abs` is a second, coarser net for widespread small drift. Any intended change regenerates both, and the diff is reviewed."
+  },
+  "cases": [
+    {
+      "id": "nyc-newyear-circle",
+      "lat": 40.758,
+      "lon": -73.9855,
+      "place": "Times Square",
+      "when_utc": "2026-01-01T00:00:00Z",
+      "tz": "America/New_York",
+      "options": {"magnitude_limit": 4.5, "shape": "circle", "title": "New Year"},
+      "size_px": 320,
+      "expected": {
+        "stars": 428,
+        "segments": 330,
+        "figures": 38,
+        "caption": "40.7580°N, 73.9855°W — Times Square · Dec 31, 2025, 7:00 PM America/New_York"
+      }
+    },
+    {
+      "id": "sydney-xmas-square",
+      "lat": -33.8688,
+      "lon": 151.2093,
+      "place": "Sydney",
+      "when_utc": "2025-12-25T11:00:00Z",
+      "tz": "Australia/Sydney",
+      "options": {"magnitude_limit": 5.0, "shape": "square", "glow": false},
+      "size_px": 320,
+      "expected": {"stars": 804, "segments": 402, "figures": 49}
+    },
+    {
+      "id": "reykjavik-fisheye",
+      "lat": 64.1466,
+      "lon": -21.9426,
+      "place": "Reykjavik",
+      "when_utc": "2025-12-21T23:00:00Z",
+      "tz": "Atlantic/Reykjavik",
+      "options": {
+        "projection": "fisheye",
+        "fisheye_strength": 1.4,
+        "magnitude_limit": 6.0,
+        "constellation_labels": false,
+        "title": "Longest night"
+      },
+      "size_px": 320,
+      "expected": {"stars": 2204, "segments": 403, "figures": 40}
+    },
+    {
+      "id": "cairo-perseids-mins-sep",
+      "lat": 29.9792,
+      "lon": 31.1342,
+      "place": null,
+      "when_utc": "2025-08-12T20:30:00Z",
+      "tz": "Africa/Cairo",
+      "options": {"min_separation": 0.02, "magnitude_limit": 5.8, "shape": "circle"},
+      "size_px": 320,
+      "expected": {"stars": 1286, "segments": 325, "figures": 42}
+    },
+    {
+      "id": "nagahama-heritage",
+      "lat": 35.3786,
+      "lon": 136.2664,
+      "place": "Nagahama",
+      "when_utc": "1998-11-17T02:17:00Z",
+      "tz": "Asia/Tokyo",
+      "options": {"magnitude_limit": 3.5, "glow_intensity": 2.0},
+      "size_px": 320,
+      "expected": {"stars": 143, "segments": 120, "figures": 20}
+    }
+  ]
+}
+```

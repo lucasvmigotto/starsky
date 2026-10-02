@@ -1,0 +1,169 @@
+name: Security
+
+# Supply-chain controls (`devsecops:supply-chain`).
+#
+# Chosen so nothing needs a paid plan or a local install:
+#   - dependency-review: PR-time SCA on the lockfiles (needs GHAS on private
+#     repos; the step is skipped with a note when the event lacks the base ref);
+#   - Trivy: filesystem scan (dependencies), secret scan, and config/IaC scan
+#     of the Dockerfiles and workflows — one tool, three controls;
+#   - CodeQL: SAST for the Python CLI and the TypeScript site.
+#
+# Gates follow the reference: **block** on secrets, and on critical/high
+# vulnerabilities that have a fix; everything else warns and is tracked.
+
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+  schedule:
+    # Deep scan weekly, so drift in the dependency graph is caught even when
+    # nobody changes a manifest.
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Fast PR-time dependency review. Fails on a vulnerable or denied-license
+  # dependency introduced by the PR.
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+        with:
+          fail-on-severity: high
+          # The license policy: the project is GPL-3.0-only, so copyleft and
+          # permissive are fine; anything unknown or explicitly non-free is not.
+          deny-licenses: >-
+            GPL-2.0-only,
+            GPL-2.0-or-later,
+            SSPL-1.0,
+            BUSL-1.1,
+            Commons-Clause,
+            Elastic-2.0
+
+  # Dependencies, secrets and Dockerfile/config in one pass.
+  trivy:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      # Secrets first: this is the one control that blocks outright.
+      - name: Secret scan (working tree)
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        with:
+          scan-type: fs
+          scanners: secret
+          format: table
+          exit-code: "1"
+          severity: CRITICAL,HIGH
+
+      # Dependencies: block only when a fix exists, so the repo is not held
+      # hostage by an unfixed advisory upstream.
+      - name: Dependency scan (lockfiles)
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        with:
+          scan-type: fs
+          scanners: vuln
+          format: table
+          exit-code: "1"
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+      # Config/Dockerfile: warn-only for now (no IaC to scan, two Dockerfiles).
+      - name: Misconfiguration scan (Dockerfiles)
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        with:
+          scan-type: config
+          format: table
+          exit-code: "0"
+          severity: CRITICAL,HIGH
+
+  # Decides whether SAST can run, and says so out loud in the run when it cannot.
+  #
+  # The check is an API call rather than a `github.event...` lookup on purpose.
+  # The schedule event's payload is not a repository webhook, so a condition read
+  # from the event would silently skip the weekly deep scan. Reading the setting
+  # from the API makes every trigger — push, pull request, schedule, manual —
+  # behave identically.
+  codeql-status:
+    name: CodeQL availability
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Read the code scanning setting
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          status="$(curl -fsSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO" \
+            | python3 -c 'import json,sys; print((json.load(sys.stdin).get("security_and_analysis") or {}).get("code_scanning", {}).get("status", "unknown"))')"
+          echo "code scanning: $status"
+          if [ "$status" = "enabled" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=CodeQL did not run::Code scanning is disabled" \
+              "for this repository, so the SAST job is skipped, not passed." \
+              "Enable code scanning (Settings > Code security > Code scanning)" \
+              "to turn SAST on. Trivy below is unaffected and still runs."
+          fi
+
+  # SAST. Python for the CLI, JavaScript/TypeScript for the site.
+  #
+  # Guarded rather than removed: CodeQL uploads its results through code scanning,
+  # so with that setting off the Analyze step fails on every push. Whether SAST can
+  # run is a repository-level choice (GHAS on a private repo), not a workflow one —
+  # so the job states that precondition and the job above reports it. When code
+  # scanning is enabled this job runs unchanged.
+  codeql:
+    needs: codeql-status
+    if: needs.codeql-status.outputs.enabled == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["python", "javascript-typescript"]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3
+        with:
+          category: "/language:${{ matrix.language }}"

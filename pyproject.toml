@@ -1,23 +1,16 @@
 [project]
-name = "starpy"
+name = "starsky"
 version = "1.0.0"
-description = "Personalized night-sky poster generator (Gradio + CLI), fully open source."
+description = "Personalized night-sky poster generator — the site renders; the CLI builds its sky data."
 readme = "README.md"
 requires-python = ">=3.14"
 license = { text = "GPL-3.0-only" }
 dependencies = [
     "click>=8.1.8",
-    "gradio>=6.3.0",
     "httpx>=0.28.1",
-    "matplotlib>=3.10.0",
-    "numpy>=2.0.0",
-    "pillow>=11.0.0",
     "polars>=1.37.1",
     "pydantic>=2.12.0",
     "pydantic-settings>=2.12.0",
-    "scipy>=1.14.0",
-    "skyfield>=1.53",
-    "timezonefinder>=6.5.0",
 ]
 
 [dependency-groups]
@@ -34,7 +27,7 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-root = "src"
-module-name = "starpy"
+module-name = "starsky"
 
 [tool.ruff]
 target-version = "py314"
@@ -48,7 +41,5 @@ testpaths = ["tests"]
 addopts = "-q --strict-markers"
 markers = [
     "unit: fast pure-function tests",
-    "integration: needs local data cache (no network)",
-    "golden: reference-image tests",
     "network: live network (never in CI)",
 ]

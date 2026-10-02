@@ -1,10 +1,10 @@
 """Enforce declarative imports: forbid `import x` / `import x as y`.
 
 Every external name must arrive via an explicit from-import
-(`from numpy import arange as np_arange`). Module attribute access roots
-that sneak back in (np./pl./plt./click./httpx./...) are also rejected.
+(`from polars import DataFrame as pl_DataFrame`). Module attribute access roots
+that sneak back in (pl./click./httpx./...) are also rejected.
 
-Usage: `python scripts/check_declarative_imports.py src tests app.py`.
+Usage: `python scripts/check_declarative_imports.py src tests`.
 Compliant by construction (uses from-imports only itself).
 """
 
@@ -71,9 +71,7 @@ def main(argv: list[str]) -> int:
     violations: list[str] = []
     for root in roots:
         base: Path = Path(root)
-        files: list[Path] = (
-            sorted(base.rglob("*.py")) if base.is_dir() else [base]
-        )
+        files: list[Path] = sorted(base.rglob("*.py")) if base.is_dir() else [base]
         for path in files:
             violations.extend(check_file(path))
     for violation in violations:

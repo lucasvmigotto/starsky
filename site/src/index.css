@@ -1,0 +1,626 @@
+@import "tailwindcss";
+
+/*
+ * Fonts are bundled (BCR-0004): Cormorant Garamond ships in public/fonts/ and
+ * is declared here — no third-party font request. The body stack stays with
+ * system faces so the UI never blocks on a webfont.
+ */
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("/fonts/CormorantGaramond.woff2") format("woff2");
+}
+
+/*
+ * The interface palette. Values come from `src/design/tokens.ts`, which is the
+ * source of truth and is asserted against the WCAG ratios by
+ * `design/contrast.test.ts` — a hex edited here without updating that file
+ * fails the build.
+ *
+ * Deliberately NOT the poster's colours. Those live in `render-spec.json`, are
+ * normative (constitution II), and are a different palette on purpose: the
+ * poster is a print, and a print does not take the browser's theme (vision
+ * D19). `color-accent` is for interactive chrome only — never for anything
+ * representing a constellation inside the map.
+ */
+@theme {
+  --color-bg: #070b14;
+  --color-surface: #0d1424;
+  --color-raised: #141d31;
+  --color-text: #f2ede1;
+  --color-text-muted: #a9b3c8;
+  --color-text-faint: #7d879e;
+  --color-accent: #8ec9b4;
+  --color-accent-ink: #05222c;
+  --color-border: #55648a;
+  --color-border-soft: #2a3550;
+  --color-focus: #9ee6f5;
+
+  /*
+   * Hover state for a light-filled control. The primary button is a near-white
+   * fill, so "hover" means brighter still — a token rather than a bare `#fff`
+   * at each call site.
+   */
+  --color-text-bright: #fff8e8;
+
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Spacing — 4px base. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 2rem;
+  --space-8: 3rem;
+
+  /* Radius by role: small, because the artifact's circle is the only curve the
+     product needs. Two values, not one applied everywhere. */
+  --radius-control: 2px;
+  --radius-panel: 4px;
+
+  /* Motion. The reveal is the single orchestrated moment (vision). */
+  --motion-duration-short: 160ms;
+  --motion-duration-reveal: 700ms;
+  --motion-ease: cubic-bezier(0.2, 0, 0.2, 1);
+
+  /* No shadow token, deliberately: a night sky casts none, and elevation is
+     expressed with surface lightness instead (vision D8). */
+  --shadow-none: none;
+}
+
+/*
+ * Fixes the class of bug the 2.11:1 button patch was an instance of: without
+ * it, browser-drawn controls (buttons, scrollbars, native selects) default to a
+ * dark control colour that fails AA on this background, and each one has to be
+ * corrected individually. Declared once, here (spec.md DS-002).
+ */
+:root {
+  color-scheme: dark;
+}
+
+html {
+  background: var(--color-bg);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Disciplined chrome around the one bold moment: the sky itself. */
+.atlas-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.atlas-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem clamp(1rem, 4vw, 2.5rem);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 0.12);
+}
+
+.atlas-main {
+  flex: 1;
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
+}
+
+.atlas-footer {
+  padding: 1.25rem clamp(1rem, 4vw, 2.5rem) 2rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-text) 0.12);
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--color-text) 0.55);
+}
+
+/* Version + source, then the legal attribution. Two quiet lines, no eyebrow. */
+.atlas-footer-meta {
+  max-width: 68ch;
+}
+
+.atlas-footer-meta + .atlas-footer-meta {
+  margin-top: 0.35rem;
+}
+
+.atlas-moment {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.atlas-explorer {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  opacity: 0;
+}
+
+.atlas-explorer.atlas-loaded {
+  animation: atlas-rise var(--motion-duration-reveal) var(--motion-ease) forwards;
+}
+
+@keyframes atlas-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (min-width: 64rem) {
+  .atlas-explorer {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.atlas-panel {
+  border: 1px solid color-mix(in srgb, var(--color-text) 0.14);
+  border-radius: var(--radius-panel);
+  padding: 1.25rem;
+  background: color-mix(in srgb, var(--color-text) 0.02);
+}
+
+.atlas-figure {
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-panel);
+  /*
+   * `color` used to be set here as a per-element patch: buttons default to the
+   * browser's dark control colour, which fails WCAG AA on this background
+   * (measured 2.11:1). The class-level fix is `color-scheme: dark` on `:root`
+   * (spec.md DS-002), which also reaches scrollbars and native selects that no
+   * per-element rule could. The explicit colour is kept because it is the
+   * intended value, not a workaround — and the child spans still dim it with
+   * their own opacity.
+   */
+  color: var(--color-text);
+  font: inherit;
+  transition:
+    background var(--motion-duration-short) var(--motion-ease),
+    border-color var(--motion-duration-short) var(--motion-ease);
+}
+
+.atlas-figure:hover,
+.atlas-figure-active {
+  background: color-mix(in srgb, var(--color-accent) 0.12);
+  border-color: color-mix(in srgb, var(--color-accent) 0.45);
+}
+
+.atlas-figure:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.atlas-tooltip {
+  position: absolute;
+  top: 0.75rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  background: color-mix(in srgb, var(--color-bg) 0.82);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 0.5);
+  border-radius: var(--radius-panel);
+  padding: 0.5rem 0.9rem;
+  margin: 0 auto;
+  width: fit-content;
+  max-width: calc(100% - 1.5rem);
+}
+
+.atlas-btn {
+  display: inline-block;
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-weight: 500;
+  font-size: 0.875rem;
+  /* Comfortably over the 44px target height (spec.md DS-A11Y-003). */
+  min-height: 44px;
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius-panel);
+}
+
+.atlas-btn:hover {
+  background: var(--color-text-bright);
+}
+
+.atlas-btn:focus-visible,
+.atlas-btn-ghost:focus-visible,
+.atlas-btn-subtle:focus-visible,
+.atlas-link:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.atlas-btn-ghost {
+  display: inline-block;
+  border: 1px solid color-mix(in srgb, var(--color-text) 0.35);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  min-height: 44px;
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--radius-panel);
+}
+
+.atlas-btn-ghost:hover {
+  border-color: color-mix(in srgb, var(--color-text) 0.7);
+}
+
+.atlas-btn-subtle {
+  display: inline-block;
+  border: 1px solid color-mix(in srgb, var(--color-text) 0.2);
+  color: color-mix(in srgb, var(--color-text) 0.55);
+  font-size: 0.75rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius-panel);
+  background: transparent;
+  cursor: pointer;
+}
+
+.atlas-btn-subtle:hover {
+  color: color-mix(in srgb, var(--color-text) 0.85);
+  border-color: color-mix(in srgb, var(--color-text) 0.4);
+}
+
+.atlas-link {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-accent) 0.8);
+  text-underline-offset: 3px;
+}
+
+.atlas-code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  background: color-mix(in srgb, var(--color-text) 0.08);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-control);
+}
+
+.atlas-empty {
+  text-align: center;
+  padding: 4rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-text) 0.14);
+  border-radius: var(--radius-panel);
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 30%, color-mix(in srgb, var(--color-accent) 0.08), transparent),
+    color-mix(in srgb, var(--color-text) 0.02);
+}
+
+.atlas-alert {
+  border: 1px solid color-mix(in srgb, var(--color-accent) 0.6);
+  border-radius: var(--radius-panel);
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+}
+
+.atlas-loading {
+  text-align: center;
+  padding: 4rem 0;
+  color: color-mix(in srgb, var(--color-text) 0.6);
+}
+
+/* Landing form: single scrollable column reusing the atlas tokens. */
+.atlas-form-wrap {
+  width: 100%;
+  max-width: 40rem;
+  margin: clamp(1rem, 4vh, 2.5rem) auto 0;
+}
+
+.atlas-form {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.atlas-form-group {
+  display: grid;
+  gap: 0.9rem;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.atlas-form-legend {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+  padding: 0;
+}
+
+.atlas-form-field {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+}
+
+.atlas-form-field > label,
+.atlas-form-label {
+  color: color-mix(in srgb, var(--color-text) 0.75);
+}
+
+.atlas-form-input {
+  width: 100%;
+  background: color-mix(in srgb, var(--color-text) 0.04);
+  border: 1px solid color-mix(in srgb, var(--color-text) 0.25);
+  border-radius: var(--radius-panel);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  padding: 0.55rem 0.75rem;
+  color-scheme: dark;
+}
+
+.atlas-form-input:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-color: color-mix(in srgb, var(--color-text) 0.6);
+}
+
+.atlas-form-input::placeholder {
+  color: color-mix(in srgb, var(--color-text) 0.35);
+}
+
+select.atlas-form-input option {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.atlas-form-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 40rem) {
+  .atlas-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.atlas-form-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.atlas-form-row .atlas-form-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.atlas-form-radio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+
+.atlas-form-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--color-text) 0.8);
+  cursor: pointer;
+}
+
+.atlas-form-radio input,
+.atlas-form-check input {
+  accent-color: var(--color-accent);
+}
+
+.atlas-form-check-row {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.atlas-form-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.875rem;
+  color: color-mix(in srgb, var(--color-text) 0.8);
+  cursor: pointer;
+}
+
+.atlas-form-value {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--color-text) 0.65);
+  font-size: 0.8rem;
+}
+
+.atlas-form-range {
+  width: 100%;
+  accent-color: var(--color-accent);
+}
+
+.atlas-form-hint {
+  font-size: 0.78rem;
+  color: color-mix(in srgb, var(--color-text) 0.55);
+}
+
+.atlas-form-details {
+  border: 1px solid color-mix(in srgb, var(--color-text) 0.14);
+  border-radius: var(--radius-panel);
+  padding: 0.8rem 1rem;
+  background: color-mix(in srgb, var(--color-text) 0.02);
+  display: grid;
+  gap: 0.9rem;
+  font-size: 0.875rem;
+}
+
+.atlas-form-details > summary {
+  cursor: pointer;
+  color: color-mix(in srgb, var(--color-text) 0.8);
+}
+
+.atlas-form-details > summary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.atlas-form-error {
+  border: 1px solid color-mix(in srgb, var(--color-accent) 0.6);
+  border-radius: var(--radius-panel);
+  padding: 0.7rem 0.9rem;
+  font-size: 0.875rem;
+  color: var(--color-text);
+}
+
+.atlas-form-submit {
+  justify-self: start;
+}
+
+.atlas-form-submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.atlas-form-alt {
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--color-text) 0.6);
+}
+
+.atlas-form-linkbtn {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.atlas-form-explainer {
+  margin-top: 1.25rem;
+}
+
+.atlas-form-explainer .atlas-empty {
+  padding: 2rem 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-explorer.atlas-loaded {
+    animation: none;
+    opacity: 1;
+  }
+
+  .atlas-figure {
+    transition: none;
+  }
+}
+
+/* Poster export controls: quiet chrome, one clear action row. */
+.atlas-export {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-text) 0.12);
+}
+
+/*
+ * Export: one disclosure trigger, formats revealed on demand.
+ *
+ * Three permanently-visible buttons made this row the loudest thing on the
+ * page after the poster, inverting vision principle 2. Ghosting them fixed the
+ * volume but made them read as plain labels — a control that looks like text
+ * gets read, not clicked. A single trigger in the accent restores the
+ * affordance while removing the competition.
+ */
+.atlas-export-trigger {
+  font: inherit;
+  font-size: 0.875rem;
+  min-height: 44px;
+  padding: 0.5rem 1.1rem;
+  color: var(--color-accent);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 0.5);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition:
+    background var(--motion-duration-short) var(--motion-ease),
+    border-color var(--motion-duration-short) var(--motion-ease);
+}
+
+.atlas-export-trigger:hover {
+  background: color-mix(in srgb, var(--color-accent) 0.1);
+  border-color: color-mix(in srgb, var(--color-accent) 0.85);
+}
+
+.atlas-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+/* `hidden` must win over the flex display above. */
+.atlas-export-actions[hidden] {
+  display: none;
+}
+
+.atlas-export-button {
+  font: inherit;
+  font-size: 0.875rem;
+  /* Comfortably over the 44px target height (spec.md DS-A11Y-003). */
+  min-height: 44px;
+  padding: 0.5rem 1.25rem;
+  /*
+   * Quiet, not a cream fill. Three identical high-contrast buttons made the
+   * export row the loudest thing on the page after the poster itself, which
+   * inverts vision principle 2 ("the interface never outshines the poster") and
+   * contradicts the wireframe in `specs/007-renderer-export/ui.md`, which draws
+   * these as secondary controls beside one primary "Copy link".
+   */
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-text) 0.35);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition:
+    background var(--motion-duration-short) var(--motion-ease),
+    border-color var(--motion-duration-short) var(--motion-ease);
+}
+
+.atlas-export-button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 0.08);
+  border-color: color-mix(in srgb, var(--color-text) 0.7);
+}
+
+.atlas-export-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.atlas-export-button:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.atlas-export-status {
+  margin-top: 0.75rem;
+  min-height: 1.25rem;
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--color-text) 0.65);
+}
