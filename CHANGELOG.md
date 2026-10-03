@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 — 2026-10-03
+
+### Changed
+
+- **site:** derive Vite base and router basename from env
+
 ## 1.1.0 — 2026-10-02
 
 ### Added
