@@ -8,9 +8,10 @@ name: Site to R2
 # the first slice of US1 rather than a cosmetic tidy: `main` still carries the
 # pre-refactor copy of this workflow, which asks for `vars.STARPY_STATIC_SITE_URL`
 # — a name BCR-0009's rename retired. That job cannot pass validation, so no
-# push to any branch deploys anything. This file needs only five config items
-# (`secrets.CLOUDFLARE_R2_ACCOUNT_SECRET` plus four `vars.CLOUDFLARE_R2_*` /
-# `vars.STARSKY_STATIC_SITE_URL`), and all five exist on the repository
+# push to any branch deploys anything. This file needs only four config items
+# (`secrets.CLOUDFLARE_R2_ACCOUNT_SECRET` plus three `vars.CLOUDFLARE_R2_*`);
+# the viewer base URL is derived from the repository name
+# (https://docs.lucasvmigotto.me/<repo>). All four exist on the repository
 # (verified 2026-10-02).
 on:
   push:
@@ -85,20 +86,11 @@ jobs:
 
       - name: Validate viewer base URL
         run: |
-          URL="${{ vars.STARSKY_STATIC_SITE_URL }}"
-          if [ -z "$URL" ]; then
-            echo "::error::vars.STARSKY_STATIC_SITE_URL is not set (Settings > Variables > Actions)"
-            exit 1
-          fi
+          # Derived from the repo name: https://docs.lucasvmigotto.me/<repo>.
+          URL="https://docs.lucasvmigotto.me/${{ github.event.repository.name }}"
           case "$URL" in
             https://*) ;;
-            *) echo "::error::STARSKY_STATIC_SITE_URL must start with https:// (got: $URL)"; exit 1 ;;
-          esac
-          case "$URL" in
-            *example.com*|*localhost*|*ngrok*|*127.0.0.1*)
-              echo "::error::STARSKY_STATIC_SITE_URL looks like a placeholder ($URL)"
-              exit 1
-              ;;
+            *) echo "::error::viewer base URL must start with https:// (got: $URL)"; exit 1 ;;
           esac
           echo "Viewer base URL OK: $URL"
 
@@ -114,7 +106,8 @@ jobs:
       - name: Build
         run: bun run build
         env:
-          VITE_FULL_APP_URL: ${{ vars.STARSKY_STATIC_SITE_URL }}
+          VITE_FULL_APP_URL: https://docs.lucasvmigotto.me/${{ github.event.repository.name }}
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
 
       # Crawlers need absolute OG URLs: fail if the build left a placeholder.
       # Tags span two lines (property line, then content line).
@@ -126,6 +119,17 @@ jobs:
           test -f dist/og-banner.png
           grep -q 'rel="icon"' dist/index.html
           test -f dist/favicon.svg
+
+      - name: Guard prefix-scoped R2 deploy
+        run: |
+          # Fitness function (ADR 0001 in lucas/docs): every R2 sync/cp must be
+          # prefix-scoped, so a project can never wipe the shared bucket root.
+          bad=$(grep -nE '^[[:space:]]+aws s3 (sync|cp)' .github/workflows/site_r2.yml | grep -v 'R2_PREFIX' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::root-scoped R2 target detected — every deploy must use \$R2_PREFIX"
+            echo "$bad"
+            exit 1
+          fi
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -170,11 +174,16 @@ jobs:
             https://*) echo "R2 endpoint OK" ;;
             *) echo "::error::CLOUDFLARE_R2_ENDPOINT_S3_CLIENT must start with https://"; exit 1 ;;
           esac
+          case "${R2_PREFIX}" in
+            /*/) ;;
+            *) echo "::error::R2_PREFIX must look like /<slug>/ (got: '${R2_PREFIX}')"; exit 1 ;;
+          esac
         env:
           CLOUDFLARE_R2_ACCOUNT_ID: ${{ vars.CLOUDFLARE_R2_ACCOUNT_ID }}
           CLOUDFLARE_R2_ACCOUNT_SECRET: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_SECRET }}
           CLOUDFLARE_R2_ENDPOINT_S3_CLIENT: ${{ vars.CLOUDFLARE_R2_ENDPOINT_S3_CLIENT }}
           CLOUDFLARE_R2_BUCKET_ID: ${{ vars.CLOUDFLARE_R2_BUCKET_ID }}
+          R2_PREFIX: /${{ github.event.repository.name }}/
 
       - name: Ensure AWS CLI
         run: |
@@ -186,6 +195,7 @@ jobs:
 
       # Hashed Vite assets: immutable, long-lived. Entry HTML and the
       # unhashed data/*.json payloads: no-cache (content changes per deploy).
+      # Prefix-scoped into the shared docs-hub bucket (ADR 0001 in lucas/docs).
       - name: Sync static site to Cloudflare R2
         env:
           # The S3 client reads its credentials from AWS_*; the repository
@@ -196,8 +206,9 @@ jobs:
           AWS_EC2_METADATA_DISABLED: "true"
           R2_ENDPOINT: ${{ vars.CLOUDFLARE_R2_ENDPOINT_S3_CLIENT }}
           R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET_ID }}
+          R2_PREFIX: /${{ github.event.repository.name }}/
         run: |
-          aws s3 sync dist "s3://$R2_BUCKET" \
+          aws s3 sync dist "s3://$R2_BUCKET${R2_PREFIX}" \
             --endpoint-url "$R2_ENDPOINT" \
             --delete \
             --exclude "index.html" \
@@ -205,20 +216,20 @@ jobs:
             --exclude "favicon.svg" \
             --cache-control "public, max-age=31536000, immutable"
           # Stable filename but mutable content: no-cache like index.html.
-          aws s3 cp dist/favicon.svg "s3://$R2_BUCKET/favicon.svg" \
+          aws s3 cp dist/favicon.svg "s3://$R2_BUCKET${R2_PREFIX}favicon.svg" \
             --endpoint-url "$R2_ENDPOINT" \
             --cache-control "no-cache" \
             --content-type "image/svg+xml"
           # Stable filename but mutable content: no-cache like index.html.
-          aws s3 cp dist/og-banner.png "s3://$R2_BUCKET/og-banner.png" \
+          aws s3 cp dist/og-banner.png "s3://$R2_BUCKET${R2_PREFIX}og-banner.png" \
             --endpoint-url "$R2_ENDPOINT" \
             --cache-control "no-cache" \
             --content-type "image/png"
-          aws s3 cp dist/index.html "s3://$R2_BUCKET/index.html" \
+          aws s3 cp dist/index.html "s3://$R2_BUCKET${R2_PREFIX}index.html" \
             --endpoint-url "$R2_ENDPOINT" \
             --cache-control "no-cache" \
             --content-type "text/html; charset=utf-8"
-          aws s3 sync dist/data "s3://$R2_BUCKET/data" \
+          aws s3 sync dist/data "s3://$R2_BUCKET${R2_PREFIX}data" \
             --endpoint-url "$R2_ENDPOINT" \
             --delete \
             --cache-control "no-cache"
