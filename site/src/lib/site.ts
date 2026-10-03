@@ -31,8 +31,9 @@ export function randomSampleFragment(exclude: string | null = null): string {
 
 /**
  * The site's own public base URL, used for absolute OG/Twitter image URLs.
- * CI sets `VITE_FULL_APP_URL` from the `STARSKY_STATIC_SITE_URL` repository
- * variable; the placeholder below is only a local-build default and is
+ * CI sets `VITE_FULL_APP_URL` to the docs-hub origin for this repo
+ * (https://docs.lucasvmigotto.me/<repo>); the placeholder below is only a
+ * local-build default and is
  * asserted away in CI ("Assert absolute OG tags").
  */
 const configured: unknown = import.meta.env["VITE_FULL_APP_URL"];

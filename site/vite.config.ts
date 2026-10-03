@@ -8,7 +8,10 @@ import { defineConfig } from "vite";
 import pkg from "./package.json" with { type: "json" };
 
 export default defineConfig({
-  base: "./",
+  // Deployed under the docs-hub prefix /<repo>/ (ADR 0001 in lucas/docs).
+  // CI sets VITE_BASE_PATH from github.event.repository.name; the local
+  // default keeps `vite preview` at the same path as production.
+  base: process.env["VITE_BASE_PATH"] ?? "/starsky/",
   plugins: [react(), tailwindcss()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
