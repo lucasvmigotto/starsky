@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.0 — 2026-10-04
+
+### Added
+
+- **viewer:** share the scene before exporting the file
+- **viewer:** name untitled skies above a known place
+
+### Fixed
+
+- **site:** guard happy-dom registration across component suites
+
+### Changed
+
+- **landing:** group settings into sky, appearance and observation
+- **share:** migrate share payloads through a versioned entry point
+
 ## 1.1.6 — 2026-10-04
 
 ### Fixed
