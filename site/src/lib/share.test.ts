@@ -2,7 +2,9 @@ import { describe, expect, it } from "bun:test";
 import {
   base64UrlToBytes,
   decodeShareFragment,
+  decodeSkyState,
   fragmentFromHash,
+  migrateSharePayload,
   ShareDecodeError,
   ShareVersionError,
 } from "./share.ts";
@@ -57,6 +59,28 @@ describe("decodeShareFragment", () => {
       caught = error;
     }
     expect(caught).toBeInstanceOf(ShareVersionError);
+  });
+});
+
+describe("migrateSharePayload", () => {
+  it("passes a v1 document through validated", () => {
+    const payload = decodeShareFragment(VECTOR);
+    const migrated = migrateSharePayload(JSON.parse(JSON.stringify(payload)));
+    expect(migrated).toEqual(payload);
+  });
+
+  it("rejects unknown versions as legacy, not corrupt", () => {
+    expect(() => migrateSharePayload({ v: 2 })).toThrow(ShareVersionError);
+    expect(() => migrateSharePayload({ v: 0 })).toThrow(ShareVersionError);
+  });
+
+  it("rejects non-objects as corrupt", () => {
+    expect(() => migrateSharePayload(null)).toThrow(ShareDecodeError);
+    expect(() => migrateSharePayload("sky")).toThrow(ShareDecodeError);
+  });
+
+  it("decodeSkyState agrees with decodeShareFragment", () => {
+    expect(decodeSkyState(VECTOR)).toEqual(decodeShareFragment(VECTOR));
   });
 });
 
