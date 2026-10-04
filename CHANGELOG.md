@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.5 — 2026-10-04
+
+### Fixed
+
+- **ci:** define R2 bucket vars under the names validation checks
+
 ## 1.1.4 — 2026-10-04
 
 ### Fixed
