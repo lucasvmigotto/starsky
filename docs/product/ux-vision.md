@@ -706,6 +706,9 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `viewer.heading.default` | This night sky |
 | `viewer.heading.abovePlace` | Night sky above {place} |
 | `viewer.caption` | {coords} — {place} · {local} {tz} |
+| `viewer.share.open` | Share |
+| `viewer.share.close` | Close share |
+| `viewer.share.heading` | Share this sky |
 | `viewer.copyLink` | Copy link |
 | `viewer.linkCopied` | Link copied |
 | `viewer.randomSky` | Load a random sky |

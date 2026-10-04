@@ -22,6 +22,7 @@ import { DISK_CX, DISK_CY } from "../lib/skymodel.ts";
 import { HOME_VIEW, zoomAt, type View } from "../lib/view.ts";
 import FiguresPanel from "./FiguresPanel.tsx";
 import ExportControls from "./ExportControls.tsx";
+import ShareDialog from "./ShareDialog.tsx";
 import SkyCanvas from "./SkyCanvas.tsx";
 import ViewControls from "./ViewControls.tsx";
 import { EmptyState, InvalidState, LegacyState } from "./States.tsx";
@@ -469,6 +470,8 @@ export default function ViewerPage() {
                 </p>
               )
             )}
+
+            {model && <ShareDialog payload={payload} />}
 
             {model && <ExportControls payload={payload} model={model} />}
 

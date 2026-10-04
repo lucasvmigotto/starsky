@@ -95,6 +95,8 @@ describe("copy", () => {
     // 98 → 99 for the untitled-with-place heading
     // (`viewer.heading.abovePlace` — "Night sky above {place}" instead of
     // the bare place name).
-    expect(copyKeys().length).toBe(99);
+    // 99 → 102 for the share disclosure (`viewer.share.open` / `.close` /
+    // `.heading` — principle 3 puts the link before the download).
+    expect(copyKeys().length).toBe(102);
   });
 });
