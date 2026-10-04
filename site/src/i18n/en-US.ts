@@ -11,14 +11,11 @@
 export const enUS = {
   "landing.title": "The night sky over any place and moment",
   "landing.subtitle": "Drawn from 8 000+ stars, in your browser",
-  // Pre-redesign copy, kept while the Landing is rebuilt in `frontend:build`.
-  // Removed with it, not translated.
-  "landing.title.legacy": "Map your night sky",
-  "landing.subtitle.legacy":
-    "Pick a place and a moment — your poster-grade sky renders right here.",
   "landing.mode.label": "Input mode",
   "landing.moment.legend": "Date and time",
-  "landing.render.legend": "Render options",
+  "landing.sky.legend": "Sky",
+  "landing.appearance.legend": "Appearance",
+  "landing.observation.legend": "Observation",
   "landing.render.fisheye": "Fisheye strength",
   "landing.render.separation": "Minimum separation",
   "landing.render.magnitude": "Limiting magnitude",

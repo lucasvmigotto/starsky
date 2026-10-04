@@ -621,11 +621,11 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.subtitle` | Drawn from 8 000+ stars, in your browser |
 | `landing.locale.label` | Language |
 | `landing.randomSky` | Load a random sky → renders `viewer.randomSky` |
-| `landing.title.legacy` | Map your night sky |
-| `landing.subtitle.legacy` | Pick a place and a moment — your poster-grade sky renders right here. |
 | `landing.mode.label` | Input mode |
 | `landing.moment.legend` | Date and time |
-| `landing.render.legend` | Render options |
+| `landing.sky.legend` | Sky |
+| `landing.appearance.legend` | Appearance |
+| `landing.observation.legend` | Observation |
 | `landing.render.fisheye` | Fisheye strength |
 | `landing.render.separation` | Minimum separation |
 | `landing.render.magnitude` | Limiting magnitude |

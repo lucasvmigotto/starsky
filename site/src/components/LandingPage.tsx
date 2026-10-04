@@ -237,10 +237,10 @@ export default function LandingPage() {
     <div className="atlas-form-wrap">
       <div className="atlas-moment">
         <p className="font-display text-3xl leading-tight sm:text-4xl">
-          {t("landing.title.legacy")}
+          {t("landing.title")}
         </p>
         <p className="mt-2 text-sm text-cream/65">
-          {t("landing.subtitle.legacy")}
+          {t("landing.subtitle")}
         </p>
       </div>
 
@@ -359,7 +359,33 @@ export default function LandingPage() {
         </fieldset>
 
         <details className="atlas-form-details">
-          <summary>{t("landing.render.legend")}</summary>
+          <summary>{t("landing.sky.legend")}</summary>
+          <div className="atlas-form-check-row">
+            <label className="atlas-form-check">
+              <input
+                type="checkbox"
+                checked={constellations}
+                onChange={(e) => {
+                  setConstellations(e.target.checked);
+                }}
+              />
+              {t("landing.render.lines")}
+            </label>
+            <label className="atlas-form-check">
+              <input
+                type="checkbox"
+                checked={constellationLabels}
+                onChange={(e) => {
+                  setConstellationLabels(e.target.checked);
+                }}
+              />
+              {t("landing.render.labels")}
+            </label>
+          </div>
+        </details>
+
+        <details className="atlas-form-details">
+          <summary>{t("landing.appearance.legend")}</summary>
           <div className="atlas-form-field">
             <label htmlFor="landing-projection">Projection</label>
             <select
@@ -394,16 +420,6 @@ export default function LandingPage() {
             decimals={3}
             onChange={setMinSeparation}
           />
-          <Slider
-            id="landing-mag"
-            label={t("landing.render.magnitude")}
-            value={magnitudeLimit}
-            min={1.0}
-            max={7.0}
-            step={0.1}
-            decimals={1}
-            onChange={setMagnitudeLimit}
-          />
           <div className="atlas-form-check-row">
             <label className="atlas-form-check">
               <input
@@ -414,26 +430,6 @@ export default function LandingPage() {
                 }}
               />
               Glow
-            </label>
-            <label className="atlas-form-check">
-              <input
-                type="checkbox"
-                checked={constellations}
-                onChange={(e) => {
-                  setConstellations(e.target.checked);
-                }}
-              />
-              {t("landing.render.lines")}
-            </label>
-            <label className="atlas-form-check">
-              <input
-                type="checkbox"
-                checked={constellationLabels}
-                onChange={(e) => {
-                  setConstellationLabels(e.target.checked);
-                }}
-              />
-              {t("landing.render.labels")}
             </label>
           </div>
           <Slider
@@ -480,6 +476,20 @@ export default function LandingPage() {
               autoComplete="off"
             />
           </div>
+        </details>
+
+        <details className="atlas-form-details">
+          <summary>{t("landing.observation.legend")}</summary>
+          <Slider
+            id="landing-mag"
+            label={t("landing.render.magnitude")}
+            value={magnitudeLimit}
+            min={1.0}
+            max={7.0}
+            step={0.1}
+            decimals={1}
+            onChange={setMagnitudeLimit}
+          />
         </details>
 
         {error && (

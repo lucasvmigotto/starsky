@@ -97,6 +97,10 @@ describe("copy", () => {
     // the bare place name).
     // 99 → 102 for the share disclosure (`viewer.share.open` / `.close` /
     // `.heading` — principle 3 puts the link before the download).
+    // 102 → 104 for the Sky / Appearance / Observation regroup (proposal
+    // §§11–12): three legends in, `landing.render.legend` out.
+    // 104 → 102 for the hero swap: the Landing speaks the canonical
+    // `landing.title` / `.subtitle`, so the two `.legacy` keys retire.
     expect(copyKeys().length).toBe(102);
   });
 });
