@@ -31,8 +31,8 @@ export function randomSampleFragment(exclude: string | null = null): string {
 
 /**
  * The site's own public base URL, used for absolute OG/Twitter image URLs.
- * CI sets `VITE_FULL_APP_URL` to the docs-hub origin for this repo
- * (https://docs.lucasvmigotto.me/<repo>); the placeholder below is only a
+ * CI sets `VITE_FULL_APP_URL` to the product origin
+ * (https://starsky.lucasvmigotto.me); the placeholder below is only a
  * local-build default and is
  * asserted away in CI ("Assert absolute OG tags").
  */

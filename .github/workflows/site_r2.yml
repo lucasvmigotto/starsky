@@ -9,10 +9,11 @@ name: Site to R2
 # pre-refactor copy of this workflow, which asks for `vars.STARPY_STATIC_SITE_URL`
 # — a name BCR-0009's rename retired. That job cannot pass validation, so no
 # push to any branch deploys anything. This file needs only four config items
-# (`secrets.CLOUDFLARE_R2_ACCOUNT_SECRET` plus three `vars.CLOUDFLARE_R2_*`);
-# the viewer base URL is derived from the repository name
-# (https://docs.lucasvmigotto.me/<repo>). All four exist on the repository
-# (verified 2026-10-02).
+# (`secrets.CLOUDFLARE_R2_ACCOUNT_SECRET` plus three `vars.CLOUDFLARE_R2_*`).
+# The product is served at the domain root (https://starsky.lucasvmigotto.me),
+# so the viewer URL and the Vite base are fixed site constants, not derived
+# from the repository name. All four exist on the repository
+# (verified 2026-10-02; bucket variables split per-site 2026-10-04).
 on:
   push:
     branches: ["main"]
@@ -86,8 +87,8 @@ jobs:
 
       - name: Validate viewer base URL
         run: |
-          # Derived from the repo name: https://docs.lucasvmigotto.me/<repo>.
-          URL="https://docs.lucasvmigotto.me/${{ github.event.repository.name }}"
+          # Served at the domain root: https://starsky.lucasvmigotto.me.
+          URL="https://starsky.lucasvmigotto.me"
           case "$URL" in
             https://*) ;;
             *) echo "::error::viewer base URL must start with https:// (got: $URL)"; exit 1 ;;
@@ -106,8 +107,8 @@ jobs:
       - name: Build
         run: bun run build
         env:
-          VITE_FULL_APP_URL: https://docs.lucasvmigotto.me/${{ github.event.repository.name }}
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_FULL_APP_URL: https://starsky.lucasvmigotto.me
+          VITE_BASE_PATH: /
 
       - name: Copy keys agree with the vision
         run: uv run python scripts/check_i18n_keys.py
@@ -128,11 +129,15 @@ jobs:
 
       - name: Guard prefix-scoped R2 deploy
         run: |
-          # Fitness function (ADR 0001 in lucas/docs): every R2 sync/cp must be
-          # prefix-scoped, so a project can never wipe the shared bucket root.
-          bad=$(grep -nE '^[[:space:]]+aws s3 (sync|cp)' .github/workflows/site_r2.yml | grep -v 'R2_PREFIX' || true)
+          # Fitness function: every R2 sync/cp must go through $R2_BUCKET +
+          # $R2_PREFIX, never a literal bucket or path, so a typo cannot
+          # retarget the deploy. Cross-site separation comes from the
+          # per-site bucket variables (starsky here, docs in `site_docs.yml`).
+          # $GITHUB_WORKSPACE: this job defaults to `site/` as its working
+          # directory, so a repo-relative path would miss and pass vacuously.
+          bad=$(grep -nE '^[[:space:]]+aws s3 (sync|cp)' "$GITHUB_WORKSPACE/.github/workflows/site_r2.yml" | grep -v 'R2_PREFIX' || true)
           if [ -n "$bad" ]; then
-            echo "::error::root-scoped R2 target detected — every deploy must use \$R2_PREFIX"
+            echo "::error::root-scoped R2 target detected — every deploy must use \$R2_BUCKET plus \$R2_PREFIX"
             echo "$bad"
             exit 1
           fi
@@ -166,10 +171,14 @@ jobs:
         # is a secret. Keeping the identifiers visible makes them reviewable
         # and diffable, and keeps the secret store to the one value that needs
         # it.
+        #
+        # Buckets are per-site: the product deploys to the starsky bucket,
+        # the docs site (`site_docs.yml`) to the docs bucket. One variable
+        # per site, so a site can never sync into the other's bucket.
         run: |
           missing=0
           for var in CLOUDFLARE_R2_ACCOUNT_ID CLOUDFLARE_R2_ACCOUNT_SECRET \
-                     CLOUDFLARE_R2_ENDPOINT_S3_CLIENT CLOUDFLARE_R2_BUCKET_ID; do
+                     CLOUDFLARE_R2_ENDPOINT_S3_CLIENT CLOUDFLARE_R2_BUCKET_STARSKY; do
             if [ -z "${!var}" ]; then
               echo "::error::$var is not set (Settings > Secrets and variables > Actions)"
               missing=1
@@ -181,15 +190,21 @@ jobs:
             *) echo "::error::CLOUDFLARE_R2_ENDPOINT_S3_CLIENT must start with https://"; exit 1 ;;
           esac
           case "${R2_PREFIX}" in
+            /) echo "R2 prefix is the bucket root (dedicated product bucket)" ;;
             /*/) ;;
-            *) echo "::error::R2_PREFIX must look like /<slug>/ (got: '${R2_PREFIX}')"; exit 1 ;;
+            *) echo "::error::R2_PREFIX must be / or look like /<slug>/ (got: '${R2_PREFIX}')"; exit 1 ;;
           esac
         env:
           CLOUDFLARE_R2_ACCOUNT_ID: ${{ vars.CLOUDFLARE_R2_ACCOUNT_ID }}
           CLOUDFLARE_R2_ACCOUNT_SECRET: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_SECRET }}
           CLOUDFLARE_R2_ENDPOINT_S3_CLIENT: ${{ vars.CLOUDFLARE_R2_ENDPOINT_S3_CLIENT }}
-          CLOUDFLARE_R2_BUCKET_ID: ${{ vars.CLOUDFLARE_R2_BUCKET_ID }}
-          R2_PREFIX: /${{ github.event.repository.name }}/
+          R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET_STARSKY }}
+          # Served at the domain root: the starsky bucket holds this site and
+          # nothing else, so the prefix is the bucket root. The per-site
+          # bucket variable (not the prefix) is what keeps the docs deploy
+          # out of here. One-time cleanup of the old /starsky/* objects is a
+          # manual step, not a recurring one.
+          R2_PREFIX: /
 
       - name: Ensure AWS CLI
         run: |
@@ -201,7 +216,10 @@ jobs:
 
       # Hashed Vite assets: immutable, long-lived. Entry HTML and the
       # unhashed data/*.json payloads: no-cache (content changes per deploy).
-      # Prefix-scoped into the shared docs-hub bucket (ADR 0001 in lucas/docs).
+      # Synced to the bucket root: the starsky bucket holds this site and
+      # nothing else, served at the domain root. The docs site deploys to
+      # its own bucket via `site_docs.yml` and can never land here —
+      # buckets (not prefixes) are the separation.
       #
       # `index.html` uploads last (contracts/delivery.md Deploy step 4): it is
       # the entry point, so a failed deploy leaves the previous entry serving
@@ -215,8 +233,8 @@ jobs:
           AWS_DEFAULT_REGION: auto
           AWS_EC2_METADATA_DISABLED: "true"
           R2_ENDPOINT: ${{ vars.CLOUDFLARE_R2_ENDPOINT_S3_CLIENT }}
-          R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET_ID }}
-          R2_PREFIX: /${{ github.event.repository.name }}/
+          R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET_STARSKY }}
+          R2_PREFIX: /
         run: |
           aws s3 sync dist "s3://$R2_BUCKET${R2_PREFIX}" \
             --endpoint-url "$R2_ENDPOINT" \
