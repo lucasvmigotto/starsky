@@ -704,6 +704,7 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | Key | Copy |
 |---|---|
 | `viewer.heading.default` | This night sky |
+| `viewer.heading.abovePlace` | Night sky above {place} |
 | `viewer.caption` | {coords} — {place} · {local} {tz} |
 | `viewer.copyLink` | Copy link |
 | `viewer.linkCopied` | Link copied |

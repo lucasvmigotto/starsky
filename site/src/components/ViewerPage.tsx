@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatLocalTime } from "../lib/caption.ts";
+import { displayHeadingTitle } from "../lib/heading.ts";
 import {
   stripUnsupported,
   titleAdjustedMessage,
@@ -380,7 +381,7 @@ export default function ViewerPage() {
           <>
             <div className="atlas-moment">
               <p className="font-display text-3xl leading-tight sm:text-4xl">
-                {payload.options.title ?? payload.place ?? "This night sky"}
+                {displayHeadingTitle(payload, t)}
               </p>
               <p className="mt-2 text-sm text-cream/65">
                 {formatLocalTime(payload.when_utc, payload.tz)} ·{" "}

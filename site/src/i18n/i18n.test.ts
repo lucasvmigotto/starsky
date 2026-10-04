@@ -92,6 +92,9 @@ describe("copy", () => {
     // 97 → 98 for the export format group's own accessible name
     // (`viewer.export.formats` — the group was named by the trigger and
     // announced as "Close export").
-    expect(copyKeys().length).toBe(98);
+    // 98 → 99 for the untitled-with-place heading
+    // (`viewer.heading.abovePlace` — "Night sky above {place}" instead of
+    // the bare place name).
+    expect(copyKeys().length).toBe(99);
   });
 });

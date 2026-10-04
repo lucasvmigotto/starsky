@@ -53,6 +53,7 @@ export const enUS = {
   "studio.updated": "Map updated",
 
   "viewer.heading.default": "This night sky",
+  "viewer.heading.abovePlace": "Night sky above {place}",
   "viewer.subtitle": "A night-sky atlas moment, recomputed in your browser",
   "viewer.loading": "Charting the stars…",
   "viewer.announced.ready": "Night sky poster ready.",
