@@ -4,9 +4,9 @@ Reconstructed by project:introspec on 2026-09-29; re-scoped by project:refactor 
 
 Status: `002` and `005` are **Implemented** (the CLI data tool ships today).
 `006` is Implemented, `000` is now **Implemented** (built 2026-09-30, reconciled
-2026-10-01), `007` is **In progress** — exports wired, `Site e2e` green on `dev`,
-four polish tasks open — and `008` is Planned. `003` is retired. Nothing is
-Verified.
+2026-10-01), `007` is **Implemented** — exports wired, all FT/QA tasks closed,
+`Site e2e` green on `dev` — and `008` is **In progress** (T002 done, deploy +
+budgets underway). `003` is retired. Nothing is Verified.
 
 | # | Feature | Priority | Depends | Frontend | Backend | Notes |
 |---|---|---|---|---|---|---|
@@ -15,8 +15,8 @@ Verified.
 | 003 | — | — | — | — | — | **Retired by BCR-0001** (Gradio removed); see `003-gradio-app/DEPRECATED.md` |
 | 005 | data-cache | P1 | — | N/A | Implemented | Hipparcos + Stellarium → parquet; ephemeris gone (BCR-0005) |
 | 006 | viewer | P1 | 005 | Implemented | N/A | Landing + `#s=` viewer, share codec, place lookup |
-| 007 | renderer-export | P1 | 006 | In progress | N/A | The browser is the sole renderer (ADR-0003); exports wired, `Site e2e` green on `dev`; FT006–FT009 + T040/T041 open |
-| 008 | site-delivery | P1 | 006, 007 | Planned | Planned | R2-only deploy, font bundling, budgets, fitness functions |
+| 007 | renderer-export | P1 | 006 | Implemented | N/A | The browser is the sole renderer (ADR-0003); exports wired, `Site e2e` green on `dev`; reference-regen deferred to 008 (`finding-reference-drift.md`) |
+| 008 | site-delivery | P1 | 006, 007 | In progress | N/A | R2-only deploy, font bundling, budgets, fitness functions; T002 done |
 
 ## Removed features
 
