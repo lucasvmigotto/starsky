@@ -198,6 +198,10 @@ jobs:
           CLOUDFLARE_R2_ACCOUNT_ID: ${{ vars.CLOUDFLARE_R2_ACCOUNT_ID }}
           CLOUDFLARE_R2_ACCOUNT_SECRET: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_SECRET }}
           CLOUDFLARE_R2_ENDPOINT_S3_CLIENT: ${{ vars.CLOUDFLARE_R2_ENDPOINT_S3_CLIENT }}
+          # Defined under both names: the loop above checks the long variable
+          # names, the sync steps use the short ones. Defining only R2_BUCKET
+          # made validation fail even with the variables set.
+          CLOUDFLARE_R2_BUCKET_STARSKY: ${{ vars.CLOUDFLARE_R2_BUCKET_STARSKY }}
           R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET_STARSKY }}
           # Served at the domain root: the starsky bucket holds this site and
           # nothing else, so the prefix is the bucket root. The per-site
