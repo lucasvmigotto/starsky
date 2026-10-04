@@ -8,8 +8,8 @@ Owner: `devsecops:pipeline` (security section by `devsecops:supply-chain`).
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `ci.yml` | push (all branches), PR | Python: ruff, `ty`, pytest, and a real `cache warm` + `catalog` build asserting the JSON shape and counts |
-| `site_ci.yml` | push/PR touching `site/**` or the render fixtures | Site: lint, `tsgo` typecheck, 91 unit/component/reference tests, build, bundle+data budgets, no-secrets scan |
+| `ci.yml` | push (all branches), PR | Python: ruff, `ty`, pytest, no-server fitness check, and a real `cache warm` + `catalog` build asserting the JSON shape and counts |
+| `site_ci.yml` | push/PR touching `site/**` or the render fixtures | Site: lint, `tsgo` typecheck, i18n key agreement, unit/component/reference tests, build, brotli bundle+data budgets, no-secrets scan |
 | `site_e2e.yml` | push to `main`/`dev`, PR touching `site/**` | 54 Playwright journeys on **Chromium and Firefox**: J1–J4, a11y, contrast, font integrity, interactive poster, perf |
 | `security.yml` | push to `main`/`dev`, all PRs, weekly | dependency review, Trivy (secrets, vulns, config), CodeQL (Python + TS) |
 | `site_r2.yml` | push to `main` touching `site/**`, PR, manual | Builds the sky data + site and deploys to Cloudflare R2 |
@@ -99,9 +99,14 @@ bad deploy is reverted by re-pointing the R2 prefix (see `docs/product/adr/0002`
 
 ## Rollback runbook
 
-1. **Site**: re-run `site_r2.yml` on the last good commit, or flip the data
-   version pointer back. Assets are immutable and hashed, so the previous build
-   keeps serving until the pointer moves.
+1. **Site**: re-run `site_r2.yml` on the last good commit (`workflow_dispatch`
+    on that ref, or revert `main` to it). Assets are content-hashed, so the
+    previous build's files keep their names and keep serving until the new
+    sync overwrites the entry point — which uploads last by design.
+    Versioned `/assets/<sha>/` + `/data/<version>/` prefixes with a manifest
+    pointer (contracts/delivery.md) are **planned, not built**: until then a
+    mid-sync failure can leave a mix of old and new hashed assets, and there
+    is no pointer to flip — the recovery is a fresh good deploy, not a flip.
 2. **CLI image**: re-tag the previous digest (`ghcr.yml` publishes per-`main`).
 3. **Data**: `starsky catalog` is deterministic for a given source snapshot;
    re-run it at the older commit.
@@ -123,8 +128,12 @@ against the real service.
 
 ## Known gaps
 
-- The workflows have not yet been observed green on GitHub (pushed 2026-09-29);
-  the container bootstrap was verified locally instead.
+- `origin/dev` is 9 commits behind `origin/main` and carries no `site/`
+  deploy path; work branches off `main` until `dev` is caught up or retired.
+- Versioned R2 prefixes (`/assets/<sha>/`, `/data/<version>/` + manifest) are
+  specified in `specs/008-site-delivery/contracts/delivery.md` but not built;
+  the deploy is flat with `index.html` last, and rollback is re-deploy, not a
+  pointer flip. The timed rollback drill (008 T021, 5-minute target) is unrun.
 - `dependency-review-action` needs GitHub Advanced Security on a **private**
   repo; the repo is public, so it runs.
 - Branch protection / rulesets are a repository setting, not code — see the

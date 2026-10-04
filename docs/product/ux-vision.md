@@ -723,13 +723,15 @@ so an empty state can override the wording later without touching three files.
 | `viewer.export.failed` | The {format} export failed ({detail}). The map is unaffected — try again. |
 | `viewer.export.open` | Export |
 | `viewer.export.close` | Close export |
+| `viewer.export.formats` | Export formats |
 | `viewer.export.preparing` | Preparing {format}… |
 | `viewer.makeYourOwn` | Make your own from this sky |
 
-The disclosure trigger carries **two** keys rather than one key plus a suffix,
-because it is also what names the format group (`aria-labelledby`), and a group
-announced as "Close export" is a group named after the control that closes it.
-`viewer.export.open` is the name the group takes in its resting state.
+The disclosure trigger carries **two** keys rather than one key plus a suffix.
+The format group carries its own name (`viewer.export.formats`) via
+`aria-label`, not `aria-labelledby` on the trigger: a group announced as
+"Close export" is a group named after the control that closes it.
+`viewer.export.open` is the trigger's resting label.
 
 `viewer.export.working` is the *status line* ("Drawing at full resolution…"),
 which is why a separate `viewer.export.preparing` exists for the button that is

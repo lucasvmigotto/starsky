@@ -109,6 +109,12 @@ jobs:
           VITE_FULL_APP_URL: https://docs.lucasvmigotto.me/${{ github.event.repository.name }}
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
 
+      - name: Copy keys agree with the vision
+        run: uv run python scripts/check_i18n_keys.py
+
+      - name: Bundle and data budgets
+        run: bash scripts/check_bundle_budget.sh
+
       # Crawlers need absolute OG URLs: fail if the build left a placeholder.
       # Tags span two lines (property line, then content line).
       - name: Assert absolute OG tags
@@ -196,6 +202,10 @@ jobs:
       # Hashed Vite assets: immutable, long-lived. Entry HTML and the
       # unhashed data/*.json payloads: no-cache (content changes per deploy).
       # Prefix-scoped into the shared docs-hub bucket (ADR 0001 in lucas/docs).
+      #
+      # `index.html` uploads last (contracts/delivery.md Deploy step 4): it is
+      # the entry point, so a failed deploy leaves the previous entry serving
+      # rather than a new entry pointing at half-synced bytes.
       - name: Sync static site to Cloudflare R2
         env:
           # The S3 client reads its credentials from AWS_*; the repository
@@ -215,6 +225,10 @@ jobs:
             --exclude "data/*.json" \
             --exclude "favicon.svg" \
             --cache-control "public, max-age=31536000, immutable"
+          aws s3 sync dist/data "s3://$R2_BUCKET${R2_PREFIX}data" \
+            --endpoint-url "$R2_ENDPOINT" \
+            --delete \
+            --cache-control "no-cache"
           # Stable filename but mutable content: no-cache like index.html.
           aws s3 cp dist/favicon.svg "s3://$R2_BUCKET${R2_PREFIX}favicon.svg" \
             --endpoint-url "$R2_ENDPOINT" \
@@ -229,7 +243,3 @@ jobs:
             --endpoint-url "$R2_ENDPOINT" \
             --cache-control "no-cache" \
             --content-type "text/html; charset=utf-8"
-          aws s3 sync dist/data "s3://$R2_BUCKET${R2_PREFIX}data" \
-            --endpoint-url "$R2_ENDPOINT" \
-            --delete \
-            --cache-control "no-cache"

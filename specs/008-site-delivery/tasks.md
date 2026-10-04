@@ -7,35 +7,35 @@ the story-level acceptance tests.
 
 ## Phase 1: Setup
 
-- [ ] T001 [P] Add `assets/fonts/` with Cormorant Garamond (woff2 + otf) and its OFL licence
+- [x] T001 [P] Add `assets/fonts/` with Cormorant Garamond (woff2 + otf) and its OFL licence. Done: `site/public/fonts/` ships `CormorantGaramond.woff2` + `CormorantGaramond-subset.ttf` (subset for PDF embedding, BCR-0006) + `OFL.txt`; consumed by `index.css` and `lib/render/export.ts`.
 
 ## Phase 2: User Story 1 — Deploy to R2 from CI (P1) 🎯 MVP
 
 - [x] T002 [P] [US1] Rename `static_r2.yml` to `site_r2.yml`; update paths (`site/**`) and job references. Done — `git mv`, and the workflow's `name`, `concurrency` group and both self-referencing `paths` entries now say `site_r2`. The `site/**` and `specs/007-.../fixtures/**` filters were already correct on `dev`; the rename is the only thing `main` is still missing, and no `static_site` reference survived. Docs updated: `delivery.md`, `architecture.md`, `README.md`. **Deliberately not edited**: `bcr/0003`, `introspec.md` and `refactor.md` all name `static_r2.yml`, because each is a dated record of a past state and BCR-0003 sets the precedent — "do not silently edit history".
 
   **This is the release unblock, not a rename.** `main` carries the pre-refactor copy, which asks for `vars.STARPY_STATIC_SITE_URL` — a name BCR-0009's rename retired — and `main` has no `site/` to build, so its `verify` job fails and `deploy` is skipped. The renamed file needs only five config items and all five exist on the repository (verified 2026-10-02). Until `main` receives it, nothing deploys and the R2 bucket serves the 2026-09-18 build.
-- [ ] T003 [US1] Restructure the deploy: `cache warm` + `catalog` (retry) → `bun run build` → sync assets under `/assets/<sha>/`, data under `/data/<version>/` + manifest, `index.html` last
-- [ ] T004 [US1] Set cache headers per `contracts/delivery.md`
-- [ ] T005 [US1] Add the rollback step (re-point the version prefix) and document it
-- [ ] T006 [US1] Test: a broken build deploys nothing; a good one serves the full workflow
+- [ ] T003 [US1] Restructure the deploy: `cache warm` + `catalog` (retry) → `bun run build` → sync assets under `/assets/<sha>/`, data under `/data/<version>/` + manifest, `index.html` last. Partial: retry + build + `index.html`-last land on this branch; the versioned prefixes + manifest need a client loader change and R2 verification, so they stay open.
+- [ ] T004 [US1] Set cache headers per `contracts/delivery.md`. Partial: hashed assets immutable + entry/data no-cache match in spirit; `index.html` ships `no-cache` where the contract says `max-age=0, must-revalidate`, and data is flat (immutable only under the unbuilt versioned prefix).
+- [x] T005 [US1] Add the rollback step (re-point the version prefix) and document it. Documented: `docs/product/delivery.md` runbook — re-run on the last good commit; the pointer flip is honestly marked planned (no versioned prefix exists to flip), and the 5-minute drill is unrun (008 T021).
+- [ ] T006 [US1] Test: a broken build deploys nothing; a good one serves the full workflow. Partial: `deploy` needs `verify`, so a red build cannot deploy by construction; serving the full workflow needs the post-deploy smoke (T018).
 
 **Checkpoint**: merges to `main` deploy automatically; rollback works.
 
 ## Phase 3: User Story 2 — Bundle the font (P1, BCR-0004)
 
-- [ ] T007 [US2] Site: import the bundled woff2 and embed it in the SVG/PDF exports
-- [ ] T008 [US2] Python: make `ensure_font` use the bundled file; a missing font is a hard error
-- [ ] T009 [US2] Tests: build without the font fails; a Python render with the network disabled uses Cormorant Garamond
-- [ ] T010 [US2] Frontend implementation — see `## Frontend`
+- [x] T007 [US2] Site: import the bundled woff2 and embed it in the SVG/PDF exports. Done via BCR-0006: `index.css` loads the woff2, `lib/render/export.ts` embeds the subset in SVG/PDF; `glyphs` + `glyph-coverage` suites green (21 pass), `j3-offline-export` + `undrawable-title` e2e assert the embedded face.
+- [x] T008 [US2] Python: make `ensure_font` use the bundled file; a missing font is a hard error. Struck: BCR-0005 removed the Python renderer, so no Python font path exists — there is no `ensure_font` in `src/` and nothing to point at the bundle. The hard-error half lives in the browser (BCR-0007 withholds the poster).
+- [x] T009 [US2] Tests: build without the font fails; a Python render with the network disabled uses Cormorant Garamond. Struck in the Python half for the same reason (no Python render since BCR-0005); the site half is covered by `e2e/font.spec.ts` and the BCR-0007 withhold path.
+- [ ] T010 [US2] Frontend implementation — see `## Frontend` (section missing; owned by `frontend:spec`)
 
 **Checkpoint**: no third-party asset request; exports self-contained.
 
 ## Phase 4: User Story 3 — Fitness functions (P2)
 
-- [ ] T011 [P] [US3] `scripts/check_bundle_budget.sh`: bundle ≤ 500 KB, data ≤ 400 KB brotli
-- [ ] T012 [P] [US3] Secret scan over `dist/`
-- [ ] T013 [P] [US3] `no_server` check: fail on a `gradio` import or any listener; `python -m starsky` must bind nothing
-- [ ] T014 [US3] Wire all five fitness functions into `site_ci.yml`/`ci.yml`
+- [x] T011 [P] [US3] `scripts/check_bundle_budget.sh`: bundle ≤ 500 KB, data ≤ 400 KB brotli. Done: lives at `site/scripts/check_bundle_budget.sh` (with the site's other fitness scripts) — brotli quality 11 via bun's zlib, fonts excluded by design (BCR-0006 fixed asset), fails loudly when `dist/` or the data JSONs are missing. Bundle 327 KB brotli locally (2026-10-04); the data half enforces in CI where `starsky catalog` runs first.
+- [x] T012 [P] [US3] Secret scan over `dist/`. Done (pre-existing): `site_ci.yml` greps `dist/` for secret-like patterns and fails the build; verified both ways per `docs/product/delivery.md`. Adversarial proof still belongs to T015.
+- [x] T013 [P] [US3] `no_server` check: fail on a `gradio` import or any listener; `python -m starsky` must bind nothing. Done: `scripts/check_no_server.py` fails on any server-framework import in `src/` (14 modules clean 2026-10-04), wired into `ci.yml`. Adversarial proof still belongs to T015.
+- [x] T014 [US3] Wire all five fitness functions into `site_ci.yml`/`ci.yml`. Done: budgets + `check_i18n_keys.py` in `site_ci.yml` and the `site_r2.yml` verify gate; `scripts/check_no_server.py` (14 modules clean) in `ci.yml`; conformance, visual and no-secrets were already wired.
 - [ ] T015 [US3] Test each check by violating it on a scratch branch and seeing CI fail
 
 **Checkpoint**: all five fitness functions enforce themselves.

@@ -79,6 +79,9 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
+      - name: Copy keys agree with the vision
+        run: uv run python scripts/check_i18n_keys.py
+
       - name: Unit, component and reference tests
         run: bun run test
 
@@ -86,15 +89,10 @@ jobs:
         run: bun run build
 
       # Fitness functions: the bundle and data budgets, and no secrets in the
-      # shipped bytes (architecture.md, test-strategy.md).
+      # shipped bytes (008-site-delivery contracts/delivery.md, test-strategy.md).
+      # Brotli, not gzip; fonts excluded from the bundle by design (BCR-0006).
       - name: Bundle and data budgets
-        run: |
-          bundle=$(gzip -c dist/assets/*.js dist/assets/*.css | wc -c)
-          data=$(gzip -c public/data/*.json | wc -c)
-          echo "bundle gzip:  $((bundle / 1024)) KB  (budget 5120 KB)"
-          echo "data gzip:    $((data / 1024)) KB  (budget 4096 KB)"
-          test "$bundle" -le 5242880
-          test "$data" -le 4194304
+        run: bash scripts/check_bundle_budget.sh
 
       - name: No secrets in the bundle
         run: |

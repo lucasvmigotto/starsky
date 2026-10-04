@@ -88,7 +88,10 @@ describe("copy", () => {
     // on the authoring path, `fontError.titleAdjusted` on the decode path);
     // 92 → 97 for the view controls the poster needed once it could be panned
     // and zoomed (`viewer.canvasHint`, `.viewControls`, `.zoomIn`, `.zoomOut`,
-    // `.resetView`).
-    expect(copyKeys().length).toBe(97);
+    // `.resetView`);
+    // 97 → 98 for the export format group's own accessible name
+    // (`viewer.export.formats` — the group was named by the trigger and
+    // announced as "Close export").
+    expect(copyKeys().length).toBe(98);
   });
 });
