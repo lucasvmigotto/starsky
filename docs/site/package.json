@@ -9,7 +9,7 @@
     "build": "vite build && bun scripts/generate_llms.ts",
     "typecheck": "tsgo --noEmit",
     "lint": "eslint .",
-    "test": "bun test",
+    "test": "bun test src scripts",
     "test:e2e": "playwright test",
     "preview": "vite preview"
   },

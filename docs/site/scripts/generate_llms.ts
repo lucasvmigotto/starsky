@@ -25,7 +25,7 @@ import type { DocSection } from "../src/content/types.ts";
 const here = dirname(fileURLToPath(import.meta.url));
 const dist = join(here, "..", "dist");
 const base =
-  process.env["DOCS_PUBLIC_URL"] ?? "https://docs.lucasvmigotto.me/starsky-docs/";
+  process.env["DOCS_PUBLIC_URL"] ?? "https://docs.lucasvmigotto.me/starsky/";
 
 function mdUrl(locale: Locale, page: Page): string {
   return `${base}docs/${locale}/${slug(page)}.md`;

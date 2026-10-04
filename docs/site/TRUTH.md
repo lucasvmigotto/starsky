@@ -47,6 +47,7 @@ Env: `STARSKY__CATALOG__CACHE_DIR`, `STARSKY__LOG__LEVEL`, `VITE_BASE_PATH`, `VI
 R2 (names only): `CLOUDFLARE_R2_ACCOUNT_ID`, `CLOUDFLARE_R2_ACCOUNT_SECRET`,
 `CLOUDFLARE_R2_ENDPOINT_S3_CLIENT`, `CLOUDFLARE_R2_BUCKET_ID`.
 Fragments: `#s=` (canonical), `#studio=` (planned). URLs:
-`https://docs.lucasvmigotto.me/<repo>`. Versions: product `1.1.1`
-(`site/package.json`; `1.1.2` tag cut by release automation).
+product `https://starsky.lucasvmigotto.me`, docs
+`https://docs.lucasvmigotto.me/starsky`. Versions: product `1.1.2`
+(`site/package.json` may lag the release tag; the tag is the source).
 Error strings: quote from `en-US.ts` / `share.ts` only.

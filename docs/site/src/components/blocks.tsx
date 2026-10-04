@@ -61,6 +61,8 @@ export function CodeBlock({ lang, text }: { lang: string; text: string }) {
   return (
     <div style={{ position: "relative", margin: "1rem 0" }}>
       <pre
+        tabIndex={0}
+        aria-label={`Code sample${lang !== "" ? ` in ${lang}` : ""}. Scroll horizontally to read it all.`}
         style={{
           background: "var(--color-dsurface)",
           border: "1px solid var(--color-dborder)",

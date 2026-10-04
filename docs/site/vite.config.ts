@@ -7,9 +7,9 @@ import { defineConfig } from "vite";
 import productPkg from "../../site/package.json" with { type: "json" };
 
 export default defineConfig({
-  // Served under the docs-hub prefix (ADR 0001 in lucas/docs), beside the
-  // product at /starsky/. CI may override per deploy target.
-  base: process.env["DOCS_BASE_PATH"] ?? "/starsky-docs/",
+  // Served under /starsky/ on the docs host (docs.lucasvmigotto.me/starsky).
+  // CI may override per deploy target.
+  base: process.env["DOCS_BASE_PATH"] ?? "/starsky/",
   plugins: [react(), tailwindcss()],
   define: {
     __DOCS_VERSION__: JSON.stringify(productPkg.version),

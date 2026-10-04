@@ -49,6 +49,12 @@ body {
 
 a {
   color: var(--color-daccent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--color-dfocus);
 }
 
 :focus-visible {

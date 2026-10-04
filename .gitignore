@@ -21,3 +21,5 @@ site/public/data/*.json
 # Playwright artifacts
 site/test-results/
 site/playwright-report/
+docs/site/test-results/
+docs/site/playwright-report/

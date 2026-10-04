@@ -143,7 +143,7 @@ export function Footer({ locale }: { locale: Locale }) {
             {t(locale, "footer.source")}
           </a>
           {" · "}
-          <a href="https://docs.lucasvmigotto.me/starsky/">
+          <a href="https://starsky.lucasvmigotto.me/">
             {t(locale, "footer.product")}
           </a>
           {" · "}
