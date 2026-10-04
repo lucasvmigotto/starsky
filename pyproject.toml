@@ -1,6 +1,6 @@
 [project]
 name = "starsky"
-version = "1.1.4"
+version = "1.1.5"
 description = "Personalized night-sky poster generator — the site renders; the CLI builds its sky data."
 readme = "README.md"
 requires-python = ">=3.14"
