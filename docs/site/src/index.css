@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+/*
+ * Docs tokens, derived from docs/product/ux-vision.md (draft palette) so the
+ * docs read as the product's family: blue-cast near-black page, verdigris
+ * reserved for interactive chrome, warm-white body text. Class names are
+ * docs-scoped (`ddocs-*`) to avoid collision with the product's `atlas-*`.
+ */
+@theme {
+  --color-dbg: #070b14;
+  --color-dsurface: #0d1424;
+  --color-draised: #141d31;
+  --color-dtext: #f2ede1;
+  --color-dmuted: #a9b3c8;
+  --color-dfaint: #7d879e;
+  --color-daccent: #8ec9b4;
+  --color-daccent-ink: #05222c;
+  --color-dborder: #55648a;
+  --color-dfocus: #9ee6f5;
+  --font-doc-display: "Cormorant Garamond", "EB Garamond", serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+body {
+  background-color: var(--color-dbg);
+  color: var(--color-dtext);
+  font-family: system-ui, sans-serif;
+  margin: 0;
+}
+
+a {
+  color: var(--color-daccent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-dfocus);
+  outline-offset: 2px;
+}
+
+.ddocs-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ddocs-skip-link {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  z-index: 100;
+  background: var(--color-daccent);
+  color: var(--color-daccent-ink);
+  padding: 0.5rem 1rem;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.ddocs-skip-link:focus {
+  top: 1rem;
+}
+
+.ddocs-nav {
+  display: none;
+  width: 100%;
+}
+
+@media (min-width: 40rem) {
+  .ddocs-nav {
+    display: block !important;
+    width: auto;
+  }
+}

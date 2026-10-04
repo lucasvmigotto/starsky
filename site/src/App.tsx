@@ -31,9 +31,10 @@ function Root() {
 
 export default function App() {
   return (
-    // Matches the docs-hub prefix (ADR 0001 in lucas/docs); derived from the
-    // Vite base so it tracks VITE_BASE_PATH.
-    <HashRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "") || "/"}>
+    // The docs-hub prefix lives in the URL pathname via Vite's `base`; the
+    // hash carries the route. A hash router must NOT set `basename` — it would
+    // look for the prefix inside the hash and render a blank page.
+    <HashRouter>
       <Routes>
         <Route path="*" element={<Root />} />
       </Routes>

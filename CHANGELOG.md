@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.2 — 2026-10-04
+
+### Fixed
+
+- **site:** name export format group on its own, not the trigger
+- **site:** use typed BASE_URL for router basename
+
 ## 1.1.1 — 2026-10-03
 
 ### Changed
