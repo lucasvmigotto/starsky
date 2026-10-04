@@ -36,6 +36,11 @@ jobs:
       - name: Workflow schema
         run: uv run python scripts/check_workflow_schema.py
 
+      # Python is a CLI that builds sky data (BCR-0005), never a server: no
+      # gradio, no socket listener, no framework import in src/.
+      - name: No server imports
+        run: uv run python scripts/check_no_server.py
+
       # The client's glyph table is generated from the bundled poster font's
       # `cmap`. A stale table means titles are refused (or not) against a face
       # the site no longer ships, and it would be invisible: the table is data,

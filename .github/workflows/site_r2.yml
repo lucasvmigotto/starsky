@@ -109,6 +109,12 @@ jobs:
           VITE_FULL_APP_URL: https://docs.lucasvmigotto.me/${{ github.event.repository.name }}
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
 
+      - name: Copy keys agree with the vision
+        run: uv run python scripts/check_i18n_keys.py
+
+      - name: Bundle and data budgets
+        run: bash scripts/check_bundle_budget.sh
+
       # Crawlers need absolute OG URLs: fail if the build left a placeholder.
       # Tags span two lines (property line, then content line).
       - name: Assert absolute OG tags
