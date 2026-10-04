@@ -62,7 +62,10 @@ function Root() {
 
 export default function App() {
   return (
-    <HashRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "") || "/"}>
+    // No basename: the docs-hub prefix lives in the URL pathname via Vite's
+    // `base`; the hash carries the route. A hash router with `basename`
+    // looks for the prefix inside the hash and renders a blank page.
+    <HashRouter>
       <Root />
     </HashRouter>
   );
