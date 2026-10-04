@@ -12,7 +12,15 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
-GlobalRegistrator.register({ url: "http://localhost/" });
+// ShareDialog.test.tsx registers the same globals when the whole suite runs
+// in one process; registering twice throws, so only the first wins.
+// The untyped lookup is deliberate: DOM types claim `document` always
+// exists, which is exactly what is false under `bun test` before registering.
+const domReady =
+  (globalThis as unknown as Record<string, unknown>)["document"] !== undefined;
+if (!domReady) {
+  GlobalRegistrator.register({ url: "http://localhost/" });
+}
 
 const { cleanup, render, screen } = await import("@testing-library/react");
 const { default: ExportControls, EXPORT_SIZE_PX } = await import(

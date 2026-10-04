@@ -92,6 +92,15 @@ describe("copy", () => {
     // 97 → 98 for the export format group's own accessible name
     // (`viewer.export.formats` — the group was named by the trigger and
     // announced as "Close export").
-    expect(copyKeys().length).toBe(98);
+    // 98 → 99 for the untitled-with-place heading
+    // (`viewer.heading.abovePlace` — "Night sky above {place}" instead of
+    // the bare place name).
+    // 99 → 102 for the share disclosure (`viewer.share.open` / `.close` /
+    // `.heading` — principle 3 puts the link before the download).
+    // 102 → 104 for the Sky / Appearance / Observation regroup (proposal
+    // §§11–12): three legends in, `landing.render.legend` out.
+    // 104 → 102 for the hero swap: the Landing speaks the canonical
+    // `landing.title` / `.subtitle`, so the two `.legacy` keys retire.
+    expect(copyKeys().length).toBe(102);
   });
 });

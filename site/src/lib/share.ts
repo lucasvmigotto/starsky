@@ -85,25 +85,7 @@ export function decodeShareFragment(fragment: string): SharePayload {
   } catch {
     throw new ShareDecodeError("Invalid share payload: not JSON");
   }
-  if (typeof data !== "object" || data === null) {
-    throw new ShareDecodeError("Invalid share payload: not an object");
-  }
-  const record = data as Record<string, unknown>;
-  if (record["v"] !== SPEC.shareLink.payloadVersion) {
-    throw new ShareVersionError(record["v"]);
-  }
-  if (
-    typeof record["lat"] !== "number" ||
-    typeof record["lon"] !== "number" ||
-    typeof record["when_utc"] !== "string" ||
-    typeof record["tz"] !== "string" ||
-    typeof record["options"] !== "object" ||
-    record["options"] === null
-  ) {
-    throw new ShareDecodeError("Invalid share payload: missing fields");
-  }
-  validateOptions(data as unknown as SharePayload);
-  return data as unknown as SharePayload;
+  return migrateSharePayload(data);
 }
 
 /**
@@ -175,6 +157,42 @@ export function validateOptions(payload: SharePayload): void {
       `Invalid share payload: shape must be one of ${SHAPES.join(", ")}`,
     );
   }
+}
+
+/**
+ * Migrate a decoded share document to the current schema.
+ *
+ * Today only `v: 1` exists, so this is the identity plus validation — but
+ * the indirection is the point: when a `v: 2` appears, old links migrate
+ * here instead of breaking. Unknown versions throw `ShareVersionError`
+ * (a different failure from corrupt bytes, and handled as "legacy" by
+ * the Viewer).
+ */
+export function migrateSharePayload(data: unknown): SharePayload {
+  if (typeof data !== "object" || data === null) {
+    throw new ShareDecodeError("Invalid share payload: not an object");
+  }
+  const record = data as Record<string, unknown>;
+  if (record["v"] !== SPEC.shareLink.payloadVersion) {
+    throw new ShareVersionError(record["v"]);
+  }
+  if (
+    typeof record["lat"] !== "number" ||
+    typeof record["lon"] !== "number" ||
+    typeof record["when_utc"] !== "string" ||
+    typeof record["tz"] !== "string" ||
+    typeof record["options"] !== "object" ||
+    record["options"] === null
+  ) {
+    throw new ShareDecodeError("Invalid share payload: missing fields");
+  }
+  validateOptions(data as unknown as SharePayload);
+  return data as unknown as SharePayload;
+}
+
+/** Decode a `#s=` fragment to the current sky state. */
+export function decodeSkyState(fragment: string): SharePayload {
+  return decodeShareFragment(fragment);
 }
 
 /** Extract the `s` fragment from a location hash like `#s=...`. */

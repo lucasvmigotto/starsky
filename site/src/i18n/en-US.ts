@@ -11,14 +11,11 @@
 export const enUS = {
   "landing.title": "The night sky over any place and moment",
   "landing.subtitle": "Drawn from 8 000+ stars, in your browser",
-  // Pre-redesign copy, kept while the Landing is rebuilt in `frontend:build`.
-  // Removed with it, not translated.
-  "landing.title.legacy": "Map your night sky",
-  "landing.subtitle.legacy":
-    "Pick a place and a moment — your poster-grade sky renders right here.",
   "landing.mode.label": "Input mode",
   "landing.moment.legend": "Date and time",
-  "landing.render.legend": "Render options",
+  "landing.sky.legend": "Sky",
+  "landing.appearance.legend": "Appearance",
+  "landing.observation.legend": "Observation",
   "landing.render.fisheye": "Fisheye strength",
   "landing.render.separation": "Minimum separation",
   "landing.render.magnitude": "Limiting magnitude",
@@ -53,6 +50,7 @@ export const enUS = {
   "studio.updated": "Map updated",
 
   "viewer.heading.default": "This night sky",
+  "viewer.heading.abovePlace": "Night sky above {place}",
   "viewer.subtitle": "A night-sky atlas moment, recomputed in your browser",
   "viewer.loading": "Charting the stars…",
   "viewer.announced.ready": "Night sky poster ready.",
@@ -75,6 +73,9 @@ export const enUS = {
   "viewer.resetView": "Show the whole sky",
   "viewer.caption": "{coords} — {place} · {local} {tz}",
   "viewer.copyLink": "Copy link",
+  "viewer.share.open": "Share",
+  "viewer.share.close": "Close share",
+  "viewer.share.heading": "Share this sky",
   "viewer.linkCopied": "Link copied",
   "viewer.linkFailed": "Could not copy the link. Select the address bar and copy it.",
   "viewer.randomSky": "Load a random sky",
