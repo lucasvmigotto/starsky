@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.3 — 2026-10-04
+
+### Fixed
+
+- **site:** drop the hash-router basename that blanked pages
+
 ## 1.1.2 — 2026-10-04
 
 ### Fixed
