@@ -33,7 +33,7 @@ export default function App() {
   return (
     // Matches the docs-hub prefix (ADR 0001 in lucas/docs); derived from the
     // Vite base so it tracks VITE_BASE_PATH.
-    <HashRouter basename={(import.meta.env?.["BASE_URL"] ?? "/").replace(/\/$/, "") || "/"}>
+    <HashRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "") || "/"}>
       <Routes>
         <Route path="*" element={<Root />} />
       </Routes>
