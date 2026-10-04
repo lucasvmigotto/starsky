@@ -32,10 +32,10 @@ the story-level acceptance tests.
 
 ## Phase 4: User Story 3 — Fitness functions (P2)
 
-- [ ] T011 [P] [US3] `scripts/check_bundle_budget.sh`: bundle ≤ 500 KB, data ≤ 400 KB brotli
-- [ ] T012 [P] [US3] Secret scan over `dist/`
-- [ ] T013 [P] [US3] `no_server` check: fail on a `gradio` import or any listener; `python -m starsky` must bind nothing
-- [ ] T014 [US3] Wire all five fitness functions into `site_ci.yml`/`ci.yml`
+- [x] T011 [P] [US3] `scripts/check_bundle_budget.sh`: bundle ≤ 500 KB, data ≤ 400 KB brotli. Done: lives at `site/scripts/check_bundle_budget.sh` (with the site's other fitness scripts) — brotli quality 11 via bun's zlib, fonts excluded by design (BCR-0006 fixed asset), fails loudly when `dist/` or the data JSONs are missing. Bundle 327 KB brotli locally (2026-10-04); the data half enforces in CI where `starsky catalog` runs first.
+- [x] T012 [P] [US3] Secret scan over `dist/`. Done (pre-existing): `site_ci.yml` greps `dist/` for secret-like patterns and fails the build; verified both ways per `docs/product/delivery.md`. Adversarial proof still belongs to T015.
+- [x] T013 [P] [US3] `no_server` check: fail on a `gradio` import or any listener; `python -m starsky` must bind nothing. Done: `scripts/check_no_server.py` fails on any server-framework import in `src/` (14 modules clean 2026-10-04), wired into `ci.yml`. Adversarial proof still belongs to T015.
+- [x] T014 [US3] Wire all five fitness functions into `site_ci.yml`/`ci.yml`. Done: budgets + `check_i18n_keys.py` in `site_ci.yml` and the `site_r2.yml` verify gate; `scripts/check_no_server.py` (14 modules clean) in `ci.yml`; conformance, visual and no-secrets were already wired.
 - [ ] T015 [US3] Test each check by violating it on a scratch branch and seeing CI fail
 
 **Checkpoint**: all five fitness functions enforce themselves.
