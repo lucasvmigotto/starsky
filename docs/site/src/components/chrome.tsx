@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { contentOf, pages, type Locale, type Page } from "../content/pages.ts";
 import { t } from "../i18n/index.ts";
+import { publicHref } from "../lib/paths.ts";
 
 export function SkipLink({ locale }: { locale: Locale }) {
   return (
@@ -147,7 +148,7 @@ export function Footer({ locale }: { locale: Locale }) {
             {t(locale, "footer.product")}
           </a>
           {" · "}
-          <a href="./llms.txt">{t(locale, "footer.llms")}</a>
+          <a href={publicHref("llms.txt")}>{t(locale, "footer.llms")}</a>
         </p>
       </div>
     </footer>

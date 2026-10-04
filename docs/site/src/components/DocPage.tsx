@@ -1,4 +1,5 @@
 import { contentOf, slug, type Locale, type Page } from "../content/pages.ts";
+import { publicHref } from "../lib/paths.ts";
 import { Breadcrumbs, Callout, CodeBlock, DocTable, StatusBadge } from "./blocks.tsx";
 
 export function DocPage({ locale, page }: { locale: Locale; page: Page }) {
@@ -52,11 +53,11 @@ export function DocPage({ locale, page }: { locale: Locale; page: Page }) {
         </section>
       ))}
       <p style={{ marginTop: "2rem", fontSize: "0.85rem" }}>
-        <a href={`./docs/${locale}/${slug(page)}.md`} type="text/markdown" rel="alternate">
+        <a href={publicHref(`docs/${locale}/${slug(page)}.md`)} type="text/markdown" rel="alternate">
           {locale === "pt" ? "Ler como Markdown" : "Read as Markdown"}
         </a>
         {" · "}
-        <a href="./llms.txt">llms.txt</a>
+        <a href={publicHref("llms.txt")}>llms.txt</a>
       </p>
     </article>
   );
