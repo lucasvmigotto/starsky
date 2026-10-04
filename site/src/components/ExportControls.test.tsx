@@ -137,9 +137,10 @@ describe("ExportControls", () => {
   it("labels the group accessibly", () => {
     render(<ExportControls payload={makePayload()} model={MODEL} />);
     openFormats();
-    // Named by the trigger, which is also what discloses it — one control
-    // rather than a label element plus a group.
-    const group = screen.getByRole("group", { name: /export/i });
+    // The group carries its own name ("Export formats"), not the trigger's
+    // label: a group announced as "Close export" is named after the control
+    // that closes it.
+    const group = screen.getByRole("group", { name: "Export formats" });
     expect(group).toBeDefined();
   });
 

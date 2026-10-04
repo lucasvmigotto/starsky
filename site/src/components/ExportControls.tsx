@@ -132,7 +132,7 @@ export default function ExportControls({ payload, model }: Props) {
         id={panelId}
         className="atlas-export-actions"
         role="group"
-        aria-labelledby={triggerId}
+        aria-label={t("viewer.export.formats")}
         hidden={!open}
       >
         {(["png", "svg", "pdf"] as const).map((format) => (
