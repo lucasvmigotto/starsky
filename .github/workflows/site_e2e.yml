@@ -42,7 +42,7 @@ jobs:
       # writes the workspace as root before the job steps run.
     steps:
       - name: Checkout repository
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # The Playwright image has Node but no Python toolchain, and the sky data
       # the site fetches is built by the Python CLI. `setup-uv` installs uv into
@@ -152,7 +152,7 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.63.0-noble
     steps:
       - name: Checkout repository
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install uv
         uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
