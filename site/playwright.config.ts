@@ -10,8 +10,7 @@ import { defineConfig, devices } from "@playwright/test";
  * same image via the compose profile.
  *
  * The suite drives the **built** site through `vite preview`, not the dev
- * server: `base: "./"` makes `dist/` self-contained and closest to what R2
- * serves.
+ * server, built at the root (`VITE_BASE_PATH=/`) as R2 serves it.
  */
 const PORT = Number(process.env["E2E_PORT"] ?? "4173");
 const BASE_URL = process.env["E2E_BASE_URL"] ?? `http://127.0.0.1:${String(PORT)}`;

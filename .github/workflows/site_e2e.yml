@@ -92,6 +92,11 @@ jobs:
         working-directory: site
         # Absolute path: PATH edits do not survive into the container's steps.
         run: /tmp/bun/bin/bun run build
+        env:
+          # Build at the root, as site_r2.yml deploys it: the Vite default is
+          # /starsky/, and e2e/serve.mjs serves dist/ at /, so the default build
+          # requested /starsky/assets/* and rendered a blank page.
+          VITE_BASE_PATH: /
 
       - name: Run the journeys
         working-directory: site
@@ -185,6 +190,8 @@ jobs:
       - name: Build the site
         working-directory: site
         run: /tmp/bun/bin/bun run build
+        env:
+          VITE_BASE_PATH: / # served at the root, as in the e2e job above
 
       - name: Live place lookup
         working-directory: site
