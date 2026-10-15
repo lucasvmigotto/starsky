@@ -101,7 +101,7 @@ jobs:
         # The v4.2.2 SHA (4d10147) is unresolvable by the runner — two
         # consecutive runs failed action resolution with it while the tag
         # itself resolves. v4.1.1 until a resolvable v4.2.x SHA is confirmed.
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: sbom.cdx.json
 
