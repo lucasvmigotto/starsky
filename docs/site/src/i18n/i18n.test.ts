@@ -9,8 +9,7 @@ import { uiEn, uiPt } from "./locales.ts";
 describe("ui i18n", () => {
   it("resolves every key in both locales to real copy", () => {
     for (const key of uiKeys()) {
-      // footer.version carries a {version} slot by design; interpolation
-      // is covered below. Here: no empty strings, no missing keys.
+      // No empty strings, no missing keys.
       expect(t("en", key).length).toBeGreaterThan(0);
       expect(t("pt", key).length).toBeGreaterThan(0);
     }
@@ -20,11 +19,9 @@ describe("ui i18n", () => {
     expect(Object.keys(uiPt).sort()).toEqual(Object.keys(uiEn).sort());
   });
 
-  it("interpolates the version slot", () => {
-    expect(t("en", "footer.version", { version: "1.1.1" })).toBe(
-      "starsky docs v1.1.1",
-    );
-    expect(t("pt", "footer.version", { version: "1.1.1" })).toContain("1.1.1");
+  it("names the footer's versions group", () => {
+    expect(t("en", "footer.version")).toBe("Versions");
+    expect(t("pt", "footer.version")).toBe("Versões");
   });
 
   it("names the maturity states distinctly per locale", () => {

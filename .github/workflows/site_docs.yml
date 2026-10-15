@@ -16,6 +16,12 @@ on:
       - "docs/**"
       - ".github/workflows/site_docs.yml"
   workflow_dispatch:
+  # Redeploy once the release workflow has tagged X.Y.Z, so the footer shows
+  # starsky@vX.Y.Z linked to the tag instead of the untagged commit.
+  workflow_run:
+    workflows: ["Tag and Release"]
+    types: [completed]
+    branches: ["main"]
 
 concurrency:
   group: site-docs-${{ github.ref }}
@@ -26,6 +32,7 @@ permissions:
 
 jobs:
   verify:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -33,6 +40,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0 # git describe --tags: the footer's versions and links
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -86,7 +95,7 @@ jobs:
           if-no-files-found: error
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_run') && github.ref == 'refs/heads/main'
     needs: verify
     runs-on: ubuntu-24.04
     environment:

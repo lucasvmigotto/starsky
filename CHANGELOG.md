@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **Docs footer versions.** The docs footer reads
+  `starsky@vX.Y.Z · docs@vX.Y.Z` (`site/package.json` and
+  `docs/site/package.json`), each linked to the repository tree at the
+  release tag, or the commit when untagged. The docs redeploy after the
+  release workflow tags, and `scripts/release.py` bumps the docs version
+  when `docs/site/` changed, apart from the product's.
+
 ## 1.2.0 — 2026-10-04
 
 ### Added

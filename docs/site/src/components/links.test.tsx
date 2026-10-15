@@ -9,7 +9,10 @@ GlobalRegistrator.register({ url: "http://localhost/" });
 
 process.env["BASE_URL"] = "/starsky/";
 // Mirror the Vite `define` from vite.config.ts — bun:test runs unbundled.
-(globalThis as Record<string, unknown>)["__DOCS_VERSION__"] = "test";
+(globalThis as Record<string, unknown>)["__VERSIONS__"] = [
+  { name: "starsky", version: "1.2.0", label: "starsky@v1.2.0", href: "https://github.com/lucasvmigotto/starsky/tree/1.2.0" },
+  { name: "docs", version: "1.1.1", label: "docs@v1.1.1", href: "https://github.com/lucasvmigotto/starsky/tree/1.2.0/docs/site" },
+];
 
 const { cleanup, render, screen, within } = await import("@testing-library/react");
 const { default: App } = await import("../App.tsx");
@@ -24,6 +27,14 @@ describe("public links", () => {
     const footer = screen.getByRole("contentinfo");
     const link = within(footer).getByRole("link", { name: "llms.txt" });
     expect(link.getAttribute("href")).toBe("/starsky/llms.txt");
+  });
+
+  it("links each footer version to the tree it was built from", () => {
+    render(<App />);
+    const footer = screen.getByRole("contentinfo");
+    expect(within(footer).getByTitle("Versions").textContent).toBe("starsky@v1.2.0 · docs@v1.1.1");
+    const link = within(footer).getByRole("link", { name: "starsky@v1.2.0" });
+    expect(link.getAttribute("href")).toBe("https://github.com/lucasvmigotto/starsky/tree/1.2.0");
   });
 
   it("points per-page Markdown alternates under the base", () => {

@@ -138,7 +138,14 @@ export function Footer({ locale }: { locale: Locale }) {
     >
       <div style={{ maxWidth: "64rem", margin: "0 auto" }}>
         <p style={{ margin: "0 0 0.5rem" }}>
-          {t(locale, "footer.version", { version: __DOCS_VERSION__ })}
+          <span title={t(locale, "footer.version")}>
+            {__VERSIONS__.map((v, i) => (
+              <span key={v.name}>
+                {i > 0 && " · "}
+                {v.href ? <a href={v.href}>{v.label}</a> : v.label}
+              </span>
+            ))}
+          </span>
           {" · "}
           <a href="https://github.com/lucasvmigotto/starsky">
             {t(locale, "footer.source")}

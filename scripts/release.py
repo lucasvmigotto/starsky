@@ -25,6 +25,11 @@ otherwise a section is generated from the commits.
 
 A carrier already changed by hand since the tag is left alone.
 
+The docs site versions on its own: docs/site/package.json is bumped by the
+strongest commit touching docs/site/ since the tag (none, none), so the
+docs footer's docs@vX.Y.Z moves only when the docs do. Hand bumps win here
+too.
+
 With no previous tag, the release is --initial (default 0.1.0) if there is
 at least one releasable commit.
 
@@ -96,11 +101,12 @@ def last_tag():
     return max(tags, key=parse_version) if tags else None
 
 
-def commits(since):
-    """Releasable-or-not commits in since..HEAD (all history if since is None)."""
+def commits(since, paths=()):
+    """Releasable-or-not commits in since..HEAD (all history if since is None),
+    limited to those touching `paths` when given."""
     rev = f"{since}..HEAD" if since else "HEAD"
     fmt = SEP_FIELD.join(["%H", "%P", "%s", "%b"]) + SEP_RECORD
-    out = git("log", "--no-color", f"--format={fmt}", rev)
+    out = git("log", "--no-color", f"--format={fmt}", rev, *(["--", *paths] if paths else []))
     result = []
     for record in out.split(SEP_RECORD):
         record = record.strip("\n")
@@ -214,6 +220,22 @@ def plan_versions(root, tag, bump, version):
             }
         )
     return plans
+
+
+def plan_docs(root, tag):
+    """docs/site/package.json, bumped by the commits touching docs/site/."""
+    path = os.path.join(root, "docs", "site", "package.json")
+    current = read_version(path, PACKAGE_JSON_RE)
+    if current is None or tag is None:
+        return []
+    tagged = tagged_version(path, tag, PACKAGE_JSON_RE)
+    if tagged is not None and tagged != current:
+        return []  # already bumped by hand since the tag
+    bump = max_bump(commits(tag, ["docs/site"]))
+    if bump == "none":
+        return []
+    return [{"path": path, "rel": os.path.relpath(path, root), "pattern": PACKAGE_JSON_RE,
+             "from": current, "to": bump_version(current, bump), "bump": bump}]
 
 
 def apply_version(path, pattern, version):
@@ -374,7 +396,7 @@ def main(argv):
                 f"carriers already above --initial {version}; pass --initial explicitly"
             )
     date = args.date or datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d")
-    plans = plan_versions(root, tag, bump, version)
+    plans = plan_versions(root, tag, bump, version) + plan_docs(root, tag)
 
     text = open(changelog).read() if os.path.exists(changelog) else ""
     new_changelog, how = updated_changelog(text, version, date, items)

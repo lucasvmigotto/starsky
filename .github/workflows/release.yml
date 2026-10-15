@@ -78,7 +78,7 @@ jobs:
             echo "Tag $version already exists; refusing to re-release." >&2
             exit 1
           fi
-          git add CHANGELOG.md site/package.json pyproject.toml uv.lock
+          git add CHANGELOG.md site/package.json docs/site/package.json pyproject.toml uv.lock
           git commit -m "chore(release): $version"
           git tag -a "$version" -m "starsky $version"
           # Rejected (and nothing published) if main moved since this run started;
