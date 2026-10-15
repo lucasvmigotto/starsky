@@ -48,12 +48,14 @@ jobs:
           fail-on-severity: high
           # The license policy: the project is GPL-3.0-only, so copyleft and
           # permissive are fine; anything unknown or explicitly non-free is not.
+          # Entries must be SPDX: Commons Clause has no SPDX ID, so it is
+          # named as a LicenseRef (a bare `Commons-Clause` fails every run).
           deny-licenses: >-
             GPL-2.0-only,
             GPL-2.0-or-later,
             SSPL-1.0,
             BUSL-1.1,
-            Commons-Clause,
+            LicenseRef-Commons-Clause,
             Elastic-2.0
 
   # Dependencies, secrets and Dockerfile/config in one pass.
