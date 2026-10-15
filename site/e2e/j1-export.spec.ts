@@ -5,7 +5,14 @@
  * buttons actually produce a **download** in a real browser — the check no
  * other layer can make, and the one that has never been run.
  */
-import { expect, fragmentFor, openExport, test, viewerUrl } from "./fixtures.ts";
+import {
+  expect,
+  exportStatus,
+  fragmentFor,
+  openExport,
+  test,
+  viewerUrl,
+} from "./fixtures.ts";
 
 test.describe("J1 poster export", () => {
   test.beforeEach(async ({ page }) => {
@@ -61,12 +68,10 @@ test.describe("J1 poster export", () => {
     }
     expect(bytes).toBeGreaterThan(10_000);
 
-    // Scope to the export row's own status region: the Viewer has a second one for
-    // its sky announcements (T035), so a bare `getByRole("status")` is
-    // ambiguous now that both exist.
-    await expect(
-      page.locator(".atlas-export-status"),
-    ).toContainText(/PNG/i);
+    // The export row's own status region: the Viewer also announces the sky
+    // (T035) and the share row reports its own actions, so neither a bare
+    // getByRole("status") nor the shared class is unambiguous.
+    await expect(exportStatus(page)).toContainText(/PNG/i);
   });
 
   test("downloads an SVG containing the title as text", async ({ page }) => {
@@ -139,9 +144,9 @@ test.describe("J1 export failure", () => {
     await expect(pdf).toBeEnabled();
     await pdf.click();
 
-    // Scoped to the export row: the Viewer has a second status region for sky
-    // announcements, so a bare getByRole("status") is ambiguous.
-    const status = page.locator(".atlas-export-status");
+    // Scoped to the export row (the sky and the share row have status
+    // regions too).
+    const status = exportStatus(page);
     // The format is named, so the user knows which of the three failed…
     await expect(status).toContainText("PDF");
     await expect(status).toContainText(/failed/i);

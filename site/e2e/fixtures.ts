@@ -59,6 +59,17 @@ export async function openExport(
   await expect(page.getByRole("button", { name: "PNG", exact: true })).toBeVisible();
 }
 
+/**
+ * The export row's status region. The share row (ShareDialog) has its own
+ * `.atlas-export-status` too, so scope by the row holding the export formats.
+ */
+export function exportStatus(page: import("@playwright/test").Page) {
+  return page
+    .locator(".atlas-export")
+    .filter({ has: page.getByRole("group", { name: "Export formats", includeHidden: true }) })
+    .locator(".atlas-export-status");
+}
+
 /** A shared `test` that fails the test on any unexpected console error. */
 export const test = base.extend<{ consoleErrors: string[] }>({
   consoleErrors: [

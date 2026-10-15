@@ -29,12 +29,12 @@ import {
 } from "./fixtures.ts";
 
 // Ids, matching `j4-place-lookup.spec.ts`. Not `getByLabel`: the title field
-// lives inside the collapsed "Render options" `<details>`, so it is in the DOM
+// lives inside the collapsed "Appearance" `<details>`, so it is in the DOM
 // but not visible until the disclosure is opened — and a `getByLabel` that
 // resolves to a hidden input fails on `fill` with a 30s timeout rather than
 // anything that names the real problem.
 const TITLE_INPUT = "#landing-title";
-const DISCLOSURE = "Render options";
+const DISCLOSURE = "Appearance";
 const WHEN_INPUT = "#landing-when";
 const LAT_INPUT = "#landing-lat";
 const LON_INPUT = "#landing-lon";

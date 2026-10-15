@@ -449,11 +449,14 @@ test.describe("navigating the poster", () => {
     await expect(reset).toBeDisabled();
 
     await canvas.focus();
+    // Focusing scrolls the poster into view (it is taller than the viewport
+    // once the controls above it are counted), so measure from there.
+    const focused = await page.evaluate(() => window.scrollY);
     // Arrows have nothing to pan at the home view, and must not scroll the
     // page either — the map claims those keys, so it has to use them.
     await page.keyboard.press("ArrowRight");
     await expect(reset).toBeDisabled();
-    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    expect(await page.evaluate(() => window.scrollY)).toBe(focused);
 
     await page.keyboard.press("+");
     await expect(reset).toBeEnabled();
@@ -572,20 +575,26 @@ test.describe("navigating the poster", () => {
     // Resting on a figure *in the panel* sets the highlight without moving the
     // view, so the geometry these corners sample stays exactly as computed.
     const figure = page.locator(".atlas-figure").first();
-    const lit: number[] = [];
+    /*
+     * The veil fades toward the background colour, so how much a corner dims
+     * depends on what is there: near-black sky moves little (~9%), stars and
+     * lines a lot. The regression left the corners untouched — exactly equal —
+     * so assert a real change, not a brightness-dependent percentage.
+     */
+    // Every clear sample first, before anything is highlighted.
+    await park(page);
     const clear: number[] = [];
-    for (const corner of corners) {
-      await park(page);
-      clear.push(await meanLuma(page, corner));
-      await figure.hover();
-      lit.push(await meanLuma(page, corner));
-    }
+    for (const corner of corners) clear.push(await meanLuma(page, corner));
 
+    await figure.hover();
+    // The veil is painted on the next frame after the hover: poll for it
+    // (auto-wait, no sleep) instead of sampling the frame before it.
     for (const [i, corner] of corners.entries()) {
-      expect(
-        lit[i] ?? 0,
-        `corner ${JSON.stringify(corner)} should dim when a figure is focused`,
-      ).toBeLessThan((clear[i] ?? 0) * 0.8);
+      await expect
+        .poll(() => meanLuma(page, corner), {
+          message: `corner ${JSON.stringify(corner)} should dim when a figure is focused`,
+        })
+        .toBeLessThan((clear[i] ?? 0) * 0.97);
     }
   });
 
