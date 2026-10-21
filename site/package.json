@@ -16,20 +16,20 @@
   "dependencies": {
     "jspdf": "^4.2.1",
     "pako": "^2.1.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "react-router-dom": "^7.6.2",
     "svg2pdf.js": "^2.5.0"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.13.0",
+    "@axe-core/playwright": "^4.14.0",
     "@happy-dom/global-registrator": "^20.14.5",
-    "@napi-rs/canvas": "^1.0.9",
-    "@playwright/test": "^1.63.0",
+    "@napi-rs/canvas": "^1.0.11",
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/vite": "^4.1.10",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
-    "@types/bun": "^1.2.0",
+    "@types/bun": "^1.4.3",
     "@types/node": "^22.15.0",
     "@types/pako": "^2.0.3",
     "@types/react": "^19.1.0",
@@ -39,7 +39,7 @@
     "eslint": "^9.28.0",
     "happy-dom": "^20.14.5",
     "tailwindcss": "^4.1.10",
-    "typescript-eslint": "^8.33.0",
+    "typescript-eslint": "^8.71.2",
     "vite": "^6.3.5"
   }
 }
