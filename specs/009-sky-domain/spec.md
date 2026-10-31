@@ -1,6 +1,6 @@
 # Feature: sky domain and camera
 
-Feature: `009-sky-domain` | Status: In progress | Depends: 005 | Direction: BCR-0011
+Feature: `009-sky-domain` | Status: Implemented | Depends: 005 | Direction: BCR-0011
 
 ## Why
 
