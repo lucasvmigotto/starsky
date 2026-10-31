@@ -8,7 +8,7 @@ Tests come first (constitution IV). Executor `builder`, Reviewer `thinker`.
 - [x] T002 [US3] Tests then SVG and PDF story paths
 - [x] T003 [US3] New reference image for story, in the existing reference test approach; existing images unchanged
 - [x] T004 [US3] `ExportControls` format choice with component tests and copy
-- [ ] T005 [US2] Tests then `convert.ts`, `returnCamera.ts`
+- [x] T005 [US2] Tests then `convert.ts`, `returnCamera.ts`
 - [ ] T006 [US1] Tests then `draft.ts`; extract `PosterFields` with landing behavior unchanged
 - [ ] T007 [US1] `StudioPage`, lazy dispatch, copy and vision tables
 - [ ] T008 [US2] Viewer actions and Explorer "Create poster"

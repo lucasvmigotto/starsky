@@ -9,29 +9,11 @@ import type { Projection, SharePayload, Shape } from "../lib/share.ts";
 import { fragmentFromHash } from "../lib/share.ts";
 import { t } from "../i18n/index.ts";
 import { randomSampleFragment } from "../lib/site.ts";
+import { DEFAULTS } from "../lib/scene/defaults.ts";
 import { toWhenUtcIso, zonedTimeToUtc } from "../lib/time.ts";
 import { EmptyState } from "./States.tsx";
 
 type LocationMode = "coordinates" | "place";
-
-const DEFAULTS = {
-  mode: "place",
-  lat: "40.7580",
-  lon: "-73.9855",
-  place: "Times Square, New York, NY",
-  when: "",
-  tz: "UTC",
-  projection: "stereographic",
-  fisheyeStrength: 1.0,
-  minSeparation: 0.008,
-  magnitudeLimit: 5.8,
-  glow: true,
-  glowIntensity: 1.0,
-  constellations: true,
-  constellationLabels: true,
-  shape: "circle",
-  title: "",
-} as const;
 
 function goToSample() {
   window.location.hash = `#s=${randomSampleFragment(fragmentFromHash(window.location.hash))}`;
