@@ -308,7 +308,7 @@ export default function ViewerPage() {
             ? handoff.exploreHash(link.payload)
             : handoff.seedStudioHash(link.payload);
       } catch {
-        // A moment that is not a date cannot be explored; the poster stays put.
+        // A chunk that fails to load leaves the poster in place.
       }
     },
     [link],

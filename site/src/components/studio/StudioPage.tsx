@@ -42,9 +42,9 @@ import {
   studioFragmentFromHash,
 } from "../../lib/studio/draft.ts";
 import ExportControls from "../ExportControls.tsx";
+import ShareDialog from "../ShareDialog.tsx";
 import PosterFields, { type PosterFieldValues } from "../poster/PosterFields.tsx";
 import SiteFooter from "../SiteFooter.tsx";
-import StudioShare from "./StudioShare.tsx";
 
 /** How long input must rest before the preview and the fragment follow it. */
 export const DRAFT_DEBOUNCE_MS = 150;
@@ -380,7 +380,7 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
 
             {model && (
               <>
-                <StudioShare
+                <ShareDialog
                   payload={applied}
                   getLink={() => absoluteLink(`#s=${encodePayload(applied)}`, window.location)}
                 />
