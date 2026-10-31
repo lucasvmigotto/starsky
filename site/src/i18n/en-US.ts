@@ -88,6 +88,7 @@ export const enUS = {
   "viewer.linkFailed": "Could not copy the link. Select the address bar and copy it.",
   "viewer.randomSky": "Load a random sky",
   "viewer.makeYourOwn": "Make your own from this sky",
+  "viewer.exploreSky": "Explore this sky",
 
   "viewer.export.png": "PNG",
   "viewer.export.svg": "SVG",
@@ -229,6 +230,7 @@ export const enUS = {
   "explorer.toolbar.layers": "Layers",
   "explorer.toolbar.search": "Search",
   "explorer.toolbar.inspector": "Inspector",
+  "explorer.toolbar.poster": "Create poster",
   "explorer.toolbar.shortcut": "{label} ({key})",
   "explorer.layers.title": "Layers",
   "explorer.layers.constellationLines": "Constellation lines",

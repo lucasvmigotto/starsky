@@ -1219,6 +1219,14 @@ select.atlas-form-input option {
   }
 }
 
+/* Secondary hand-offs under the Viewer's share and export rows. */
+.atlas-viewer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
 /*
  * Poster Studio (012-poster-studio): the preview leads and the controls sit
  * beside it on desktop; on a phone they stack, preview first. `min-width: 0`

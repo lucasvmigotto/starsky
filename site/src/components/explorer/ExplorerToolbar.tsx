@@ -17,6 +17,8 @@ interface Props {
   onToggleSearch: () => void;
   onToggleLayers: () => void;
   onToggleInspector: () => void;
+  /** Open the Poster Studio with this scene; the button shows only when given. */
+  onCreatePoster?: () => void;
   searchRef?: RefObject<HTMLButtonElement | null>;
   layersRef?: RefObject<HTMLButtonElement | null>;
   inspectorRef?: RefObject<HTMLButtonElement | null>;
@@ -35,6 +37,7 @@ function ExplorerToolbar({
   onToggleSearch,
   onToggleLayers,
   onToggleInspector,
+  onCreatePoster,
   searchRef,
   layersRef,
   inspectorRef,
@@ -144,6 +147,16 @@ function ExplorerToolbar({
       >
         {t("explorer.toolbar.inspector")}
       </button>
+      {onCreatePoster && (
+        <button
+          type="button"
+          className="explorer-tool explorer-tool-text"
+          title={t("explorer.toolbar.poster")}
+          onClick={onCreatePoster}
+        >
+          {t("explorer.toolbar.poster")}
+        </button>
+      )}
     </div>
   );
 }

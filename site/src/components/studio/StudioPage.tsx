@@ -20,14 +20,12 @@ import {
   unsupportedCharacterMessage,
   unsupportedInPosterFont,
 } from "../../lib/render/glyphs.ts";
-import { posterToExplorer } from "../../lib/scene/convert.ts";
-import { loadReturnCamera } from "../../lib/scene/returnCamera.ts";
+import { returnToExplorerHash } from "../../lib/scene/handoff.ts";
 import {
   type SharePayload,
   ShareDecodeError,
   ShareVersionError,
 } from "../../lib/share.ts";
-import { encodeExplorer } from "../../lib/sky/payload.ts";
 import {
   CANVAS_W,
   DISK_CX,
@@ -296,8 +294,7 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
 
   const returnHref = useMemo((): string | null => {
     try {
-      const camera = loadReturnCamera(applied);
-      return `#e=${encodeExplorer(posterToExplorer(applied, camera ?? undefined))}`;
+      return returnToExplorerHash(applied);
     } catch {
       return null;
     }
