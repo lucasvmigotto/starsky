@@ -1,0 +1,225 @@
+/**
+ * The inspector: what the selection is, as catalog facts and as values derived
+ * for this place and moment, plus the constellation list. A right panel on wide
+ * screens, a bottom sheet on narrow ones (the layout is CSS; this is the DOM).
+ * It takes the selection as a prop, so a camera move never reaches it.
+ */
+import { memo, useMemo } from "react";
+import type { JSX, ReactNode } from "react";
+import { t } from "../../i18n/index.ts";
+import {
+  type ConstellationDetail,
+  type StarDetail,
+  describeConstellation,
+  describeStar,
+  listConstellations,
+} from "../../lib/explorer/inspect.ts";
+import type { ObserverView } from "../../lib/explorer/observerView.ts";
+import type { SkyScene } from "../../lib/sky/scene.ts";
+import { formatDegrees, formatMagnitude } from "./format.ts";
+
+export const INSPECTOR_BODY_ID = "explorer-inspector-body";
+
+interface Props {
+  scene: SkyScene;
+  view: ObserverView;
+  selection: string | null;
+  open: boolean;
+  /** Select and center. */
+  onChoose: (id: string) => void;
+  onCenter: () => void;
+  onClear: () => void;
+  onToggle: () => void;
+  onClose: () => void;
+}
+
+function Fact({ label, children }: { label: string; children: ReactNode }): JSX.Element {
+  return (
+    <div className="explorer-fact">
+      <dt>{label}</dt>
+      <dd>{children}</dd>
+    </div>
+  );
+}
+
+function Facts({
+  heading,
+  id,
+  note,
+  children,
+}: {
+  heading: string;
+  id: string;
+  note?: string;
+  children: ReactNode;
+}): JSX.Element {
+  return (
+    <div role="group" aria-labelledby={id} className="explorer-facts">
+      <h3 id={id} className="explorer-facts-title">
+        {heading}
+      </h3>
+      <dl>{children}</dl>
+      {note !== undefined && <p className="explorer-note">{note}</p>}
+    </div>
+  );
+}
+
+function horizonText(status: "above" | "below"): string {
+  return t(status === "above" ? "explorer.inspector.horizon.above" : "explorer.inspector.horizon.below");
+}
+
+function StarFacts({ star, onChoose }: { star: StarDetail; onChoose: (id: string) => void }): JSX.Element {
+  return (
+    <>
+      <Facts heading={t("explorer.inspector.catalog")} id="explorer-facts-catalog">
+        {star.name !== null && <Fact label={t("explorer.inspector.name")}>{star.name}</Fact>}
+        <Fact label={t("explorer.inspector.hip")}>{star.hip}</Fact>
+        <Fact label={t("explorer.inspector.magnitude")}>{formatMagnitude(star.mag)}</Fact>
+        <Fact label={t("explorer.inspector.ra")}>{formatDegrees(star.raDeg, 4)}</Fact>
+        <Fact label={t("explorer.inspector.dec")}>{formatDegrees(star.decDeg, 4)}</Fact>
+      </Facts>
+      <Facts
+        heading={t("explorer.inspector.derived")}
+        id="explorer-facts-derived"
+        note={t("explorer.inspector.precision")}
+      >
+        <Fact label={t("explorer.inspector.horizon")}>{horizonText(star.horizon)}</Fact>
+        <Fact label={t("explorer.inspector.altitude")}>
+          {t("explorer.inspector.approximate", { value: formatDegrees(star.altDeg, 1) })}
+        </Fact>
+        <Fact label={t("explorer.inspector.azimuth")}>
+          {t("explorer.inspector.approximate", { value: formatDegrees(star.azDeg, 1) })}
+        </Fact>
+      </Facts>
+      {star.figures.length > 0 && (
+        <ul className="explorer-figures">
+          {star.figures.map((figure) => (
+            <li key={figure.id}>
+              <button
+                type="button"
+                className="explorer-link"
+                onClick={() => {
+                  onChoose(figure.id);
+                }}
+              >
+                {t("explorer.inspector.figureOf", { name: figure.name })}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+function ConstellationFacts({ con }: { con: ConstellationDetail }): JSX.Element {
+  return (
+    <>
+      <Facts heading={t("explorer.inspector.catalog")} id="explorer-facts-catalog">
+        <Fact label={t("explorer.inspector.abbr")}>{con.abbr}</Fact>
+        <Fact label={t("explorer.inspector.starCount")}>{con.starCount}</Fact>
+        <Fact label={t("explorer.inspector.brightest")}>
+          {t("explorer.inspector.brightestValue", {
+            name: con.brightest.title,
+            mag: formatMagnitude(con.brightest.mag),
+          })}
+        </Fact>
+      </Facts>
+      <Facts heading={t("explorer.inspector.derived")} id="explorer-facts-derived">
+        <Fact label={t("explorer.inspector.aboveCount")}>
+          {t("explorer.inspector.aboveValue", { above: con.aboveCount, total: con.starCount })}
+        </Fact>
+      </Facts>
+    </>
+  );
+}
+
+function ExplorerInspector({
+  scene,
+  view,
+  selection,
+  open,
+  onChoose,
+  onCenter,
+  onClear,
+  onToggle,
+  onClose,
+}: Props): JSX.Element {
+  const list = useMemo(() => listConstellations(scene), [scene]);
+  const detail = useMemo(() => {
+    if (selection === null) return null;
+    return describeStar(scene, view.ctx, selection) ?? describeConstellation(scene, view, selection);
+  }, [scene, view, selection]);
+  const title = detail === null ? t("explorer.inspector.label") : detail.kind === "star" ? detail.title : detail.name;
+
+  return (
+    <aside className="explorer-inspector" aria-label={t("explorer.inspector.label")} data-open={open}>
+      <button
+        type="button"
+        className="explorer-sheet-handle"
+        aria-expanded={open}
+        aria-controls={INSPECTOR_BODY_ID}
+        onClick={onToggle}
+      >
+        <span>{t(open ? "explorer.inspector.collapse" : "explorer.inspector.expand")}</span>
+        {detail !== null && <span className="explorer-sheet-title">{title}</span>}
+      </button>
+      <div id={INSPECTOR_BODY_ID} className="explorer-inspector-body" hidden={!open}>
+        <div className="explorer-inspector-head">
+          <div>
+            {detail !== null && (
+              <p className="explorer-kind">
+                {t(detail.kind === "star" ? "explorer.kind.star" : "explorer.kind.constellation")}
+              </p>
+            )}
+            <h2 className="explorer-inspector-title">{title}</h2>
+          </div>
+          <button type="button" className="explorer-close" onClick={onClose}>
+            {t("explorer.inspector.close")}
+          </button>
+        </div>
+        {detail === null ? (
+          <p className="explorer-note">{t("explorer.inspector.empty")}</p>
+        ) : (
+          <>
+            {detail.kind === "star" ? (
+              <StarFacts star={detail} onChoose={onChoose} />
+            ) : (
+              <ConstellationFacts con={detail} />
+            )}
+            <div className="explorer-actions">
+              <button type="button" className="atlas-btn-ghost explorer-action" onClick={onCenter}>
+                {t("explorer.inspector.center")}
+              </button>
+              <button type="button" className="atlas-btn-ghost explorer-action" onClick={onClear}>
+                {t("explorer.inspector.clear")}
+              </button>
+            </div>
+          </>
+        )}
+        <h3 id="explorer-list-title" className="explorer-facts-title">
+          {t("explorer.list.title")}
+        </h3>
+        <ul className="explorer-list" aria-labelledby="explorer-list-title">
+          {list.map((item) => (
+            <li key={item.id}>
+              <button
+                type="button"
+                className="explorer-list-item"
+                aria-current={item.id === selection ? "true" : undefined}
+                onClick={() => {
+                  onChoose(item.id);
+                }}
+              >
+                <span>{item.name}</span>
+                <span className="explorer-list-abbr">{item.abbr}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </aside>
+  );
+}
+
+export default memo(ExplorerInspector);

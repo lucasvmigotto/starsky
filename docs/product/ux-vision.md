@@ -159,6 +159,29 @@ dimmed and say so; selection is never shown by color alone.
 
 Copy keys for this direction live in *Key-screen copy*.
 
+**Explorer interface (011-explorer-ui).** The canvas fills the viewport; nothing
+sits over its centre.
+
+```
+desktop                                      phone (portrait and landscape)
+┌─────────────────────────────┬───────────┐  ┌──────────────────────────┬──┐
+│ moment strip        [Copy]  │ inspector │  │ moment strip   [Copy]    │⊕ │
+│ (expanded → one line)       │ 300–360px │  │ (wraps; top, never over  │⊖ │
+│                          ┌─┐│ collapsed │  │  the selection)          │⟲ │
+│                  canvas  │T││ until a   │  │          canvas          │≡ │
+│                          │o││ selection │  │                          │⌕ │
+│                          │o││ or toggle │  ├──────────────────────────┴──┤
+│                          │l││           │  │ ▲ Show details · Sirius     │
+│                          └─┘│           │  └─────────────────────────────┘
+└─────────────────────────────┴───────────┘  bottom sheet: collapsed handle,
+toolbar: top-right edge, one column          expanded half-height; 44px targets
+```
+
+The moment strip is expanded on load and during activity, one line after 2.5 s
+idle, and pinned on request; it never hides and it wraps. The sheet and panel
+share one body. Escape closes search or layers first, then clears the
+selection, and focus returns to the control that opened the panel.
+
 ## Information architecture
 
 No navigation chrome. Two surfaces, entered by intent, sharing one hash.
@@ -846,9 +869,9 @@ parts read as one sentence, asserted by `i18n.test.ts`.
 | `footer.source` | source |
 | `footer.attribution` | Star data from Hipparcos and JPL. Constellation lines from Stellarium (CC BY-SA 4.0). Place lookup by OpenStreetMap contributors. |
 
-**Explorer** (`#e=`, 010-explorer-canvas; the map only — layout, inspector and search are 011)
+**Explorer** (`#e=`; the map is 010-explorer-canvas, the interface around it is 011-explorer-ui)
 
-The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for missing star data. Its selection announcements go to one `role="status"` region and never say a star can be seen: a star below the horizon is announced as below it.
+The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for missing star data. Its selection announcements go to one `role="status"` region and never say a star can be seen: a star below the horizon is announced as below it. The inspector keeps catalog facts apart from values derived for the place and moment; altitude and azimuth read "about" and carry a note on precision (ADR-0006). Missing data is left out, not filled in.
 
 | Key | Copy |
 |---|---|
@@ -867,6 +890,69 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 | `explorer.cardinal.s` | S |
 | `explorer.cardinal.w` | W |
 | `explorer.back` | Back to the start |
+| `explorer.inspector.label` | Inspector |
+| `explorer.inspector.empty` | Nothing is selected. Choose a star or a constellation on the map, or from the list. |
+| `explorer.inspector.close` | Close inspector |
+| `explorer.inspector.expand` | Show details |
+| `explorer.inspector.collapse` | Hide details |
+| `explorer.inspector.catalog` | Catalog |
+| `explorer.inspector.derived` | For this place and moment |
+| `explorer.inspector.name` | Name |
+| `explorer.inspector.hip` | HIP number |
+| `explorer.inspector.magnitude` | Apparent magnitude |
+| `explorer.inspector.ra` | Right ascension |
+| `explorer.inspector.dec` | Declination |
+| `explorer.inspector.altitude` | Altitude |
+| `explorer.inspector.azimuth` | Azimuth |
+| `explorer.inspector.horizon` | Horizon |
+| `explorer.inspector.horizon.above` | Above the horizon |
+| `explorer.inspector.horizon.below` | Below the horizon |
+| `explorer.inspector.approximate` | about {value} |
+| `explorer.inspector.precision` | Approximate, to 0.1°. The catalog is not corrected for precession, so positions can be off by up to about 1° far from the year 2000. |
+| `explorer.inspector.figureOf` | Part of the figure of {name} |
+| `explorer.inspector.abbr` | IAU abbreviation |
+| `explorer.inspector.starCount` | Stars in the figure |
+| `explorer.inspector.aboveCount` | Above the horizon now |
+| `explorer.inspector.aboveValue` | {above} of {total} |
+| `explorer.inspector.brightest` | Brightest star |
+| `explorer.inspector.brightestValue` | {name}, magnitude {mag} |
+| `explorer.inspector.center` | Center on map |
+| `explorer.inspector.clear` | Clear selection |
+| `explorer.kind.star` | Star |
+| `explorer.kind.constellation` | Constellation |
+| `explorer.list.title` | Constellations |
+| `explorer.search.input` | Search constellations and stars |
+| `explorer.search.placeholder` | Name, abbreviation or HIP number |
+| `explorer.search.results` | Search results |
+| `explorer.search.none` | No matches. |
+| `explorer.search.countOne` | 1 result. |
+| `explorer.search.countMany` | {count} results. |
+| `explorer.search.close` | Close search |
+| `explorer.search.starDetail` | HIP {hip}, magnitude {mag} |
+| `explorer.moment.label` | Moment |
+| `explorer.moment.pin` | Keep details open |
+| `explorer.link.copy` | Copy link |
+| `explorer.link.copied` | Link copied. |
+| `explorer.link.failed` | Could not copy the link. Copy it from the address bar. |
+| `explorer.toolbar.label` | Map controls |
+| `explorer.toolbar.zoomIn` | Zoom in |
+| `explorer.toolbar.zoomOut` | Zoom out |
+| `explorer.toolbar.reset` | Reset view |
+| `explorer.toolbar.layers` | Layers |
+| `explorer.toolbar.search` | Search |
+| `explorer.toolbar.inspector` | Inspector |
+| `explorer.toolbar.shortcut` | {label} ({key}) |
+| `explorer.layers.title` | Layers |
+| `explorer.layers.constellationLines` | Constellation lines |
+| `explorer.layers.constellationLabels` | Constellation names |
+| `explorer.layers.horizon` | Horizon |
+| `explorer.layers.cardinalDirections` | Cardinal points |
+| `explorer.layers.equatorialGrid` | Equatorial grid |
+| `explorer.layers.below` | Below the horizon |
+| `explorer.layers.below.dimmed` | Dimmed |
+| `explorer.layers.below.hidden` | Hidden |
+| `explorer.layers.close` | Close layers |
+| `explorer.announced.label` | Map announcements |
 
 ---
 

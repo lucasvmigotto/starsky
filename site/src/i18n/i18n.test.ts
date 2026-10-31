@@ -103,6 +103,6 @@ describe("copy", () => {
     // `landing.title` / `.subtitle`, so the two `.legacy` keys retire.
     // 102 → 117 for the Explorer (010-explorer-canvas): heading, loading,
     // canvas label and hint, five announcements, four cardinal letters, back.
-    expect(copyKeys().length).toBe(117);
+    expect(copyKeys().length).toBe(180);
   });
 });

@@ -4,7 +4,7 @@
  * event or per frame (FR-003). Only a selection change reaches React state.
  */
 import { useEffect, useRef, useState } from "react";
-import type { JSX } from "react";
+import type { JSX, RefObject } from "react";
 import { t } from "../../i18n/index.ts";
 import { ExplorerController } from "../../lib/explorer/controller.ts";
 import { layersFromPayload } from "../../lib/explorer/layers.ts";
@@ -17,14 +17,19 @@ import { announceSelection, cardinalText } from "./announce.ts";
 interface Props {
   scene: SkyScene;
   payload: ExplorerPayload;
+  /** Told once when the controller exists, and with null when it is gone. */
+  onController?: (controller: ExplorerController | null) => void;
+  /** So the page can return focus to the map. */
+  canvasRef?: RefObject<HTMLCanvasElement | null>;
 }
 
 const HINT_ID = "explorer-canvas-hint";
 /** Wheel `deltaMode` 1 is lines; scale to roughly pixels. */
 const LINE_HEIGHT_PX = 16;
 
-export default function ExplorerCanvas({ scene, payload }: Props): JSX.Element {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+export default function ExplorerCanvas({ scene, payload, onController, canvasRef: external }: Props): JSX.Element {
+  const own = useRef<HTMLCanvasElement | null>(null);
+  const canvasRef = external ?? own;
   const [announcement, setAnnouncement] = useState("");
 
   useEffect(() => {
@@ -49,6 +54,10 @@ export default function ExplorerCanvas({ scene, payload }: Props): JSX.Element {
       requestFrame: (callback) => window.requestAnimationFrame(callback),
       cancelFrame: (handle) => {
         window.cancelAnimationFrame(handle);
+      },
+      setTimer: (callback, ms) => window.setTimeout(callback, ms),
+      clearTimer: (handle) => {
+        window.clearTimeout(handle);
       },
       draw: (plan, state) => {
         renderer.render(plan, { ...state.viewport, dpr: window.devicePixelRatio });
@@ -109,11 +118,14 @@ export default function ExplorerCanvas({ scene, payload }: Props): JSX.Element {
     observer.observe(canvas);
 
     const unsubscribe = controller.subscribe((change) => {
+      if (change.kind !== "selection") return;
       setAnnouncement(announceSelection(scene, ctx, change.selection));
     });
     setAnnouncement(t("explorer.announced.ready"));
+    onController?.(controller);
 
     return () => {
+      onController?.(null);
       unsubscribe();
       observer.disconnect();
       canvas.removeEventListener("pointerdown", onPointerDown);
@@ -127,6 +139,7 @@ export default function ExplorerCanvas({ scene, payload }: Props): JSX.Element {
       controller.dispose();
       renderer.dispose();
     };
+    // `onController` and the ref are stable for the life of the page.
   }, [scene, payload]);
 
   const label =
@@ -147,7 +160,7 @@ export default function ExplorerCanvas({ scene, payload }: Props): JSX.Element {
       <p id={HINT_ID} className="sr-only">
         {t("explorer.canvasHint")}
       </p>
-      <p role="status" className="sr-only">
+      <p role="status" aria-label={t("explorer.announced.label")} className="sr-only">
         {announcement}
       </p>
     </>

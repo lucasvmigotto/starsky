@@ -100,6 +100,9 @@ const RING_GAP_PX = 5;
 const LABEL_HEIGHT_PX = 14;
 const LABEL_CHAR_WIDTH_PX = 6.6;
 const LABEL_PAD_PX = 6;
+/** A label must not sit on a star at least this bright (magnitude at or below). */
+const BRIGHT_MAG = 2;
+const BRIGHT_CLEARANCE_PX = 4;
 /** One label per this many square pixels, so small viewports thin out first. */
 const LABEL_AREA_PX2 = 60_000;
 const LABEL_CAP_MIN = 2;
@@ -288,6 +291,71 @@ function overlaps(a: LabelMark, b: LabelMark): boolean {
   );
 }
 
+const brightStars = new WeakMap<SkyScene, number[]>();
+
+function brightIndices(scene: SkyScene): number[] {
+  let list = brightStars.get(scene);
+  if (!list) {
+    list = [];
+    scene.stars.forEach((star, i) => {
+      if (star.mag <= BRIGHT_MAG) list?.push(i);
+    });
+    brightStars.set(scene, list);
+  }
+  return list;
+}
+
+/** Screen positions of the bright stars the map draws, in catalogue order. */
+function brightScreenPoints(input: FrameInput): { x: number; y: number }[] {
+  const { scene, view, camera, viewport, layers, magLimit } = input;
+  const v = scene.vectors;
+  const out: { x: number; y: number }[] = [];
+  for (const i of brightIndices(scene)) {
+    if ((scene.stars[i]?.mag ?? Infinity) > magLimit) continue;
+    if (!starShown(layers.below, view.altitudesDeg[i] ?? 0)) continue;
+    const p = projectToViewport(
+      camera,
+      [v[i * 3] ?? 0, v[i * 3 + 1] ?? 0, v[i * 3 + 2] ?? 0],
+      viewport.width,
+      viewport.height,
+    );
+    if (p) out.push(p);
+  }
+  return out;
+}
+
+function coversStar(mark: LabelMark, stars: readonly { x: number; y: number }[]): boolean {
+  return stars.some(
+    (s) =>
+      Math.abs(mark.x - s.x) < mark.width / 2 + BRIGHT_CLEARANCE_PX &&
+      Math.abs(mark.y - s.y) < mark.height / 2 + BRIGHT_CLEARANCE_PX,
+  );
+}
+
+/** Offsets tried in order around the anchor: above, below, right, left, then corners. */
+function labelOffsets(mark: LabelMark): [number, number][] {
+  const dx = mark.width / 2 + LABEL_PAD_PX;
+  const dy = mark.height + LABEL_PAD_PX;
+  return [
+    [0, -dy],
+    [0, dy],
+    [dx, 0],
+    [-dx, 0],
+    [dx, -dy],
+    [-dx, -dy],
+    [dx, dy],
+    [-dx, dy],
+  ];
+}
+
+function clampMark(mark: LabelMark, viewport: Viewport): LabelMark {
+  return {
+    ...mark,
+    x: Math.min(viewport.width - mark.width / 2, Math.max(mark.width / 2, mark.x)),
+    y: Math.min(viewport.height - mark.height / 2, Math.max(mark.height / 2, mark.y)),
+  };
+}
+
 function planLabels(input: FrameInput): LabelMark[] {
   const { scene, view, camera, viewport, layers, selection } = input;
   if (!layers.constellationLabels) return [];
@@ -342,10 +410,25 @@ function planLabels(input: FrameInput): LabelMark[] {
   );
   const cap = Math.max(LABEL_CAP_MIN, Math.floor((viewport.width * viewport.height) / LABEL_AREA_PX2));
   const placed: LabelMark[] = [];
+  // Collisions are decided on the anchors, as before; offsets only clear bright stars.
+  const anchors: LabelMark[] = [];
+  const bright = brightScreenPoints(input);
   for (const { mark } of candidates) {
     if (placed.length >= cap) break;
-    if (placed.some((other) => overlaps(mark, other))) continue;
-    placed.push(mark);
+    if (anchors.some((other) => overlaps(mark, other))) continue;
+    let spot = mark;
+    if (coversStar(mark, bright)) {
+      for (const [ox, oy] of labelOffsets(mark)) {
+        const moved = clampMark({ ...mark, x: mark.x + ox, y: mark.y + oy }, viewport);
+        if (!coversStar(moved, bright) && !placed.some((other) => overlaps(moved, other))) {
+          spot = moved;
+          break;
+        }
+      }
+    }
+    if (placed.some((other) => overlaps(spot, other))) continue;
+    anchors.push(mark);
+    placed.push(spot);
   }
   return placed;
 }

@@ -20,7 +20,10 @@ import { DEFAULT_LAYERS, type PlanLayers } from "./layers.ts";
 import { type ObserverView, prepareObserverView } from "./observerView.ts";
 import { type Pick, pickAt } from "./pick.ts";
 
-export type ControllerChange = { kind: "selection"; selection: string | null };
+export type ControllerChange =
+  | { kind: "selection"; selection: string | null }
+  /** The view (camera, layers or selection) stopped changing; see `settleMs`. */
+  | { kind: "settled" };
 
 export interface FrameState {
   camera: ExplorerCamera;
@@ -40,6 +43,14 @@ export interface ControllerOptions {
   /** `requestAnimationFrame` in the browser; a queue in tests. */
   requestFrame: (callback: () => void) => number;
   cancelFrame?: (handle: number) => void;
+  /**
+   * Timers for the settled event. Without them the controller never settles,
+   * which is what the pure tests want; the page passes the window's.
+   */
+  setTimer?: (callback: () => void, ms: number) => number;
+  clearTimer?: (handle: number) => void;
+  /** Quiet time before a change counts as settled; default 500. */
+  settleMs?: number;
   draw: (plan: FramePlan, state: FrameState) => void;
 }
 
@@ -48,6 +59,7 @@ export const DRAG_THRESHOLD_PX = 4;
 const WHEEL_SENSITIVITY = 0.0015;
 const WHEEL_MAX_DELTA = 200;
 const KEY_ZOOM_FACTOR = 1.25;
+export const SETTLE_MS = 500;
 /** One arrow press turns the view by this share of the shorter side. */
 const KEY_ROTATE_SHARE = 0.1;
 
@@ -65,6 +77,10 @@ export class ExplorerController {
   private readonly requestFrame: ControllerOptions["requestFrame"];
   private readonly cancelFrame: ControllerOptions["cancelFrame"];
   private readonly draw: ControllerOptions["draw"];
+  private readonly setTimer: ControllerOptions["setTimer"];
+  private readonly clearTimer: ControllerOptions["clearTimer"];
+  private readonly settleMs: number;
+  private settleHandle: number | null = null;
   private camera: ExplorerCamera;
   private layers: PlanLayers;
   private selection: string | null = null;
@@ -89,6 +105,9 @@ export class ExplorerController {
     this.requestFrame = options.requestFrame;
     this.cancelFrame = options.cancelFrame;
     this.draw = options.draw;
+    this.setTimer = options.setTimer;
+    this.clearTimer = options.clearTimer;
+    this.settleMs = options.settleMs ?? SETTLE_MS;
     this.viewport = options.viewport;
     this.layers = options.layers ?? DEFAULT_LAYERS;
     this.camera = options.camera ?? initialCamera(options.ctx);
@@ -126,6 +145,8 @@ export class ExplorerController {
     this.disposed = true;
     if (this.handle !== null) this.cancelFrame?.(this.handle);
     this.handle = null;
+    if (this.settleHandle !== null) this.clearTimer?.(this.settleHandle);
+    this.settleHandle = null;
     this.listeners.clear();
   }
 
@@ -140,11 +161,34 @@ export class ExplorerController {
     if (next === this.selection) return;
     this.selection = next;
     this.invalidate();
+    this.touch();
     for (const listener of this.listeners) listener({ kind: "selection", selection: next });
   }
 
   reset(): void {
     this.setCamera(initialCamera(this.ctx));
+  }
+
+  setLayer<K extends keyof PlanLayers>(key: K, value: PlanLayers[K]): void {
+    if (this.layers[key] === value) return;
+    this.layers = { ...this.layers, [key]: value };
+    this.invalidate();
+    this.touch();
+  }
+
+  /** Zoom about the centre by `steps` key presses; positive zooms in. */
+  zoomBy(steps: number): void {
+    const { width, height } = this.viewport;
+    this.zoomTo(this.camera.fovDeg * Math.pow(KEY_ZOOM_FACTOR, -steps), width / 2, height / 2);
+  }
+
+  /** Turn the view to the star or the constellation's centre; the zoom stays. Instant. */
+  centerOn(id: string): boolean {
+    const star = this.starVector(id);
+    const target = star ?? (this.scene.constellationIndexById.has(id) ? this.constellationCentre(id) : null);
+    if (!target) return false;
+    this.lookToward(target);
+    return true;
   }
 
   pointerDown(id: number, x: number, y: number): void {
@@ -246,16 +290,43 @@ export class ExplorerController {
     const hit = this.pick(x, y);
     let target = screenRay(this.camera, x, y, width, height);
     if (hit?.kind === "star") {
-      const i = hit.index * 3;
-      target = [this.scene.vectors[i] ?? 0, this.scene.vectors[i + 1] ?? 0, this.scene.vectors[i + 2] ?? 0];
+      target = this.starVector(hit.id) ?? target;
     } else if (hit) {
-      const centre = this.constellationCentre(hit.id);
-      if (centre) target = centre;
+      target = this.constellationCentre(hit.id) ?? target;
     }
+    this.lookToward(target);
+  }
+
+  private lookToward(target: Vec3): void {
     const forward = rotate(this.camera.orientation, [0, 0, -1]);
     const delta = fromUnitVectors(forward, target);
     this.setCamera({ ...this.camera, orientation: normalize(multiply(delta, this.camera.orientation)) });
   }
+
+  private starVector(id: string): Vec3 | null {
+    const index = this.scene.starIndexById.get(id);
+    if (index === undefined) return null;
+    const v = this.scene.vectors;
+    return [v[index * 3] ?? 0, v[index * 3 + 1] ?? 0, v[index * 3 + 2] ?? 0];
+  }
+
+  /** A change happened: (re)start the quiet period that ends in `settled`. */
+  private touch(): void {
+    if (this.disposed || !this.setTimer) return;
+    if (this.settleHandle !== null) this.clearTimer?.(this.settleHandle);
+    this.settleHandle = this.setTimer(this.onSettle, this.settleMs);
+  }
+
+  private readonly onSettle = (): void => {
+    this.settleHandle = null;
+    if (this.disposed) return;
+    // Never mid-gesture: the next change or the gesture's end starts the wait again.
+    if (this.pointers.size > 0) {
+      this.touch();
+      return;
+    }
+    for (const listener of this.listeners) listener({ kind: "settled" });
+  };
 
   private readonly runFrame = (): void => {
     this.handle = null;
@@ -309,6 +380,7 @@ export class ExplorerController {
   private setCamera(camera: ExplorerCamera): void {
     this.camera = camera;
     this.invalidate();
+    this.touch();
   }
 
   private dragTo(x: number, y: number): void {
