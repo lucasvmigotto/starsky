@@ -1,14 +1,11 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0
+- Version change: 1.1.0 → 1.2.0
 - Modified principles:
-  - II. "One Normative Render Contract" → "One Renderer, One Contract"
-    (BCR-0005 removed the Python renderer; the two-renderer conformance rule
-    is void)
-  - III. "Determinism and Correctness" (dropped the Python byte-stability
-    clause; named the browser matrix; added the no-fallback font rule)
-  - IV. "Test-First, Evidence-Backed Status" (replaced "parallel-run for
-    renderer parity" with "visual regression"; named the e2e runner)
+  - II. "One Renderer, One Contract" (scoped to the poster; the Sky Explorer is
+    a separate view, not a poster renderer: ADR-0007, BCR-0011)
+  - VI. "Accessible, Self-Contained Client" (permits OpenStreetMap map tiles,
+    only after the visitor opens the location map: ADR-0008)
 - Added sections: none
 - Removed sections: none
 - Follow-up TODOs: none
@@ -36,6 +33,10 @@ glow, lines, labels, ring, caption band, fonts, share codec), and the renderer
 MUST conform to it, with a conformance test guarding the pairing. A change to a
 token is a change to the spec and the renderer together. No second
 implementation exists to keep in step.
+
+The Sky Explorer (BCR-0011) is an interactive view, not a poster output. It has
+its own renderer behind its own boundary (ADR-0007), is not governed by
+`render-spec.json`, and MUST NOT change poster output.
 
 Rationale: correctness of the poster is the top driver. A second renderer was
 pure maintenance cost and drifted (BCR-0005).
@@ -80,12 +81,14 @@ The client MUST meet WCAG 2.2 AA (keyboard reachable, visible focus, labels,
 contrast, reduced-motion respected) and MUST work in the supported browsers:
 **Chrome and Firefox**, current stable, verified by the e2e matrix. WebKit is
 untested and MUST NOT be claimed as supported (no `standalone-webkit` image).
-It MUST NOT offload poster generation to a third party; the only permitted
-outbound call is place lookup to OpenStreetMap Nominatim, from the browser.
+It MUST NOT offload poster generation to a third party. The only permitted
+outbound calls, both from the browser, are place lookup to OpenStreetMap
+Nominatim and OpenStreetMap map tiles. Tiles MUST load only after the visitor
+opens the location map, and every journey MUST work without them (ADR-0008).
 
 Rationale: the browser is the whole runtime (ADR-0001); accessibility and
-privacy are product requirements, and Nominatim is the sole approved external
-dependency.
+privacy are product requirements, and OpenStreetMap is the sole approved
+external dependency.
 
 ## Additional Constraints
 
@@ -125,4 +128,4 @@ Every plan MUST include a Constitution Check; violations MUST be justified in
 its Complexity Tracking table or the plan is rejected. Compliance is reviewed
 at the end of each build stage and by `project:status`.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-29 | **Last Amended**: 2026-09-29
+**Version**: 1.2.0 | **Ratified**: 2026-09-29 | **Last Amended**: 2026-10-31
