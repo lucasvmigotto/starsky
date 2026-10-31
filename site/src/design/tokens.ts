@@ -52,3 +52,49 @@ export type ColorToken = keyof typeof color;
  */
 export const CONTRAST_MIN_TEXT = 4.5;
 export const CONTRAST_MIN_UI = 3;
+/**
+ * The Sky Explorer's canvas palette (010-explorer-canvas, ADR-0007).
+ *
+ * Built from the interface tokens above; `render-spec.json` does not govern the
+ * Explorer. Canvas takes plain strings, so the renderer reads these constants
+ * once, never CSS variables per frame. Dimming is alpha, not a second colour, so
+ * a star below the horizon is never mistaken for a different kind of object.
+ *
+ * Text pairs (`label`, `labelBelow`, `labelSelected`, `cardinal`) clear 4.5:1 and
+ * the line/ring pairs 3:1 against `background` — `explorer-theme.test.ts` checks.
+ * `color.accent` stays off the map (see the boundary note at the top).
+ */
+export const explorer = {
+  background: color.bg,
+  star: color.text,
+  line: color.border,
+  lineSelected: color.text,
+  horizon: color.textFaint,
+  grid: color.borderSoft,
+  label: color.textMuted,
+  labelBelow: color.textFaint,
+  labelSelected: color.text,
+  cardinal: color.textMuted,
+  /** Selection ring and hover ring: a shape as well as a colour. */
+  selection: color.focus,
+  /** Background of the halo behind map text. */
+  halo: color.bg,
+  alpha: {
+    /** Stars and lines below the horizon. */
+    dim: 0.3,
+    grid: 0.7,
+    glow: 0.16,
+    halo: 0.75,
+  },
+  font: {
+    label: "12px system-ui, -apple-system, 'Segoe UI', sans-serif",
+    labelSelected: "600 12px system-ui, -apple-system, 'Segoe UI', sans-serif",
+    cardinal: "600 13px system-ui, -apple-system, 'Segoe UI', sans-serif",
+  },
+  /** Stroke widths in CSS pixels. */
+  width: { line: 1, lineSelected: 2, horizon: 1.25, grid: 1, ring: 2, hoverRing: 1 },
+  /** A glow circle is this many times the star radius. */
+  glowScale: 2.6,
+  /** Gap between a selection ring and its label. */
+  labelGap: 6,
+} as const;
