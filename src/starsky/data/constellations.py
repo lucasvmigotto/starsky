@@ -14,6 +14,7 @@ polyline form one segment each.
 
 from json import loads as json_loads
 from pathlib import Path
+from re import compile as re_compile
 from typing import Any, Final
 
 from httpx import Response as httpx_Response
@@ -28,6 +29,9 @@ IAU_INDEX_URL: Final[str] = (
     "/skycultures/modern_iau/index.json"
 )
 PARQUET_NAME: Final[str] = "constellations.parquet"
+STAR_NAMES_PARQUET_NAME: Final[str] = "star_names.parquet"
+# The index also keys names by Gaia DR3 and other catalogs; only HIP is usable.
+_HIP_KEY: Final = re_compile(r"HIP (\d+)")
 
 
 def parse_iau_index(payload: dict[str, Any]) -> pl_DataFrame:
@@ -60,6 +64,29 @@ def parse_iau_index(payload: dict[str, Any]) -> pl_DataFrame:
     )
 
 
+def parse_star_names(payload: dict[str, Any]) -> pl_DataFrame:
+    """Read ``common_names`` into (hip, name) rows, sorted by HIP number.
+
+    Only ``"HIP <int>"`` keys are kept. The name is the first entry's English
+    name, else its native name; empty names are skipped.
+    """
+    rows: dict[int, str] = {}
+    common_names: dict[str, list[dict[str, Any]]] = payload.get("common_names", {})
+    for key, entries in common_names.items():
+        match = _HIP_KEY.fullmatch(key)
+        if match is None or not entries:
+            continue
+        first: dict[str, Any] = entries[0]
+        name: str = str(first.get("english") or first.get("native") or "").strip()
+        if name:
+            rows[int(match.group(1))] = name
+    hips: list[int] = sorted(rows)
+    return pl_DataFrame(
+        {"hip": hips, "name": [rows[hip] for hip in hips]},
+        schema={"hip": pl_Int64, "name": pl_String},
+    )
+
+
 def download_iau_index(url: str = IAU_INDEX_URL) -> dict[str, Any]:
     """Download the IAU skyculture JSON (~135 KB)."""
     response: httpx_Response = httpx_get(url, follow_redirects=True, timeout=60.0)
@@ -76,5 +103,17 @@ def load_constellation_lines(cache_dir: Path | str) -> pl_DataFrame:
     if parquet_path.exists():
         return pl_read_parquet(parquet_path)
     df: pl_DataFrame = parse_iau_index(download_iau_index())
+    df.write_parquet(parquet_path)
+    return df
+
+
+def load_star_names(cache_dir: Path | str) -> pl_DataFrame:
+    """Load (hip, name) rows from the same Stellarium index (parquet-cached)."""
+    directory: Path = Path(cache_dir)
+    directory.mkdir(parents=True, exist_ok=True)
+    parquet_path: Path = directory / STAR_NAMES_PARQUET_NAME
+    if parquet_path.exists():
+        return pl_read_parquet(parquet_path)
+    df: pl_DataFrame = parse_star_names(download_iau_index())
     df.write_parquet(parquet_path)
     return df

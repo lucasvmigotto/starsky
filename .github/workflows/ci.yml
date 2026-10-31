@@ -64,6 +64,7 @@ jobs:
           uv run python -m starsky catalog --output-dir /tmp/starsky-data
           test -s /tmp/starsky-data/catalog.json
           test -s /tmp/starsky-data/constellations.json
+          test -s /tmp/starsky-data/names.json
           uv run python - <<'PY'
           import json
           from pathlib import Path
@@ -73,5 +74,8 @@ jobs:
           assert len(stars) > 8000, len(stars)
           assert len(segs) > 500, len(segs)
           assert len(stars[0]) == 4 and len(segs[0]) == 4
-          print(f"ok: {len(stars)} stars, {len(segs)} segments")
+          names = json.loads(Path("/tmp/starsky-data/names.json").read_text())["names"]
+          assert len(names) > 100, len(names)
+          assert [32349, "Sirius"] in names, "Sirius (HIP 32349) missing"
+          print(f"ok: {len(stars)} stars, {len(segs)} segments, {len(names)} names")
           PY
