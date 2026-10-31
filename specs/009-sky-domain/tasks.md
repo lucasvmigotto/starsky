@@ -4,7 +4,7 @@ Feature: `009-sky-domain` | Branch: `feat/009-sky-domain` | Input: `specs/009-sk
 
 Tests come first for every story (constitution IV). Executor `builder`, Reviewer `thinker`.
 
-- [ ] T001 [US1] Tests then `vec.ts`, `quat.ts`
+- [x] T001 [US1] Tests then `vec.ts`, `quat.ts`
 - [ ] T002 [US1] Tests then `camera.ts`: handedness, poles, RA wrap, near plane, ray round trip, drag keeps the grabbed direction under the pointer, anchored zoom
 - [ ] T003 [US2] Tests then `observer.ts`: agreement with `altAz()`, Meeus reference, zenith and nadir, azimuth wrap, initial camera
 - [ ] T004 [US3] Tests then `scene.ts`: below-horizon stars kept, stable ids, figure-based membership, segments whose stars are missing dropped
