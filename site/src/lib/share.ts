@@ -186,6 +186,10 @@ export function migrateSharePayload(data: unknown): SharePayload {
   ) {
     throw new ShareDecodeError("Invalid share payload: missing fields");
   }
+  // Rendering formats this moment and throws on a non-date, blanking the page.
+  if (Number.isNaN(new Date(record["when_utc"]).getTime())) {
+    throw new ShareDecodeError("Invalid share payload: when_utc is not a date");
+  }
   validateOptions(data as unknown as SharePayload);
   return data as unknown as SharePayload;
 }

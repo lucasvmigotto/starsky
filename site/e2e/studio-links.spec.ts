@@ -158,3 +158,16 @@ test.describe("old #s= links", () => {
     expect(new URL(page.url()).hash).toBe(`#s=${OLD_FRAGMENT}`);
   });
 });
+
+test.describe("a shared moment that is not a date", () => {
+  for (const [surface, url] of [
+    ["Viewer", viewerUrl],
+    ["Studio", studioUrl],
+  ] as const) {
+    test(`the ${surface} says the link is invalid instead of going blank`, async ({ page }) => {
+      await page.goto(url(fragmentFor({ when_utc: "not a date" })));
+      await expect(page.getByText("This link holds no sky")).toBeVisible();
+      await expect(page.getByRole("button", { name: "Explore this sky" })).toHaveCount(0);
+    });
+  }
+});
