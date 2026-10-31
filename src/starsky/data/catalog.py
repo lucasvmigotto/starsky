@@ -16,9 +16,14 @@ Proper motion is ignored: drift since J1991.25 is sub-arcminute for nearly
 all stars, far below poster resolution.
 """
 
+from collections.abc import Sequence
+from hashlib import sha256
+from logging import Logger, getLogger
 from pathlib import Path
 from typing import Final
 
+from httpx import HTTPError as httpx_HTTPError
+from httpx import Timeout as httpx_Timeout
 from httpx import stream as httpx_stream
 from polars import DataFrame as pl_DataFrame
 from polars import Float64 as pl_Float64
@@ -27,7 +32,19 @@ from polars import read_parquet as pl_read_parquet
 
 from ..settings import CatalogSettings
 
-HIPPARCOS_URL: Final[str] = "https://cdsarc.cds.unistra.fr/ftp/cats/I/239/hip_main.dat"
+logger: Final[Logger] = getLogger(__name__)
+
+# CDS first, then its CfA VizieR mirror: the file never changes, so the checksum
+# guarantees every source yields the same catalog.
+HIPPARCOS_URLS: Final[tuple[str, ...]] = (
+    "https://cdsarc.cds.unistra.fr/ftp/cats/I/239/hip_main.dat",
+    "https://vizier.cfa.harvard.edu/ftp/cats/I/239/hip_main.dat",
+)
+HIPPARCOS_SHA256: Final[str] = (
+    "58ceabb104d647160d9437ce6e513a02a036bb4ad9f8879a5a22fd52943616e0"
+)
+# A dead host should fail fast so the next source gets its turn.
+DOWNLOAD_TIMEOUT: Final[httpx_Timeout] = httpx_Timeout(120.0, connect=20.0)
 PARQUET_NAME: Final[str] = "hipparcos.parquet"
 
 
@@ -73,12 +90,40 @@ def parse_hip_main(text: str) -> pl_DataFrame:
     )
 
 
-def download_hip_main(url: str = HIPPARCOS_URL) -> str:
-    """Download ``hip_main.dat`` (~13 MB) and return its text."""
-    with httpx_stream("GET", url, follow_redirects=True, timeout=120.0) as response:
+def fetch_bytes(url: str) -> bytes:
+    """Download ``url`` and return its body."""
+    with httpx_stream(
+        "GET", url, follow_redirects=True, timeout=DOWNLOAD_TIMEOUT
+    ) as response:
         response.raise_for_status()
         chunks: list[bytes] = [chunk for chunk in response.iter_bytes()]
-    return b"".join(chunks).decode("ascii", errors="replace")
+    return b"".join(chunks)
+
+
+def download_hip_main(
+    urls: Sequence[str] = HIPPARCOS_URLS,
+    expected_sha256: str = HIPPARCOS_SHA256,
+) -> str:
+    """Download ``hip_main.dat`` (~53 MB) from the first source that serves it.
+
+    A source that fails, or whose file does not match ``expected_sha256``, is
+    skipped. Raises ``RuntimeError`` when no source yields the expected file.
+    """
+    failures: list[str] = []
+    for url in urls:
+        try:
+            body: bytes = fetch_bytes(url)
+        except httpx_HTTPError as error:
+            failures.append(f"{url}: {error!r}")
+            logger.warning("Hipparcos source failed: %s", failures[-1])
+            continue
+        digest: str = sha256(body).hexdigest()
+        if digest != expected_sha256:
+            failures.append(f"{url}: unexpected sha256 {digest}")
+            logger.warning("Hipparcos source failed: %s", failures[-1])
+            continue
+        return body.decode("ascii", errors="replace")
+    raise RuntimeError(f"No Hipparcos source succeeded: {'; '.join(failures)}")
 
 
 def load_hipparcos(

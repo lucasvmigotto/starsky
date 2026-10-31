@@ -6,7 +6,9 @@ compatibility. `starsky` itself is GPL-3.0-only (`LICENSE`).
 ## Star catalog — Hipparcos Main Catalogue (ESA 1997, CDS I/239)
 
 - Source: `https://cdsarc.cds.unistra.fr/ftp/cats/I/239/hip_main.dat`
-  (same file Skyfield uses), downloaded at first run into the ephemeris
+  (same file Skyfield uses), or its VizieR mirror at
+  `https://vizier.cfa.harvard.edu/ftp/cats/I/239/hip_main.dat`, verified by
+  SHA-256, downloaded at first run into the ephemeris
   cache dir, parsed without pandas, re-cached as parquet.
 - License: public domain (U.S. Government/ESA mission data product
   distributed freely for scientific use; no additional restrictions).
