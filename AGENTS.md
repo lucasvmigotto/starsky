@@ -50,7 +50,7 @@ cd docs/site && bun run test:e2e   # run as `bun run test:e2e`, not `bun test`
 ## Conventions
 
 - Conventional Commits (`fix(site): …`); one branch per phase or fix,
-  branched off `main` (`origin/dev` is far behind — see delivery.md);
+  branched off `dev`, which promotes to `main`;
   ask before merging, pushing, or opening PRs. Never commit to `main`
   directly; never `--no-verify`; never add co-author trailers.
 - TypeScript imports keep their `.ts`/`.tsx` extensions

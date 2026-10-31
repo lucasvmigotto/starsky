@@ -137,8 +137,6 @@ against the real service.
 
 ## Known gaps
 
-- `origin/dev` is 9 commits behind `origin/main` and carries no `site/`
-  deploy path; work branches off `main` until `dev` is caught up or retired.
 - R2 auth is being re-scoped: the token needs ListObjects on both buckets,
   and the per-site bucket variables (`..._BUCKET_STARSKY`,
   `..._BUCKET_DOCS`) must exist before either deploy job can pass validation.
