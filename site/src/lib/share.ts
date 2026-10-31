@@ -73,7 +73,7 @@ export function decodeShareFragment(fragment: string): SharePayload {
   const bytes = base64UrlToBytes(fragment);
   let raw: string;
   try {
-    raw = inflate(bytes, { to: "string" });
+    raw = inflate(bytes, { toText: true });
   } catch (error) {
     throw new ShareDecodeError(
       `Invalid share payload: ${error instanceof Error ? error.message : String(error)}`,
