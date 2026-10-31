@@ -93,7 +93,7 @@ export class Canvas2dRenderer implements ExplorerRenderer {
   private drawStars(ctx: CanvasRenderingContext2D, plan: FramePlan): void {
     ctx.fillStyle = explorer.star;
     for (const batch of plan.stars) {
-      const alpha = batch.dim ? explorer.alpha.dim : 1;
+      const alpha = batch.alpha * (batch.dim ? explorer.alpha.dim : 1);
       if (batch.glow) {
         // A restrained second circle for the brightest stars only.
         ctx.globalAlpha = alpha * explorer.alpha.glow;
