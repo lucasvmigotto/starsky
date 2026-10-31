@@ -39,7 +39,7 @@ export interface ConstellationDetail {
   starCount: number;
   /** Of those, how many are above the horizon now. */
   aboveCount: number;
-  brightest: { id: string; title: string; mag: number } | null;
+  brightest: { id: string; title: string; mag: number };
 }
 
 export interface ConstellationItem {
@@ -101,7 +101,7 @@ export function describeConstellation(
     abbr: con.abbr,
     starCount: con.memberIndices.length,
     aboveCount: above,
-    brightest: star ? { id: star.id, title: starLabel(star), mag: star.mag } : null,
+    brightest: { id: star.id, title: starLabel(star), mag: star.mag },
   };
 }
 
