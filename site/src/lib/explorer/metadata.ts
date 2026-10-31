@@ -1,7 +1,8 @@
 /**
  * The moment strip's three states (expanded, compact, pinned) as a small state
- * machine with an injected clock, and the text it shows. Activity is whatever
- * the page decides it is; this module only keeps time.
+ * machine with an injected clock, and the text it shows. It starts compact, so
+ * only the one line shows on load. Activity is whatever the page decides it is;
+ * this module only keeps time.
  */
 
 import { formatCoords } from "../caption.ts";
@@ -17,7 +18,7 @@ export interface MetadataOptions {
 }
 
 export class MetadataMachine {
-  private state: MetadataMode = "expanded";
+  private state: MetadataMode = "compact";
   private lastActivity: number;
   private readonly now: () => number;
   private readonly idleMs: number;

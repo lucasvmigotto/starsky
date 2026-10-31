@@ -119,6 +119,24 @@ describe("drag and click", () => {
     expect(changes).toEqual([{ kind: "selection", selection: "HIP:1" }]);
   });
 
+  it("lets the caller turn a tap into no selection at all, and still drags", () => {
+    const { controller, changes } = setup();
+    controller.pointerDown(1, 402, 301);
+    controller.pointerUp(1, 402, 301, { select: false });
+    expect(controller.getSelection()).toBeNull();
+    expect(changes).toEqual([]);
+    // The next tap is a normal one.
+    controller.pointerDown(3, 402, 301);
+    controller.pointerUp(3, 402, 301);
+    expect(controller.getSelection()).toBe("HIP:1");
+    // A drag still pans.
+    const before = controller.getCamera();
+    controller.pointerDown(2, 402, 301);
+    controller.pointerMove(2, 450, 340);
+    controller.pointerUp(2, 450, 340, { select: false });
+    expect(controller.getCamera()).not.toBe(before);
+  });
+
   it("treats a small wobble as a click", () => {
     const { controller } = setup();
     const before = controller.getCamera();

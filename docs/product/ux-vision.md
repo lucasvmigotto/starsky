@@ -141,7 +141,7 @@ conflict. **The sky is the product; the poster is an artifact made from it.**
 /                 landing: where do you want to explore the sky from?
 │
 ├── Explorer      #e=<payload>        primary, full-viewport celestial map
-│                 ├── adaptive metadata (expanded, compact one line, pinned)
+│                 ├── adaptive metadata (one line on load; expanded, compact, pinned)
 │                 ├── toolbar, bottom right: zoom, reset, layers, search, poster
 │                 └── inspector: right panel with a tab; bottom sheet on phones
 │
@@ -153,7 +153,8 @@ conflict. **The sky is the product; the poster is an artifact made from it.**
 ```
 
 A visitor with a `#s=` link still sees their poster first, with no form (P1).
-The metadata never disappears by default: it collapses to one line when idle.
+The metadata never disappears: it opens as one line, expands during activity
+and collapses to one line when idle.
 Constellation labels are always on and subtle. Stars below the horizon are
 dimmed and say so; selection is never shown by color alone.
 
@@ -189,6 +190,35 @@ the side panel open the toolbar sits to the panel's left, never under it. The
 sheet and panel share one body. Escape closes a star's tooltip first, then
 search or layers, then clears the selection, and focus returns to the control
 that opened the panel (the tab, on wide screens).
+
+**Idle collapse (014-explorer-polish).** The Explorer opens collapsed: only the
+one-line moment (title, place, date and time) shows, even for a link with a
+selection, which stays marked in the sky. Any pointer movement, touch, scroll or
+key press brings everything back, and after 4 s without activity the toolbar,
+the panel tab, the side panel or sheet, and the strip's pin and copy buttons
+fade out again; the line stays. Nothing hides while search or layers is open,
+while keyboard focus is on a control, while the pointer rests on a control or
+the panel, while a drag is under way, or while the strip is pinned (pinned shows
+the strip expanded). The controls fade with opacity only, so they stay in the
+tab order and the accessibility tree and keep their names; tabbing to one
+brings all of them back. With reduced motion they appear and disappear without
+a fade. A selected star or constellation stays selected and marked, and its
+panel returns with the controls.
+
+On a touch screen the first tap while the controls are hidden only wakes them
+and never selects anything in the sky; the second tap selects. A first-time
+phone visitor therefore taps once to get the controls. A mouse click selects as
+usual, because moving the mouse already woke the controls.
+
+**Star tooltip (014-explorer-polish).** Holding a mouse or pen pointer still
+over a star for 1.5 s shows a small tooltip beside it: the name (or HIP
+number), the apparent magnitude, and whether the star is above or below the
+horizon. It closes when the pointer moves to another spot, when a drag or a zoom
+starts, when the pointer leaves the map, and on Escape, which closes it before
+anything else and leaves the selection alone. It never covers the star and
+stays inside the screen. Touch and keyboard keep using selection and the panel,
+which show the same facts, so the tooltip is hidden from screen readers. It
+does not depend on the idle collapse.
 
 ## Information architecture
 

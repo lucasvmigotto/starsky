@@ -1321,7 +1321,35 @@ select.atlas-form-input option {
   }
 }
 
+/*
+ * Idle collapse (014): the controls fade out but stay in the tab order and the
+ * accessibility tree, so never display:none or visibility:hidden. Focusing one
+ * brings them all back. The one-line moment stays.
+ */
+.explorer-toolbar,
+.explorer-tab,
+.explorer-inspector,
+.explorer-moment > button {
+  transition: opacity var(--motion-duration-panel) var(--motion-ease);
+}
+
+.explorer-stage-inner[data-chrome="hidden"] :is(.explorer-toolbar, .explorer-tab, .explorer-inspector, .explorer-moment > button) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Out of the strip's flow, so the strip fits the line alone. */
+.explorer-stage-inner[data-chrome="hidden"] .explorer-moment > button {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .explorer-toolbar,
+  .explorer-tab,
+  .explorer-inspector,
+  .explorer-moment > button,
   .explorer-moment-full,
   .explorer-moment-line,
   .explorer-pin,

@@ -223,7 +223,8 @@ export class ExplorerController {
     this.dragTo(x, y);
   }
 
-  pointerUp(id: number, x: number, y: number): void {
+  /** `select: false` ends a tap without picking: the page uses it when a tap only wakes the controls. */
+  pointerUp(id: number, x: number, y: number, options: { select?: boolean } = {}): void {
     if (!this.pointers.has(id)) return;
     this.pointers.delete(id);
     if (this.pointers.size === 0) {
@@ -232,7 +233,7 @@ export class ExplorerController {
         !this.dragging &&
         Math.hypot(x - this.start.x, y - this.start.y) <= DRAG_THRESHOLD_PX;
       this.endGesture();
-      if (wasClick) this.click(x, y);
+      if (wasClick && options.select !== false) this.click(x, y);
       return;
     }
     this.continueAsDrag();

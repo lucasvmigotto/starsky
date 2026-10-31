@@ -4,10 +4,11 @@
  * here in a reducer; everything that moves lives in the controller, and the
  * link follows it without React (history.replaceState on settle).
  */
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState, useSyncExternalStore } from "react";
 import type { JSX, KeyboardEvent } from "react";
 import type { ExplorerController } from "../../lib/explorer/controller.ts";
 import { absoluteLink, bindLink, currentHash } from "../../lib/explorer/link.ts";
+import { MetadataMachine } from "../../lib/explorer/metadata.ts";
 import { createPosterHash } from "../../lib/scene/handoff.ts";
 import type { ExplorerPayload } from "../../lib/sky/payload.ts";
 import type { SkyScene } from "../../lib/sky/scene.ts";
@@ -19,6 +20,7 @@ import ExplorerMetadata from "./ExplorerMetadata.tsx";
 import ExplorerPanelTab from "./ExplorerPanelTab.tsx";
 import ExplorerSearch from "./ExplorerSearch.tsx";
 import ExplorerToolbar from "./ExplorerToolbar.tsx";
+import useChrome from "./useChrome.ts";
 
 interface Props {
   scene: SkyScene;
@@ -64,6 +66,12 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
   const tabButton = useRef<HTMLButtonElement | null>(null);
   const searchInput = useRef<HTMLInputElement | null>(null);
   const layersPanel = useRef<HTMLDivElement | null>(null);
+  const [metadata] = useState(() => new MetadataMachine({ now: () => Date.now() }));
+  const pinned = useSyncExternalStore(
+    (listener) => metadata.subscribe(listener),
+    () => metadata.mode === "pinned",
+  );
+  const chrome = useChrome({ rootRef: layoutRef, popoverOpen: panels.search || panels.layers, pinned });
 
   useEffect(() => {
     if (!controller) return;
@@ -176,13 +184,24 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
   };
 
   return (
-    <div className="explorer-stage-inner" ref={layoutRef} onKeyDownCapture={onKeyDownCapture}>
+    <div
+      className="explorer-stage-inner"
+      ref={layoutRef}
+      data-chrome={chrome.state}
+      onKeyDownCapture={onKeyDownCapture}
+    >
       <div className="explorer-view">
-        <ExplorerCanvas scene={scene} payload={payload} onController={setController} canvasRef={canvasRef} />
+        <ExplorerCanvas
+          scene={scene}
+          payload={payload}
+          onController={setController}
+          canvasRef={canvasRef}
+          wakesOnly={chrome.hiddenNow}
+        />
         {controller && (
           <>
             <div className="explorer-top">
-              <ExplorerMetadata moment={moment}>
+              <ExplorerMetadata moment={moment} machine={metadata}>
                 <ExplorerCopyLink getLink={() => absoluteLink(currentHash(controller, payload), window.location)} />
               </ExplorerMetadata>
             </div>

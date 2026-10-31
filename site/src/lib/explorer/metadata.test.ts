@@ -8,12 +8,15 @@ function setup() {
 }
 
 describe("MetadataMachine", () => {
-  it("starts expanded", () => {
-    expect(setup().machine.mode).toBe("expanded");
+  it("starts compact: only the one line shows on load", () => {
+    const { machine } = setup();
+    expect(machine.mode).toBe("compact");
+    expect(machine.msUntilCompact()).toBeNull();
   });
 
   it("goes compact after 2500 ms without activity, not before", () => {
     const { clock, machine } = setup();
+    machine.activity();
     expect(IDLE_MS).toBe(2500);
     clock.t = 2499;
     expect(machine.tick()).toBe(false);
@@ -25,6 +28,7 @@ describe("MetadataMachine", () => {
 
   it("activity restarts the idle time", () => {
     const { clock, machine } = setup();
+    machine.activity();
     clock.t = 2000;
     machine.activity();
     clock.t = 4000;
@@ -36,10 +40,8 @@ describe("MetadataMachine", () => {
     expect(machine.mode).toBe("compact");
   });
 
-  it("activity while compact expands again", () => {
-    const { clock, machine } = setup();
-    clock.t = 3000;
-    machine.tick();
+  it("activity while compact expands", () => {
+    const { machine } = setup();
     expect(machine.mode).toBe("compact");
     expect(machine.activity()).toBe(true);
     expect(machine.mode).toBe("expanded");
@@ -47,6 +49,7 @@ describe("MetadataMachine", () => {
 
   it("reports no change for activity while already expanded", () => {
     const { machine } = setup();
+    machine.activity();
     expect(machine.activity()).toBe(false);
   });
 
@@ -86,6 +89,7 @@ describe("MetadataMachine", () => {
 
   it("has no time left to wait unless expanded", () => {
     const { clock, machine } = setup();
+    machine.activity();
     expect(machine.msUntilCompact()).toBe(2500);
     machine.pin();
     expect(machine.msUntilCompact()).toBeNull();
@@ -102,15 +106,17 @@ describe("MetadataMachine", () => {
       calls++;
     });
     machine.activity();
-    expect(calls).toBe(0);
+    expect(calls).toBe(1);
+    machine.activity();
+    expect(calls).toBe(1);
     clock.t = 3000;
     machine.tick();
-    expect(calls).toBe(1);
-    machine.pin();
     expect(calls).toBe(2);
+    machine.pin();
+    expect(calls).toBe(3);
     off();
     machine.unpin();
-    expect(calls).toBe(2);
+    expect(calls).toBe(3);
   });
 });
 
