@@ -35,6 +35,15 @@ compatibility. `starsky` itself is GPL-3.0-only (`LICENSE`).
   file, which no longer exists upstream (skycultures migrated to
   `index.json`); `modern_iau` carries the same IAU line figures.
 
+## Star names — Stellarium `modern_iau` skyculture
+
+- Source: the same `skycultures/modern_iau/index.json` as the constellation
+  lines above (its `common_names` section, HIP-keyed entries only),
+  downloaded at `cache warm`, re-cached as parquet, and written to
+  `names.json` for the Sky Explorer.
+- Authors: Stellarium team. License: **CC BY-SA 4.0**; GPL-3.0
+  compatibility and attribution as for the constellation lines.
+
 ## Font — Cormorant Garamond (SIL Open Font License 1.1)
 
 - Source: `https://github.com/google/fonts` (`ofl/cormorantgaramond/`).

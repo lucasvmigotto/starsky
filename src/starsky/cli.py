@@ -1,8 +1,8 @@
 """CLI: prepare the sky data the browser consumes.
 
-The browser is the product's only renderer (BCR-0005); this CLI builds the two
-JSON files it fetches (`catalog.json`, `constellations.json`) and warms the
-local caches. It opens no socket and renders nothing.
+The browser is the product's only renderer (BCR-0005); this CLI builds the
+JSON files it fetches (`catalog.json`, `constellations.json`, `names.json`) and
+warms the local caches. It opens no socket and renders nothing.
 """
 
 from json import dumps as json_dumps
@@ -18,16 +18,21 @@ from polars import DataFrame as pl_DataFrame
 from polars import col as pl_col
 
 from .data.catalog import load_hipparcos
-from .data.constellations import load_constellation_lines
+from .data.constellations import load_constellation_lines, load_star_names
 from .settings import Settings
 from .utils.setup import setup_log
 
 
 def warm_caches(settings: Settings) -> dict[str, int]:
-    """Download and cache the star catalog and constellation lines."""
+    """Download and cache the star catalog, constellation lines and star names."""
     catalog: pl_DataFrame = load_hipparcos(settings.CATALOG)
     lines: pl_DataFrame = load_constellation_lines(settings.CATALOG.CACHE_DIR)
-    return {"stars": catalog.height, "segments": lines.height}
+    names: pl_DataFrame = load_star_names(settings.CATALOG.CACHE_DIR)
+    return {
+        "stars": catalog.height,
+        "segments": lines.height,
+        "names": names.height,
+    }
 
 
 def build_static_data(
@@ -35,7 +40,7 @@ def build_static_data(
     output_dir: Path,
     settings: Settings,
 ) -> dict[str, int]:
-    """Write ``catalog.json`` and ``constellations.json`` for the browser."""
+    """Write ``catalog.json``, ``constellations.json`` and ``names.json``."""
     catalog: pl_DataFrame = load_hipparcos(settings.CATALOG)
     lines: pl_DataFrame = load_constellation_lines(settings.CATALOG.CACHE_DIR)
     stars: list[list[float]] = [
@@ -50,6 +55,10 @@ def build_static_data(
             "abbr", "name", "hip_a", "hip_b"
         ).iter_rows()
     ]
+    star_names: pl_DataFrame = load_star_names(settings.CATALOG.CACHE_DIR)
+    names: list[list[object]] = [
+        [int(hip), str(name)] for hip, name in star_names.sort("hip").iter_rows()
+    ]
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "catalog.json").write_text(
         json_dumps({"stars": stars}), encoding="utf-8"
@@ -57,7 +66,10 @@ def build_static_data(
     (output_dir / "constellations.json").write_text(
         json_dumps({"segments": segments}), encoding="utf-8"
     )
-    return {"stars": len(stars), "segments": len(segments)}
+    (output_dir / "names.json").write_text(
+        json_dumps({"names": names}), encoding="utf-8"
+    )
+    return {"stars": len(stars), "segments": len(segments), "names": len(names)}
 
 
 @click_group(invoke_without_command=True)
@@ -82,8 +94,8 @@ def catalog_cmd(mag_limit: float, output_dir: Path) -> None:
     setup_log(settings.LOG)
     counts: dict[str, int] = build_static_data(mag_limit, output_dir, settings)
     click_echo(
-        f"exported {counts['stars']} stars, {counts['segments']} segments "
-        f"-> {output_dir}"
+        f"exported {counts['stars']} stars, {counts['segments']} segments, "
+        f"{counts['names']} names -> {output_dir}"
     )
 
 
@@ -94,8 +106,11 @@ def cache_group() -> None:
 
 @cache_group.command(name="warm")
 def cache_warm() -> None:
-    """Download the star catalog and constellation lines into the cache."""
+    """Download the star catalog, constellation lines and star names into the cache."""
     settings: Settings = Settings()
     setup_log(settings.LOG)
     counts: dict[str, int] = warm_caches(settings)
-    click_echo(f"warmed: {counts['stars']} stars, {counts['segments']} segments")
+    click_echo(
+        f"warmed: {counts['stars']} stars, {counts['segments']} segments, "
+        f"{counts['names']} names"
+    )

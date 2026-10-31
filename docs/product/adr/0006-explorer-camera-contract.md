@@ -45,7 +45,7 @@ Canvas coordinates are CSS pixels, `+y` down. Segments crossing the near plane a
 
 **Stable identifiers.** `HIP:<number>` for stars and `CON:<abbr>` for constellations.
 
-**Precision.** The catalog is epoch J1991.25, proper motion is ignored and no precession or nutation is applied. Positions may be off by up to about 0.5° for present-day dates, and more further from 1991. Altitude and azimuth are shown as approximate, to 0.1°. Better precision would be a separate decision.
+**Precision.** The catalog has J2000 axes at epoch J1991.25, proper motion is ignored and no precession or nutation is applied. Measured worst case over five reference stars (`specs/009-sky-domain/finding-precision.md`): 0.03° in 1998, about 0.3° in 2026, and about 1.2° in 1900 and 2100. Altitude and azimuth carry the same error, so they are shown as approximate; their 0.1° display is a resolution, not an accuracy. Better precision would be a separate decision.
 
 ## Consequences
 
