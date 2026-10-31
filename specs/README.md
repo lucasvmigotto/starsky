@@ -18,7 +18,7 @@ budgets underway). `003` is retired. Nothing is Verified.
 | 007 | renderer-export | P1 | 006 | Implemented | N/A | The browser is the sole renderer (ADR-0003); exports wired, `Site e2e` green on `main`; reference-regen deferred to 008 (`finding-reference-drift.md`) |
 | 008 | site-delivery | P1 | 006, 007 | In progress | N/A | R2-only deploy, font bundling, budgets, fitness functions; T002 done |
 | 009 | sky-domain | P1 | 005 | Implemented | N/A | Camera, observer, scene, `#e=`, star names, measured precision (BCR-0011, ADR-0006) |
-| 010 | explorer-canvas | P1 | 009 | In progress | N/A | Canvas 2D renderer, navigation, selection behind `#e=` (ADR-0007) |
+| 010 | explorer-canvas | P1 | 009 | Implemented | N/A | Canvas 2D renderer, navigation, selection behind `#e=` (ADR-0007) |
 
 ## Removed features
 

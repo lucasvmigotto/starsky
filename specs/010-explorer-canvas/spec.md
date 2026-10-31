@@ -1,6 +1,6 @@
 # Feature: Explorer canvas and navigation
 
-Feature: `010-explorer-canvas` | Status: In progress | Depends: 009 | Decisions: ADR-0006, ADR-0007
+Feature: `010-explorer-canvas` | Status: Implemented | Depends: 009 | Decisions: ADR-0006, ADR-0007
 
 ## Why
 
