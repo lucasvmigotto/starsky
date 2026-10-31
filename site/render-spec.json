@@ -46,6 +46,9 @@
     "coordsFormat": "{abs(lat):.4f}°N|S, {abs(lon):.4f}°E|W",
     "detailTemplate": "{coords} — {place} · {local} {tz} (place segment omitted when unresolved; title line omitted when empty)"
   },
+  "formats": {
+    "story": { "widthPx": 1080, "heightPx": 1920 }
+  },
   "fonts": ["Cormorant Garamond"],
   "shareLink": {
     "fragmentParam": "s",

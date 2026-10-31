@@ -25,6 +25,7 @@ import type { SkyModel, VisibleStar } from "../skymodel.ts";
 import { AXIS_EXTENT } from "../skymodel.ts";
 import { SPEC } from "../spec.ts";
 import { captionMaxWidth, fitCaption } from "./caption.ts";
+import { type PosterFormat, storyGeometry, storyMargin } from "./format.ts";
 
 /** The unit-disc extent the sky axes span. Re-exported so every consumer keeps
  * importing it from here; the value lives in `skymodel.ts` beside `DISK_R`. */
@@ -475,11 +476,13 @@ export function renderPoster(
   sizePx: number,
   dpr = 1,
   preview: PreviewGeometry,
+  /** Vertical offset of the poster in logical px; the story format's margin. */
+  offsetY = 0,
 ): PosterGeometry {
   const geometry = posterGeometry(sizePx);
   geometry.dpr = dpr;
 
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, offsetY * dpr);
   ctx.fillStyle = SPEC.colors.background;
   ctx.fillRect(0, 0, geometry.sizePx, geometry.canvasHeight);
 
@@ -512,16 +515,66 @@ export function renderPoster(
   return geometry;
 }
 
-/** Render into a fresh detached canvas (used by tests and the exporters). */
+/**
+ * Compose the story format (BCR-0012) onto a canvas that is already
+ * 1080 x 1920 (times `dpr`): the standard 1080 poster, offset by the margin.
+ *
+ * The circle mask clears everything outside the disc and the caption band,
+ * margins included, and the standard poster leaves the corners transparent. A
+ * story is background colour throughout, so a last `destination-over` fill under
+ * the finished poster restores both. It only touches pixels the poster left
+ * transparent, so the poster's own pixels are unchanged.
+ */
+export function renderStory(
+  ctx: CanvasRenderingContext2D,
+  payload: SharePayload,
+  model: SkyModel,
+  preview: PreviewGeometry,
+  dpr = 1,
+): PosterGeometry {
+  const { widthPx, heightPx } = storyGeometry();
+  const geometry = renderPoster(
+    ctx,
+    payload,
+    model,
+    widthPx,
+    dpr,
+    preview,
+    storyMargin(widthPx),
+  );
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = "destination-over";
+  ctx.fillStyle = SPEC.colors.background;
+  ctx.fillRect(0, 0, Math.round(widthPx * dpr), Math.round(heightPx * dpr));
+  ctx.restore();
+  return geometry;
+}
+
+/**
+ * Render into a fresh detached canvas (used by tests and the exporters).
+ * `format` defaults to the standard poster; `story` ignores `sizePx` and uses
+ * the format's own 1080 px width.
+ */
 export function renderPosterToCanvas(
   payload: SharePayload,
   model: SkyModel,
   sizePx: number,
   preview: PreviewGeometry,
   dpr = 1,
+  format: PosterFormat = "standard",
 ): HTMLCanvasElement {
-  const geometry = posterGeometry(sizePx);
   const canvas = document.createElement("canvas");
+  if (format === "story") {
+    const { widthPx, heightPx } = storyGeometry();
+    canvas.width = Math.round(widthPx * dpr);
+    canvas.height = Math.round(heightPx * dpr);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("2d canvas context unavailable");
+    renderStory(ctx, payload, model, preview, dpr);
+    return canvas;
+  }
+  const geometry = posterGeometry(sizePx);
   canvas.width = Math.round(geometry.sizePx * dpr);
   canvas.height = Math.round(geometry.canvasHeight * dpr);
   const ctx = canvas.getContext("2d");

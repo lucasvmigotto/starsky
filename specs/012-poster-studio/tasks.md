@@ -4,7 +4,7 @@ Feature: `012-poster-studio` | Branch: `feat/012-poster-studio` | Input: `specs/
 
 Tests come first (constitution IV). Executor `builder`, Reviewer `thinker`.
 
-- [ ] T001 [US3] Tests then spec entry, `format.ts`, canvas story path: 1080 × 1920, equal margins, standard output byte-identical
+- [x] T001 [US3] Tests then spec entry, `format.ts`, canvas story path: 1080 × 1920, equal margins, standard output byte-identical
 - [ ] T002 [US3] Tests then SVG and PDF story paths
 - [ ] T003 [US3] New reference image for story, in the existing reference test approach; existing images unchanged
 - [ ] T004 [US3] `ExportControls` format choice with component tests and copy
