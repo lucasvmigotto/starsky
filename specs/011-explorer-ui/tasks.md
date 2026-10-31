@@ -6,7 +6,7 @@ Tests come first (constitution IV). Executor `builder`, Reviewer `thinker`.
 
 - [x] T001 [US1] Tests then `inspect.ts`
 - [x] T002 [US2] Tests then `search.ts`
-- [ ] T003 [US3] Tests then `metadata.ts`
+- [x] T003 [US3] Tests then `metadata.ts`
 - [ ] T004 [US6] Tests then `link.ts` and controller settled event, `centerOn`, `setLayer`, `zoomBy`
 - [ ] T005 [US7] Tests then label offsets in `frame.ts`
 - [ ] T006 [US1, US2] `ExplorerInspector`, `ExplorerSearch` with component tests
