@@ -1116,22 +1116,27 @@ select.atlas-form-input option {
     max-width: none;
   }
 
-  /* A row above the sheet: within thumb reach, and off the sky's center. */
+  /*
+   * A row above the sheet: within thumb reach, and off the sky's center. It
+   * spans the screen (centered) so it wraps to a second row only when six
+   * buttons do not fit, instead of wrapping at half the width.
+   */
   .explorer-toolbar {
     top: auto;
-    right: auto;
+    right: var(--space-2);
     bottom: calc(44px + var(--space-2));
-    left: 50%;
-    transform: translateX(-50%);
-    flex-flow: row nowrap;
-    max-width: calc(100% - 2 * var(--space-2));
+    left: var(--space-2);
+    width: fit-content;
+    margin-inline: auto;
+    flex-flow: row wrap;
+    justify-content: center;
     max-height: none;
     z-index: 2;
   }
 
   .explorer-toolbar .explorer-tool {
     min-width: 44px;
-    padding-inline: var(--space-2);
+    padding-inline: var(--space-1);
     white-space: nowrap;
   }
 
@@ -1204,7 +1209,7 @@ select.atlas-form-input option {
   .explorer-toolbar {
     right: var(--space-2);
     left: auto;
-    transform: none;
+    margin-inline: 0;
   }
 }
 

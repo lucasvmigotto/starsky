@@ -43,6 +43,36 @@ export function viewerUrl(fragment: string): string {
   return `/#s=${fragment}`;
 }
 
+export function studioUrl(fragment: string): string {
+  return `/#studio=${fragment}`;
+}
+
+/** A downloaded file's bytes. */
+export async function readDownload(
+  download: import("@playwright/test").Download,
+): Promise<Buffer> {
+  const stream = await download.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks);
+}
+
+/** Width and height from a PNG's IHDR chunk (bytes 16 to 24). */
+export function pngSize(bytes: Buffer): { width: number; height: number } {
+  expect(bytes.subarray(1, 4).toString("latin1")).toBe("PNG");
+  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+}
+
+/** The page boxes of a PDF, read from its `/MediaBox` entries. */
+export function pdfPages(bytes: Buffer): { width: number; height: number }[] {
+  const text = bytes.toString("latin1");
+  return [...text.matchAll(/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/g)].map(
+    (m) => ({ width: Number(m[1]), height: Number(m[2]) }),
+  );
+}
+
 /**
  * Reveal the export formats.
  *

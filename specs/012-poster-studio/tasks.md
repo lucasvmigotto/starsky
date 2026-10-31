@@ -12,4 +12,4 @@ Tests come first (constitution IV). Executor `builder`, Reviewer `thinker`.
 - [x] T006 [US1] Tests then `draft.ts`; extract `PosterFields` with landing behavior unchanged
 - [x] T007 [US1] `StudioPage`, lazy dispatch, copy and vision tables
 - [x] T008 [US2] Viewer actions and Explorer "Create poster"
-- [ ] T009 [US1–US4] e2e: Studio live redraw, export PNG, story dimensions for PNG, SVG and PDF, Explorer ↔ Studio with camera restored, Viewer actions, old `#s=` fixtures, keyboard journey, axe, phone layout
+- [x] T009 [US1–US4] e2e: Studio live redraw, export PNG, story dimensions for PNG, SVG and PDF, Explorer ↔ Studio with camera restored, Viewer actions, old `#s=` fixtures, keyboard journey, axe, phone layout
