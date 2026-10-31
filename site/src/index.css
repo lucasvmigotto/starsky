@@ -1046,6 +1046,31 @@ select.atlas-form-input option {
   color: var(--color-text-muted);
 }
 
+/* Hover tooltip: beside the star, never taking the pointer. Placed by script before paint. */
+.explorer-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  visibility: hidden;
+  max-width: 16rem;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface) 95%, transparent);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-control);
+  pointer-events: none;
+}
+
+.explorer-tooltip-title {
+  font-size: 0.9375rem;
+}
+
+.explorer-tooltip-detail {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
 /* Inspector: a right panel that floats over the sky, so opening it never resizes the canvas. */
 .explorer-inspector {
   position: absolute;

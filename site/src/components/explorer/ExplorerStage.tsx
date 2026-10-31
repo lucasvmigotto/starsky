@@ -20,6 +20,7 @@ import ExplorerMetadata from "./ExplorerMetadata.tsx";
 import ExplorerPanelTab from "./ExplorerPanelTab.tsx";
 import ExplorerSearch from "./ExplorerSearch.tsx";
 import ExplorerToolbar from "./ExplorerToolbar.tsx";
+import ExplorerTooltip from "./ExplorerTooltip.tsx";
 import useChrome from "./useChrome.ts";
 
 interface Props {
@@ -49,6 +50,13 @@ const SHEET_QUERY = "(max-width: 47.99rem), (max-height: 32rem)";
 
 function sheetLayout(): boolean {
   return typeof window.matchMedia === "function" && window.matchMedia(SHEET_QUERY).matches;
+}
+
+/** How much of the map's right side the open side panel covers; 0 for the sheet. */
+function panelInset(): number {
+  if (sheetLayout()) return 0;
+  const panel = document.querySelector<HTMLElement>('.explorer-inspector[data-open="true"]');
+  return panel ? panel.getBoundingClientRect().width : 0;
 }
 
 export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
@@ -200,6 +208,12 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
         />
         {controller && (
           <>
+            <ExplorerTooltip
+              controller={controller}
+              scene={scene}
+              canvas={canvasRef.current}
+              rightInset={panelInset}
+            />
             <div className="explorer-top">
               <ExplorerMetadata moment={moment} machine={metadata}>
                 <ExplorerCopyLink getLink={() => absoluteLink(currentHash(controller, payload), window.location)} />

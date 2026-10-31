@@ -374,3 +374,30 @@ describe("planning", () => {
     expect(plans).toHaveLength(2);
   });
 });
+
+describe("starAt (hover tooltip)", () => {
+  it("names the star under the pointer and where it is drawn, stars only", () => {
+    const { controller } = setup();
+    const hit = controller.starAt(404, 303);
+    expect(hit?.id).toBe("HIP:1");
+    expect(hit?.x).toBeCloseTo(400, 3);
+    expect(hit?.y).toBeCloseTo(300, 3);
+  });
+
+  it("finds nothing on a constellation line or on empty sky", () => {
+    const { controller } = setup();
+    const a = project(controller.getCamera(), dirAt(10, 20));
+    const b = project(controller.getCamera(), dirAt(10, 24));
+    expect(controller.starAt((a.x + b.x) / 2, (a.y + b.y) / 2 + 3)).toBeNull();
+    expect(controller.starAt(30, 30)).toBeNull();
+  });
+
+  it("asks for no frame and changes nothing", () => {
+    const { controller, queue, flush, changes } = setup();
+    flush();
+    for (let i = 0; i < 20; i++) controller.starAt(400 + i, 300);
+    expect(queue).toHaveLength(0);
+    expect(changes).toEqual([]);
+    expect(controller.frames).toBe(1);
+  });
+});

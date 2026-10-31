@@ -1001,6 +1001,7 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 | `explorer.inspector.clear` | Clear selection |
 | `explorer.kind.star` | Star |
 | `explorer.kind.constellation` | Constellation |
+| `explorer.tooltip.detail` | Magnitude {mag} · {horizon} *(the hover tooltip; {horizon} is `explorer.inspector.horizon.above` or `.below`)* |
 | `explorer.list.title` | Constellations |
 | `explorer.list.above` | Above the horizon ({count}) |
 | `explorer.list.below` | Below the horizon ({count}) |
