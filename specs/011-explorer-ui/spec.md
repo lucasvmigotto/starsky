@@ -1,6 +1,6 @@
 # Feature: Explorer interface
 
-Feature: `011-explorer-ui` | Status: In progress | Depends: 010 | Direction: BCR-0011, D20–D23
+Feature: `011-explorer-ui` | Status: Implemented | Depends: 010 | Direction: BCR-0011, D20–D23
 
 ## Why
 

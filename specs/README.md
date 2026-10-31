@@ -19,7 +19,7 @@ budgets underway). `003` is retired. Nothing is Verified.
 | 008 | site-delivery | P1 | 006, 007 | In progress | N/A | R2-only deploy, font bundling, budgets, fitness functions; T002 done |
 | 009 | sky-domain | P1 | 005 | Implemented | N/A | Camera, observer, scene, `#e=`, star names, measured precision (BCR-0011, ADR-0006) |
 | 010 | explorer-canvas | P1 | 009 | Implemented | N/A | Canvas 2D renderer, navigation, selection behind `#e=` (ADR-0007) |
-| 011 | explorer-ui | P1 | 010 | In progress | N/A | Inspector, search, adaptive metadata, toolbar, layers, responsive layout, live link |
+| 011 | explorer-ui | P1 | 010 | Implemented | N/A | Inspector, search, adaptive metadata, toolbar, layers, responsive layout, live link |
 
 ## Removed features
 
