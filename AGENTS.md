@@ -35,7 +35,7 @@ cd docs/site && bun run test:e2e   # run as `bun run test:e2e`, not `bun test`
 
 - `src/starsky/` — CLI (`catalog`, `cache warm`) + parquet data loaders.
   Opens no socket, renders nothing.
-- `site/` — React 19 + TS 7 (`tsgo`) + Vite 6 + Tailwind 4 product app.
+- `site/` — React 19 + TS 7 (`tsgo`) + Vite 8 + Tailwind 4 product app.
   `render-spec.json` is the normative render contract (one implementation).
 - `docs/site/` — React docs site (en + pt-BR), Markdown + `llms.txt`
   generated from the same typed content (`scripts/generate_llms.ts`).
