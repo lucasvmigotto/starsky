@@ -109,6 +109,7 @@ export default function ExplorerCanvas({ scene, payload }: Props): JSX.Element {
     observer.observe(canvas);
 
     const unsubscribe = controller.subscribe((change) => {
+      if (change.kind !== "selection") return;
       setAnnouncement(announceSelection(scene, ctx, change.selection));
     });
     setAnnouncement(t("explorer.announced.ready"));
