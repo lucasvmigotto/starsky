@@ -607,6 +607,11 @@ select.atlas-form-input option {
   margin-top: 0.75rem;
 }
 
+/* The layout choice sits above the format buttons, on its own row. */
+.atlas-export-layout {
+  flex-basis: 100%;
+}
+
 /* `hidden` must win over the flex display above. */
 .atlas-export-actions[hidden] {
   display: none;
@@ -1111,22 +1116,27 @@ select.atlas-form-input option {
     max-width: none;
   }
 
-  /* A row above the sheet: within thumb reach, and off the sky's center. */
+  /*
+   * A row above the sheet: within thumb reach, and off the sky's center. It
+   * spans the screen (centered) so it wraps to a second row only when six
+   * buttons do not fit, instead of wrapping at half the width.
+   */
   .explorer-toolbar {
     top: auto;
-    right: auto;
+    right: var(--space-2);
     bottom: calc(44px + var(--space-2));
-    left: 50%;
-    transform: translateX(-50%);
-    flex-flow: row nowrap;
-    max-width: calc(100% - 2 * var(--space-2));
+    left: var(--space-2);
+    width: fit-content;
+    margin-inline: auto;
+    flex-flow: row wrap;
+    justify-content: center;
     max-height: none;
     z-index: 2;
   }
 
   .explorer-toolbar .explorer-tool {
     min-width: 44px;
-    padding-inline: var(--space-2);
+    padding-inline: var(--space-1);
     white-space: nowrap;
   }
 
@@ -1199,7 +1209,7 @@ select.atlas-form-input option {
   .explorer-toolbar {
     right: var(--space-2);
     left: auto;
-    transform: none;
+    margin-inline: 0;
   }
 }
 
@@ -1211,5 +1221,63 @@ select.atlas-form-input option {
   .explorer-tool,
   .explorer-action {
     transition: none;
+  }
+}
+
+/* Secondary hand-offs under the Viewer's share and export rows. */
+.atlas-viewer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/*
+ * Poster Studio (012-poster-studio): the preview leads and the controls sit
+ * beside it on desktop; on a phone they stack, preview first. `min-width: 0`
+ * on both columns keeps a wide child from pushing the page past the viewport.
+ */
+.atlas-studio {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.atlas-studio-preview,
+.atlas-studio-side {
+  min-width: 0;
+}
+
+.atlas-studio-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.atlas-studio-side {
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
+}
+
+.atlas-studio-side .atlas-export {
+  margin-top: 0;
+}
+
+.atlas-studio-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+@media (min-width: 64rem) {
+  .atlas-studio {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .atlas-studio-preview {
+    position: sticky;
+    top: 1rem;
   }
 }

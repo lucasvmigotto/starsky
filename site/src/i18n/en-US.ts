@@ -48,6 +48,14 @@ export const enUS = {
   "studio.title.label": "Title",
   "studio.title.placeholder": "Our first flat",
   "studio.updated": "Map updated",
+  "studio.poster.heading": "Poster Studio",
+  "studio.poster.subtitle": "Compose the poster, then export it or copy a link.",
+  "studio.sky.legend": "Sky",
+  "studio.observation.legend": "Observation",
+  "studio.summary.note":
+    "Place and moment come from the sky you started with. Start again from the start page to change them.",
+  "studio.returnToExplorer": "Return to Explorer",
+  "studio.back": "Back to the start",
 
   "viewer.heading.default": "This night sky",
   "viewer.heading.abovePlace": "Night sky above {place}",
@@ -80,6 +88,7 @@ export const enUS = {
   "viewer.linkFailed": "Could not copy the link. Select the address bar and copy it.",
   "viewer.randomSky": "Load a random sky",
   "viewer.makeYourOwn": "Make your own from this sky",
+  "viewer.exploreSky": "Explore this sky",
 
   "viewer.export.png": "PNG",
   "viewer.export.svg": "SVG",
@@ -92,6 +101,9 @@ export const enUS = {
   "viewer.export.close": "Close export",
   "viewer.export.formats": "Export formats",
   "viewer.export.preparing": "Preparing {format}…",
+  "viewer.export.layout": "Layout",
+  "viewer.export.layout.standard": "Standard",
+  "viewer.export.layout.story": "Story (9:16)",
 
   "empty.title": "No sky on this page yet",
   "figures.legend": "Figures in this sky",
@@ -218,6 +230,7 @@ export const enUS = {
   "explorer.toolbar.layers": "Layers",
   "explorer.toolbar.search": "Search",
   "explorer.toolbar.inspector": "Inspector",
+  "explorer.toolbar.poster": "Create poster",
   "explorer.toolbar.shortcut": "{label} ({key})",
   "explorer.layers.title": "Layers",
   "explorer.layers.constellationLines": "Constellation lines",

@@ -37,6 +37,9 @@ export const SPEC = {
     detailFontSize: 10.5,
     singleCaptionFontSize: 11,
   },
+  formats: {
+    story: { widthPx: 1080, heightPx: 1920 },
+  },
   shareLink: {
     fragmentParam: "s",
     payloadVersion: 1,

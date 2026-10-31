@@ -12,6 +12,7 @@ import { describe, expect, it } from "bun:test";
 import { encodePayload } from "./encode.ts";
 import {
   decodeShareFragment,
+  ShareDecodeError,
   type SharePayload,
 } from "./share.ts";
 import { SAMPLE_FRAGMENTS } from "./site.ts";
@@ -124,5 +125,12 @@ describe("BCR-0008 — out-of-range options are rejected", () => {
       options: { ...payload().options, magnitude_limit: Number.POSITIVE_INFINITY },
     };
     expect(() => encodePayload(bad)).toThrow(/non-finite/);
+  });
+});
+
+describe("the moment in a share link", () => {
+  it("rejects a moment that is not a date, which would otherwise blank the page", () => {
+    const bad = encodePayload({ ...payload(), when_utc: "not a date" });
+    expect(() => decodeShareFragment(bad)).toThrow(ShareDecodeError);
   });
 });

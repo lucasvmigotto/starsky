@@ -23,7 +23,7 @@ if (!domReady) {
 }
 
 const { cleanup, render, screen } = await import("@testing-library/react");
-const { default: ExportControls, EXPORT_SIZE_PX } = await import(
+const { default: ExportControls, EXPORT_SIZE_PX, STORY_EXPORT_SIZE_PX } = await import(
   "./ExportControls.tsx"
 );
 const { act } = await import("react");
@@ -80,6 +80,11 @@ function openFormats(): void {
       trigger.click();
     });
   }
+}
+
+function radioChecked(name: string): boolean {
+  const radio: unknown = screen.getByRole("radio", { name });
+  return radio instanceof HTMLInputElement && radio.checked;
 }
 
 describe("ExportControls", () => {
@@ -235,5 +240,89 @@ describe("ExportControls", () => {
     } finally {
       URL.createObjectURL = original;
     }
+  });
+
+  describe("layout choice (BCR-0012)", () => {
+    it("offers Standard and Story as a labelled radio group, Standard selected", () => {
+      render(<ExportControls payload={makePayload()} model={MODEL} />);
+      openFormats();
+      const group = screen.getByRole("radiogroup", { name: "Layout" });
+      expect(group).toBeDefined();
+      const standard = screen.getByRole("radio", { name: "Standard" });
+      const story = screen.getByRole("radio", { name: "Story (9:16)" });
+      expect((standard as HTMLInputElement).checked).toBe(true);
+      expect((story as HTMLInputElement).checked).toBe(false);
+    });
+
+    it("is keyboard reachable: native radios, no positive tabindex", () => {
+      render(<ExportControls payload={makePayload()} model={MODEL} />);
+      openFormats();
+      for (const name of ["Standard", "Story (9:16)"]) {
+        const radio = screen.getByRole("radio", { name });
+        expect(radio.getAttribute("type")).toBe("radio");
+        expect(radio.getAttribute("tabindex")).toBeNull();
+        expect(radio.hasAttribute("disabled")).toBe(false);
+      }
+    });
+
+    it("keeps standard filenames unchanged", () => {
+      render(<ExportControls payload={makePayload()} model={MODEL} />);
+      openFormats();
+      act(() => {
+        screen.getByRole("button", { name: "SVG" }).click();
+      });
+      expect(screen.getByRole("status").textContent).toBe(
+        t("viewer.export.done", { filename: "export-night.svg" }),
+      );
+    });
+
+    it("names the story file in the status, and exports a 1080 x 1920 SVG", async () => {
+      const blobs: Blob[] = [];
+      const original = URL.createObjectURL.bind(URL);
+      URL.createObjectURL = (blob: Blob): string => {
+        blobs.push(blob);
+        return original(blob);
+      };
+      try {
+        render(<ExportControls payload={makePayload()} model={MODEL} />);
+        openFormats();
+        act(() => {
+          screen.getByRole("radio", { name: "Story (9:16)" }).click();
+        });
+        expect(radioChecked("Story (9:16)")).toBe(true);
+        act(() => {
+          screen.getByRole("button", { name: "SVG" }).click();
+        });
+        expect(screen.getByRole("status").textContent).toBe(
+          t("viewer.export.done", { filename: "export-night-story.svg" }),
+        );
+        const svg = await (blobs[0]).text();
+        expect(svg).toContain('width="1080" height="1920"');
+      } finally {
+        URL.createObjectURL = original;
+      }
+    });
+
+    it("is not stored anywhere: not in the link, not in storage, gone on remount", () => {
+      window.sessionStorage.clear();
+      window.localStorage.clear();
+      const hash = window.location.hash;
+      const first = render(<ExportControls payload={makePayload()} model={MODEL} />);
+      openFormats();
+      act(() => {
+        screen.getByRole("radio", { name: "Story (9:16)" }).click();
+      });
+      expect(window.location.hash).toBe(hash);
+      expect(window.sessionStorage.length).toBe(0);
+      expect(window.localStorage.length).toBe(0);
+      first.unmount();
+      render(<ExportControls payload={makePayload()} model={MODEL} />);
+      openFormats();
+      expect(radioChecked("Standard")).toBe(true);
+    });
+
+    it("exports story at its own 1080 px size, not the standard export size", () => {
+      expect(STORY_EXPORT_SIZE_PX).toBe(1080);
+    });
   });
 });

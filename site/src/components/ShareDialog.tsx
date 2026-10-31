@@ -17,6 +17,11 @@ import type { SharePayload } from "../lib/share.ts";
 
 interface Props {
   payload: SharePayload;
+  /**
+   * The link to copy; defaults to the current address. The Studio passes its
+   * `#s=` link, so the copy is the finished sky and never the `#studio=` draft.
+   */
+  getLink?: () => string;
 }
 
 /** What the recipient gets: place, moment, and the settings that change the sky. */
@@ -26,7 +31,7 @@ function sceneSummary(payload: SharePayload): string {
   return `${where} · ${when} · ${payload.options.projection} projection · mag ${payload.options.magnitude_limit.toFixed(1)}`;
 }
 
-export default function ShareDialog({ payload }: Props) {
+export default function ShareDialog({ payload, getLink }: Props) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState("");
   const panelId = "share-details";
@@ -34,7 +39,7 @@ export default function ShareDialog({ payload }: Props) {
 
   const copyLink = async (): Promise<void> => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(getLink ? getLink() : window.location.href);
       setStatus(t("viewer.linkCopied"));
     } catch {
       setStatus(t("viewer.linkFailed"));

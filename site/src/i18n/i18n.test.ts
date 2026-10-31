@@ -103,6 +103,9 @@ describe("copy", () => {
     // `landing.title` / `.subtitle`, so the two `.legacy` keys retire.
     // 102 → 117 for the Explorer (010-explorer-canvas): heading, loading,
     // canvas label and hint, five announcements, four cardinal letters, back.
-    expect(copyKeys().length).toBe(180);
+    // 180 → 183 for the export layout choice (012-poster-studio, BCR-0012).
+    // 183 → 190 for the Poster Studio page (012-poster-studio).
+    // 190 → 192 for the Explorer and Viewer hand-offs (012-poster-studio).
+    expect(copyKeys().length).toBe(192);
   });
 });

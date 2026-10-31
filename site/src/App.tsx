@@ -7,6 +7,8 @@ import { fragmentFromHash } from "./lib/share.ts";
 
 // The Explorer is its own chunk: `#s=` and the landing never download it.
 const ExplorerPage = lazy(() => import("./components/explorer/ExplorerPage.tsx"));
+// So is the Poster Studio: only `#studio=` downloads it.
+const StudioPage = lazy(() => import("./components/studio/StudioPage.tsx"));
 
 /**
  * The `#e=` hash, or null. Deliberately not `explorerFragmentFromHash`: that
@@ -16,6 +18,12 @@ const ExplorerPage = lazy(() => import("./components/explorer/ExplorerPage.tsx")
 function explorerHash(): string | null {
   const { hash } = window.location;
   return hash.startsWith("#e=") && hash.length > 3 ? hash : null;
+}
+
+/** The `#studio=` hash, or null. Kept here for the same reason as `explorerHash`. */
+function studioHash(): string | null {
+  const { hash } = window.location;
+  return hash.startsWith("#studio=") && hash.length > 8 ? hash : null;
 }
 
 function hasShareFragment(): boolean {
@@ -32,10 +40,12 @@ function hasShareFragment(): boolean {
 function Root() {
   const [ready, setReady] = useState(hasShareFragment);
   const [explorer, setExplorer] = useState(explorerHash);
+  const [studio, setStudio] = useState(studioHash);
   useEffect(() => {
     const onHash = () => {
       setReady(hasShareFragment());
       setExplorer(explorerHash());
+      setStudio(studioHash());
     };
     window.addEventListener("hashchange", onHash);
     return () => {
@@ -54,6 +64,22 @@ function Root() {
         }
       >
         <ExplorerPage key={explorer} />
+      </Suspense>
+    );
+  }
+  if (studio !== null) {
+    // Keyed by the fragment so a pasted `#studio=` link replaces the draft; the
+    // page's own `replaceState` writes raise no `hashchange`, so editing never
+    // remounts it.
+    return (
+      <Suspense
+        fallback={
+          <p className="atlas-loading" role="status">
+            {t("viewer.loading")}
+          </p>
+        }
+      >
+        <StudioPage key={studio} />
       </Suspense>
     );
   }

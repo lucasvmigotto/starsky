@@ -51,6 +51,31 @@ afterEach(() => {
   cleanup();
 });
 
+describe("ExplorerToolbar: Create poster", () => {
+  it("is offered once the page can act on it, and asks for the poster", () => {
+    const world = makeController();
+    let created = 0;
+    render(
+      <ExplorerToolbar
+        controller={world.controller}
+        searchOpen={false}
+        layersOpen={false}
+        inspectorOpen={false}
+        onToggleSearch={() => {}}
+        onToggleLayers={() => {}}
+        onToggleInspector={() => {}}
+        onCreatePoster={() => {
+          created++;
+        }}
+      />,
+    );
+    const button = screen.getByRole("button", { name: "Create poster" });
+    expect(button.tagName).toBe("BUTTON");
+    fireEvent.click(button);
+    expect(created).toBe(1);
+  });
+});
+
 describe("ExplorerToolbar", () => {
   it("offers named buttons for zoom, reset, layers, search and the inspector", () => {
     mount();

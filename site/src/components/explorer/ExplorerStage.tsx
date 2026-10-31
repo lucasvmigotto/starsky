@@ -8,6 +8,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { JSX, KeyboardEvent } from "react";
 import type { ExplorerController } from "../../lib/explorer/controller.ts";
 import { absoluteLink, bindLink, currentHash } from "../../lib/explorer/link.ts";
+import { createPosterHash } from "../../lib/scene/handoff.ts";
 import type { ExplorerPayload } from "../../lib/sky/payload.ts";
 import type { SkyScene } from "../../lib/sky/scene.ts";
 import ExplorerCanvas from "./ExplorerCanvas.tsx";
@@ -158,6 +159,12 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
     event.stopPropagation();
   };
 
+  /** Leave for the Studio with this scene; the camera is remembered for the way back. */
+  const createPoster = useCallback((): void => {
+    if (!controller) return;
+    window.location.hash = createPosterHash(payload, controller.getCamera());
+  }, [controller, payload]);
+
   const moment = {
     lat: payload.lat,
     lon: payload.lon,
@@ -185,6 +192,7 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
               onToggleSearch={toggleSearch}
               onToggleLayers={toggleLayers}
               onToggleInspector={toggleInspector}
+              onCreatePoster={createPoster}
               searchRef={searchButton}
               layersRef={layersButton}
               inspectorRef={inspectorButton}

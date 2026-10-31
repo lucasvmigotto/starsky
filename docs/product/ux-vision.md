@@ -275,12 +275,32 @@ opens `#studio=` and lands in an editor rather than on the map they were sent.
 ### F3 — Keep it (P2, P3)
 
 Entry: from the Viewer, once the map is right.
-1. Choose PNG, SVG or PDF.
+1. Choose a layout, Standard or Story (9:16, 1080 × 1920), then PNG, SVG or PDF.
+   The layout is chosen at export time and is never part of a link.
 2. Export renders at print resolution; the PNG is the current view.
 3. Confirm completion in place, next to the button that started it.
 
 **Secondary by design** (principle 3), but one click from the map — it is the
 most *personal* action in the product, so it is never more than two steps away.
+
+### F4 — Make a poster from the sky, and come back (012-poster-studio)
+
+Entry: the Explorer toolbar's "Create poster", or the Viewer's "Make your own
+from this sky".
+1. The Studio opens as `#studio=` with the same place, moment, timezone, title
+   and magnitude (clamped to what a share link accepts), and default poster
+   composition. From the Viewer it opens with the shared poster itself.
+2. Tune the poster-only controls. The preview follows after a short pause; the
+   fragment follows it with `replaceState`.
+3. "Return to Explorer" opens the same scene at the camera the visitor left, if
+   this tab still remembers it, and at the initial view if not. That memory is
+   per tab, held only in `sessionStorage`, and never appears in a link.
+4. In the Viewer, "Explore this sky" opens the Explorer for the poster's place
+   and moment. The `#s=` link is not rewritten.
+
+A title the poster face cannot draw is refused in the Studio, as on the
+landing. One that arrives from the Explorer or a link loses the characters it
+cannot draw and the Studio says so, as the Viewer does.
 
 ---
 
@@ -748,6 +768,13 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `studio.title.label` | Title |
 | `studio.title.placeholder` | Our first flat |
 | `studio.updated` | Map updated |
+| `studio.poster.heading` | Poster Studio |
+| `studio.poster.subtitle` | Compose the poster, then export it or copy a link. |
+| `studio.sky.legend` | Sky |
+| `studio.observation.legend` | Observation |
+| `studio.summary.note` | Place and moment come from the sky you started with. Start again from the start page to change them. |
+| `studio.returnToExplorer` | Return to Explorer |
+| `studio.back` | Back to the start |
 
 **Viewer**
 
@@ -779,7 +806,11 @@ so an empty state can override the wording later without touching three files.
 | `viewer.export.close` | Close export |
 | `viewer.export.formats` | Export formats |
 | `viewer.export.preparing` | Preparing {format}… |
+| `viewer.export.layout` | Layout |
+| `viewer.export.layout.standard` | Standard |
+| `viewer.export.layout.story` | Story (9:16) |
 | `viewer.makeYourOwn` | Make your own from this sky |
+| `viewer.exploreSky` | Explore this sky |
 
 The disclosure trigger carries **two** keys rather than one key plus a suffix.
 The format group carries its own name (`viewer.export.formats`) via
@@ -941,6 +972,7 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 | `explorer.toolbar.layers` | Layers |
 | `explorer.toolbar.search` | Search |
 | `explorer.toolbar.inspector` | Inspector |
+| `explorer.toolbar.poster` | Create poster |
 | `explorer.toolbar.shortcut` | {label} ({key}) |
 | `explorer.layers.title` | Layers |
 | `explorer.layers.constellationLines` | Constellation lines |

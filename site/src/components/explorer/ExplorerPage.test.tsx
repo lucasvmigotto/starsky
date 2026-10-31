@@ -147,7 +147,8 @@ describe("ExplorerPage interface", () => {
     expect(screen.getByRole("region", { name: "Moment" }).textContent).toContain("Night one");
     const toggle = screen.getByRole("button", { name: "Inspector" });
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.queryByRole("button", { name: /poster/i })).toBeNull();
+    // 012-poster-studio: the toolbar now offers the way into the Studio.
+    expect(screen.getByRole("button", { name: "Create poster" })).toBeTruthy();
     fireEvent.click(toggle);
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByRole("list", { name: "Constellations" })).toBeTruthy();

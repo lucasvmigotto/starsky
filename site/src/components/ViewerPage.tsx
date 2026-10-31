@@ -294,6 +294,27 @@ export default function ViewerPage() {
   }, [animateView]);
 
   /*
+   * Hand the shared sky to the Explorer or the Studio. Dynamic imports keep the
+   * scene codecs out of the Viewer's own chunk; the `#s=` link is never
+   * rewritten, the visitor simply moves on and can come back to it.
+   */
+  const goTo = useCallback(
+    async (target: "explore" | "studio"): Promise<void> => {
+      if (link.kind !== "ready") return;
+      try {
+        const handoff = await import("../lib/scene/handoff.ts");
+        window.location.hash =
+          target === "explore"
+            ? handoff.exploreHash(link.payload)
+            : handoff.seedStudioHash(link.payload);
+      } catch {
+        // A chunk that fails to load leaves the poster in place.
+      }
+    },
+    [link],
+  );
+
+  /*
    * A pointer, wheel or keyboard gesture, applied directly.
    *
    * Not `animateView`: the pointer is the easing curve, and a tween under a
@@ -474,6 +495,27 @@ export default function ViewerPage() {
             {model && <ShareDialog payload={payload} />}
 
             {model && <ExportControls payload={payload} model={model} />}
+
+            <div className="atlas-viewer-actions">
+              <button
+                type="button"
+                className="atlas-btn-ghost"
+                onClick={() => {
+                  void goTo("explore");
+                }}
+              >
+                {t("viewer.exploreSky")}
+              </button>
+              <button
+                type="button"
+                className="atlas-btn-ghost"
+                onClick={() => {
+                  void goTo("studio");
+                }}
+              >
+                {t("viewer.makeYourOwn")}
+              </button>
+            </div>
 
             {/*
               Async outcomes (000-design-system T035). `sr-only` keeps it out of
