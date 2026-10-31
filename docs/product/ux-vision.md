@@ -159,6 +159,29 @@ dimmed and say so; selection is never shown by color alone.
 
 Copy keys for this direction live in *Key-screen copy*.
 
+**Explorer interface (011-explorer-ui).** The canvas fills the viewport; nothing
+sits over its centre.
+
+```
+desktop                                      phone (portrait and landscape)
+┌─────────────────────────────┬───────────┐  ┌──────────────────────────┬──┐
+│ moment strip        [Copy]  │ inspector │  │ moment strip   [Copy]    │⊕ │
+│ (expanded → one line)       │ 300–360px │  │ (wraps; top, never over  │⊖ │
+│                          ┌─┐│ collapsed │  │  the selection)          │⟲ │
+│                  canvas  │T││ until a   │  │          canvas          │≡ │
+│                          │o││ selection │  │                          │⌕ │
+│                          │o││ or toggle │  ├──────────────────────────┴──┤
+│                          │l││           │  │ ▲ Show details · Sirius     │
+│                          └─┘│           │  └─────────────────────────────┘
+└─────────────────────────────┴───────────┘  bottom sheet: collapsed handle,
+toolbar: top-right edge, one column          expanded half-height; 44px targets
+```
+
+The moment strip is expanded on load and during activity, one line after 2.5 s
+idle, and pinned on request; it never hides and it wraps. The sheet and panel
+share one body. Escape closes search or layers first, then clears the
+selection, and focus returns to the control that opened the panel.
+
 ## Information architecture
 
 No navigation chrome. Two surfaces, entered by intent, sharing one hash.
@@ -846,9 +869,9 @@ parts read as one sentence, asserted by `i18n.test.ts`.
 | `footer.source` | source |
 | `footer.attribution` | Star data from Hipparcos and JPL. Constellation lines from Stellarium (CC BY-SA 4.0). Place lookup by OpenStreetMap contributors. |
 
-**Explorer** (`#e=`, 010-explorer-canvas; the map only — layout, inspector and search are 011)
+**Explorer** (`#e=`; the map is 010-explorer-canvas, the interface around it is 011-explorer-ui)
 
-The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for missing star data. Its selection announcements go to one `role="status"` region and never say a star can be seen: a star below the horizon is announced as below it.
+The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for missing star data. Its selection announcements go to one `role="status"` region and never say a star can be seen: a star below the horizon is announced as below it. The inspector keeps catalog facts apart from values derived for the place and moment; altitude and azimuth read "about" and carry a note on precision (ADR-0006). Missing data is left out, not filled in.
 
 | Key | Copy |
 |---|---|
@@ -929,6 +952,7 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 | `explorer.layers.below.dimmed` | Dimmed |
 | `explorer.layers.below.hidden` | Hidden |
 | `explorer.layers.close` | Close layers |
+| `explorer.announced.label` | Map announcements |
 
 ---
 

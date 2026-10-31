@@ -229,6 +229,7 @@ export const enUS = {
   "explorer.layers.below.dimmed": "Dimmed",
   "explorer.layers.below.hidden": "Hidden",
   "explorer.layers.close": "Close layers",
+  "explorer.announced.label": "Map announcements",
 } as const;
 
 export type CopyKey = keyof typeof enUS;

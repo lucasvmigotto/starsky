@@ -14,7 +14,7 @@ import {
 } from "../../lib/sky/payload.ts";
 import { type SkyScene, prepareScene } from "../../lib/sky/scene.ts";
 import type { SegmentRow } from "../../lib/skymodel.ts";
-import ExplorerCanvas from "./ExplorerCanvas.tsx";
+import ExplorerStage from "./ExplorerStage.tsx";
 
 const DATA_BASE = `${import.meta.env.BASE_URL}data/`;
 
@@ -139,7 +139,7 @@ export default function ExplorerPage(): JSX.Element {
     <main className="explorer-stage">
       <h1 className="sr-only">{t("explorer.heading")}</h1>
       {scene ? (
-        <ExplorerCanvas scene={scene} payload={link.payload} />
+        <ExplorerStage scene={scene} payload={link.payload} />
       ) : (
         <p className="atlas-loading" role="status">
           {t("explorer.loading")}

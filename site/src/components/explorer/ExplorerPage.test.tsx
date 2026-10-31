@@ -11,7 +11,7 @@ if (!domReady) {
   GlobalRegistrator.register({ url: "http://localhost/" });
 }
 
-const { cleanup, render, screen, waitFor } = await import("@testing-library/react");
+const { cleanup, fireEvent, render, screen, waitFor } = await import("@testing-library/react");
 const { default: ExplorerPage, loadScene, resetSceneCache } = await import("./ExplorerPage.tsx");
 const { encodeExplorer } = await import("../../lib/sky/payload.ts");
 
@@ -120,7 +120,78 @@ describe("ExplorerPage", () => {
     expect(canvas.getAttribute("tabindex")).toBe("0");
     expect(canvas.getAttribute("aria-describedby")).toBeTruthy();
     await waitFor(() => {
-      expect(screen.getByRole("status").textContent).toBe("Sky Explorer ready.");
+      expect(screen.getByRole("status", { name: "Map announcements" }).textContent).toBe("Sky Explorer ready.");
     });
+  });
+});
+
+describe("ExplorerPage interface", () => {
+  const route = (url: string): unknown =>
+    url.endsWith("catalog.json")
+      ? CATALOG
+      : url.endsWith("constellations.json")
+        ? SEGMENTS
+        : url.endsWith("names.json")
+          ? { names: [[32349, "Sirius"]] }
+          : null;
+
+  async function open() {
+    window.location.hash = `#e=${encodeExplorer({ ...PAYLOAD, title: "Night one" })}`;
+    stubFetch(route);
+    render(<ExplorerPage />);
+    await screen.findByRole("toolbar", { name: "Map controls" });
+  }
+
+  it("shows the moment strip, the toolbar, and an inspector closed until needed", async () => {
+    await open();
+    expect(screen.getByRole("region", { name: "Moment" }).textContent).toContain("Night one");
+    const toggle = screen.getByRole("button", { name: "Inspector" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByRole("button", { name: /poster/i })).toBeNull();
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByRole("list", { name: "Constellations" })).toBeTruthy();
+  });
+
+  it("opens layers with focus inside, and Escape closes them and returns focus", async () => {
+    await open();
+    const layers = screen.getByRole("button", { name: "Layers" });
+    fireEvent.click(layers);
+    expect(document.activeElement?.getAttribute("type")).toBe("checkbox");
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    expect(screen.queryByRole("group", { name: "Layers" })).toBeNull();
+    expect(document.activeElement).toBe(layers);
+  });
+
+  it("searches, selects and centers; the inspector follows; Escape clears", async () => {
+    await open();
+    const search = screen.getByRole("button", { name: "Search" });
+    fireEvent.click(search);
+    const input = screen.getByRole("combobox", { name: "Search constellations and stars" });
+    expect(document.activeElement).toBe(input);
+    fireEvent.change(input, { target: { value: "siri" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(screen.queryByRole("combobox")).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Sirius" })).toBeTruthy();
+    });
+    expect(screen.getByRole("status", { name: "Map announcements" }).textContent).toMatch(/^Sirius selected/);
+    expect(document.activeElement).toBe(screen.getByRole("img", { name: /Sky map/ }));
+    fireEvent.keyDown(screen.getByRole("img", { name: /Sky map/ }), { key: "Escape" });
+    await waitFor(() => {
+      expect(screen.getByRole("status", { name: "Map announcements" }).textContent).toBe("Selection cleared.");
+    });
+  });
+
+  it("closes search before it clears the selection", async () => {
+    await open();
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+    const input = screen.getByRole("combobox");
+    fireEvent.change(input, { target: { value: "siri" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+    fireEvent.keyDown(screen.getByRole("combobox"), { key: "Escape" });
+    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(screen.getByRole("status", { name: "Map announcements" }).textContent).toMatch(/^Sirius selected/);
   });
 });

@@ -690,3 +690,490 @@ select.atlas-form-input option {
   margin: 0 auto;
   padding: 3rem 1rem;
 }
+
+/*
+ * Sky Explorer interface (011-explorer-ui). The canvas fills the viewport; the
+ * strip, toolbar and popovers float over it at its edges, and the inspector is
+ * a right panel, or a bottom sheet on narrow or short screens. Dark only.
+ */
+@theme {
+  --motion-duration-panel: 250ms;
+}
+
+.explorer-stage {
+  display: flex;
+}
+
+.explorer-stage-inner {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+}
+
+.explorer-view {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.explorer-view .explorer-canvas {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+
+.explorer-top {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  max-width: min(34rem, calc(100% - 6rem));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.explorer-top > * {
+  pointer-events: auto;
+}
+
+.explorer-moment,
+.explorer-copy,
+.explorer-toolbar,
+.explorer-popover {
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel);
+}
+
+.explorer-moment {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  min-width: 0;
+  color: var(--color-text);
+}
+
+.explorer-moment-visual {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.explorer-moment-full {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows var(--motion-duration-panel) var(--motion-ease),
+    opacity var(--motion-duration-panel) var(--motion-ease);
+}
+
+.explorer-moment-full > div {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.explorer-moment-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+
+.explorer-moment-place {
+  font-size: 0.95rem;
+}
+
+.explorer-moment-time,
+.explorer-moment-coords {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.explorer-moment-line {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  transition:
+    max-height var(--motion-duration-panel) var(--motion-ease),
+    opacity var(--motion-duration-panel) var(--motion-ease);
+}
+
+.explorer-moment[data-mode="compact"] .explorer-moment-full {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.explorer-moment[data-mode="compact"] .explorer-moment-line {
+  max-height: 8rem;
+  opacity: 1;
+}
+
+.explorer-pin,
+.explorer-close,
+.explorer-tool,
+.explorer-link,
+.explorer-action {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    background var(--motion-duration-short) var(--motion-ease),
+    border-color var(--motion-duration-short) var(--motion-ease);
+}
+
+.explorer-pin:hover,
+.explorer-close:hover,
+.explorer-tool:hover,
+.explorer-action:hover,
+.explorer-list-item:hover {
+  background: var(--color-raised);
+}
+
+.explorer-pin[aria-pressed="true"],
+.explorer-tool[aria-expanded="true"] {
+  background: var(--color-raised);
+  border-color: var(--color-accent);
+}
+
+.explorer-pin:focus-visible,
+.explorer-close:focus-visible,
+.explorer-tool:focus-visible,
+.explorer-link:focus-visible,
+.explorer-action:focus-visible,
+.explorer-list-item:focus-visible,
+.explorer-sheet-handle:focus-visible,
+.explorer-search-input:focus-visible,
+.explorer-switch input:focus-visible,
+.explorer-result[aria-selected="true"] {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.explorer-tool:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.explorer-link {
+  border: 0;
+  padding: 0;
+  text-align: left;
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.explorer-copy {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 0;
+  background: transparent;
+}
+
+.explorer-copy .explorer-pin {
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+}
+
+.explorer-copy-status {
+  max-width: 14rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.explorer-copy-status:empty {
+  display: none;
+}
+
+.explorer-toolbar {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: flex;
+  flex-flow: column wrap-reverse;
+  align-items: stretch;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  max-height: calc(100% - 2 * var(--space-3));
+}
+
+.explorer-popover {
+  position: absolute;
+  top: var(--space-3);
+  right: calc(var(--space-3) + 6rem);
+  width: min(20rem, calc(100% - 8rem));
+  max-height: calc(100% - 2 * var(--space-3));
+  overflow-y: auto;
+  padding: var(--space-3);
+  z-index: 2;
+}
+
+.explorer-panel-head,
+.explorer-search-row,
+.explorer-inspector-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.explorer-panel-title,
+.explorer-inspector-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.explorer-switch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.explorer-switch input {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--color-accent);
+}
+
+.explorer-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  font: inherit;
+}
+
+.explorer-results {
+  margin-top: var(--space-2);
+  max-height: 16rem;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.explorer-result {
+  display: flex;
+  flex-direction: column;
+  min-height: 44px;
+  justify-content: center;
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  border-radius: var(--radius-control);
+}
+
+.explorer-result[aria-selected="true"] {
+  background: var(--color-raised);
+  outline-offset: -2px;
+}
+
+.explorer-result-detail {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.explorer-search-status {
+  margin-top: var(--space-2);
+  min-height: 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+/* Inspector: a right panel by default. */
+.explorer-inspector {
+  flex: 0 0 clamp(300px, 26vw, 360px);
+  width: clamp(300px, 26vw, 360px);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border-soft);
+  color: var(--color-text);
+}
+
+.explorer-inspector[data-open="false"] {
+  display: none;
+}
+
+.explorer-sheet-handle {
+  display: none;
+}
+
+.explorer-inspector-body {
+  padding: var(--space-4);
+}
+
+.explorer-inspector-body[hidden] {
+  display: none;
+}
+
+.explorer-kind,
+.explorer-facts-title {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.explorer-facts {
+  margin-top: var(--space-4);
+}
+
+.explorer-fact {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--color-border-soft);
+  font-size: 0.875rem;
+}
+
+.explorer-fact dt {
+  color: var(--color-text-muted);
+}
+
+.explorer-fact dd {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.explorer-note {
+  margin-top: var(--space-2);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+}
+
+.explorer-figures {
+  margin-top: var(--space-3);
+  list-style: none;
+}
+
+.explorer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.explorer-list {
+  margin-top: var(--space-2);
+  list-style: none;
+}
+
+.explorer-list-item {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.explorer-list-item[aria-current="true"] {
+  background: var(--color-raised);
+  border-color: var(--color-accent);
+}
+
+.explorer-list-abbr {
+  color: var(--color-text-muted);
+}
+
+/* Narrow or short screens: the inspector becomes a bottom sheet. */
+@media (max-width: 47.99rem), (max-height: 32rem) {
+  .explorer-top {
+    right: calc(44px + 2 * var(--space-3) + var(--space-2));
+    max-width: none;
+  }
+
+  .explorer-popover {
+    right: calc(44px + 2 * var(--space-3) + var(--space-2));
+    left: var(--space-3);
+    width: auto;
+  }
+
+  .explorer-inspector {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    flex: none;
+    overflow: hidden;
+    border-left: 0;
+    border-top: 1px solid var(--color-border-soft);
+    z-index: 3;
+  }
+
+  .explorer-inspector[data-open="false"] {
+    display: flex;
+  }
+
+  .explorer-sheet-handle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: 44px;
+    padding: 0 var(--space-4);
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 0;
+    font: inherit;
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .explorer-sheet-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text-muted);
+  }
+
+  .explorer-inspector-body {
+    overflow-y: auto;
+    max-height: calc(50dvh - 44px);
+  }
+
+  .explorer-tool-inspector {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .explorer-moment-full,
+  .explorer-moment-line,
+  .explorer-pin,
+  .explorer-close,
+  .explorer-tool,
+  .explorer-action {
+    transition: none;
+  }
+}
