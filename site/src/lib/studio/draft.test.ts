@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { encodePayload } from "../encode.ts";
 import { type SharePayload, ShareDecodeError, ShareVersionError, decodeShareFragment, fragmentFromHash } from "../share.ts";
 import { SAMPLE_FRAGMENTS } from "../site.ts";
-import { decodeDraft, draftHash, encodeDraft, studioFragmentFromHash } from "./draft.ts";
+import { adjustUndrawable, decodeDraft, draftHash, encodeDraft, studioFragmentFromHash } from "./draft.ts";
 
 const PAYLOAD: SharePayload = {
   v: 1,
@@ -65,5 +65,30 @@ describe("draft codec", () => {
     expect(() => decodeDraft(bad)).toThrow(ShareDecodeError);
     expect(() => decodeDraft("%%%")).toThrow(ShareDecodeError);
     expect(() => decodeDraft(encodePayload({ ...PAYLOAD, v: 2 }))).toThrow(ShareVersionError);
+  });
+});
+
+describe("adjustUndrawable (what the Viewer does with a title it cannot draw)", () => {
+  it("leaves a drawable draft alone", () => {
+    const result = adjustUndrawable(PAYLOAD);
+    expect(result.payload).toBe(PAYLOAD);
+    expect(result.removed).toEqual([]);
+  });
+
+  it("drops undrawable characters from the title and reports them", () => {
+    const result = adjustUndrawable({ ...PAYLOAD, options: { ...PAYLOAD.options, title: "Noite \u{1F30C} Austral" } });
+    expect(result.payload.options.title).toBe("Noite Austral");
+    expect(result.removed).toEqual(["\u{1F30C}"]);
+  });
+
+  it("empties a title that is only undrawable, leaving it untitled", () => {
+    const result = adjustUndrawable({ ...PAYLOAD, options: { ...PAYLOAD.options, title: "\u{1F30C}" } });
+    expect(result.payload.options.title).toBeNull();
+  });
+
+  it("does the same for the place", () => {
+    const result = adjustUndrawable({ ...PAYLOAD, place: "Tokyo \u6771\u4EAC" });
+    expect(result.payload.place).toBe("Tokyo");
+    expect(result.removed).toEqual(["\u6771", "\u4EAC"]);
   });
 });

@@ -4,6 +4,7 @@
  * from the Studio re-encodes it under `#s=`.
  */
 import { encodePayload } from "../encode.ts";
+import { stripUnsupported, unsupportedInPosterFont } from "../render/glyphs.ts";
 import { type SharePayload, decodeShareFragment } from "../share.ts";
 
 const PREFIX = "studio=";
@@ -27,4 +28,32 @@ export function decodeDraft(fragment: string): SharePayload {
 
 export function draftHash(payload: SharePayload): string {
   return `#${PREFIX}${encodeDraft(payload)}`;
+}
+
+/**
+ * A draft seeded from somebody else's link, or from the Explorer, can carry a
+ * title or place the poster face cannot draw. As in the Viewer, the characters
+ * are dropped so the preview and every export agree, and the caller says so.
+ * (What the visitor types in the Studio is refused instead: they can fix it.)
+ */
+export function adjustUndrawable(payload: SharePayload): {
+  payload: SharePayload;
+  removed: string[];
+} {
+  const title = payload.options.title;
+  const place = payload.place;
+  const nextTitle = stripUnsupported(title ?? "");
+  const nextPlace = stripUnsupported(place ?? "");
+  if (nextTitle === null && nextPlace === null) return { payload, removed: [] };
+  return {
+    payload: {
+      ...payload,
+      place: nextPlace === null ? place : nextPlace || null,
+      options: {
+        ...payload.options,
+        title: nextTitle === null ? title : nextTitle || null,
+      },
+    },
+    removed: [...unsupportedInPosterFont(title ?? ""), ...unsupportedInPosterFont(place ?? "")],
+  };
 }

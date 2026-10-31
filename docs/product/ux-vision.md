@@ -748,6 +748,13 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `studio.title.label` | Title |
 | `studio.title.placeholder` | Our first flat |
 | `studio.updated` | Map updated |
+| `studio.poster.heading` | Poster Studio |
+| `studio.poster.subtitle` | Compose the poster, then export it or copy a link. |
+| `studio.sky.legend` | Sky |
+| `studio.observation.legend` | Observation |
+| `studio.summary.note` | Place and moment come from the sky you started with. Start again from the start page to change them. |
+| `studio.returnToExplorer` | Return to Explorer |
+| `studio.back` | Back to the start |
 
 **Viewer**
 

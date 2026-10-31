@@ -104,6 +104,7 @@ describe("copy", () => {
     // 102 → 117 for the Explorer (010-explorer-canvas): heading, loading,
     // canvas label and hint, five announcements, four cardinal letters, back.
     // 180 → 183 for the export layout choice (012-poster-studio, BCR-0012).
-    expect(copyKeys().length).toBe(183);
+    // 183 → 190 for the Poster Studio page (012-poster-studio).
+    expect(copyKeys().length).toBe(190);
   });
 });
