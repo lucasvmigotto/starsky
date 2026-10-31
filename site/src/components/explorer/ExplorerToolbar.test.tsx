@@ -19,27 +19,22 @@ interface Opts {
   fov?: number;
   searchOpen?: boolean;
   layersOpen?: boolean;
-  inspectorOpen?: boolean;
 }
 
 function mount(opts: Opts = {}, wrap: (node: ReactNode) => ReactNode = (n) => n) {
   const world = makeController(opts.fov);
-  const calls = { search: 0, layers: 0, inspector: 0 };
+  const calls = { search: 0, layers: 0 };
   render(
     wrap(
       <ExplorerToolbar
         controller={world.controller}
         searchOpen={opts.searchOpen ?? false}
         layersOpen={opts.layersOpen ?? false}
-        inspectorOpen={opts.inspectorOpen ?? false}
         onToggleSearch={() => {
           calls.search++;
         }}
         onToggleLayers={() => {
           calls.layers++;
-        }}
-        onToggleInspector={() => {
-          calls.inspector++;
         }}
       />,
     ),
@@ -60,10 +55,8 @@ describe("ExplorerToolbar: Create poster", () => {
         controller={world.controller}
         searchOpen={false}
         layersOpen={false}
-        inspectorOpen={false}
         onToggleSearch={() => {}}
         onToggleLayers={() => {}}
-        onToggleInspector={() => {}}
         onCreatePoster={() => {
           created++;
         }}
@@ -77,11 +70,16 @@ describe("ExplorerToolbar: Create poster", () => {
 });
 
 describe("ExplorerToolbar", () => {
-  it("offers named buttons for zoom, reset, layers, search and the inspector", () => {
+  it("has no Inspector button: the panel's tab replaces it", () => {
+    mount();
+    expect(screen.queryByRole("button", { name: "Inspector" })).toBeNull();
+  });
+
+  it("offers named buttons for zoom, reset, layers and search", () => {
     mount();
     const toolbar = screen.getByRole("toolbar", { name: "Map controls" });
     expect(toolbar).toBeTruthy();
-    for (const name of ["Zoom in", "Zoom out", "Reset view", "Layers", "Search", "Inspector"]) {
+    for (const name of ["Zoom in", "Zoom out", "Reset view", "Layers", "Search"]) {
       expect(screen.getByRole("button", { name })).toBeTruthy();
     }
     expect(screen.queryByRole("button", { name: /poster/i })).toBeNull();
@@ -140,8 +138,7 @@ describe("ExplorerToolbar", () => {
     expect(screen.getByRole("button", { name: "Search" }).getAttribute("aria-expanded")).toBe("false");
     fireEvent.click(screen.getByRole("button", { name: "Search" }));
     fireEvent.click(screen.getByRole("button", { name: "Layers" }));
-    fireEvent.click(screen.getByRole("button", { name: "Inspector" }));
-    expect(calls).toEqual({ search: 1, layers: 1, inspector: 1 });
+    expect(calls).toEqual({ search: 1, layers: 1 });
   });
 });
 
@@ -163,10 +160,8 @@ describe("FR-001: a moving sky does not rerender the panels", () => {
             controller={world.controller}
             searchOpen={false}
             layersOpen={false}
-            inspectorOpen
             onToggleSearch={noop}
             onToggleLayers={noop}
-            onToggleInspector={noop}
           />
         </Profiler>
         <Profiler

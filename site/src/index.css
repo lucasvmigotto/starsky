@@ -712,10 +712,19 @@ select.atlas-form-input option {
 }
 
 .explorer-stage-inner {
+  position: relative;
   display: flex;
   flex: 1 1 auto;
   min-width: 0;
   height: 100%;
+  /* The side panel floats over the sky; this is how far in from the right the
+     controls must stay, and it is 0 whenever no panel sits at the right. */
+  --explorer-panel-w: clamp(300px, 26vw, 360px);
+  --explorer-inset: 0px;
+}
+
+.explorer-stage-inner:has(.explorer-inspector[data-open="true"]) {
+  --explorer-inset: var(--explorer-panel-w);
 }
 
 .explorer-view {
@@ -736,7 +745,7 @@ select.atlas-form-input option {
   position: absolute;
   top: var(--space-3);
   left: var(--space-3);
-  max-width: min(34rem, calc(100% - 6rem));
+  max-width: min(34rem, calc(100% - var(--explorer-inset) - 4rem));
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -767,6 +776,7 @@ select.atlas-form-input option {
 }
 
 .explorer-moment-visual {
+  flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -839,6 +849,10 @@ select.atlas-form-input option {
   transition:
     background var(--motion-duration-short) var(--motion-ease),
     border-color var(--motion-duration-short) var(--motion-ease);
+}
+
+.explorer-pin {
+  white-space: nowrap;
 }
 
 .explorer-pin:hover,
@@ -915,27 +929,43 @@ select.atlas-form-input option {
   display: none;
 }
 
-.explorer-toolbar {
+/*
+ * Bottom right: the toolbar and, above it, whichever popover is open, so a
+ * popover is always anchored to the toolbar however many rows it wraps to.
+ * With the side panel open the dock sits to the panel's left.
+ */
+.explorer-dock {
   position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
+  right: calc(var(--space-3) + var(--explorer-inset));
+  bottom: var(--space-3);
   display: flex;
-  flex-flow: column wrap-reverse;
-  align-items: stretch;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: var(--space-2);
+  max-width: calc(100% - 2 * var(--space-3) - var(--explorer-inset));
+  max-height: calc(100% - 2 * var(--space-3));
+  pointer-events: none;
+}
+
+.explorer-dock > * {
+  pointer-events: auto;
+}
+
+.explorer-toolbar {
+  display: flex;
+  flex: none;
+  flex-flow: row wrap;
+  justify-content: flex-end;
+  align-items: center;
   gap: var(--space-1);
   padding: var(--space-1);
-  max-height: calc(100% - 2 * var(--space-3));
 }
 
 .explorer-popover {
-  position: absolute;
-  top: var(--space-3);
-  right: calc(var(--space-3) + 6rem);
-  width: min(20rem, calc(100% - 8rem));
-  max-height: calc(100% - 2 * var(--space-3));
+  width: min(20rem, 100%);
+  min-height: 0;
   overflow-y: auto;
   padding: var(--space-3);
-  z-index: 2;
 }
 
 .explorer-panel-head,
@@ -1016,16 +1046,66 @@ select.atlas-form-input option {
   color: var(--color-text-muted);
 }
 
-/* Inspector: a right panel by default. */
+/* Inspector: a right panel that floats over the sky, so opening it never resizes the canvas. */
 .explorer-inspector {
-  flex: 0 0 clamp(300px, 26vw, 360px);
-  width: clamp(300px, 26vw, 360px);
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  width: var(--explorer-panel-w);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   background: var(--color-surface);
   border-left: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel) 0 0 var(--radius-panel);
   color: var(--color-text);
+}
+
+/* The tab: small to look at, 44 px to hit. It rides the panel's left edge. */
+.explorer-tab {
+  position: absolute;
+  top: 50%;
+  right: var(--explorer-inset);
+  z-index: 4;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 44px;
+  height: 64px;
+  padding: 0;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.explorer-tab-face {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 56px;
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  border: 1px solid var(--color-border);
+  border-right: 0;
+  border-radius: var(--radius-control) 0 0 var(--radius-control);
+  transition: background var(--motion-duration-short) var(--motion-ease);
+}
+
+.explorer-tab:hover .explorer-tab-face {
+  background: var(--color-raised);
+}
+
+.explorer-tab:focus-visible {
+  /* The ring is drawn on the face, which is what the eye sees. */
+  outline-style: none;
+}
+
+.explorer-tab:focus-visible .explorer-tab-face {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .explorer-inspector[data-open="false"] {
@@ -1154,26 +1234,24 @@ select.atlas-form-input option {
 
 /* Narrow or short screens: the inspector becomes a bottom sheet. */
 @media (max-width: 47.99rem), (max-height: 32rem) {
+  .explorer-stage-inner:has(.explorer-inspector[data-open="true"]) {
+    --explorer-inset: 0px;
+  }
+
   .explorer-top {
     right: var(--space-3);
     max-width: none;
   }
 
   /*
-   * A row above the sheet: within thumb reach, and off the sky's center. It
-   * spans the screen (centered) so it wraps to a second row only when six
-   * buttons do not fit, instead of wrapping at half the width.
+   * A row above the sheet, right-aligned: within thumb reach and off the sky's
+   * centre. The dock wraps to a second row only when the buttons do not fit.
    */
-  .explorer-toolbar {
-    top: auto;
+  .explorer-dock {
     right: var(--space-2);
     bottom: calc(44px + var(--space-2));
-    left: var(--space-2);
-    width: fit-content;
-    margin-inline: auto;
-    flex-flow: row wrap;
-    justify-content: center;
-    max-height: none;
+    max-width: calc(100% - 2 * var(--space-2));
+    max-height: calc(100% - 44px - 2 * var(--space-2) - var(--space-3));
     z-index: 2;
   }
 
@@ -1183,34 +1261,34 @@ select.atlas-form-input option {
     white-space: nowrap;
   }
 
-  .explorer-stage-inner:has(.explorer-inspector[data-open="true"]) .explorer-toolbar {
+  .explorer-stage-inner:has(.explorer-inspector[data-open="true"]) .explorer-dock {
     bottom: calc(38dvh + var(--space-2));
+    max-height: calc(100% - 38dvh - 2 * var(--space-2));
   }
 
   .explorer-popover {
-    top: auto;
-    right: var(--space-3);
-    bottom: calc(44px + 44px + 3 * var(--space-2));
-    left: var(--space-3);
-    width: auto;
     max-height: 50dvh;
   }
 
   .explorer-inspector {
-    position: absolute;
+    top: auto;
     left: 0;
     right: 0;
     bottom: 0;
     width: auto;
-    flex: none;
     overflow: hidden;
     border-left: 0;
+    border-radius: 0;
     border-top: 1px solid var(--color-border-soft);
     z-index: 3;
   }
 
   .explorer-inspector[data-open="false"] {
     display: flex;
+  }
+
+  .explorer-tab {
+    display: none;
   }
 
   .explorer-sheet-handle {
@@ -1240,19 +1318,6 @@ select.atlas-form-input option {
   .explorer-inspector-body {
     overflow-y: auto;
     max-height: calc(38dvh - 44px);
-  }
-
-  .explorer-tool-inspector {
-    display: none;
-  }
-}
-
-/* Short screens have the width to spare: keep the row off the sky's center. */
-@media (max-height: 32rem) {
-  .explorer-toolbar {
-    right: var(--space-2);
-    left: auto;
-    margin-inline: 0;
   }
 }
 

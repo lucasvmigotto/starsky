@@ -232,7 +232,6 @@ export const enUS = {
   "explorer.toolbar.reset": "Reset view",
   "explorer.toolbar.layers": "Layers",
   "explorer.toolbar.search": "Search",
-  "explorer.toolbar.inspector": "Inspector",
   "explorer.toolbar.poster": "Create poster",
   "explorer.toolbar.shortcut": "{label} ({key})",
   "explorer.layers.title": "Layers",

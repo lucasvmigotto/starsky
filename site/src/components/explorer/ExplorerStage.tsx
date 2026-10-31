@@ -16,6 +16,7 @@ import ExplorerCopyLink from "./ExplorerCopyLink.tsx";
 import ExplorerInspector, { INSPECTOR_BODY_ID } from "./ExplorerInspector.tsx";
 import ExplorerLayers from "./ExplorerLayers.tsx";
 import ExplorerMetadata from "./ExplorerMetadata.tsx";
+import ExplorerPanelTab from "./ExplorerPanelTab.tsx";
 import ExplorerSearch from "./ExplorerSearch.tsx";
 import ExplorerToolbar from "./ExplorerToolbar.tsx";
 
@@ -60,7 +61,7 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const searchButton = useRef<HTMLButtonElement | null>(null);
   const layersButton = useRef<HTMLButtonElement | null>(null);
-  const inspectorButton = useRef<HTMLButtonElement | null>(null);
+  const tabButton = useRef<HTMLButtonElement | null>(null);
   const searchInput = useRef<HTMLInputElement | null>(null);
   const layersPanel = useRef<HTMLDivElement | null>(null);
 
@@ -107,7 +108,7 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
   const closeInspector = useCallback((): void => {
     dispatch({ type: "close", panel: "inspector" });
     const handle = layoutRef.current?.querySelector<HTMLElement>(".explorer-sheet-handle");
-    (sheetLayout() ? handle : inspectorButton.current)?.focus();
+    (sheetLayout() ? handle : tabButton.current)?.focus();
   }, []);
 
   const toggleSearch = useCallback((): void => {
@@ -185,36 +186,34 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
                 <ExplorerCopyLink getLink={() => absoluteLink(currentHash(controller, payload), window.location)} />
               </ExplorerMetadata>
             </div>
-            <ExplorerToolbar
-              controller={controller}
-              searchOpen={panels.search}
-              layersOpen={panels.layers}
-              inspectorOpen={panels.inspector}
-              onToggleSearch={toggleSearch}
-              onToggleLayers={toggleLayers}
-              onToggleInspector={toggleInspector}
-              onCreatePoster={createPoster}
-              searchRef={searchButton}
-              layersRef={layersButton}
-              inspectorRef={inspectorButton}
-              inspectorId={INSPECTOR_BODY_ID}
-            />
-            {panels.search && (
-              <div className="explorer-popover">
-                <ExplorerSearch
-                  scene={scene}
-                  magLimit={payload.mag}
-                  onChoose={chooseFromSearch}
-                  onClose={closeSearch}
-                  inputRef={searchInput}
-                />
-              </div>
-            )}
-            {panels.layers && (
-              <div className="explorer-popover" ref={layersPanel}>
-                <ExplorerLayers controller={controller} onClose={closeLayers} />
-              </div>
-            )}
+            <div className="explorer-dock">
+              <ExplorerToolbar
+                controller={controller}
+                searchOpen={panels.search}
+                layersOpen={panels.layers}
+                onToggleSearch={toggleSearch}
+                onToggleLayers={toggleLayers}
+                onCreatePoster={createPoster}
+                searchRef={searchButton}
+                layersRef={layersButton}
+              />
+              {panels.search && (
+                <div className="explorer-popover">
+                  <ExplorerSearch
+                    scene={scene}
+                    magLimit={payload.mag}
+                    onChoose={chooseFromSearch}
+                    onClose={closeSearch}
+                    inputRef={searchInput}
+                  />
+                </div>
+              )}
+              {panels.layers && (
+                <div className="explorer-popover" ref={layersPanel}>
+                  <ExplorerLayers controller={controller} onClose={closeLayers} />
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
@@ -229,6 +228,14 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
           onClear={clear}
           onToggle={toggleInspector}
           onClose={closeInspector}
+        />
+      )}
+      {controller && (
+        <ExplorerPanelTab
+          open={panels.inspector}
+          controls={INSPECTOR_BODY_ID}
+          onToggle={toggleInspector}
+          buttonRef={tabButton}
         />
       )}
     </div>

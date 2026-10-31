@@ -142,8 +142,8 @@ conflict. **The sky is the product; the poster is an artifact made from it.**
 │
 ├── Explorer      #e=<payload>        primary, full-viewport celestial map
 │                 ├── adaptive metadata (expanded, compact one line, pinned)
-│                 ├── floating toolbar: zoom, reset, layers, search, poster
-│                 └── inspector: right panel; bottom sheet on phones
+│                 ├── toolbar, bottom right: zoom, reset, layers, search, poster
+│                 └── inspector: right panel with a tab; bottom sheet on phones
 │
 ├── Viewer        #s=<payload>        a shared poster, exactly as before
 │                 └── explore this sky → Explorer
@@ -159,28 +159,36 @@ dimmed and say so; selection is never shown by color alone.
 
 Copy keys for this direction live in *Key-screen copy*.
 
-**Explorer interface (011-explorer-ui).** The canvas fills the viewport; nothing
-sits over its centre.
+**Explorer interface (011-explorer-ui, reworked by 014-explorer-polish).** The
+canvas fills the viewport; nothing sits over its centre. The side panel floats
+over the sky instead of taking width, so opening or closing it never resizes
+the canvas.
 
 ```
-desktop                                      phone (portrait and landscape)
-┌─────────────────────────────┬───────────┐  ┌──────────────────────────┬──┐
-│ moment strip        [Copy]  │ inspector │  │ moment strip   [Copy]    │⊕ │
-│ (expanded → one line)       │ 300–360px │  │ (wraps; top, never over  │⊖ │
-│                          ┌─┐│ collapsed │  │  the selection)          │⟲ │
-│                  canvas  │T││ until a   │  │          canvas          │≡ │
-│                          │o││ selection │  │                          │⌕ │
-│                          │o││ or toggle │  ├──────────────────────────┴──┤
-│                          │l││           │  │ ▲ Show details · Sirius     │
-│                          └─┘│           │  └─────────────────────────────┘
-└─────────────────────────────┴───────────┘  bottom sheet: collapsed handle,
-toolbar: top-right edge, one column          expanded half-height; 44px targets
+desktop                                          phone (portrait and landscape)
+┌───────────────────────────────┬─────────────┐  ┌──────────────────────────────┐
+│ moment strip [⛓][Keep open]   │ inspector   │  │ moment strip   [⛓][Keep open]│
+│ (one line, then expanded)     │ 300–360px   │  │ (wraps; top, never over the  │
+│                               │ floats over │  │  selection)                  │
+│                         canvas│ the sky     │  │            canvas            │
+│                             ┌─┤             │  │                              │
+│                             │<│             │  │      [+][−][Reset][Layers].. │
+│                             └─┤             │  ├──────────────────────────────┤
+│            [+][−][Reset][Layers][Search][Poster]│ ▲ Show details · Sirius      │
+└───────────────────────────────┴─────────────┘  └──────────────────────────────┘
+toolbar: bottom right, a row; popovers open    bottom sheet: collapsed handle,
+upward from it. The tab (<  or  > when open)   expanded half-height; the toolbar
+rides the panel's left edge. 44px targets.     row sits above it, right-aligned.
 ```
 
-The moment strip is expanded on load and during activity, one line after 2.5 s
-idle, and pinned on request; it never hides and it wraps. The sheet and panel
-share one body. Escape closes search or layers first, then clears the
-selection, and focus returns to the control that opened the panel.
+The moment strip starts as one line on load, expands during activity, returns
+to one line after 2.5 s idle, and is pinned on request; it wraps. After 4 s
+without activity the toolbar, the tab, the side panel or sheet and the strip's
+buttons fade out, leaving the one-line moment (see *Idle collapse* below). With
+the side panel open the toolbar sits to the panel's left, never under it. The
+sheet and panel share one body. Escape closes a star's tooltip first, then
+search or layers, then clears the selection, and focus returns to the control
+that opened the panel (the tab, on wide screens).
 
 ## Information architecture
 
@@ -986,7 +994,6 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 | `explorer.toolbar.reset` | Reset view |
 | `explorer.toolbar.layers` | Layers |
 | `explorer.toolbar.search` | Search |
-| `explorer.toolbar.inspector` | Inspector |
 | `explorer.toolbar.poster` | Create poster |
 | `explorer.toolbar.shortcut` | {label} ({key}) |
 | `explorer.layers.title` | Layers |

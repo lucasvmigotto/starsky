@@ -142,16 +142,31 @@ describe("ExplorerPage interface", () => {
     await screen.findByRole("toolbar", { name: "Map controls" });
   }
 
-  it("shows the moment strip, the toolbar, and an inspector closed until needed", async () => {
+  it("shows the moment strip, the toolbar, and an inspector closed until its tab opens it", async () => {
     await open();
     expect(screen.getByRole("region", { name: "Moment" }).textContent).toContain("Night one");
-    const toggle = screen.getByRole("button", { name: "Inspector" });
+    expect(screen.queryByRole("button", { name: "Inspector" })).toBeNull();
+    const toggle = document.querySelector<HTMLButtonElement>(".explorer-tab");
+    if (!toggle) throw new Error("no tab");
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(toggle.getAttribute("aria-label")).toBe("Show details");
     // 012-poster-studio: the toolbar now offers the way into the Studio.
     expect(screen.getByRole("button", { name: "Create poster" })).toBeTruthy();
     fireEvent.click(toggle);
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(toggle.getAttribute("aria-label")).toBe("Hide details");
+    expect(toggle.getAttribute("aria-controls")).toBe("explorer-inspector-body");
     expect(screen.getByRole("list", { name: /Above the horizon/ })).toBeTruthy();
+  });
+
+  it("returns focus to the tab when the panel is closed from its own button", async () => {
+    await open();
+    const toggle = document.querySelector<HTMLButtonElement>(".explorer-tab");
+    if (!toggle) throw new Error("no tab");
+    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole("button", { name: "Close inspector" }));
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(toggle);
   });
 
   it("opens layers with focus inside, and Escape closes them and returns focus", async () => {
