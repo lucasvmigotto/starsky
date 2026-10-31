@@ -78,7 +78,7 @@ test.describe("explorer", () => {
     const canvas = await openExplorer(page, explorerUrl(SIRIUS));
     const c = await centreOf(canvas);
     await page.mouse.click(c.x, c.y);
-    const status = page.getByRole("status");
+    const status = page.getByRole("status", { name: "Map announcements" });
     await expect(status).toHaveText(/^Sirius selected, above the horizon\.$/);
     await canvas.focus();
     await page.keyboard.press("Escape");
@@ -94,7 +94,7 @@ test.describe("explorer", () => {
     await page.mouse.move(c.x + 30, c.y + 12, { steps: 4 });
     await page.mouse.up();
     await expect(canvas).not.toHaveAttribute("data-frames", before);
-    await expect(page.getByRole("status")).toHaveText("Sky Explorer ready.");
+    await expect(page.getByRole("status", { name: "Map announcements" })).toHaveText("Sky Explorer ready.");
   });
 
   test("taps select on touch screens", async ({ page }, testInfo) => {
@@ -102,7 +102,7 @@ test.describe("explorer", () => {
     const canvas = await openExplorer(page, explorerUrl(SIRIUS));
     const c = await centreOf(canvas);
     await page.touchscreen.tap(c.x, c.y);
-    await expect(page.getByRole("status")).toHaveText(/^Sirius selected/);
+    await expect(page.getByRole("status", { name: "Map announcements" })).toHaveText(/^Sirius selected/);
   });
 
   test("rotates across the north celestial pole without a jump or an error", async ({ page, consoleErrors }) => {

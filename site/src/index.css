@@ -1159,7 +1159,7 @@ select.atlas-form-input option {
 
   .explorer-inspector-body {
     overflow-y: auto;
-    max-height: calc(50dvh - 44px);
+    max-height: calc(45dvh - 44px);
   }
 
   .explorer-tool-inspector {
