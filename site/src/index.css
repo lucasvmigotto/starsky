@@ -749,7 +749,6 @@ select.atlas-form-input option {
 }
 
 .explorer-moment,
-.explorer-copy,
 .explorer-toolbar,
 .explorer-popover {
   background: color-mix(in srgb, var(--color-surface) 90%, transparent);
@@ -758,6 +757,7 @@ select.atlas-form-input option {
 }
 
 .explorer-moment {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
@@ -869,12 +869,19 @@ select.atlas-form-input option {
   outline-offset: 2px;
 }
 
+.explorer-icon-button,
 .explorer-tool-icon {
   width: 44px;
   padding: 0;
   border-radius: 50%;
   font-size: 1.125rem;
   line-height: 1;
+}
+
+.explorer-icon-button {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
 }
 
 .explorer-tool:disabled {
@@ -890,22 +897,18 @@ select.atlas-form-input option {
   text-decoration: underline;
 }
 
-.explorer-copy {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  border: 0;
-  background: transparent;
-}
-
-.explorer-copy .explorer-pin {
-  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
-}
-
+/* A failed copy: text under the strip, out of its flow so the strip keeps its shape. */
 .explorer-copy-status {
-  max-width: 14rem;
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  padding: var(--space-2) var(--space-3);
   font-size: 0.8125rem;
-  color: var(--color-text-muted);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel);
 }
 
 .explorer-copy-status:empty {

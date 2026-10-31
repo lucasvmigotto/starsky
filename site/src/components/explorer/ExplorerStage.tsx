@@ -181,8 +181,9 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
         {controller && (
           <>
             <div className="explorer-top">
-              <ExplorerMetadata moment={moment} />
-              <ExplorerCopyLink getLink={() => absoluteLink(currentHash(controller, payload), window.location)} />
+              <ExplorerMetadata moment={moment}>
+                <ExplorerCopyLink getLink={() => absoluteLink(currentHash(controller, payload), window.location)} />
+              </ExplorerMetadata>
             </div>
             <ExplorerToolbar
               controller={controller}

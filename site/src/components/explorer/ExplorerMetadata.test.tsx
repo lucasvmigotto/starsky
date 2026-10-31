@@ -48,6 +48,21 @@ afterEach(() => {
   cleanup();
 });
 
+describe("ExplorerMetadata actions", () => {
+  it("shows what it is given beside the pin, inside the strip", () => {
+    const machine = new MetadataMachine({ now: () => 0 });
+    render(
+      <ExplorerMetadata moment={MOMENT} machine={machine}>
+        <button type="button" aria-label="side-action" />
+      </ExplorerMetadata>,
+    );
+    const pin = screen.getByRole("button", { name: "Keep details open" });
+    const action = screen.getByRole("button", { name: "side-action" });
+    expect(region().contains(action)).toBe(true);
+    expect(pin.parentElement).toBe(action.parentElement);
+  });
+});
+
 describe("ExplorerMetadata", () => {
   it("starts expanded and shows the moment", () => {
     mount();

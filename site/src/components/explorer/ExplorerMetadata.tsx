@@ -5,7 +5,7 @@
  * the visual forms are hidden from it, so only sight sees the change.
  */
 import { useEffect, useState, useSyncExternalStore } from "react";
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 import { t } from "../../i18n/index.ts";
 import { MetadataMachine, type MomentInput, formatMoment } from "../../lib/explorer/metadata.ts";
 
@@ -13,12 +13,14 @@ interface Props {
   moment: MomentInput;
   /** For tests; the page lets the component make its own. */
   machine?: MetadataMachine;
+  /** Buttons that sit beside the pin, inside the strip. */
+  children?: ReactNode;
 }
 
 /** Pointer, touch and keyboard (wheel counts as pointer). */
 const ACTIVITY_EVENTS = ["pointerdown", "pointermove", "touchstart", "wheel", "keydown"] as const;
 
-export default function ExplorerMetadata({ moment, machine: provided }: Props): JSX.Element {
+export default function ExplorerMetadata({ moment, machine: provided, children }: Props): JSX.Element {
   const [machine] = useState(() => provided ?? new MetadataMachine({ now: () => Date.now() }));
   const mode = useSyncExternalStore(
     (listener) => machine.subscribe(listener),
@@ -81,6 +83,7 @@ export default function ExplorerMetadata({ moment, machine: provided }: Props): 
       >
         {t("explorer.moment.pin")}
       </button>
+      {children}
     </section>
   );
 }
