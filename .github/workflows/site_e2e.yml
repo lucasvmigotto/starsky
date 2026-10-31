@@ -30,13 +30,13 @@ permissions:
 
 env:
   # Pinned so the browser version matches the image tag (containers.md §3).
-  PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.63.0-noble
+  PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.64.1-noble
 
 jobs:
   e2e:
     runs-on: ubuntu-24.04
     container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
       # No `--user` override: the image's default user is already the non-root
       # `pwuser` (1001), and forcing a UID fights `actions/checkout`, which
       # writes the workspace as root before the job steps run.
@@ -154,7 +154,7 @@ jobs:
       github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
     steps:
       - name: Checkout repository
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
