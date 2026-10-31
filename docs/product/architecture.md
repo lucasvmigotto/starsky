@@ -135,13 +135,16 @@ No personal data is stored or transmitted (place text goes only to Nominatim, fr
 | Hosting | **Cloudflare R2 + CDN; free tier** | Driver 3 (free) + driver 4 (CDN SLA, originless). PaaS/containers rejected: a server for a static artifact. HF Space rejected: an origin with cold starts (BCR-0003) | 0001, 0003 |
 | API style | **No API** (static fetch + URL fragment) | One client, no partners, no cache headers to negotiate. REST/gRPC/GraphQL all N/A | — |
 | Data | **Build-artifact JSON on CDN** | Read-only, immutable, tiny; no transactions. A DB would be a component without a driver | — |
-| Integration | **Browser → Nominatim only; everything else build-time** | Matches the existing client behaviour; no broker/queue needed | — |
+| Integration | **Browser → OpenStreetMap only (Nominatim, plus map tiles on demand, ADR-0008); everything else build-time** | Matches the existing client behaviour; no broker/queue needed | — |
 | Identity & access | **None** | Public, read-only, no accounts (user: local-only) | — |
 | Multi-tenancy | **N/A** | Single public site | — |
 | Resilience & DR | **CDN redundancy; rebuildable from git** | RPO/RTO = restore the last CI build; assets are reproducible; no data to lose. Rebuild trigger documented | 0004 |
 | Observability | **R2/Cloudflare analytics + a client-side error hook (optional)** | No server logs to keep; a tiny beacon for render failures is the only useful signal | 0004 |
 | Delivery | **GitHub Actions → R2 sync; blue/green by immutable prefix** | Rollback = re-point to the previous prefix | 0002 |
 | Cost | **Free tier** | R2 free tier + Actions minutes; egress free | 0002, 0003 |
+| Explorer camera | **Quaternion camera, gnomonic projection, equatorial frame** | No gimbal lock, straight great circles; angles and stereographic rejected | 0006 |
+| Explorer renderer | **Canvas 2D behind a renderer boundary, apart from the poster** | Protects poster output; extending `SkyCanvas` and WebGL-first rejected | 0007 |
+| Map tiles | **OpenStreetMap, only after the location map opens** | Free and keyless; self-hosted and keyed providers rejected | 0008 |
 | Stack | **Bun + React (latest) + TypeScript 7 + Vite + Tailwind; `bun:test`**; Python 3.14 + `uv` + `ruff` + `ty` + `pytest` for the data CLI — dependencies: click, httpx, polars, pydantic(-settings) only | One client toolchain (ADR-0005); the Python tree shrank to its data job (BCR-0005) | 0003, 0005 |
 
 ## Cost estimate

@@ -132,6 +132,33 @@ Five product-specific rules that settle future disputes.
 
 ---
 
+## Sky Explorer direction (BCR-0011)
+
+This section supersedes D1 and D2 and the surface map below wherever they
+conflict. **The sky is the product; the poster is an artifact made from it.**
+
+```
+/                 landing: where do you want to explore the sky from?
+│
+├── Explorer      #e=<payload>        primary, full-viewport celestial map
+│                 ├── adaptive metadata (expanded, compact one line, pinned)
+│                 ├── floating toolbar: zoom, reset, layers, search, poster
+│                 └── inspector: right panel; bottom sheet on phones
+│
+├── Viewer        #s=<payload>        a shared poster, exactly as before
+│                 └── explore this sky → Explorer
+│
+└── Poster Studio #studio=<draft>     composition, preview, share, export
+                  └── return to Explorer
+```
+
+A visitor with a `#s=` link still sees their poster first, with no form (P1).
+The metadata never disappears by default: it collapses to one line when idle.
+Constellation labels are always on and subtle. Stars below the horizon are
+dimmed and say so; selection is never shown by color alone.
+
+Copy keys for this direction live in *Key-screen copy*.
+
 ## Information architecture
 
 No navigation chrome. Two surfaces, entered by intent, sharing one hash.
@@ -918,6 +945,11 @@ survives the answer.*
 | D16 | The poster stays `en-US` permanently | Localizing the artifact | `reference.test.ts:229` pins the caption; a locale-dependent caption would render the same `#s=` link differently per visitor and fail the test. A share link promises everyone the same sky. |
 | D17 | `pt-BR` after the retheme, as its own slice | Both in one change | A ~60-file diff mixing palette and copy is where design regressions hide. Split, each stays reviewable; the keys exist now either way. |
 | D18 | `site/package.json` is the version source, renamed to `starsky` | `pyproject.toml`; keeping `starsky-site` | One source for a static-only site, and the package name then matches what the footer prints. |
+| D20 | **Explorer is primary; Viewer and Studio are secondary** (supersedes D1, D2) | Two surfaces of equal weight | Owner decision, BCR-0011. `#s=` still opens the poster directly, so P1 keeps its path. |
+| D21 | Full sphere through a rotating camera | A flat all-sky map | A sphere cannot project flat without distortion (ADR-0006). |
+| D22 | Metadata collapses to one line, never hides by default | Auto-hide | Owner decision: the moment stays readable. |
+| D23 | Constellation labels always visible, subtle, decluttered | Hover-only labels | Owner decision: orientation matters more than an empty sky. |
+| D24 | Search + Leaflet map for location, on demand | Search only | Owner decision. Tiles load only when opened (ADR-0008); coordinates always work without the map. |
 | D19 | **The UI palette is independent of the poster's**; `render-spec.json` is untouched | Repainting the poster to match the new palette | `render-spec.json` is normative (constitution II) and pinned by `spec.test.ts:32`, by literal hex assertions in `boundaries.test.ts`/`poster.test.ts`, and by stored reference PNGs. Changing it is a BCR that regenerates every fixture and alters the artifact for every existing share link. The poster is a print; it does not take the browser's theme. Accepted cost: rose lines beside verdigris chrome, bounded by "accent is chrome only, never a constellation in the map". |
 
 ---

@@ -5,6 +5,8 @@ Refreshed by project:init on 2026-10-04 to the static-first reality (BCR-0001–
 
 Status: Draft
 
+> **Direction change (BCR-0011, 2026-10-31):** the Sky Explorer becomes the primary experience, and the poster workflow becomes a separate Poster Studio. Sections below describe the product as built until `specs/README.md` marks features 009–013 Implemented.
+
 ## Problem
 
 People want a personalized night-sky poster for a place and moment ("our night") without proprietary SaaS or manual planetarium work. The poster must be exactly shareable — the same link renders the same sky for everyone — and keepable as a print-grade file.
