@@ -148,6 +148,23 @@ export const enUS = {
   "footer.source": "source",
   "footer.attribution":
     "Star data from Hipparcos and JPL. Constellation lines from Stellarium (CC BY-SA 4.0). Place lookup by OpenStreetMap contributors.",
+
+  "explorer.heading": "Sky Explorer",
+  "explorer.loading": "Charting the stars…",
+  "explorer.canvasLabel": "Sky map above {place}",
+  "explorer.canvasLabel.untitled": "Sky map",
+  "explorer.canvasHint":
+    "Drag to look around, scroll or pinch to zoom, double-click to center on a spot. With the map focused, the arrow keys turn the view, plus and minus zoom, 0 returns to the start and Escape clears the selection.",
+  "explorer.announced.ready": "Sky Explorer ready.",
+  "explorer.announced.starAbove": "{name} selected, above the horizon.",
+  "explorer.announced.starBelow": "{name} selected, below the horizon.",
+  "explorer.announced.constellation": "{name} constellation selected.",
+  "explorer.announced.cleared": "Selection cleared.",
+  "explorer.cardinal.n": "N",
+  "explorer.cardinal.e": "E",
+  "explorer.cardinal.s": "S",
+  "explorer.cardinal.w": "W",
+  "explorer.back": "Back to the start",
 } as const;
 
 export type CopyKey = keyof typeof enUS;

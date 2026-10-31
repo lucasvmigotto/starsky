@@ -846,6 +846,28 @@ parts read as one sentence, asserted by `i18n.test.ts`.
 | `footer.source` | source |
 | `footer.attribution` | Star data from Hipparcos and JPL. Constellation lines from Stellarium (CC BY-SA 4.0). Place lookup by OpenStreetMap contributors. |
 
+**Explorer** (`#e=`, 010-explorer-canvas; the map only — layout, inspector and search are 011)
+
+The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for missing star data. Its selection announcements go to one `role="status"` region and never say a star can be seen: a star below the horizon is announced as below it.
+
+| Key | Copy |
+|---|---|
+| `explorer.heading` | Sky Explorer *(screen-reader only, the page's `h1`)* |
+| `explorer.loading` | Charting the stars… |
+| `explorer.canvasLabel` | Sky map above {place} *(the canvas's `aria-label`)* |
+| `explorer.canvasLabel.untitled` | Sky map |
+| `explorer.canvasHint` | Drag to look around, scroll or pinch to zoom, double-click to center on a spot. With the map focused, the arrow keys turn the view, plus and minus zoom, 0 returns to the start and Escape clears the selection. *(screen-reader only, the canvas's `aria-describedby`)* |
+| `explorer.announced.ready` | Sky Explorer ready. |
+| `explorer.announced.starAbove` | {name} selected, above the horizon. |
+| `explorer.announced.starBelow` | {name} selected, below the horizon. |
+| `explorer.announced.constellation` | {name} constellation selected. |
+| `explorer.announced.cleared` | Selection cleared. |
+| `explorer.cardinal.n` | N |
+| `explorer.cardinal.e` | E |
+| `explorer.cardinal.s` | S |
+| `explorer.cardinal.w` | W |
+| `explorer.back` | Back to the start |
+
 ---
 
 ## Localization

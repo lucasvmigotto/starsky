@@ -656,3 +656,37 @@ select.atlas-form-input option {
   font-size: 0.8rem;
   color: color-mix(in srgb, var(--color-text) 0.65);
 }
+
+/* Sky Explorer (#e=): one full-viewport canvas, no chrome. */
+.explorer-stage {
+  position: fixed;
+  inset: 0;
+  background: var(--color-bg);
+}
+
+.explorer-canvas {
+  display: block;
+  width: 100%;
+  height: 100dvh;
+  /* The page must not scroll or zoom during a gesture. */
+  touch-action: none;
+  overscroll-behavior: none;
+  cursor: grab;
+}
+
+.explorer-canvas:active {
+  cursor: grabbing;
+}
+
+/* Inset: the canvas fills the viewport, so an outer ring would be clipped. */
+.explorer-canvas:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -4px;
+}
+
+.explorer-state {
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+}

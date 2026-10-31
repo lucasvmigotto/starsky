@@ -101,6 +101,8 @@ describe("copy", () => {
     // §§11–12): three legends in, `landing.render.legend` out.
     // 104 → 102 for the hero swap: the Landing speaks the canonical
     // `landing.title` / `.subtitle`, so the two `.legacy` keys retire.
-    expect(copyKeys().length).toBe(102);
+    // 102 → 117 for the Explorer (010-explorer-canvas): heading, loading,
+    // canvas label and hint, five announcements, four cardinal letters, back.
+    expect(copyKeys().length).toBe(117);
   });
 });

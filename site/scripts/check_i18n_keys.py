@@ -37,6 +37,7 @@ COPY_NAMESPACES = (
     "fontError.",
     "loading.",
     "footer.",
+    "explorer.",
 )
 
 

@@ -16,6 +16,7 @@ import type { SkyScene } from "../sky/scene.ts";
 import { type Vec3, add, raDecToVec, scale } from "../sky/vec.ts";
 import type { PlanLayers } from "./layers.ts";
 import type { ObserverView } from "./observerView.ts";
+import { starLabel } from "./selection.ts";
 import { isBelow, segmentShown, starShown } from "./visibility.ts";
 
 export interface Viewport {
@@ -370,7 +371,7 @@ function starMark(
   );
   if (!p || p.x < 0 || p.x > viewport.width || p.y < 0 || p.y > viewport.height) return null;
   const radius = radiusClass(star.mag) * zoomScale(camera.fovDeg) + RING_GAP_PX;
-  const label = kind === "selected" ? (star.name ?? `HIP ${String(star.hip)}`) : null;
+  const label = kind === "selected" ? starLabel(star) : null;
   return { kind, x: p.x, y: p.y, radius, label, dim: isBelow(alt) };
 }
 

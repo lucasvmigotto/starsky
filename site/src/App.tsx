@@ -1,8 +1,22 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { HashRouter, Route, Routes } from "react-router-dom";
 import LandingPage from "./components/LandingPage.tsx";
 import ViewerPage from "./components/ViewerPage.tsx";
+import { t } from "./i18n/index.ts";
 import { fragmentFromHash } from "./lib/share.ts";
+
+// The Explorer is its own chunk: `#s=` and the landing never download it.
+const ExplorerPage = lazy(() => import("./components/explorer/ExplorerPage.tsx"));
+
+/**
+ * The `#e=` hash, or null. Deliberately not `explorerFragmentFromHash`: that
+ * lives beside the Explorer's codec, and importing it here would pull the codec
+ * into the main chunk the lazy page exists to keep it out of.
+ */
+function explorerHash(): string | null {
+  const { hash } = window.location;
+  return hash.startsWith("#e=") && hash.length > 3 ? hash : null;
+}
 
 function hasShareFragment(): boolean {
   return fragmentFromHash(window.location.hash) !== null;
@@ -17,16 +31,33 @@ function hasShareFragment(): boolean {
  */
 function Root() {
   const [ready, setReady] = useState(hasShareFragment);
+  const [explorer, setExplorer] = useState(explorerHash);
   useEffect(() => {
     const onHash = () => {
       setReady(hasShareFragment());
+      setExplorer(explorerHash());
     };
     window.addEventListener("hashchange", onHash);
     return () => {
       window.removeEventListener("hashchange", onHash);
     };
   }, []);
-  return ready ? <ViewerPage /> : <LandingPage />;
+  if (ready) return <ViewerPage />;
+  if (explorer !== null) {
+    // Keyed by the fragment so a pasted `#e=` link replaces the camera and data.
+    return (
+      <Suspense
+        fallback={
+          <p className="atlas-loading" role="status">
+            {t("explorer.loading")}
+          </p>
+        }
+      >
+        <ExplorerPage key={explorer} />
+      </Suspense>
+    );
+  }
+  return <LandingPage />;
 }
 
 export default function App() {
