@@ -4,15 +4,16 @@
  * screens, a bottom sheet on narrow ones (the layout is CSS; this is the DOM).
  * It takes the selection as a prop, so a camera move never reaches it.
  */
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import type { JSX, ReactNode } from "react";
 import { t } from "../../i18n/index.ts";
 import {
   type ConstellationDetail,
+  type GroupedConstellation,
   type StarDetail,
   describeConstellation,
   describeStar,
-  listConstellations,
+  groupConstellations,
 } from "../../lib/explorer/inspect.ts";
 import type { ObserverView } from "../../lib/explorer/observerView.ts";
 import type { SkyScene } from "../../lib/sky/scene.ts";
@@ -134,6 +135,51 @@ function ConstellationFacts({ con }: { con: ConstellationDetail }): JSX.Element 
   );
 }
 
+interface GroupProps {
+  titleId: string;
+  heading: string;
+  items: readonly GroupedConstellation[];
+  open: boolean;
+  selection: string | null;
+  onToggle: (open: boolean) => void;
+  onChoose: (id: string) => void;
+}
+
+/** One side of the horizon: a native disclosure, so it needs no script to open or close. */
+function ConstellationGroup({ titleId, heading, items, open, selection, onToggle, onChoose }: GroupProps): JSX.Element {
+  return (
+    <details
+      className="explorer-group"
+      open={open}
+      onToggle={(event) => {
+        onToggle(event.currentTarget.open);
+      }}
+    >
+      <summary id={titleId} className="explorer-group-summary">
+        {heading}
+      </summary>
+      <ul className="explorer-list" aria-labelledby={titleId}>
+        {items.map((item) => (
+          <li key={item.id}>
+            <button
+              type="button"
+              className="explorer-list-item"
+              aria-current={item.id === selection ? "true" : undefined}
+              onClick={() => {
+                onChoose(item.id);
+              }}
+            >
+              <span>{item.name}</span>
+              {item.partly && <span className="explorer-list-partly">{t("explorer.list.partly")}</span>}
+              <span className="explorer-list-abbr">{item.abbr}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 function ExplorerInspector({
   scene,
   view,
@@ -145,7 +191,14 @@ function ExplorerInspector({
   onToggle,
   onClose,
 }: Props): JSX.Element {
-  const list = useMemo(() => listConstellations(scene), [scene]);
+  const groups = useMemo(() => groupConstellations(scene, view), [scene, view]);
+  const [aboveOpen, setAboveOpen] = useState(true);
+  const [belowOpen, setBelowOpen] = useState(false);
+  const selectedBelow = selection !== null && groups.below.some((item) => item.id === selection);
+  // A selection in the closed group would otherwise be invisible in the list.
+  useEffect(() => {
+    if (selectedBelow) setBelowOpen(true);
+  }, [selectedBelow, selection]);
   const detail = useMemo(() => {
     if (selection === null) return null;
     return describeStar(scene, view.ctx, selection) ?? describeConstellation(scene, view, selection);
@@ -200,23 +253,24 @@ function ExplorerInspector({
         <h3 id="explorer-list-title" className="explorer-facts-title">
           {t("explorer.list.title")}
         </h3>
-        <ul className="explorer-list" aria-labelledby="explorer-list-title">
-          {list.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                className="explorer-list-item"
-                aria-current={item.id === selection ? "true" : undefined}
-                onClick={() => {
-                  onChoose(item.id);
-                }}
-              >
-                <span>{item.name}</span>
-                <span className="explorer-list-abbr">{item.abbr}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <ConstellationGroup
+          titleId="explorer-list-above"
+          heading={t("explorer.list.above", { count: groups.above.length })}
+          items={groups.above}
+          open={aboveOpen}
+          selection={selection}
+          onToggle={setAboveOpen}
+          onChoose={onChoose}
+        />
+        <ConstellationGroup
+          titleId="explorer-list-below"
+          heading={t("explorer.list.below", { count: groups.below.length })}
+          items={groups.below}
+          open={belowOpen}
+          selection={selection}
+          onToggle={setBelowOpen}
+          onChoose={onChoose}
+        />
       </div>
     </aside>
   );

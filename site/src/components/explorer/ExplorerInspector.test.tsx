@@ -22,11 +22,14 @@ const { scene } = sceneOf(
     { hip: 2, dir: dirAt(10, 100), mag: 2 },
     { hip: 3, dir: dirAt(-20, 110), mag: 3 },
     { hip: 4, dir: dirAt(60, 0), mag: 4.25 },
+    { hip: 5, dir: dirAt(-30, 200), mag: 3 },
+    { hip: 6, dir: dirAt(-40, 210), mag: 3 },
   ],
   [
     ["Ori", "Orion", 1, 2],
     ["Ori", "Orion", 2, 3],
     ["Cru", "Crux", 3, 4],
+    ["Vel", "Vela", 5, 6],
   ],
   [[1, "Rigel"]],
 );
@@ -158,23 +161,64 @@ describe("ExplorerInspector, a constellation", () => {
 });
 
 describe("ExplorerInspector, nothing selected", () => {
-  it("says so and lists the constellations by name", () => {
+  it("says so and lists the constellations above the horizon by name", () => {
     const calls = mount(null);
     expect(screen.getByText(/Nothing is selected/)).toBeTruthy();
-    const list = screen.getByRole("list", { name: "Constellations" });
+    const list = screen.getByRole("list", { name: /Above the horizon/ });
     const names = within(list)
       .getAllByRole("button")
       .map((b) => b.textContent);
-    expect(names).toEqual(["CruxCru", "OrionOri"]);
+    expect(names).toEqual(["CruxpartlyCru", "OrionpartlyOri"]);
     fireEvent.click(within(list).getByRole("button", { name: /Orion/ }));
     expect(calls.chosen).toEqual(["CON:Ori"]);
   });
 
   it("marks the selected constellation in the list", () => {
     mount("CON:Cru");
-    const list = screen.getByRole("list", { name: "Constellations" });
+    const list = screen.getByRole("list", { name: /Above the horizon/ });
     expect(within(list).getByRole("button", { name: /Crux/ }).getAttribute("aria-current")).toBe("true");
     expect(within(list).getByRole("button", { name: /Orion/ }).getAttribute("aria-current")).toBeNull();
+  });
+});
+
+describe("ExplorerInspector, constellations by the horizon", () => {
+  const group = (name: RegExp): HTMLDetailsElement => {
+    const summary = screen.getByText(name).closest("summary");
+    const details = summary?.closest("details");
+    if (!details) throw new Error("no group");
+    return details;
+  };
+
+  it("splits the list in two with a count in each heading", () => {
+    mount(null);
+    expect(group(/^Above the horizon \(2\)$/)).toBeTruthy();
+    expect(group(/^Below the horizon \(1\)$/)).toBeTruthy();
+  });
+
+  it("opens the top group and closes the bottom one", () => {
+    mount(null);
+    expect(group(/^Above the horizon/).open).toBe(true);
+    expect(group(/^Below the horizon/).open).toBe(false);
+  });
+
+  it("says partly in words, only for a constellation that is partly below", () => {
+    mount(null);
+    const above = screen.getByRole("list", { name: /Above the horizon/ });
+    expect(within(above).getAllByText("partly")).toHaveLength(2);
+    const below = group(/^Below the horizon/);
+    expect(within(below).queryByText("partly")).toBeNull();
+  });
+
+  it("lets a constellation below the horizon be chosen", () => {
+    const calls = mount(null);
+    fireEvent.click(within(group(/^Below the horizon/)).getByRole("button", { name: /Vela/ }));
+    expect(calls.chosen).toEqual(["CON:Vel"]);
+  });
+
+  it("opens the bottom group when the selection is in it", () => {
+    mount("CON:Vel");
+    expect(group(/^Below the horizon/).open).toBe(true);
+    expect(within(group(/^Below the horizon/)).getByRole("button", { name: /Vela/ }).getAttribute("aria-current")).toBe("true");
   });
 });
 

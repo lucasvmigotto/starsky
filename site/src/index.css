@@ -1119,6 +1119,36 @@ select.atlas-form-input option {
   color: var(--color-text-muted);
 }
 
+.explorer-list-partly {
+  margin-inline: auto var(--space-2);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.explorer-group {
+  margin-top: var(--space-2);
+}
+
+.explorer-group-summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.explorer-group-summary:hover {
+  background: var(--color-raised);
+}
+
+.explorer-group-summary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 /* Narrow or short screens: the inspector becomes a bottom sheet. */
 @media (max-width: 47.99rem), (max-height: 32rem) {
   .explorer-top {

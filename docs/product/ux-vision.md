@@ -964,6 +964,9 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 | `explorer.kind.star` | Star |
 | `explorer.kind.constellation` | Constellation |
 | `explorer.list.title` | Constellations |
+| `explorer.list.above` | Above the horizon ({count}) |
+| `explorer.list.below` | Below the horizon ({count}) |
+| `explorer.list.partly` | partly |
 | `explorer.search.input` | Search constellations and stars |
 | `explorer.search.placeholder` | Name, abbreviation or HIP number |
 | `explorer.search.results` | Search results |

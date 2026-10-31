@@ -151,7 +151,7 @@ describe("ExplorerPage interface", () => {
     expect(screen.getByRole("button", { name: "Create poster" })).toBeTruthy();
     fireEvent.click(toggle);
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
-    expect(screen.getByRole("list", { name: "Constellations" })).toBeTruthy();
+    expect(screen.getByRole("list", { name: /Above the horizon/ })).toBeTruthy();
   });
 
   it("opens layers with focus inside, and Escape closes them and returns focus", async () => {

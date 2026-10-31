@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { CTX, dirAt, sceneOf } from "./fixture.ts";
-import { describeConstellation, describeStar, listConstellations } from "./inspect.ts";
+import { describeConstellation, describeStar, groupConstellations, listConstellations } from "./inspect.ts";
 import { prepareObserverView } from "./observerView.ts";
 
 const SEGMENTS: [string, string, number, number][] = [
@@ -109,5 +109,53 @@ describe("listConstellations", () => {
       ],
     );
     expect(listConstellations(scene).map((c) => c.id)).toEqual(["CON:And", "CON:Ori"]);
+  });
+});
+
+describe("groupConstellations", () => {
+  function sky() {
+    return sceneOf(
+      [
+        { hip: 1, dir: dirAt(40, 90), mag: 1 },
+        { hip: 2, dir: dirAt(41, 90), mag: 1 },
+        { hip: 3, dir: dirAt(-20, 90), mag: 1 },
+        { hip: 4, dir: dirAt(-30, 200), mag: 1 },
+        { hip: 5, dir: dirAt(-40, 210), mag: 1 },
+        { hip: 6, dir: dirAt(50, 10), mag: 1 },
+        { hip: 7, dir: dirAt(55, 10), mag: 1 },
+      ],
+      [
+        ["Ori", "Orion", 1, 2],
+        ["Vel", "Vela", 4, 5],
+        ["Crx", "Crux", 2, 3],
+        ["And", "Andromeda", 6, 7],
+        ["Aqr", "Aquarius", 4, 5],
+      ],
+    );
+  }
+
+  it("puts a constellation with any star above the horizon in the top group", () => {
+    const { scene, view } = sky();
+    const groups = groupConstellations(scene, view);
+    expect(groups.above.map((c) => c.id)).toEqual(["CON:And", "CON:Crx", "CON:Ori"]);
+    expect(groups.below.map((c) => c.id)).toEqual(["CON:Aqr", "CON:Vel"]);
+  });
+
+  it("marks a top-group constellation partly when some of its stars are below", () => {
+    const { scene, view } = sky();
+    const partly = Object.fromEntries(groupConstellations(scene, view).above.map((c) => [c.id, c.partly]));
+    expect(partly).toEqual({ "CON:And": false, "CON:Crx": true, "CON:Ori": false });
+  });
+
+  it("never marks the bottom group partly, and puts every constellation in exactly one group", () => {
+    const { scene, view } = sky();
+    const groups = groupConstellations(scene, view);
+    expect(groups.below.every((c) => !c.partly)).toBe(true);
+    expect(groups.above.length + groups.below.length).toBe(scene.constellations.length);
+  });
+
+  it("depends on place and moment only: the same view gives the same groups", () => {
+    const { scene, view } = sky();
+    expect(groupConstellations(scene, view)).toEqual(groupConstellations(scene, view));
   });
 });
