@@ -4,7 +4,7 @@ Feature: `010-explorer-canvas` | Branch: `feat/010-explorer-canvas` | Input: `sp
 
 Tests come first (constitution IV). Executor `builder`, Reviewer `thinker`.
 
-- [ ] T001 [US1] Tests then `observerView.ts` and `frame.ts`: determinism, culling, below-horizon dimmed and hidden, near-plane line clipping, horizon polyline
+- [x] T001 [US1] Tests then `observerView.ts` and `frame.ts`: determinism, culling, below-horizon dimmed and hidden, near-plane line clipping, horizon polyline
 - [ ] T002 [US3] Tests then `pick.ts`: nearest star, tie to the brighter, star beats segment, nothing when far, zoom-aware tolerance
 - [ ] T003 [US4] Tests then label decluttering in `frame.ts`: no overlaps, selected first, fewer on small viewports
 - [ ] T004 [US2] Tests then `controller.ts`: drag vs click, pinch, wheel, keys, cancel, reset, double-click center, idle draws nothing, FOV limits
