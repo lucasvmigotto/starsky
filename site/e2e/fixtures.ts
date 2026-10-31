@@ -10,6 +10,9 @@
 import { expect, test as base } from "@playwright/test";
 import { encodePayload } from "../src/lib/encode.ts";
 import type { SharePayload } from "../src/lib/share.ts";
+import { lookAt } from "../src/lib/sky/camera.ts";
+import { type ExplorerPayload, encodeExplorer } from "../src/lib/sky/payload.ts";
+import { raDecToVec } from "../src/lib/sky/vec.ts";
 
 export const BASE_PAYLOAD: SharePayload = {
   v: 1,
@@ -68,6 +71,33 @@ export function exportStatus(page: import("@playwright/test").Page) {
     .locator(".atlas-export")
     .filter({ has: page.getByRole("group", { name: "Export formats", includeHidden: true }) })
     .locator(".atlas-export-status");
+}
+
+/** Sirius, HIP:32349, J2000 as the catalogue holds it. */
+export const SIRIUS = { raDeg: 101.28854105, decDeg: -16.71314306 };
+
+export const BASE_EXPLORER: ExplorerPayload = {
+  v: 1,
+  lat: 40.758,
+  lon: -73.9855,
+  place: "Times Square",
+  tz: "UTC",
+  when_utc: "2026-01-01T05:00:00Z",
+  title: null,
+  mag: 6.5,
+  q: [0, 0, 0, 1],
+  fov: 30,
+  layers: { below: "dimmed" },
+  sel: null,
+};
+
+/** An `#e=` URL whose camera looks at the given sky position, north up. */
+export function explorerUrl(
+  at: { raDeg: number; decDeg: number },
+  overrides: Partial<ExplorerPayload> = {},
+): string {
+  const q = lookAt(raDecToVec(at.raDeg, at.decDeg), [0, 0, 1]);
+  return `/#e=${encodeExplorer({ ...BASE_EXPLORER, q, ...overrides })}`;
 }
 
 /** A shared `test` that fails the test on any unexpected console error. */
