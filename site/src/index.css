@@ -1194,6 +1194,15 @@ select.atlas-form-input option {
   }
 }
 
+/* Short screens have the width to spare: keep the row off the sky's center. */
+@media (max-height: 32rem) {
+  .explorer-toolbar {
+    right: var(--space-2);
+    left: auto;
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .explorer-moment-full,
   .explorer-moment-line,
