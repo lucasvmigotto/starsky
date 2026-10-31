@@ -779,6 +779,9 @@ so an empty state can override the wording later without touching three files.
 | `viewer.export.close` | Close export |
 | `viewer.export.formats` | Export formats |
 | `viewer.export.preparing` | Preparing {format}… |
+| `viewer.export.layout` | Layout |
+| `viewer.export.layout.standard` | Standard |
+| `viewer.export.layout.story` | Story (9:16) |
 | `viewer.makeYourOwn` | Make your own from this sky |
 
 The disclosure trigger carries **two** keys rather than one key plus a suffix.

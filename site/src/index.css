@@ -607,6 +607,11 @@ select.atlas-form-input option {
   margin-top: 0.75rem;
 }
 
+/* The layout choice sits above the format buttons, on its own row. */
+.atlas-export-layout {
+  flex-basis: 100%;
+}
+
 /* `hidden` must win over the flex display above. */
 .atlas-export-actions[hidden] {
   display: none;

@@ -92,6 +92,9 @@ export const enUS = {
   "viewer.export.close": "Close export",
   "viewer.export.formats": "Export formats",
   "viewer.export.preparing": "Preparing {format}…",
+  "viewer.export.layout": "Layout",
+  "viewer.export.layout.standard": "Standard",
+  "viewer.export.layout.story": "Story (9:16)",
 
   "empty.title": "No sky on this page yet",
   "figures.legend": "Figures in this sky",
