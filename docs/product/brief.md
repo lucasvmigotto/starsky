@@ -53,7 +53,7 @@ Later: reference-image regeneration inside the tools image (deferred by finding-
 ## Constraints
 
 - Licenses: code GPL-3.0-only; Hipparcos public domain; Stellarium lines CC BY-SA 4.0 (one-way compatible to GPL-3.0, attributed in-app); Cormorant Garamond OFL 1.1, bundled. [OBSERVED: pyproject.toml:7; THIRD_PARTY_NOTICES.md:3-41]
-- Toolchain: Python >= 3.14, Bun 1.4.2, TypeScript native (`tsgo`), React 19, Vite 6, Tailwind 4 — pinned in `.tool-versions`. [OBSERVED: pyproject.toml:6; .tool-versions]
+- Toolchain: Python >= 3.14, Bun 1.4.2, TypeScript native (`tsgo`), React 19, Vite 8, Tailwind 4 — pinned in `.tool-versions`. [OBSERVED: pyproject.toml:6; .tool-versions]
 - Python is Click + Polars only; no server framework in `src/` (CI-enforced `scripts/check_no_server.py`). No raw-hex or inline-copy in components (ESLint design rules). [OBSERVED: scripts/check_no_server.py]
 - Hosting: R2 free tier + docs-hub prefix `/starsky/`; budgets 500 KB bundle / 400 KB data brotli (CI-enforced). [OBSERVED: site/scripts/check_bundle_budget.sh; vite.config.ts:14]
 - Accessibility: WCAG 2.2 AA — axe suites + computed-contrast checks + 44px targets + keyboard-only paths (verified, not assumed). [OBSERVED: site/e2e/a11y.spec.ts; site/e2e/contrast.spec.ts; specs/000-design-system/tasks.md:71-77]
