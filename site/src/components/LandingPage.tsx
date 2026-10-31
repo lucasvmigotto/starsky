@@ -5,12 +5,13 @@ import {
   unsupportedCharacterMessage,
   unsupportedInPosterFont,
 } from "../lib/render/glyphs.ts";
-import type { Projection, SharePayload, Shape } from "../lib/share.ts";
+import type { SharePayload } from "../lib/share.ts";
 import { fragmentFromHash } from "../lib/share.ts";
 import { t } from "../i18n/index.ts";
 import { randomSampleFragment } from "../lib/site.ts";
 import { DEFAULTS } from "../lib/scene/defaults.ts";
 import { toWhenUtcIso, zonedTimeToUtc } from "../lib/time.ts";
+import PosterFields, { type PosterFieldValues } from "./poster/PosterFields.tsx";
 import { EmptyState } from "./States.tsx";
 
 type LocationMode = "coordinates" | "place";
@@ -25,49 +26,6 @@ function parseDateTimeLocal(value: string): [number, number, number, number, num
   return [Number(match[1]), Number(match[2]), Number(match[3]), Number(match[4]), Number(match[5])];
 }
 
-function Slider({
-  id,
-  label,
-  value,
-  min,
-  max,
-  step,
-  decimals,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  decimals: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <div className="atlas-form-field">
-      <div className="atlas-form-row">
-        <label htmlFor={id}>{label}</label>
-        <output htmlFor={id} className="atlas-form-value">
-          {value.toFixed(decimals)}
-        </output>
-      </div>
-      <input
-        id={id}
-        type="range"
-        className="atlas-form-range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => {
-          onChange(Number(e.target.value));
-        }}
-      />
-    </div>
-  );
-}
-
 export default function LandingPage() {
   const [mode, setMode] = useState<LocationMode>(DEFAULTS.mode);
   const [lat, setLat] = useState<string>(DEFAULTS.lat);
@@ -78,16 +36,18 @@ export default function LandingPage() {
   const [resolving, setResolving] = useState(false);
   const [when, setWhen] = useState<string>(DEFAULTS.when);
   const [tz, setTz] = useState<string>(DEFAULTS.tz);
-  const [projection, setProjection] = useState<Projection>(DEFAULTS.projection);
-  const [fisheyeStrength, setFisheyeStrength] = useState<number>(DEFAULTS.fisheyeStrength);
-  const [minSeparation, setMinSeparation] = useState<number>(DEFAULTS.minSeparation);
-  const [magnitudeLimit, setMagnitudeLimit] = useState<number>(DEFAULTS.magnitudeLimit);
-  const [glow, setGlow] = useState<boolean>(DEFAULTS.glow);
-  const [glowIntensity, setGlowIntensity] = useState<number>(DEFAULTS.glowIntensity);
-  const [constellations, setConstellations] = useState<boolean>(DEFAULTS.constellations);
-  const [constellationLabels, setConstellationLabels] = useState<boolean>(DEFAULTS.constellationLabels);
-  const [shape, setShape] = useState<Shape>(DEFAULTS.shape);
-  const [title, setTitle] = useState<string>(DEFAULTS.title);
+  const [fields, setFields] = useState<PosterFieldValues>({
+    projection: DEFAULTS.projection,
+    fisheyeStrength: DEFAULTS.fisheyeStrength,
+    minSeparation: DEFAULTS.minSeparation,
+    magnitudeLimit: DEFAULTS.magnitudeLimit,
+    glow: DEFAULTS.glow,
+    glowIntensity: DEFAULTS.glowIntensity,
+    constellations: DEFAULTS.constellations,
+    constellationLabels: DEFAULTS.constellationLabels,
+    shape: DEFAULTS.shape,
+    title: DEFAULTS.title,
+  });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -177,7 +137,7 @@ export default function LandingPage() {
       }
     }
 
-    const cleanTitle = title.trim();
+    const cleanTitle = fields.title.trim();
 
     // The poster face has no glyph for emoji or CJK, so those characters would
     // render as a notdef box — silently, and differently in each export. Here the
@@ -200,15 +160,15 @@ export default function LandingPage() {
       when_utc: toWhenUtcIso(whenUtc),
       tz: zone,
       options: {
-        projection,
-        fisheye_strength: fisheyeStrength,
-        min_separation: minSeparation,
-        magnitude_limit: magnitudeLimit,
-        glow,
-        glow_intensity: glowIntensity,
-        constellations,
-        constellation_labels: constellationLabels,
-        shape,
+        projection: fields.projection,
+        fisheye_strength: fields.fisheyeStrength,
+        min_separation: fields.minSeparation,
+        magnitude_limit: fields.magnitudeLimit,
+        glow: fields.glow,
+        glow_intensity: fields.glowIntensity,
+        constellations: fields.constellations,
+        constellation_labels: fields.constellationLabels,
+        shape: fields.shape,
         title: cleanTitle ? cleanTitle : null,
       },
     };
@@ -340,139 +300,19 @@ export default function LandingPage() {
           </div>
         </fieldset>
 
-        <details className="atlas-form-details">
-          <summary>{t("landing.sky.legend")}</summary>
-          <div className="atlas-form-check-row">
-            <label className="atlas-form-check">
-              <input
-                type="checkbox"
-                checked={constellations}
-                onChange={(e) => {
-                  setConstellations(e.target.checked);
-                }}
-              />
-              {t("landing.render.lines")}
-            </label>
-            <label className="atlas-form-check">
-              <input
-                type="checkbox"
-                checked={constellationLabels}
-                onChange={(e) => {
-                  setConstellationLabels(e.target.checked);
-                }}
-              />
-              {t("landing.render.labels")}
-            </label>
-          </div>
-        </details>
-
-        <details className="atlas-form-details">
-          <summary>{t("landing.appearance.legend")}</summary>
-          <div className="atlas-form-field">
-            <label htmlFor="landing-projection">Projection</label>
-            <select
-              id="landing-projection"
-              className="atlas-form-input"
-              value={projection}
-              onChange={(e) => {
-                setProjection(e.target.value as Projection);
-              }}
-            >
-              <option value="stereographic">stereographic</option>
-              <option value="fisheye">fisheye</option>
-            </select>
-          </div>
-          <Slider
-            id="landing-fisheye"
-            label={t("landing.render.fisheye")}
-            value={fisheyeStrength}
-            min={0.1}
-            max={3.0}
-            step={0.1}
-            decimals={1}
-            onChange={setFisheyeStrength}
-          />
-          <Slider
-            id="landing-separation"
-            label={t("landing.render.separation")}
-            value={minSeparation}
-            min={0.0}
-            max={0.05}
-            step={0.001}
-            decimals={3}
-            onChange={setMinSeparation}
-          />
-          <div className="atlas-form-check-row">
-            <label className="atlas-form-check">
-              <input
-                type="checkbox"
-                checked={glow}
-                onChange={(e) => {
-                  setGlow(e.target.checked);
-                }}
-              />
-              Glow
-            </label>
-          </div>
-          <Slider
-            id="landing-glow"
-            label={t("landing.render.glow")}
-            value={glowIntensity}
-            min={0.0}
-            max={3.0}
-            step={0.1}
-            decimals={1}
-            onChange={setGlowIntensity}
-          />
-          <div className="atlas-form-field">
-            <span className="atlas-form-label" id="landing-shape-label">
-              Shape
-            </span>
-            <div className="atlas-form-radio-row" role="radiogroup" aria-labelledby="landing-shape-label">
-              {(["circle", "square"] as const).map((s) => (
-                <label key={s} className="atlas-form-radio">
-                  <input
-                    type="radio"
-                    name="shape"
-                    value={s}
-                    checked={shape === s}
-                    onChange={() => {
-                      setShape(s);
-                    }}
-                  />
-                  {s}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div className="atlas-form-field">
-            <label htmlFor="landing-title">Title (optional)</label>
-            <input
-              id="landing-title"
-              type="text"
-              className="atlas-form-input"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-              }}
-              autoComplete="off"
-            />
-          </div>
-        </details>
-
-        <details className="atlas-form-details">
-          <summary>{t("landing.observation.legend")}</summary>
-          <Slider
-            id="landing-mag"
-            label={t("landing.render.magnitude")}
-            value={magnitudeLimit}
-            min={1.0}
-            max={7.0}
-            step={0.1}
-            decimals={1}
-            onChange={setMagnitudeLimit}
-          />
-        </details>
+        <PosterFields
+          idPrefix="landing"
+          legends={{
+            sky: t("landing.sky.legend"),
+            appearance: t("landing.appearance.legend"),
+            observation: t("landing.observation.legend"),
+          }}
+          titleLabel="Title (optional)"
+          value={fields}
+          onChange={(patch) => {
+            setFields((current) => ({ ...current, ...patch }));
+          }}
+        />
 
         {error && (
           <p role="alert" className="atlas-form-error">
