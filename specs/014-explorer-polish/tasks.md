@@ -4,7 +4,7 @@ Feature: `014-explorer-polish` | Branch: `feat/014-explorer-polish` | Input: `sp
 
 Tests come first (constitution IV). Executor `builder`, Reviewer `thinker`.
 
-- [ ] T001 Rounder corners: tokens, CSS, component docs, vision; artifact surfaces unchanged
+- [x] T001 Rounder corners: tokens, CSS, component docs, vision; artifact surfaces unchanged
 - [ ] T002 Brighter stars: radius, opacity tiers, glow in `frame.ts`, `canvas2d.ts`, `tokens.ts`
 - [ ] T003 Constellation list grouped by the horizon, with counts and "partly"
 - [ ] T004 Copy link icon button inside the moment strip

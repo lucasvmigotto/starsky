@@ -496,8 +496,20 @@ serif tolerates more than sans, but the copy is short.
 
 ### Spacing, radius, elevation
 
-4px base scale (`.25rem` … `4rem`). Radius `2px` on controls, `4px` on panels —
-small, because the artifact's circle is the only curve the product needs.
+4px base scale (`.25rem` … `4rem`). Radius `8px` on controls (`radius.control`),
+`12px` on panels, the moment strip and popovers (`radius.panel`), and `0` on
+anything that shows the poster itself (`radius.artifact`).
+
+The first draft kept corners at `2px` and `4px` because the artifact's circle
+was the only curve the product needed. The Explorer changes that argument: its
+controls float over a sky of points and arcs, and hard rectangles against that
+read as cut-outs, so the controls are rounded. Two radii by role stays true,
+and so does the rule against pills: no button or panel is a stadium shape.
+Icon-only buttons (zoom, copy link) are circles; the panel tab is rounded only
+on the side that faces the sky and square against the screen edge. A poster
+preview is a print, not chrome, so its corners follow the artifact, never the
+controls: the Square shape stays square.
+
 Elevation is expressed with **surface lightness, not shadows**: a night sky has
 no drop shadows, and `rgba(0,0,0,.1)` card shadows are an AI-default tell.
 
@@ -524,7 +536,7 @@ already honoured in `index.css` and must survive the token change.
 `color.bg`, `color.surface`, `color.raised`, `color.text`, `color.text.muted`,
 `color.text.faint`, `color.accent`, `color.accent.ink`, `color.border`,
 `color.border.soft`, `color.focus`; `font.display`, `font.ui`; `space.1`–`space.8`;
-`radius.control`, `radius.panel`; `motion.duration.short`, `motion.duration.reveal`;
+`radius.control`, `radius.panel`, `radius.artifact`; `motion.duration.short`, `motion.duration.reveal`;
 `shadow.none` (deliberately empty).
 
 ---

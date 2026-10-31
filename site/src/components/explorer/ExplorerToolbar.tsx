@@ -80,7 +80,7 @@ function ExplorerToolbar({
       <button
         ref={zoomInRef}
         type="button"
-        className="explorer-tool"
+        className="explorer-tool explorer-tool-icon"
         aria-label={zoomInLabel}
         title={tip(zoomInLabel, "+")}
         disabled={atMin}
@@ -93,7 +93,7 @@ function ExplorerToolbar({
       <button
         ref={zoomOutRef}
         type="button"
-        className="explorer-tool"
+        className="explorer-tool explorer-tool-icon"
         aria-label={zoomOutLabel}
         title={tip(zoomOutLabel, "-")}
         disabled={atMax}

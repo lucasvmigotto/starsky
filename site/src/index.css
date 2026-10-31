@@ -58,10 +58,12 @@
   --space-7: 2rem;
   --space-8: 3rem;
 
-  /* Radius by role: small, because the artifact's circle is the only curve the
-     product needs. Two values, not one applied everywhere. */
-  --radius-control: 2px;
-  --radius-panel: 4px;
+  /* Radius by role. The Explorer's controls float over a sky of points and arcs,
+     so they are rounded; two values, never a pill. Anything that shows the
+     poster itself takes --radius-artifact, so a Square poster stays square. */
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --radius-artifact: 0px;
 
   /* Motion. The reveal is the single orchestrated moment (vision). */
   --motion-duration-short: 160ms;
@@ -867,6 +869,14 @@ select.atlas-form-input option {
   outline-offset: 2px;
 }
 
+.explorer-tool-icon {
+  width: 44px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
 .explorer-tool:disabled {
   opacity: 0.45;
   cursor: default;
@@ -1250,6 +1260,7 @@ select.atlas-form-input option {
 
 .atlas-studio-canvas {
   display: block;
+  border-radius: var(--radius-artifact);
   width: 100%;
   height: auto;
 }

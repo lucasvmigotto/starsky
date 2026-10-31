@@ -28,7 +28,7 @@ A panel. One purpose: group related content on the page background.
 
 - **Variants**: `panel` (bordered, `--color-surface`), `raised` (hover/active)
 - **States**: default · hover · (selected is the *content's*, not the surface's)
-- **Radius**: `--radius-panel`. Elevation is surface lightness, never a shadow
+- **Radius**: `--radius-panel` (12px; controls use `--radius-control`, 8px; a surface that shows the poster uses `--radius-artifact`). Elevation is surface lightness, never a shadow
 - **Do**: use for a group of controls or figures. **Don't**: use for a single
   control, or stack two surfaces inside each other
 
