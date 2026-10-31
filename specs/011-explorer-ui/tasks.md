@@ -5,7 +5,7 @@ Feature: `011-explorer-ui` | Branch: `feat/011-explorer-ui` | Input: `specs/011-
 Tests come first (constitution IV). Executor `builder`, Reviewer `thinker`.
 
 - [x] T001 [US1] Tests then `inspect.ts`
-- [ ] T002 [US2] Tests then `search.ts`
+- [x] T002 [US2] Tests then `search.ts`
 - [ ] T003 [US3] Tests then `metadata.ts`
 - [ ] T004 [US6] Tests then `link.ts` and controller settled event, `centerOn`, `setLayer`, `zoomBy`
 - [ ] T005 [US7] Tests then label offsets in `frame.ts`
