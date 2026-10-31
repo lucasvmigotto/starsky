@@ -28,7 +28,8 @@ import { GlobalFonts, createCanvas, loadImage } from "@napi-rs/canvas";
 import { formatDetailLine } from "../caption.ts";
 import { buildSkyModel, DISK_CX, DISK_CY, DISK_R, type SegmentRow, type StarRow } from "../skymodel.ts";
 import type { SharePayload } from "../share.ts";
-import { renderPoster } from "./poster.ts";
+import { renderPoster, renderStory } from "./poster.ts";
+import { storyGeometry } from "./format.ts";
 
 // Register the bundled poster font with the canvas library, as the Python
 // renderer used to with `fontManager.addfont`.
@@ -73,6 +74,8 @@ interface MatrixCase {
   tz: string;
   options: Partial<SharePayload["options"]>;
   size_px: number;
+  /** `story` is the 1080 x 1920 export format (BCR-0012); absent is standard. */
+  format?: "story";
   expected: CaseExpected;
 }
 interface Matrix {
@@ -154,17 +157,13 @@ function renderCase(c: MatrixCase): RenderResult {
   const { catalog, segments } = readData();
   const payload = payloadFor(c);
   const model = buildSkyModel(payload, catalog, segments);
-  const width = c.size_px;
-  const height = Math.round(c.size_px * 1.22);
+  const story = c.format === "story";
+  const width = story ? storyGeometry().widthPx : c.size_px;
+  const height = story ? storyGeometry().heightPx : Math.round(c.size_px * 1.22);
   const canvas = createCanvas(width, height);
-  renderPoster(
-    canvas.getContext("2d") as unknown as CanvasRenderingContext2D,
-    payload,
-    model,
-    c.size_px,
-    1,
-    REFERENCE_PREVIEW,
-  );
+  const ctx = canvas.getContext("2d") as unknown as CanvasRenderingContext2D;
+  if (story) renderStory(ctx, payload, model, REFERENCE_PREVIEW);
+  else renderPoster(ctx, payload, model, c.size_px, 1, REFERENCE_PREVIEW);
   return {
     pixels: canvas.getContext("2d").getImageData(0, 0, width, height).data,
     png: canvas.toBuffer("image/png"),

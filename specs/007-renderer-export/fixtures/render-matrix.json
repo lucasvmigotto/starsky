@@ -9,7 +9,8 @@ renders:
   reference in `site/src/lib/render/__references__/`.
 
 Inputs per case: `id`, `lat`, `lon`, `place`, `when_utc` (ISO-8601 UTC), `tz`,
-`options`, `size_px`, `expected`.
+`options`, `size_px`, `expected`, and an optional `format` (`"story"` renders the
+1080 × 1920 story format, BCR-0012; absent means the standard poster).
 
 This file was the browser↔CLI *parity* matrix while two renderers existed. The
 Python renderer was removed (BCR-0005), so "parity" is gone; what remains is the
@@ -91,6 +92,23 @@ deliberately, regenerate the references with
       "options": {"magnitude_limit": 3.5, "glow_intensity": 2.0},
       "size_px": 320,
       "expected": {"stars": 143, "segments": 120, "figures": 20}
+    },
+    {
+      "id": "nyc-newyear-story",
+      "format": "story",
+      "lat": 40.758,
+      "lon": -73.9855,
+      "place": "Times Square",
+      "when_utc": "2026-01-01T00:00:00Z",
+      "tz": "America/New_York",
+      "options": {"magnitude_limit": 4.5, "shape": "circle", "title": "New Year"},
+      "size_px": 1080,
+      "expected": {
+        "stars": 428,
+        "segments": 330,
+        "figures": 38,
+        "caption": "40.7580°N, 73.9855°W — Times Square · Dec 31, 2025, 7:00 PM America/New_York"
+      }
     }
   ]
 }
