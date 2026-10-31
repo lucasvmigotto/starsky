@@ -1,6 +1,6 @@
 # Feature: Poster Studio and share migration
 
-Feature: `012-poster-studio` | Status: In progress | Depends: 011 | Issue: #53 | Direction: BCR-0011, BCR-0012
+Feature: `012-poster-studio` | Status: Implemented | Depends: 011 | Issue: #53 | Direction: BCR-0011, BCR-0012
 
 ## Why
 
