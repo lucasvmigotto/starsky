@@ -96,6 +96,12 @@ export interface FramePlan {
 /** Half a glyph plus its glow: stars this far outside the viewport cannot touch it. */
 const CULL_MARGIN_PX = 10;
 const RING_GAP_PX = 5;
+const LABEL_HEIGHT_PX = 14;
+const LABEL_CHAR_WIDTH_PX = 6.6;
+const LABEL_PAD_PX = 6;
+/** One label per this many square pixels, so small viewports thin out first. */
+const LABEL_AREA_PX2 = 60_000;
+const LABEL_CAP_MIN = 2;
 const GLOW_CLASS = 2.5;
 const SAMPLE_DEG = 3;
 const GRID_STEP_DEG = 30;
@@ -274,6 +280,75 @@ function planCardinals(input: FrameInput): CardinalMark[] {
   return out;
 }
 
+function overlaps(a: LabelMark, b: LabelMark): boolean {
+  return (
+    Math.abs(a.x - b.x) < (a.width + b.width) / 2 + LABEL_PAD_PX &&
+    Math.abs(a.y - b.y) < (a.height + b.height) / 2 + LABEL_PAD_PX
+  );
+}
+
+function planLabels(input: FrameInput): LabelMark[] {
+  const { scene, view, camera, viewport, layers, selection } = input;
+  if (!layers.constellationLabels) return [];
+  const v = scene.vectors;
+  interface Candidate {
+    mark: LabelMark;
+    brightness: number;
+  }
+  const candidates: Candidate[] = [];
+  for (const con of scene.constellations) {
+    let sx = 0;
+    let sy = 0;
+    let onScreen = 0;
+    let anyAbove = false;
+    for (const i of con.memberIndices) {
+      if (!isBelow(view.altitudesDeg[i] ?? 0)) anyAbove = true;
+      const p = projectToViewport(
+        camera,
+        [v[i * 3] ?? 0, v[i * 3 + 1] ?? 0, v[i * 3 + 2] ?? 0],
+        viewport.width,
+        viewport.height,
+      );
+      if (p && p.x >= 0 && p.x <= viewport.width && p.y >= 0 && p.y <= viewport.height) {
+        sx += p.x;
+        sy += p.y;
+        onScreen++;
+      }
+    }
+    if (onScreen === 0 || (!anyAbove && layers.below === "hidden")) continue;
+    const width = con.name.length * LABEL_CHAR_WIDTH_PX;
+    const x = Math.min(viewport.width - width / 2, Math.max(width / 2, sx / onScreen));
+    const y = Math.min(viewport.height - LABEL_HEIGHT_PX / 2, Math.max(LABEL_HEIGHT_PX / 2, sy / onScreen));
+    candidates.push({
+      brightness: scene.stars[con.brightestIndex]?.mag ?? Infinity,
+      mark: {
+        id: con.id,
+        text: con.name,
+        x,
+        y,
+        width,
+        height: LABEL_HEIGHT_PX,
+        selected: con.id === selection,
+        dim: !anyAbove,
+      },
+    });
+  }
+  candidates.sort(
+    (a, b) =>
+      Number(b.mark.selected) - Number(a.mark.selected) ||
+      a.brightness - b.brightness ||
+      (a.mark.id < b.mark.id ? -1 : 1),
+  );
+  const cap = Math.max(LABEL_CAP_MIN, Math.floor((viewport.width * viewport.height) / LABEL_AREA_PX2));
+  const placed: LabelMark[] = [];
+  for (const { mark } of candidates) {
+    if (placed.length >= cap) break;
+    if (placed.some((other) => overlaps(mark, other))) continue;
+    placed.push(mark);
+  }
+  return placed;
+}
+
 function starMark(
   input: FrameInput,
   id: string | null,
@@ -316,7 +391,7 @@ export function planFrame(input: FrameInput): FramePlan {
       ? gridLines().flatMap((line) => polylines(camera, line, viewport, false))
       : [],
     cardinals: planCardinals(input),
-    labels: [],
+    labels: planLabels(input),
     marks,
   };
 }
