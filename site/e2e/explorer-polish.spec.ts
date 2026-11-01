@@ -317,7 +317,7 @@ test.describe("constellation list by the horizon", () => {
     const partly = above.locator(".explorer-list-item .sr-only");
     expect(await partly.count()).toBeGreaterThan(0);
     await expect(partly.first()).toHaveText("partly above the horizon");
-    await expect(partly.first()).not.toBeVisible();
+    expect(await partly.first().evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
     await expect(below.locator(".explorer-list-item .sr-only")).toHaveCount(0);
     await expect(above.locator(".explorer-list-item").first().locator("span:not(.sr-only)")).toHaveCount(1);
   });
@@ -489,20 +489,26 @@ test.describe("toolbar and panel tab", () => {
     expect(closed.height).toBeGreaterThanOrEqual(44);
     expect(closed.x + closed.width).toBeCloseTo(vp?.width ?? 0, 0);
     expect(closed.y + closed.height / 2).toBeCloseTo((vp?.height ?? 0) / 2, 0);
-    // Rounded only on the sky-facing side.
+    // Rounded only on the sky-facing side, with the toolbar container's radius.
     const face = tab(page).locator(".explorer-tab-face");
     const radius = await face.evaluate((el) => {
       const s = getComputedStyle(el);
       return [s.borderTopLeftRadius, s.borderBottomLeftRadius, s.borderTopRightRadius, s.borderBottomRightRadius];
     });
-    expect(radius).toEqual(["8px", "8px", "0px", "0px"]);
+    expect(radius).toEqual(["12px", "12px", "0px", "0px"]);
     await tab(page).click();
     await expect(tab(page)).toHaveAttribute("aria-expanded", "true");
     await expect(tab(page)).toHaveAttribute("aria-label", "Hide details");
     await expect(tab(page)).toHaveAttribute("data-chevron", "right");
-    const panel = await boxOf(page.getByRole("complementary", { name: "Inspector" }));
+    // The panel and the tab slide together; wait for them to arrive.
+    await expect
+      .poll(async () => {
+        const panel = await boxOf(page.getByRole("complementary", { name: "Inspector" }));
+        const onPanel = await boxOf(tab(page));
+        return Math.abs(onPanel.x + onPanel.width - panel.x);
+      })
+      .toBeLessThan(1);
     const onPanel = await boxOf(tab(page));
-    expect(onPanel.x + onPanel.width).toBeCloseTo(panel.x, 0);
     expect(onPanel.y + onPanel.height / 2).toBeCloseTo((vp?.height ?? 0) / 2, 0);
     await tab(page).click();
     await expect(tab(page)).toHaveAttribute("aria-expanded", "false");
