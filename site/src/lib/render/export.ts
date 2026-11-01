@@ -15,9 +15,10 @@ import {
   estimateTextWidth,
   SVG_LENGTH_ADJUST,
 } from "./caption.ts";
+import { type PosterFormat, storyGeometry, storyMargin } from "./format.ts";
 import {
-  AXIS_EXTENT,
   REFERENCE_DPI,
+  insideSkySquare,
   posterGeometry,
   unitToCanvas,
 } from "./poster.ts";
@@ -60,18 +61,33 @@ export function buildPosterSvg(
    * conservative, erring toward shrinking text that would have fit.
    */
   measure: (text: string, fontSizePx: number) => number = estimateTextWidth,
+  /**
+   * `story` (BCR-0012) draws the same poster, at the format's own 1080 px
+   * width, inside a 1080 x 1920 page: full-page background, the poster body in
+   * a translated group. `sizePx` is ignored for it. Anything else leaves the
+   * output byte-identical to before the option existed (FR-002).
+   */
+  format: PosterFormat = "standard",
 ): string {
-  const geometry = posterGeometry(sizePx);
+  if (format === "story") sizePx = storyGeometry().widthPx;
+  const geometry = posterGeometry(sizePx, payload.options.shape);
   const [cx, cy] = unitToCanvas(0, 0, geometry);
-  const radius = (1 / AXIS_EXTENT) * (sizePx / 2);
+  const radius = (1 / geometry.extent) * (sizePx / 2);
   const parts: string[] = [];
 
+  const pageHeight =
+    format === "story"
+      ? storyGeometry().heightPx.toString()
+      : geometry.canvasHeight.toFixed(1);
   parts.push(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx.toString()}" height="${geometry.canvasHeight.toFixed(1)}" viewBox="0 0 ${sizePx.toString()} ${geometry.canvasHeight.toFixed(1)}">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx.toString()}" height="${pageHeight}" viewBox="0 0 ${sizePx.toString()} ${pageHeight}">`,
   );
   parts.push(
     `<rect width="100%" height="100%" fill="${SPEC.colors.background}"/>`,
   );
+  if (format === "story") {
+    parts.push(`<g transform="translate(0, ${storyMargin(sizePx).toString()})">`);
+  }
 
   // Sky group, clipped to the disc.
   parts.push(`<g clip-path="url(#disc)">`);
@@ -82,6 +98,7 @@ export function buildPosterSvg(
     for (const seg of model.segments) {
       const a = model.stars[seg.a];
       const b = model.stars[seg.b];
+      if (a === undefined || b === undefined) continue;
       const [ax, ay] = unitToCanvas(a.unitX, a.unitY, geometry);
       const [bx, by] = unitToCanvas(b.unitX, b.unitY, geometry);
       parts.push(
@@ -107,6 +124,7 @@ export function buildPosterSvg(
     for (const figure of model.figures) {
       const ux = (figure.centroidX - previewCx) / previewR;
       const uy = (figure.centroidY - previewCy) / previewR;
+      if (!insideSkySquare(ux, uy, geometry)) continue;
       const [x, y] = unitToCanvas(ux, uy, geometry);
       const label = figure.name.toUpperCase();
       parts.push(
@@ -151,8 +169,11 @@ export function buildPosterSvg(
   parts.push(`</g>`);
 
   parts.push(
-    `<defs><clipPath id="disc"><circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${radius.toFixed(2)}"/></clipPath></defs>`,
+    payload.options.shape === "square"
+      ? `<defs><clipPath id="disc"><rect x="0" y="0" width="${sizePx.toString()}" height="${geometry.skyPx.toString()}"/></clipPath></defs>`
+      : `<defs><clipPath id="disc"><circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${radius.toFixed(2)}"/></clipPath></defs>`,
   );
+  if (format === "story") parts.push(`</g>`);
   parts.push(`</svg>`);
   return parts.join("");
 }
@@ -174,8 +195,9 @@ export function exportSvg(
   payload: SharePayload,
   model: SkyModel,
   sizePx: number,
+  format: PosterFormat = "standard",
 ): Blob {
-  return new Blob([buildPosterSvg(payload, model, sizePx)], {
+  return new Blob([buildPosterSvg(payload, model, sizePx, undefined, format)], {
     type: "image/svg+xml",
   });
 }
@@ -185,20 +207,24 @@ export async function exportPdf(
   payload: SharePayload,
   model: SkyModel,
   sizePx: number,
+  format: PosterFormat = "standard",
 ): Promise<Blob> {
-  const svg = buildPosterSvg(payload, model, sizePx);
+  if (format === "story") sizePx = storyGeometry().widthPx;
+  const svg = buildPosterSvg(payload, model, sizePx, undefined, format);
   const { jsPDF } = await import("jspdf");
   const { svg2pdf } = await import("svg2pdf.js");
-  const geometry = posterGeometry(sizePx);
+  const geometry = posterGeometry(sizePx, payload.options.shape);
+  const pageHeight =
+    format === "story" ? storyGeometry().heightPx : geometry.canvasHeight;
   const doc = new jsPDF({
-    orientation: geometry.canvasHeight > sizePx ? "portrait" : "landscape",
+    orientation: pageHeight > sizePx ? "portrait" : "landscape",
     unit: "px",
-    format: [sizePx, geometry.canvasHeight],
+    format: [sizePx, pageHeight],
   });
 
   // Embed the poster's own face (BCR-0006). Without this jsPDF falls back to the
   // 14 standard PDF fonts and the caption renders as Times on every reader,
-  // which the export contract forbids. The subset is ~108 KB of the 1.2 MB
+  // which the export contract forbids. The subset is ~224 KB of the 1.2 MB
   // variable TTF, covering every glyph the poster can draw.
   await registerPosterFontForPdf(doc);
 
@@ -209,7 +235,7 @@ export async function exportPdf(
     x: 0,
     y: 0,
     width: sizePx,
-    height: geometry.canvasHeight,
+    height: pageHeight,
   });
   return doc.output("blob");
 }

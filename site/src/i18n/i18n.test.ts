@@ -18,7 +18,7 @@ describe("copy", () => {
     expect(t("studio.place.resolved", { place: "Times Square" })).toBe(
       "Showing Times Square",
     );
-    expect(t("footer.version", { version: "1.0.0" })).toBe("starsky v1.0.0");
+    expect(t("footer.version", { version: "1.0.0" })).toBe("starsky@v1.0.0");
     expect(
       t("viewer.export.done", { filename: "starsky-sky.png" }),
     ).toBe("Saved starsky-sky.png");
@@ -101,6 +101,43 @@ describe("copy", () => {
     // §§11–12): three legends in, `landing.render.legend` out.
     // 104 → 102 for the hero swap: the Landing speaks the canonical
     // `landing.title` / `.subtitle`, so the two `.legacy` keys retire.
-    expect(copyKeys().length).toBe(102);
+    // 102 → 117 for the Explorer (010-explorer-canvas): heading, loading,
+    // canvas label and hint, five announcements, four cardinal letters, back.
+    // 180 → 183 for the export layout choice (012-poster-studio, BCR-0012).
+    // 183 → 190 for the Poster Studio page (012-poster-studio).
+    // 190 → 192 for the Explorer and Viewer hand-offs (012-poster-studio).
+    // 195 → 187 for the image-only Viewer (015, BCR-0013): the figures panel's
+    // seven keys and `viewer.announced.figureSelected` retire.
+    // 187 → 184 for the form regroup (015): the two Advanced legends in;
+    // the Sky and Observation legends (landing and Studio) and `landing.explain`
+    // out.
+    // 184 → 178 for the static Viewer image (FR-010): `viewer.announced.viewReset`,
+    // `viewer.canvasHint`, `viewer.viewControls`, `viewer.zoomIn`, `viewer.zoomOut` and
+    // `viewer.resetView` retire.
+    // 178 → 177 for the footer (FR-011): `footer.source` retires; the version is the link.
+    // 177 → 186 for the landing's place search (013-location-first).
+    // 186 → 203 for the location map and the selected-place line (013-location-first).
+    // 203 → 208 for the coordinates toggle and its errors (013-location-first).
+    // 208 → 208 for the moment row (+2: timezone label, Detect) and the retired
+    // landing form (−2: `landing.mode.label`, `landing.appearance.legend`).
+    // 208 → 212 for the landing actions and the moment and timezone errors (013-location-first).
+    // 212 → 207 for the always-visible map and the Coordinates switch: `landing.map.show`,
+    // `.hide`, `.expand`, `.collapse` and `.skip` retire, and 212 → 206 with `landing.poster`
+    // ("Make a poster instead": Explore this sky is the only action) (013-location-first).
+    // 206 → 207 for the unreadable `#c=` link notice (013-location-first); 207 → 208 for the Studio:
+    // the subtitle retires and the summary note splits around its link to the start page;
+    // 208 → 210 for the capitalised Projection options (`landing.render.projection.*`).
+    // 213 → 217 for the error boundary's page (`site.error.*`, 017 hardening).
+    // 217 → 227 for pt-BR (018): `landing.locale.*` (3) become `site.language.*`
+    // (3, the footer switcher); `studio.lang.label` / `.hint` (the poster
+    // language); five PosterFields words that were inline English
+    // (`landing.render.projection`, `.shape`, `.shape.square`, `.shape.circle`,
+    // `.glowToggle`); and the share summary (`viewer.share.summary`,
+    // `.projection.stereographic`, `.projection.fisheye`).
+    // 227 → 235 for the privacy page: `landing.privacy` and `.osm` retire, and
+    // `landing.privacy.link` plus nine `site.privacy.*` keys arrive.
+    // 235 → 241 for the constellation tooltip and star list (019): `explorer.tooltip.constellation`,
+    // `.constellationOne`, `.namedMore` and `explorer.members.title`, `.detail`, `.detailBelow`.
+    expect(copyKeys().length).toBe(241);
   });
 });

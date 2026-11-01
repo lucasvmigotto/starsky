@@ -1,8 +1,44 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { HashRouter, Route, Routes } from "react-router-dom";
+import ErrorBoundary from "./components/ErrorBoundary.tsx";
 import LandingPage from "./components/LandingPage.tsx";
+import PrivacyPage, { PRIVACY_HASH } from "./components/PrivacyPage.tsx";
 import ViewerPage from "./components/ViewerPage.tsx";
+import { t } from "./i18n/index.ts";
+import { useLocale } from "./i18n/useLocale.ts";
 import { fragmentFromHash } from "./lib/share.ts";
+
+// The Explorer is its own chunk: `#s=` and the landing never download it.
+const ExplorerPage = lazy(() => import("./components/explorer/ExplorerPage.tsx"));
+// So is the Poster Studio: only `#studio=` downloads it.
+const StudioPage = lazy(() => import("./components/studio/StudioPage.tsx"));
+
+/**
+ * The `#e=` hash, or null. Deliberately not `explorerFragmentFromHash`: that
+ * lives beside the Explorer's codec, and importing it here would pull the codec
+ * into the main chunk the lazy page exists to keep it out of.
+ */
+function explorerHash(): string | null {
+  const { hash } = window.location;
+  return hash.startsWith("#e=") && hash.length > 3 ? hash : null;
+}
+
+/** The `#studio=` hash, or null. Kept here for the same reason as `explorerHash`. */
+function studioHash(): string | null {
+  const { hash } = window.location;
+  return hash.startsWith("#studio=") && hash.length > 8 ? hash : null;
+}
+
+/** The `#c=` hash, or null: it opens the landing, pre-filled, and a pasted one remounts it. */
+function creationHash(): string | null {
+  const { hash } = window.location;
+  return hash.startsWith("#c=") && hash.length > 3 ? hash : null;
+}
+
+/** `#privacy`: the privacy notice, a page of its own. */
+function isPrivacyHash(): boolean {
+  return window.location.hash === PRIVACY_HASH;
+}
 
 function hasShareFragment(): boolean {
   return fragmentFromHash(window.location.hash) !== null;
@@ -17,26 +53,90 @@ function hasShareFragment(): boolean {
  */
 function Root() {
   const [ready, setReady] = useState(hasShareFragment);
+  const [explorer, setExplorer] = useState(explorerHash);
+  const [studio, setStudio] = useState(studioHash);
+  const [creation, setCreation] = useState(creationHash);
+  const [privacy, setPrivacy] = useState(isPrivacyHash);
   useEffect(() => {
     const onHash = () => {
       setReady(hasShareFragment());
+      setExplorer(explorerHash());
+      setStudio(studioHash());
+      setCreation(creationHash());
+      setPrivacy(isPrivacyHash());
     };
     window.addEventListener("hashchange", onHash);
     return () => {
       window.removeEventListener("hashchange", onHash);
     };
   }, []);
-  return ready ? <ViewerPage /> : <LandingPage />;
+  if (ready) return <ViewerPage />;
+  if (privacy) return <PrivacyPage />;
+  if (explorer !== null) {
+    // Keyed by the fragment so a pasted `#e=` link replaces the camera and data.
+    return (
+      <Suspense
+        fallback={
+          <p className="atlas-loading" role="status">
+            {t("explorer.loading")}
+          </p>
+        }
+      >
+        <ExplorerPage key={explorer} />
+      </Suspense>
+    );
+  }
+  if (studio !== null) {
+    // Keyed by the fragment so a pasted `#studio=` link replaces the draft; the
+    // page's own `replaceState` writes raise no `hashchange`, so editing never
+    // remounts it.
+    return (
+      <Suspense
+        fallback={
+          <p className="atlas-loading" role="status">
+            {t("viewer.loading")}
+          </p>
+        }
+      >
+        <StudioPage key={studio} />
+      </Suspense>
+    );
+  }
+  // Keyed by the fragment so a pasted `#c=` link refills the form; the landing's own
+  // `replaceState` writes raise no `hashchange`, so typing never remounts it.
+  return <LandingPage key={creation ?? "blank"} />;
+}
+
+/** Keeps a failed page from blanking the site; trying again when the address changes. */
+function Guarded() {
+  const [hash, setHash] = useState(() => window.location.hash);
+  useEffect(() => {
+    const onHash = () => {
+      setHash(window.location.hash);
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => {
+      window.removeEventListener("hashchange", onHash);
+    };
+  }, []);
+  return (
+    <ErrorBoundary resetKey={hash}>
+      <Root />
+    </ErrorBoundary>
+  );
 }
 
 export default function App() {
+  // Subscribed at the root, so a language switch re-renders every page in place
+  // (018): nothing remounts, so the form, the camera and the draft are kept.
+  useLocale();
   return (
     // The docs-hub prefix lives in the URL pathname via Vite's `base`; the
     // hash carries the route. A hash router must NOT set `basename` — it would
     // look for the prefix inside the hash and render a blank page.
     <HashRouter>
       <Routes>
-        <Route path="*" element={<Root />} />
+        <Route path="*" element={<Guarded />} />
       </Routes>
     </HashRouter>
   );

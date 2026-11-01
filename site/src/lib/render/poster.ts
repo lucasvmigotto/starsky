@@ -20,11 +20,12 @@
  * hard-coded here (constitution II).
  */
 import { formatDetailLine } from "../caption.ts";
-import type { SharePayload } from "../share.ts";
+import { type Shape, type SharePayload, posterLocale } from "../share.ts";
 import type { SkyModel, VisibleStar } from "../skymodel.ts";
 import { AXIS_EXTENT } from "../skymodel.ts";
 import { SPEC } from "../spec.ts";
 import { captionMaxWidth, fitCaption } from "./caption.ts";
+import { type PosterFormat, storyGeometry, storyMargin } from "./format.ts";
 
 /** The unit-disc extent the sky axes span. Re-exported so every consumer keeps
  * importing it from here; the value lives in `skymodel.ts` beside `DISK_R`. */
@@ -44,11 +45,36 @@ export interface PosterGeometry {
   canvasHeight: number;
   /** Device pixels per logical pixel (for the backing store). */
   dpr: number;
+  /** The sky shape this geometry draws (BCR-0014). */
+  shape: Shape;
+  /**
+   * Unit-disc half-extent the sky square spans: `AXIS_EXTENT` for the circle,
+   * `1 / sqrt(2)` for a square inscribed in the horizon disc.
+   */
+  extent: number;
 }
 
-export function posterGeometry(sizePx: number): PosterGeometry {
+/**
+ * The one place the shape decides how far the sky square reaches in unit-disc
+ * terms (BCR-0014). Canvas, SVG and PDF all read it through `posterGeometry`.
+ * The inscribed square has half-side `1 / sqrt(2)`: its corners sit at unit
+ * radius 1, on the horizon, so nothing below the horizon is ever drawn.
+ */
+export function skyExtent(shape: Shape): number {
+  if (shape === "square" && SPEC.shape.square.fill === "inscribed") {
+    return 1 / Math.SQRT2;
+  }
+  return AXIS_EXTENT;
+}
+
+export function posterGeometry(
+  sizePx: number,
+  shape: Shape = "circle",
+): PosterGeometry {
   const bandPx = sizePx * SPEC.caption.bandFraction;
   return {
+    shape,
+    extent: skyExtent(shape),
     sizePx,
     skyPx: sizePx,
     bandPx,
@@ -101,7 +127,7 @@ export function unitToCanvas(
   const cx = geometry.sizePx / 2;
   const cy = geometry.skyPx / 2;
   const half = geometry.sizePx / 2;
-  return [cx + (u / AXIS_EXTENT) * half, cy + (v / AXIS_EXTENT) * half];
+  return [cx + (u / geometry.extent) * half, cy + (v / geometry.extent) * half];
 }
 
 /**
@@ -135,6 +161,36 @@ function pointsToPx(points: number): number {
   return points * (REFERENCE_DPI / 72);
 }
 
+/**
+ * Whether a unit-disc point lies inside the sky's drawn square. Labels use it:
+ * one whose anchor falls outside is not drawn (BCR-0014); one that merely
+ * crosses the edge is clipped by the sky clip, never moved.
+ */
+export function insideSkySquare(
+  u: number,
+  v: number,
+  geometry: PosterGeometry,
+): boolean {
+  return Math.abs(u) <= geometry.extent && Math.abs(v) <= geometry.extent;
+}
+
+/**
+ * Add the sky's clip shape to the current path: the horizon disc for the
+ * circle, the whole sky square for the inscribed square (BCR-0014).
+ */
+function skyClipPath(
+  ctx: CanvasRenderingContext2D,
+  geometry: PosterGeometry,
+): void {
+  if (geometry.shape === "square") {
+    ctx.rect(0, 0, geometry.sizePx, geometry.skyPx);
+    return;
+  }
+  const [cx, cy] = unitToCanvas(0, 0, geometry);
+  const radius = (1 / geometry.extent) * (geometry.sizePx / 2);
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+}
+
 function drawSegments(
   ctx: CanvasRenderingContext2D,
   model: SkyModel,
@@ -146,6 +202,7 @@ function drawSegments(
   for (const seg of model.segments) {
     const a = model.stars[seg.a];
     const b = model.stars[seg.b];
+    if (a === undefined || b === undefined) continue;
     const [ax, ay] = unitToCanvas(a.unitX, a.unitY, geometry);
     const [bx, by] = unitToCanvas(b.unitX, b.unitY, geometry);
     ctx.moveTo(ax, ay);
@@ -178,14 +235,14 @@ export function drawFocusOverlay(
   options: SharePayload["options"],
 ): void {
   const [cx, cy] = unitToCanvas(0, 0, geometry);
-  const radius = (1 / AXIS_EXTENT) * (geometry.sizePx / 2);
-  if (focused < 0 || focused >= model.figures.length) return;
-  const figure = model.figures[focused];
+  const radius = (1 / geometry.extent) * (geometry.sizePx / 2);
+  const figure = focused < 0 ? undefined : model.figures[focused];
+  if (!figure) return;
 
   ctx.save();
   // Veil: dim everything inside the disc.
   ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  skyClipPath(ctx, geometry);
   ctx.clip();
   ctx.fillStyle = withAlpha(SPEC.colors.background, 0.62);
   ctx.fillRect(
@@ -207,6 +264,7 @@ export function drawFocusOverlay(
       if (model.figures[seg.figure] !== figure) continue;
       const a = model.stars[seg.a];
       const b = model.stars[seg.b];
+      if (a === undefined || b === undefined) continue;
       const [ax, ay] = unitToCanvas(a.unitX, a.unitY, geometry);
       const [bx, by] = unitToCanvas(b.unitX, b.unitY, geometry);
       ctx.moveTo(ax, ay);
@@ -223,6 +281,10 @@ export function drawFocusOverlay(
     const ux = (figure.centroidX - preview.diskCx) / preview.diskR;
     const uy = (figure.centroidY - preview.diskCy) / preview.diskR;
     const [lx, ly] = unitToCanvas(ux, uy, geometry);
+    if (!insideSkySquare(ux, uy, geometry)) {
+      ctx.restore();
+      return;
+    }
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = `${pointsToPx(SPEC.constellations.labelFontSize).toString()}px "Cormorant Garamond", serif`;
@@ -290,6 +352,7 @@ function drawLabels(
     // round-trip as the focus overlay: plus on y, exact at the unified scale.
     const ux = (figure.centroidX - preview.diskCx) / preview.diskR;
     const uy = (figure.centroidY - preview.diskCy) / preview.diskR;
+    if (!insideSkySquare(ux, uy, geometry)) continue;
     const [x, y] = unitToCanvas(ux, uy, geometry);
     // render-spec pins labelUppercase: true (guarded by spec.test.ts).
     const label = figure.name.toUpperCase();
@@ -302,7 +365,7 @@ function drawRing(
   geometry: PosterGeometry,
 ): void {
   const [cx, cy] = unitToCanvas(0, 0, geometry);
-  const radius = (1 / AXIS_EXTENT) * (geometry.sizePx / 2);
+  const radius = (1 / geometry.extent) * (geometry.sizePx / 2);
   ctx.strokeStyle = withAlpha(RING_COLOR, SPEC.shape.ringAlpha);
   ctx.lineWidth = pointsToPx(SPEC.shape.ringWidth);
   ctx.beginPath();
@@ -343,12 +406,14 @@ export function captionLines(
   measure: (text: string, fontSizePx: number) => number,
 ): ReadonlyArray<{ text: string; fontSizePx: number; opacity: number }> {
   const maxWidth = captionMaxWidth(geometry.sizePx);
+  // The link's language (absent: en-US), never the visitor's (018 FR-006).
   const detail = formatDetailLine(
     payload.lat,
     payload.lon,
     payload.place,
     payload.when_utc,
     payload.tz,
+    posterLocale(payload),
   );
   if (payload.options.title) {
     return [
@@ -447,7 +512,7 @@ function applyCircleMask(
   geometry: PosterGeometry,
 ): void {
   const [cx, cy] = unitToCanvas(0, 0, geometry);
-  const radius = (1 / AXIS_EXTENT) * (geometry.sizePx / 2);
+  const radius = (1 / geometry.extent) * (geometry.sizePx / 2);
   ctx.save();
   // `destination-in` keeps the destination only where the new shape is
   // opaque, so the fill colour is irrelevant — but it must be fully opaque
@@ -475,20 +540,20 @@ export function renderPoster(
   sizePx: number,
   dpr = 1,
   preview: PreviewGeometry,
+  /** Vertical offset of the poster in logical px; the story format's margin. */
+  offsetY = 0,
 ): PosterGeometry {
-  const geometry = posterGeometry(sizePx);
+  const geometry = posterGeometry(sizePx, payload.options.shape);
   geometry.dpr = dpr;
 
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, offsetY * dpr);
   ctx.fillStyle = SPEC.colors.background;
   ctx.fillRect(0, 0, geometry.sizePx, geometry.canvasHeight);
 
   // Sky is clipped to the disc/square, matching the preview's clip.
   ctx.save();
-  const [cx, cy] = unitToCanvas(0, 0, geometry);
-  const radius = (1 / AXIS_EXTENT) * (geometry.sizePx / 2);
   ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  skyClipPath(ctx, geometry);
   ctx.clip();
 
   if (payload.options.constellations) {
@@ -512,16 +577,66 @@ export function renderPoster(
   return geometry;
 }
 
-/** Render into a fresh detached canvas (used by tests and the exporters). */
+/**
+ * Compose the story format (BCR-0012) onto a canvas that is already
+ * 1080 x 1920 (times `dpr`): the standard 1080 poster, offset by the margin.
+ *
+ * The circle mask clears everything outside the disc and the caption band,
+ * margins included, and the standard poster leaves the corners transparent. A
+ * story is background colour throughout, so a last `destination-over` fill under
+ * the finished poster restores both. It only touches pixels the poster left
+ * transparent, so the poster's own pixels are unchanged.
+ */
+export function renderStory(
+  ctx: CanvasRenderingContext2D,
+  payload: SharePayload,
+  model: SkyModel,
+  preview: PreviewGeometry,
+  dpr = 1,
+): PosterGeometry {
+  const { widthPx, heightPx } = storyGeometry();
+  const geometry = renderPoster(
+    ctx,
+    payload,
+    model,
+    widthPx,
+    dpr,
+    preview,
+    storyMargin(widthPx),
+  );
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = "destination-over";
+  ctx.fillStyle = SPEC.colors.background;
+  ctx.fillRect(0, 0, Math.round(widthPx * dpr), Math.round(heightPx * dpr));
+  ctx.restore();
+  return geometry;
+}
+
+/**
+ * Render into a fresh detached canvas (used by tests and the exporters).
+ * `format` defaults to the standard poster; `story` ignores `sizePx` and uses
+ * the format's own 1080 px width.
+ */
 export function renderPosterToCanvas(
   payload: SharePayload,
   model: SkyModel,
   sizePx: number,
   preview: PreviewGeometry,
   dpr = 1,
+  format: PosterFormat = "standard",
 ): HTMLCanvasElement {
-  const geometry = posterGeometry(sizePx);
   const canvas = document.createElement("canvas");
+  if (format === "story") {
+    const { widthPx, heightPx } = storyGeometry();
+    canvas.width = Math.round(widthPx * dpr);
+    canvas.height = Math.round(heightPx * dpr);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("2d canvas context unavailable");
+    renderStory(ctx, payload, model, preview, dpr);
+    return canvas;
+  }
+  const geometry = posterGeometry(sizePx, payload.options.shape);
   canvas.width = Math.round(geometry.sizePx * dpr);
   canvas.height = Math.round(geometry.canvasHeight * dpr);
   const ctx = canvas.getContext("2d");

@@ -41,18 +41,4 @@ test.describe("retheme checkpoint", () => {
     await page.screenshot({ path: `${OUT}/landing-mobile.png`, fullPage: true });
   });
 
-  test("a figure is selected, to judge accent against the poster", async ({
-    page,
-  }) => {
-    mkdirSync(OUT, { recursive: true });
-    await page.goto(`/#s=${VIEWER}`);
-    await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible({
-      timeout: 20_000,
-    });
-    const first = page.locator("button.atlas-figure").first();
-    await first.click();
-    await page.waitForTimeout(600);
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.screenshot({ path: `${OUT}/viewer-figure-selected.png`, fullPage: true });
-  });
 });

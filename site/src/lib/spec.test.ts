@@ -19,6 +19,7 @@ const renderSpec = parsed as {
   constellations: Record<string, unknown>;
   shape: Record<string, unknown>;
   caption: Record<string, unknown>;
+  formats: Record<string, Record<string, unknown>>;
 };
 
 // `toBe` from bun:test is generic over `T`; the untyped JSON side is `unknown`.
@@ -60,10 +61,22 @@ describe("render-spec conformance", () => {
     const shape = renderSpec["shape"];
     eq(SPEC.shape.ringWidth, shape["ringWidth"]);
     eq(SPEC.shape.ringAlpha, shape["ringAlpha"]);
+    expect((shape["square"] as { fill: string }).fill).toBe(SPEC.shape.square.fill);
     const caption = renderSpec["caption"];
     eq(SPEC.caption.bandFraction, caption["bandFraction"]);
     eq(SPEC.caption.titleFontSize, caption["titleFontSize"]);
     eq(SPEC.caption.detailFontSize, caption["detailFontSize"]);
+  });
+
+  it("adds the story format and nothing else to the contract (BCR-0012)", () => {
+    eq(renderSpec.formats, {
+      story: {
+        widthPx: SPEC.formats.story.widthPx,
+        heightPx: SPEC.formats.story.heightPx,
+      },
+    });
+    eq(SPEC.formats.story.widthPx, 1080);
+    eq(SPEC.formats.story.heightPx, 1920);
   });
 
   it("implements size = size_max * 10 ** (mag / -2.5) clamped to [0.6, 14]", () => {

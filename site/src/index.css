@@ -1,10 +1,21 @@
 @import "tailwindcss";
 
 /*
- * Fonts are bundled (BCR-0004): Cormorant Garamond ships in public/fonts/ and
- * is declared here — no third-party font request. The body stack stays with
- * system faces so the UI never blocks on a webfont.
+ * Fonts are bundled, never fetched from a third party. Cormorant Garamond
+ * (poster and display face, BCR-0004) ships in public/fonts/. Inter (OFL) is
+ * the interface face (015): declared here for the latin subset only, from the
+ * @fontsource-variable/inter package, so no other subset is bundled.
  */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 @font-face {
   font-family: "Cormorant Garamond";
   font-style: normal;
@@ -46,7 +57,7 @@
   --color-text-bright: #fff8e8;
 
   --font-display: "Cormorant Garamond", Georgia, serif;
-  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* Spacing — 4px base. */
   --space-1: 0.25rem;
@@ -58,10 +69,12 @@
   --space-7: 2rem;
   --space-8: 3rem;
 
-  /* Radius by role: small, because the artifact's circle is the only curve the
-     product needs. Two values, not one applied everywhere. */
-  --radius-control: 2px;
-  --radius-panel: 4px;
+  /* Radius by role. The Explorer's controls float over a sky of points and arcs,
+     so they are rounded; two values, never a pill. Anything that shows the
+     poster itself takes --radius-artifact, so a Square poster stays square. */
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --radius-artifact: 0px;
 
   /* Motion. The reveal is the single orchestrated moment (vision). */
   --motion-duration-short: 160ms;
@@ -105,13 +118,30 @@ body {
   flex-direction: column;
 }
 
+/* One header on every surface: the site name, nothing else. */
 .atlas-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.25rem clamp(1rem, 4vw, 2.5rem);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 0.12);
+  align-items: center;
+  min-height: 3rem;
+  padding: 0 clamp(var(--space-4), 4vw, 2.5rem);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.atlas-site-name {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.atlas-site-name:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .atlas-main {
@@ -123,19 +153,205 @@ body {
 }
 
 .atlas-footer {
-  padding: 1.25rem clamp(1rem, 4vw, 2.5rem) 2rem;
-  border-top: 1px solid color-mix(in srgb, var(--color-text) 0.12);
+  padding: var(--space-4) clamp(var(--space-4), 4vw, 2.5rem) var(--space-5);
+  border-top: 1px solid var(--color-border-soft);
   font-size: 0.8rem;
-  color: color-mix(in srgb, var(--color-text) 0.55);
+  color: var(--color-text-muted);
 }
 
-/* Version + source, then the legal attribution. Two quiet lines, no eyebrow. */
+/* The data credits on the left, the page's actions and the version link at the end. */
+.atlas-footer-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.atlas-footer-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.atlas-footer-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  /* On a phone the credits sit above and this row takes the line, to the end, and may wrap. */
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  min-width: 0;
+  margin-left: auto;
+}
+
+@media (min-width: 64rem) {
+  /* The credits give way (and wrap inside their own box) before the actions are pushed to a second row. */
+  .atlas-footer-main {
+    flex-wrap: nowrap;
+  }
+
+  .atlas-footer-end {
+    flex: none;
+    flex-wrap: nowrap;
+  }
+}
+
+.atlas-footer-actions {
+  display: flex;
+}
+
+/*
+ * The interface language (018): a native select drawn as a 44 px globe, like the
+ * page's icon actions. The select covers the icon and takes the pointer; its own
+ * text is hidden, the list shows each language by its own name.
+ */
+.atlas-footer-lang {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+.atlas-footer-lang > svg {
+  position: absolute;
+  pointer-events: none;
+}
+
+.atlas-footer-lang:hover {
+  color: var(--color-text);
+}
+
+.atlas-footer-select {
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: transparent;
+  font: inherit;
+  color-scheme: dark;
+  cursor: pointer;
+  transition: background var(--motion-duration-short) var(--motion-ease);
+}
+
+.atlas-footer-select:hover {
+  background: var(--color-raised);
+}
+
+.atlas-footer-select:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.atlas-footer-select option {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Forced colours repaint the hidden text: show the language's name instead of the globe. */
+@media (forced-colors: active) {
+  .atlas-footer-lang > svg {
+    display: none;
+  }
+
+  .atlas-footer-select {
+    width: auto;
+    padding: 0 var(--space-2);
+    appearance: auto;
+    color: CanvasText;
+  }
+}
+
+@media (min-width: 64rem) {
+  /*
+   * The one-row footer: the switcher keeps its 44 px target, but it takes only a
+   * text line of the row (the rest reaches into the footer's padding), so the
+   * landing and the Studio still fit 1440x900 with no page scroll.
+   */
+  .atlas-footer-select {
+    /* Reach at most the landing footer's bottom padding, the rest goes up. */
+    margin-block: calc(1lh - 44px + var(--space-3)) calc(-1 * var(--space-3));
+  }
+}
+
+/* The tagline may wrap before the link, never inside it. */
+.atlas-footer-version {
+  text-align: right;
+}
+
+.atlas-footer-version a {
+  white-space: nowrap;
+}
+
 .atlas-footer-meta {
   max-width: 68ch;
 }
 
-.atlas-footer-meta + .atlas-footer-meta {
-  margin-top: 0.35rem;
+/* The credits are one short line: only the screen's edge wraps them. */
+.atlas-footer-info .atlas-footer-meta {
+  max-width: none;
+}
+
+/* The sky image: the square sky region, never wider than its column. */
+.atlas-sky {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+}
+
+.atlas-sky-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+}
+
+/*
+ * Wide, tall screens: the Viewer fits the viewport with no vertical scroll
+ * (FR-011). The page is exactly one viewport tall; the image takes whatever
+ * height the header, heading and footer leave, and is as large as that and the
+ * width allow. Phones keep the natural flow and may scroll.
+ */
+@media (min-width: 64rem) and (min-height: 36rem) {
+  .atlas-viewer-fit {
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  .atlas-viewer-fit .atlas-main {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding-block: var(--space-4);
+  }
+
+  .atlas-viewer-fit .atlas-moment {
+    margin-bottom: var(--space-3);
+  }
+
+  .atlas-viewer-fit .atlas-explorer {
+    flex: 1 1 0;
+    min-height: 0;
+    width: 100%;
+  }
+
+  .atlas-viewer-fit .atlas-sky {
+    height: 100%;
+  }
+
+  .atlas-viewer-fit .atlas-sky-canvas {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+  }
 }
 
 .atlas-moment {
@@ -143,10 +359,12 @@ body {
   margin-bottom: 1.75rem;
 }
 
+/* The sky image: one centred column, never wider than the image is useful at. */
 .atlas-explorer {
-  display: grid;
-  gap: 1.5rem;
-  grid-template-columns: 1fr;
+  display: flex;
+  justify-content: center;
+  width: min(100%, 44rem);
+  margin-inline: auto;
   opacity: 0;
 }
 
@@ -165,130 +383,99 @@ body {
   }
 }
 
-@media (min-width: 64rem) {
-  .atlas-explorer {
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-    align-items: start;
-  }
-}
-
+/* The one panel style: Explorer's surface, soft edge and panel radius. */
 .atlas-panel {
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.14);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-panel);
-  padding: 1.25rem;
-  background: color-mix(in srgb, var(--color-text) 0.02);
 }
 
-.atlas-figure {
-  width: 100%;
-  text-align: left;
-  padding: 0.55rem 0.75rem;
-  border: 1px solid transparent;
-  border-radius: var(--radius-panel);
-  /*
-   * `color` used to be set here as a per-element patch: buttons default to the
-   * browser's dark control colour, which fails WCAG AA on this background
-   * (measured 2.11:1). The class-level fix is `color-scheme: dark` on `:root`
-   * (spec.md DS-002), which also reaches scrollbars and native selects that no
-   * per-element rule could. The explicit colour is kept because it is the
-   * intended value, not a workaround — and the child spans still dim it with
-   * their own opacity.
-   */
-  color: var(--color-text);
+/*
+ * Buttons: primary, ghost and icon share one base (height, radius, type,
+ * motion). Primary is the near-white fill; ghost and icon are bordered with the
+ * control border colour, never the accent or the focus colour.
+ */
+.atlas-btn,
+.atlas-btn-ghost,
+.atlas-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
   font: inherit;
+  font-size: 0.875rem;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  cursor: pointer;
   transition:
     background var(--motion-duration-short) var(--motion-ease),
     border-color var(--motion-duration-short) var(--motion-ease);
 }
 
-.atlas-figure:hover,
-.atlas-figure-active {
-  background: color-mix(in srgb, var(--color-accent) 0.12);
-  border-color: color-mix(in srgb, var(--color-accent) 0.45);
-}
-
-.atlas-figure:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-.atlas-tooltip {
-  position: absolute;
-  top: 0.75rem;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  text-align: center;
-  background: color-mix(in srgb, var(--color-bg) 0.82);
-  border: 1px solid color-mix(in srgb, var(--color-accent) 0.5);
-  border-radius: var(--radius-panel);
-  padding: 0.5rem 0.9rem;
-  margin: 0 auto;
-  width: fit-content;
-  max-width: calc(100% - 1.5rem);
-  /*
-   * Informational only: it names the hovered figure and duplicates panel
-   * content, so it must never capture the pointer. Under the cursor it fires
-   * mouseleave on the canvas, which clears the hover that showed it — a
-   * flicker loop for any visitor hovering lines near the top of the disc, and
-   * a race for any test reading its text.
-   */
-  pointer-events: none;
-}
-
 .atlas-btn {
-  display: inline-block;
   background: var(--color-text);
   color: var(--color-bg);
   font-weight: 500;
-  font-size: 0.875rem;
-  /* Comfortably over the 44px target height (spec.md DS-A11Y-003). */
-  min-height: 44px;
-  padding: 0.55rem 1.1rem;
-  border-radius: var(--radius-panel);
 }
 
 .atlas-btn:hover {
   background: var(--color-text-bright);
 }
 
+.atlas-btn-ghost,
+.atlas-btn-icon {
+  color: var(--color-text);
+  background: transparent;
+  border-color: var(--color-border);
+}
+
+.atlas-btn-ghost:hover:not(:disabled),
+.atlas-btn-icon:hover:not(:disabled) {
+  background: var(--color-raised);
+}
+
+/* A square 44 px button holding one icon. */
+.atlas-btn-icon {
+  width: 44px;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.atlas-btn-icon[aria-pressed="true"],
+.atlas-btn-icon[aria-expanded="true"] {
+  background: var(--color-raised);
+  border-color: var(--color-text-muted);
+}
+
+/* A fieldset used as a panel: its legend is the first line inside, not on the edge. */
+fieldset.atlas-panel {
+  min-width: 0;
+}
+
+fieldset.atlas-panel > legend {
+  float: left;
+  width: 100%;
+  margin-bottom: var(--space-3);
+}
+
+fieldset.atlas-panel > legend ~ * {
+  clear: both;
+}
+
+fieldset.atlas-panel > p + p {
+  margin-top: var(--space-2);
+}
+
 .atlas-btn:focus-visible,
 .atlas-btn-ghost:focus-visible,
-.atlas-btn-subtle:focus-visible,
+.atlas-btn-icon:focus-visible,
 .atlas-link:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
-}
-
-.atlas-btn-ghost {
-  display: inline-block;
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.35);
-  color: var(--color-text);
-  font-size: 0.875rem;
-  min-height: 44px;
-  padding: 0.55rem 1.1rem;
-  border-radius: var(--radius-panel);
-}
-
-.atlas-btn-ghost:hover {
-  border-color: color-mix(in srgb, var(--color-text) 0.7);
-}
-
-.atlas-btn-subtle {
-  display: inline-block;
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.2);
-  color: color-mix(in srgb, var(--color-text) 0.55);
-  font-size: 0.75rem;
-  padding: 0.3rem 0.7rem;
-  border-radius: var(--radius-panel);
-  background: transparent;
-  cursor: pointer;
-}
-
-.atlas-btn-subtle:hover:not(:disabled) {
-  color: color-mix(in srgb, var(--color-text) 0.85);
-  border-color: color-mix(in srgb, var(--color-text) 0.4);
 }
 
 /*
@@ -296,36 +483,24 @@ body {
  * at the whole poster. Not `cursor: progress`: nothing is pending, and a
  * spinner-cursor on a control that will never become available reads as a bug.
  */
-.atlas-btn-subtle:disabled {
+.atlas-btn:disabled,
+.atlas-btn-ghost:disabled,
+.atlas-btn-icon:disabled {
   opacity: 0.45;
   cursor: default;
-}
-
-/*
- * The view controls sit under the poster, centred, inside the poster's own grid
- * item. Direct manipulation is the primary way to move the map; these three
- * are the affordance that says it can be moved at all, so they belong with the
- * poster rather than down in the export row.
- */
-.atlas-viewcontrols {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 0.85rem;
 }
 
 .atlas-link {
   color: var(--color-text);
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--color-accent) 0.8);
+  text-decoration-color: var(--color-accent);
   text-underline-offset: 3px;
 }
 
 .atlas-code {
   font-family: ui-monospace, monospace;
   font-size: 0.85em;
-  background: color-mix(in srgb, var(--color-text) 0.08);
+  background: var(--color-raised);
   padding: 0.1em 0.35em;
   border-radius: var(--radius-control);
 }
@@ -333,15 +508,15 @@ body {
 .atlas-empty {
   text-align: center;
   padding: 4rem 1rem;
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.14);
+  border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-panel);
   background:
-    radial-gradient(ellipse 60% 50% at 50% 30%, color-mix(in srgb, var(--color-accent) 0.08), transparent),
-    color-mix(in srgb, var(--color-text) 0.02);
+    radial-gradient(ellipse 60% 50% at 50% 30%, color-mix(in srgb, var(--color-accent) 8%, transparent), transparent),
+    var(--color-surface);
 }
 
 .atlas-alert {
-  border: 1px solid color-mix(in srgb, var(--color-accent) 0.6);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
   padding: 0.9rem 1.1rem;
   margin-bottom: 1.25rem;
@@ -351,7 +526,7 @@ body {
 .atlas-loading {
   text-align: center;
   padding: 4rem 0;
-  color: color-mix(in srgb, var(--color-text) 0.6);
+  color: var(--color-text-muted);
 }
 
 /* Landing form: single scrollable column reusing the atlas tokens. */
@@ -390,28 +565,29 @@ body {
 
 .atlas-form-field > label,
 .atlas-form-label {
-  color: color-mix(in srgb, var(--color-text) 0.75);
+  color: var(--color-text-muted);
 }
 
 .atlas-form-input {
   width: 100%;
-  background: color-mix(in srgb, var(--color-text) 0.04);
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.25);
-  border-radius: var(--radius-panel);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
   color: var(--color-text);
+  font: inherit;
   font-size: 0.9rem;
-  padding: 0.55rem 0.75rem;
   color-scheme: dark;
 }
 
 .atlas-form-input:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
-  border-color: color-mix(in srgb, var(--color-text) 0.6);
 }
 
 .atlas-form-input::placeholder {
-  color: color-mix(in srgb, var(--color-text) 0.35);
+  color: var(--color-text-faint);
 }
 
 select.atlas-form-input option {
@@ -442,44 +618,130 @@ select.atlas-form-input option {
   min-width: 0;
 }
 
-.atlas-form-radio-row {
+.atlas-form-radio-row,
+.atlas-form-check-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1.25rem;
+  gap: var(--space-1) var(--space-4);
+}
+
+/* Related controls share a row on wide screens and stack on small ones. */
+.atlas-form-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 40rem) {
+  .atlas-form-pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* A label that wraps grows upward, so the controls in a row stay level. */
+    align-items: end;
+  }
+}
+
+/* A toggle with its slider: one row while both fit, wrapping only when they do not. */
+.atlas-form-pair-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-4);
+}
+
+.atlas-form-pair-flow > .atlas-form-field {
+  flex: 1 1 9rem;
+  min-width: 0;
+}
+
+/* Two options as one segmented switch; the radios stay real and cover their segment. */
+.atlas-segmented {
+  display: inline-flex;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.atlas-segment {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+}
+
+.atlas-segment + .atlas-segment {
+  border-left: 1px solid var(--color-border);
+}
+
+.atlas-segment input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.atlas-segment span {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 var(--space-3);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  transition: background var(--motion-duration-short) var(--motion-ease);
+}
+
+.atlas-segment input:checked + span {
+  color: var(--color-text);
+  background: var(--color-raised);
+  font-weight: 600;
+}
+
+.atlas-segment input:focus-visible + span {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
 }
 
 .atlas-form-radio {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  min-height: 44px;
+  gap: var(--space-2);
   font-size: 0.875rem;
-  color: color-mix(in srgb, var(--color-text) 0.8);
+  color: var(--color-text-muted);
   cursor: pointer;
 }
 
 .atlas-form-radio input,
 .atlas-form-check input {
+  width: 1.25rem;
+  height: 1.25rem;
   accent-color: var(--color-accent);
 }
 
-.atlas-form-check-row {
-  display: grid;
-  gap: 0.5rem;
+.atlas-form-radio input:focus-visible,
+.atlas-form-check input:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .atlas-form-check {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  min-height: 44px;
+  gap: var(--space-2);
   font-size: 0.875rem;
-  color: color-mix(in srgb, var(--color-text) 0.8);
+  color: var(--color-text-muted);
   cursor: pointer;
 }
 
 .atlas-form-value {
   margin-left: auto;
   font-variant-numeric: tabular-nums;
-  color: color-mix(in srgb, var(--color-text) 0.65);
+  color: var(--color-text-muted);
   font-size: 0.8rem;
 }
 
@@ -490,22 +752,48 @@ select.atlas-form-input option {
 
 .atlas-form-hint {
   font-size: 0.78rem;
-  color: color-mix(in srgb, var(--color-text) 0.55);
+  color: var(--color-text-faint);
 }
 
 .atlas-form-details {
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.14);
+  border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-panel);
-  padding: 0.8rem 1rem;
-  background: color-mix(in srgb, var(--color-text) 0.02);
-  display: grid;
-  gap: 0.9rem;
+  padding: 0 var(--space-4);
+  background: var(--color-surface);
+  gap: var(--space-4);
   font-size: 0.875rem;
 }
 
 .atlas-form-details > summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
   cursor: pointer;
-  color: color-mix(in srgb, var(--color-text) 0.8);
+  color: var(--color-text-muted);
+}
+
+/*
+ * Inside a panel the disclosure is a section of that panel, not a second box:
+ * no frame, one soft rule, and all of the panel's width for its controls.
+ */
+.atlas-panel .atlas-form-details {
+  padding-inline: 0;
+  background: transparent;
+  border-width: 1px 0 0;
+  border-radius: 0;
+}
+
+/* Open: the content sits under the summary with room around it. */
+.atlas-form-details[open] {
+  padding-bottom: var(--space-4);
+}
+
+.atlas-form-details[open] > * + * {
+  margin-top: var(--space-4);
+}
+
+.atlas-form-details[open] > summary + * {
+  margin-top: var(--space-1);
 }
 
 .atlas-form-details > summary:focus-visible {
@@ -514,7 +802,7 @@ select.atlas-form-input option {
 }
 
 .atlas-form-error {
-  border: 1px solid color-mix(in srgb, var(--color-accent) 0.6);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
   padding: 0.7rem 0.9rem;
   font-size: 0.875rem;
@@ -522,7 +810,7 @@ select.atlas-form-input option {
 }
 
 .atlas-form-submit {
-  justify-self: start;
+  justify-self: center;
 }
 
 .atlas-form-submit:disabled {
@@ -534,7 +822,7 @@ select.atlas-form-input option {
   margin-top: 1.25rem;
   text-align: center;
   font-size: 0.85rem;
-  color: color-mix(in srgb, var(--color-text) 0.6);
+  color: var(--color-text-muted);
 }
 
 .atlas-form-linkbtn {
@@ -545,114 +833,1284 @@ select.atlas-form-input option {
   cursor: pointer;
 }
 
-.atlas-form-explainer {
-  margin-top: 1.25rem;
-}
-
-.atlas-form-explainer .atlas-empty {
-  padding: 2rem 1rem;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .atlas-explorer.atlas-loaded {
     animation: none;
     opacity: 1;
   }
 
-  .atlas-figure {
+  .atlas-btn,
+  .atlas-btn-ghost,
+  .atlas-btn-icon,
+  .atlas-segment span {
     transition: none;
   }
 }
 
-/* Poster export controls: quiet chrome, one clear action row. */
-.atlas-export {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid color-mix(in srgb, var(--color-text) 0.12);
-}
-
 /*
- * Export: one disclosure trigger, formats revealed on demand.
- *
- * Three permanently-visible buttons made this row the loudest thing on the
- * page after the poster, inverting vision principle 2. Ghosting them fixed the
- * volume but made them read as plain labels — a control that looks like text
- * gets read, not clicked. A single trigger in the accent restores the
- * affordance while removing the competition.
+ * The page actions, in the footer (FR-011): icon-only buttons of one size in one
+ * row. Share and Export keep their trigger, popover and status in a wrapper that
+ * takes no box of its own.
  */
-.atlas-export-trigger {
-  font: inherit;
-  font-size: 0.875rem;
-  min-height: 44px;
-  padding: 0.5rem 1.1rem;
-  color: var(--color-accent);
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--color-accent) 0.5);
-  border-radius: var(--radius-control);
-  cursor: pointer;
-  transition:
-    background var(--motion-duration-short) var(--motion-ease),
-    border-color var(--motion-duration-short) var(--motion-ease);
-}
-
-.atlas-export-trigger:hover {
-  background: color-mix(in srgb, var(--color-accent) 0.1);
-  border-color: color-mix(in srgb, var(--color-accent) 0.85);
-}
-
-.atlas-export-actions {
+.atlas-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.atlas-export {
+  display: contents;
+}
+
+/* Above the trigger, inside the viewport: its position is set from the trigger. */
+.atlas-popover {
+  position: fixed;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  overflow-y: auto;
+  padding: var(--space-4);
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel);
 }
 
 /* `hidden` must win over the flex display above. */
-.atlas-export-actions[hidden] {
+.atlas-popover[hidden] {
   display: none;
 }
 
-.atlas-export-button {
-  font: inherit;
-  font-size: 0.875rem;
-  /* Comfortably over the 44px target height (spec.md DS-A11Y-003). */
-  min-height: 44px;
-  padding: 0.5rem 1.25rem;
-  /*
-   * Quiet, not a cream fill. Three identical high-contrast buttons made the
-   * export row the loudest thing on the page after the poster itself, which
-   * inverts vision principle 2 ("the interface never outshines the poster") and
-   * contradicts the wireframe in `specs/007-renderer-export/ui.md`, which draws
-   * these as secondary controls beside one primary "Copy link".
-   */
+.atlas-popover > .atlas-form-hint {
+  flex: 0 0 100%;
+  text-align: center;
+}
+
+/* The layout choice sits above the format buttons, on its own row. */
+.atlas-export-layout {
+  flex-basis: 100%;
+  justify-content: center;
+}
+
+.atlas-export-status:empty {
+  min-height: 0;
+  margin: 0;
+}
+
+.atlas-export-status {
+  flex: 0 0 100%;
+  text-align: center;
+  min-height: 1.25rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+/* Sky Explorer (#e=): one full-viewport canvas, no header; the moment line floats over the sky. */
+.explorer-stage {
+  position: fixed;
+  inset: 0;
+  background: var(--color-bg);
+}
+
+.explorer-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* The page must not scroll or zoom during a gesture. */
+  touch-action: none;
+  overscroll-behavior: none;
+  cursor: grab;
+}
+
+.explorer-canvas:active {
+  cursor: grabbing;
+}
+
+/* Inset: the canvas fills the viewport, so an outer ring would be clipped. */
+.explorer-canvas:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -4px;
+}
+
+.explorer-state {
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+}
+
+/*
+ * Sky Explorer interface (011-explorer-ui). The canvas fills the viewport; the
+ * strip, toolbar and popovers float over it at its edges, and the inspector is
+ * a right panel, or a bottom sheet on narrow or short screens. Dark only.
+ */
+@theme {
+  --motion-duration-panel: 250ms;
+}
+
+.explorer-stage {
+  display: flex;
+}
+
+.explorer-stage-inner {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  /* The side panel floats over the sky; this is how far in from the right the
+     controls must stay, and it is 0 whenever no panel sits at the right. */
+  --explorer-panel-w: clamp(300px, 26vw, 360px);
+  --explorer-inset: 0px;
+}
+
+.explorer-stage-inner:has(.explorer-inspector[data-open="true"]) {
+  --explorer-inset: var(--explorer-panel-w);
+}
+
+.explorer-view {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.explorer-view .explorer-canvas {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+
+.explorer-top {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  max-width: min(34rem, calc(100% - var(--explorer-inset) - 4rem));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.explorer-top > * {
+  pointer-events: auto;
+}
+
+.explorer-moment,
+.explorer-toolbar,
+.explorer-popover {
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel);
+}
+
+.explorer-moment {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  min-width: 0;
   color: var(--color-text);
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.35);
-  border-radius: var(--radius-control);
-  cursor: pointer;
+}
+
+.explorer-moment-visual {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.explorer-moment-full {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
   transition:
-    background var(--motion-duration-short) var(--motion-ease),
-    border-color var(--motion-duration-short) var(--motion-ease);
+    grid-template-rows var(--motion-duration-panel) var(--motion-ease),
+    opacity var(--motion-duration-panel) var(--motion-ease);
 }
 
-.atlas-export-button:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-text) 0.08);
-  border-color: color-mix(in srgb, var(--color-text) 0.7);
+.explorer-moment-full > div {
+  min-height: 0;
+  overflow: hidden;
 }
 
-.atlas-export-button:focus-visible {
+.explorer-moment-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+
+.explorer-moment-place {
+  font-size: 0.95rem;
+}
+
+.explorer-moment-time,
+.explorer-moment-coords {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.explorer-moment-line {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  transition:
+    max-height var(--motion-duration-panel) var(--motion-ease),
+    opacity var(--motion-duration-panel) var(--motion-ease);
+}
+
+.explorer-moment[data-mode="compact"] .explorer-moment-full {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.explorer-moment[data-mode="compact"] .explorer-moment-line {
+  max-height: 8rem;
+  opacity: 1;
+}
+
+.explorer-list-item:hover,
+.explorer-list-item[data-hover="true"],
+.explorer-group-summary[data-hover="true"] {
+  background: var(--color-raised);
+}
+
+.explorer-list-item:focus-visible,
+.explorer-sheet-handle:focus-visible,
+.explorer-search-input:focus-visible,
+.explorer-result[aria-selected="true"] {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
-.atlas-export-button:disabled {
-  opacity: 0.55;
-  cursor: progress;
+.explorer-link {
+  min-height: 44px;
+  padding: 0;
+  font: inherit;
+  font-size: 0.8125rem;
+  text-align: left;
+  color: var(--color-accent);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
-.atlas-export-status {
-  margin-top: 0.75rem;
+.explorer-link:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* A failed copy: text under the strip, out of its flow so the strip keeps its shape. */
+.explorer-copy-status {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.8125rem;
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel);
+}
+
+.explorer-copy-status:empty {
+  display: none;
+}
+
+/*
+ * Bottom right: the toolbar and, above it, whichever popover is open, so a
+ * popover is always anchored to the toolbar however many rows it wraps to.
+ * With the side panel open the dock sits to the panel's left.
+ */
+.explorer-dock {
+  position: absolute;
+  right: calc(var(--space-3) + var(--explorer-inset));
+  bottom: var(--space-3);
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: var(--space-2);
+  max-width: calc(100% - 2 * var(--space-3) - var(--explorer-inset));
+  max-height: calc(100% - 2 * var(--space-3));
+  pointer-events: none;
+}
+
+.explorer-dock > * {
+  pointer-events: auto;
+}
+
+.explorer-toolbar {
+  display: flex;
+  flex: none;
+  flex-flow: row nowrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+}
+
+.explorer-popover {
+  width: min(20rem, 100%);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-3);
+}
+
+.explorer-panel-head,
+.explorer-search-row,
+.explorer-inspector-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.explorer-panel-title,
+.explorer-inspector-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.explorer-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.explorer-results {
+  margin-top: var(--space-2);
+  max-height: 16rem;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.explorer-result {
+  display: flex;
+  flex-direction: column;
+  min-height: 44px;
+  justify-content: center;
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  border-radius: var(--radius-control);
+}
+
+.explorer-result[aria-selected="true"] {
+  background: var(--color-raised);
+  outline-offset: -2px;
+}
+
+.explorer-result-detail {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.explorer-search-status {
+  margin-top: var(--space-2);
   min-height: 1.25rem;
-  font-size: 0.8rem;
-  color: color-mix(in srgb, var(--color-text) 0.65);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+/* Hover tooltip: beside the star, never taking the pointer. Placed by script before paint. */
+.explorer-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  visibility: hidden;
+  max-width: 16rem;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface) 95%, transparent);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-control);
+  pointer-events: none;
+}
+
+.explorer-tooltip-detail {
+  font-size: 0.9375rem;
+}
+
+/* A constellation's named stars (019): the second line, quieter than the first. */
+.explorer-tooltip-members {
+  margin-top: var(--space-1);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+/* Inspector: a right panel that floats over the sky, so opening it never resizes the canvas. */
+.explorer-inspector {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  width: var(--explorer-panel-w);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel) 0 0 var(--radius-panel);
+  color: var(--color-text);
+}
+
+/* The tab: small to look at, 44 px to hit. It rides the panel's left edge. */
+.explorer-tab {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  z-index: 4;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 44px;
+  height: 64px;
+  padding: 0;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.explorer-tab-face {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 56px;
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  border: 1px solid var(--color-border-soft);
+  border-right: 0;
+  border-radius: var(--radius-panel) 0 0 var(--radius-panel);
+  transition: background var(--motion-duration-short) var(--motion-ease);
+}
+
+.explorer-tab:hover .explorer-tab-face {
+  background: var(--color-raised);
+}
+
+.explorer-tab:focus-visible {
+  /* The ring is drawn on the face, which is what the eye sees. */
+  outline-style: none;
+}
+
+.explorer-tab:focus-visible .explorer-tab-face {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/*
+ * Wide screens: the panel and its tab slide from the right by transform, so
+ * the canvas is never resized. The closed panel turns invisible only after it
+ * has left, which keeps it out of the tab order without cutting the slide.
+ */
+@media (min-width: 48rem) and (min-height: 32.01rem) {
+  .explorer-inspector {
+    transition:
+      transform var(--motion-duration-panel) var(--motion-ease),
+      opacity var(--motion-duration-panel) var(--motion-ease);
+  }
+
+  .explorer-inspector[data-open="false"] {
+    transform: translateX(100%);
+    visibility: hidden;
+    transition:
+      transform var(--motion-duration-panel) var(--motion-ease),
+      opacity var(--motion-duration-panel) var(--motion-ease),
+      visibility 0s linear var(--motion-duration-panel);
+  }
+
+  /* Kept laid out while it slides away; the closed panel is invisible anyway. */
+  .explorer-inspector-body[hidden] {
+    display: block;
+  }
+
+  .explorer-tab {
+    transition:
+      transform var(--motion-duration-panel) var(--motion-ease),
+      opacity var(--motion-duration-panel) var(--motion-ease);
+  }
+
+  .explorer-tab[aria-expanded="true"] {
+    transform: translate(calc(-1 * var(--explorer-panel-w)), -50%);
+  }
+
+  .explorer-dock {
+    transition:
+      right var(--motion-duration-panel) var(--motion-ease),
+      max-width var(--motion-duration-panel) var(--motion-ease);
+  }
+}
+
+.explorer-sheet-handle {
+  display: none;
+}
+
+.explorer-inspector-body {
+  padding: var(--space-4);
+}
+
+.explorer-inspector-body[hidden] {
+  display: none;
+}
+
+.explorer-kind,
+.explorer-facts-title {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.explorer-facts {
+  margin-top: var(--space-4);
+}
+
+.explorer-fact {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--color-border-soft);
+  font-size: 0.875rem;
+}
+
+.explorer-fact dt {
+  color: var(--color-text-muted);
+}
+
+.explorer-fact dd {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.explorer-note {
+  margin-top: var(--space-2);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+}
+
+.explorer-figures {
+  margin-top: var(--space-3);
+  list-style: none;
+}
+
+/* A figure's stars (019): a list that scrolls on its own, so a long figure leaves the rest of the panel in reach. */
+.explorer-members {
+  margin-top: var(--space-2);
+  max-height: 16rem;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.explorer-member {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-1) var(--space-3);
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.explorer-member:hover {
+  background: var(--color-raised);
+}
+
+/* Inset, so the scrolling list does not clip the ring. */
+.explorer-member:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.explorer-member-detail {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.explorer-inspector-title:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.explorer-actions {
+  margin-block-end: var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.explorer-list {
+  margin-top: var(--space-2);
+  list-style: none;
+}
+
+.explorer-list-item {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.explorer-list-item[aria-current="true"] {
+  background: var(--color-raised);
+  border-color: var(--color-border);
+}
+
+.explorer-group {
+  margin-top: var(--space-2);
+}
+
+.explorer-group-summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.explorer-group-summary:hover {
+  background: var(--color-raised);
+}
+
+.explorer-group-summary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Narrow or short screens: the inspector becomes a bottom sheet. */
+@media (max-width: 47.99rem), (max-height: 32rem) {
+  .explorer-stage-inner:has(.explorer-inspector[data-open="true"]) {
+    --explorer-inset: 0px;
+  }
+
+  .explorer-top {
+    right: var(--space-3);
+    max-width: none;
+  }
+
+  /*
+   * A row above the sheet, right-aligned: within thumb reach and off the sky's
+   * centre. The dock wraps to a second row only when the buttons do not fit.
+   */
+  .explorer-dock {
+    right: var(--space-2);
+    bottom: calc(44px + var(--space-2));
+    max-width: calc(100% - 2 * var(--space-2));
+    max-height: calc(100% - 44px - 2 * var(--space-2) - var(--space-3));
+    z-index: 2;
+  }
+
+  .explorer-stage-inner:has(.explorer-inspector[data-open="true"]) .explorer-dock {
+    bottom: calc(38dvh + var(--space-2));
+    max-height: calc(100% - 38dvh - 2 * var(--space-2));
+  }
+
+  .explorer-popover {
+    max-height: 50dvh;
+  }
+
+  .explorer-inspector {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    overflow: hidden;
+    border-left: 0;
+    border-radius: 0;
+    border-top: 1px solid var(--color-border-soft);
+    z-index: 3;
+  }
+
+  .explorer-inspector[data-open="false"] {
+    display: flex;
+  }
+
+  .explorer-tab {
+    display: none;
+  }
+
+  .explorer-sheet-handle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: 44px;
+    padding: 0 var(--space-4);
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 0;
+    font: inherit;
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .explorer-sheet-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text-muted);
+  }
+
+  .explorer-inspector-body {
+    overflow-y: auto;
+    max-height: calc(38dvh - 44px);
+  }
+
+  /* The sheet's body already scrolls; a second scroller inside it would trap the thumb. */
+  .explorer-members {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+/*
+ * Idle collapse (014): the controls fade out but stay in the tab order and the
+ * accessibility tree, so never display:none or visibility:hidden. Focusing one
+ * brings them all back. The one-line moment stays.
+ */
+.explorer-toolbar,
+.explorer-moment > button {
+  transition: opacity var(--motion-duration-panel) var(--motion-ease);
+}
+
+.explorer-stage-inner[data-chrome="hidden"] :is(.explorer-toolbar, .explorer-tab, .explorer-inspector, .explorer-moment > button) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Out of the strip's flow, so the strip fits the line alone. */
+.explorer-stage-inner[data-chrome="hidden"] .explorer-moment > button {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .explorer-toolbar,
+  .explorer-tab,
+  .explorer-tab[aria-expanded],
+  .explorer-inspector,
+  .explorer-inspector[data-open],
+  .explorer-dock,
+  .explorer-moment > button,
+  .explorer-moment-full,
+  .explorer-moment-line {
+    transition: none;
+  }
+}
+
+/*
+ * Poster Studio (012-poster-studio): the preview leads and the controls sit
+ * beside it on desktop; on a phone they stack, preview first. `min-width: 0`
+ * on both columns keeps a wide child from pushing the page past the viewport.
+ */
+.atlas-studio {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.atlas-studio-preview,
+.atlas-studio-side {
+  min-width: 0;
+}
+
+/* The sky image, centred in its column like the Viewer's. */
+.atlas-studio-canvas {
+  display: block;
+  border-radius: var(--radius-artifact);
+  width: 100%;
+  height: auto;
+}
+
+.atlas-studio-side {
+  display: grid;
+  gap: var(--space-5);
+  align-content: start;
+}
+
+@media (min-width: 64rem) {
+  .atlas-studio {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .atlas-studio-preview {
+    position: sticky;
+    top: var(--space-4);
+  }
+}
+
+/*
+ * Wide, tall screens (013): the Studio, like the landing and the Viewer, is one
+ * viewport tall. The preview column takes the height the header, poster heading and
+ * footer leave, and the poster is as large as that and the column's width allow, by
+ * CSS alone: the canvas keeps its pixel size and aspect, only its display size
+ * changes, so exports are untouched. The controls are compact. Phones stack and scroll.
+ */
+@media (min-width: 64rem) and (min-height: 36rem) {
+  .atlas-studio-fit {
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  .atlas-studio-fit .atlas-main {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-width: 96rem;
+    padding-block: var(--space-3);
+  }
+
+  .atlas-studio-fit .atlas-studio {
+    flex: 1 1 0;
+    min-height: 0;
+    gap: var(--space-5);
+    align-items: stretch;
+  }
+
+  .atlas-studio-fit .atlas-studio-preview {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .atlas-studio-fit .atlas-moment {
+    margin-bottom: var(--space-2);
+  }
+
+  /* The poster sits right under its heading, as one group at the top of the column. */
+  .atlas-studio-fit .atlas-studio-stage {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .atlas-studio-fit .atlas-studio-canvas {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .atlas-studio-fit .atlas-studio-side {
+    gap: var(--space-3);
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .atlas-studio-fit .atlas-panel {
+    padding: var(--space-4);
+  }
+
+  .atlas-studio-fit .atlas-form {
+    gap: var(--space-3);
+  }
+}
+
+/* Landing (013): the place search list sits in the flow, under its field. */
+/* The list floats under the field, so dismissing it never moves the page under a click. */
+.landing-search-box {
+  position: relative;
+}
+
+/* The search button sits inside the field, at its right end; the input leaves room for it. */
+.landing-search-submit {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 44px;
+  padding: 0;
+  border-color: transparent;
+}
+
+.landing-search-box .atlas-form-input {
+  padding-right: 44px;
+}
+
+.landing-results {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 14rem;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+
+.landing-result {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.landing-result[aria-selected="true"] {
+  background: var(--color-raised);
+  outline-offset: -2px;
+}
+
+.landing-search-status {
+  min-height: 1.1rem;
+  color: var(--color-text-muted);
+}
+
+/* Landing place (013): the field and its switch in one row, the map right under, then the summary. */
+.landing-place {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.landing-place-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.landing-place-field {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+/* Nudged down to the input, past the label, on wide rows; wraps below it on a phone. */
+.landing-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  margin-top: 1.5rem;
+  padding: 0 var(--space-1);
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+/* Wrapped under the field on a phone: no label to clear, so no nudge. */
+@media (max-width: 40rem) {
+  .landing-switch {
+    margin-top: 0;
+  }
+}
+
+.landing-switch:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.landing-switch-track {
+  display: inline-flex;
+  align-items: center;
+  width: 2.5rem;
+  height: 1.5rem;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-bg);
+}
+
+.landing-switch-thumb {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: calc(var(--radius-control) / 2);
+  background: var(--color-text-muted);
+  transition: transform var(--motion-duration-short) var(--motion-ease);
+}
+
+.landing-switch[aria-checked="true"] .landing-switch-track {
+  background: var(--color-accent);
+}
+
+.landing-switch[aria-checked="true"] .landing-switch-thumb {
+  background: var(--color-accent-ink);
+  transform: translateX(1rem);
+}
+
+.landing-map {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* The box is the map's size always (280 px, 220 on phones), loading or failed, so nothing shifts. */
+.landing-map-box {
+  position: relative;
+  height: 220px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+@media (min-width: 40rem) {
+  .landing-map-box {
+    height: 280px;
+  }
+}
+
+.landing-map-canvas {
+  height: 100%;
+  width: 100%;
+}
+
+.landing-map-notice {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.landing-map-canvas.leaflet-container {
+  z-index: 0;
+  font: inherit;
+}
+
+/* Leaflet draws its controls on a light ground over the tiles: dark text on it. */
+.landing-map-canvas .leaflet-control-attribution,
+.landing-map-canvas .leaflet-control-attribution a {
+  color: var(--color-bg);
+}
+
+.landing-map-canvas .leaflet-control-attribution a {
+  text-decoration: underline;
+}
+
+.landing-map-tiles-notice {
+  color: var(--color-text);
+}
+
+.landing-selected {
+  display: grid;
+  gap: var(--space-1);
+}
+
+/* Place and coordinates on one baseline; wraps between them, never inside the coordinates. */
+.landing-selected-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-2);
+}
+
+.landing-selected-lead {
+  min-width: 0;
+}
+
+.landing-selected-name {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+/* The coordinates keep the hint style they had on their own line. */
+.landing-selected-coords {
+  font-size: 0.78rem;
+  color: var(--color-text-faint);
+  white-space: nowrap;
+}
+
+
+/* Landing actions: the primary action centred on its own line, the secondary under it. */
+.landing-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Landing page (013): one column, tight enough to fit one screen on a large display. */
+.landing-main {
+  padding-block: var(--space-3) var(--space-4);
+}
+
+.landing-page .atlas-form-wrap {
+  max-width: 45rem;
+  margin-top: 0;
+}
+
+.landing-page .atlas-moment {
+  margin-bottom: var(--space-3);
+}
+
+.landing-page .atlas-form-alt {
+  margin-top: var(--space-3);
+}
+
+.landing-page .atlas-footer {
+  padding-block: var(--space-3);
+}
+
+.landing-card {
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.landing-card-notice {
+  grid-column: 1 / -1;
+}
+
+.landing-side {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.landing-search-status {
+  min-height: 0;
+}
+
+.landing-search-status:empty {
+  display: none;
+}
+
+/* Advanced on a full-width row of its own, then the action centred on the next. */
+.landing-foot {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.landing-actions {
+  display: flex;
+  justify-content: center;
+  padding-block: var(--space-2) var(--space-1);
+}
+
+/*
+ * On a large display the page is a full-height column and the map takes all the height
+ * the rest leaves, between 200 px and 60vh, so the landing fills the screen without
+ * scrolling. Phones keep the fixed map height above and scroll normally.
+ */
+@media (min-width: 64rem) {
+  .landing-page {
+    min-height: 100dvh;
+  }
+
+  .landing-main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .landing-page .atlas-form-wrap {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .landing-card {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .landing-place,
+  .landing-map {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .landing-map-region {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+  }
+
+  .landing-map-box {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 200px;
+    max-height: 60vh;
+  }
+
+  .landing-map-box .landing-map-canvas {
+    position: absolute;
+    inset: 0;
+    height: auto;
+  }
+}
+
+/* Share, export and Explore: a row under Advanced, to the right. */
+.atlas-studio-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.atlas-studio-buttons .atlas-actions {
+  gap: var(--space-2);
+}
+
+/* The privacy link closes the map hint line; the notice itself is its own page. */
+.landing-privacy-link {
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* The privacy page: one readable column. */
+.privacy-card {
+  max-width: 40rem;
+  margin-inline: auto;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.privacy-card a {
+  text-decoration: underline;
 }

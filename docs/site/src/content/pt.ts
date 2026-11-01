@@ -8,26 +8,34 @@ export const overviewPt: PageContent = {
     {
       heading: "O que é",
       paragraphs: [
-        "starsky desenha o céu noturno de qualquer lugar e momento, no navegador. Escolha coordenadas ou um lugar, uma data e hora e opções de aparência, e o pôster renderiza ao vivo. Um link compartilhado carrega o céu inteiro no fragmento, então o mesmo link renderiza o mesmo pôster para todos.",
+        "starsky desenha o céu noturno de qualquer lugar e momento, no navegador. Busque um lugar ou digite coordenadas, escolha data e hora e abra o céu no Explorador: arraste para olhar em volta, aproxime, alterne camadas, selecione uma estrela ou uma constelação. Quando o céu estiver certo, faça um pôster dele no Estúdio de pôster e exporte em PNG, SVG ou PDF. Um link compartilhado carrega o céu inteiro no fragmento, então o mesmo link renderiza o mesmo pôster para todos.",
         "Não há servidor, banco de dados nem contas. O site são arquivos estáticos no Cloudflare R2; o único Python do produto monta os dados de estrelas que o navegador busca.",
       ],
     },
     {
       heading: "Como as peças se encaixam",
       paragraphs: [
-        "A CLI baixa o catálogo Hipparcos e as linhas de constelação do Stellarium uma vez e exporta dois arquivos JSON. O site busca esses arquivos e faz a própria astronomia e busca de lugares, então a CLI nunca renderiza nem serve nada.",
+        "A CLI baixa o catálogo Hipparcos, as linhas de constelação do Stellarium e os nomes das estrelas uma vez e exporta três arquivos JSON. O site busca esses arquivos e faz a própria astronomia e busca de lugares, então a CLI nunca renderiza nem serve nada.",
       ],
       code: [
         {
           lang: "text",
-          text: "Catálogo Hipparcos ─┐\n                   ├─ starsky (CLI) ──► catalog.json, constellations.json ──┐\nIAU Stellarium ────┘                                                      │\n                                                                          ▼\n                                       site/ (React + TS) ──► pôster PNG / SVG / PDF",
+          text: "Catálogo Hipparcos ─┐\n                   ├─ starsky (CLI) ──► catalog.json, constellations.json, names.json ──┐\nIAU Stellarium ────┘                                                               │\n                                                                                   ▼\n                                          site/ (React + TS) ──► Explorador, pôster PNG / SVG / PDF",
         },
       ],
     },
     {
-      heading: "Duas superfícies",
+      heading: "Quatro superfícies",
       paragraphs: [
-        "Landing monta um momento: coordenadas ou nome de lugar, data, hora, fuso e aparência. Viewer mostra um céu compartilhado via link #s=: o mapa, figuras de constelação, legenda, controles de vista, copiar link e a superfície de exportação. Uma superfície de construção e ajuste em #studio= está planejada, não construída.",
+        "O fluxo é página inicial, depois Explorador, depois exportação. A página inicial faz uma pergunta, de onde você quer explorar o céu, e sua única ação, Explorar este céu, abre o Explorador. O Explorador (#e=) é a superfície principal. O Estúdio de pôster (#studio=) compõe e exporta um pôster. A página do pôster (#s=) mostra um pôster compartilhado exatamente como foi feito. Cada uma tem sua própria página nesta documentação.",
+        "Privacidade: o starsky não guarda nenhum registro sobre você e não tem contas. Os links carregam o conteúdo no fragmento da URL, que o navegador nunca envia ao servidor. A exceção a conhecer é o OpenStreetMap: a busca de lugares (Nominatim) e os blocos do mapa da página inicial são pedidos pelo seu navegador, então o OpenStreetMap vê o seu endereço IP.",
+      ],
+    },
+    {
+      heading: "Idiomas",
+      paragraphs: [
+        "A interface fala inglês (en-US) e português do Brasil (pt-BR). A primeira visita segue o idioma do seu navegador; o seletor no rodapé troca o idioma, e a escolha fica guardada só neste navegador. A troca redesenha a página no lugar, sem perder o que você digitou.",
+        "O pôster tem um idioma próprio, o idioma do pôster, escolhido no Estúdio de pôster e guardado no link. O navegador de quem abre o link nunca o muda, então todos veem o mesmo pôster. Nomes de constelações e estrelas, coordenadas, a versão e os créditos dos dados nunca são traduzidos.",
       ],
     },
   ],
@@ -71,7 +79,7 @@ export const installPt: PageContent = {
     {
       heading: "Docker",
       paragraphs: [
-        "A imagem é um trabalho de dados de execução única, não um serviço: escreve catalog.json e constellations.json num diretório montado e sai. Roda como UID/GID 65532.",
+        "A imagem é um trabalho de dados de execução única, não um serviço: escreve catalog.json, constellations.json e names.json num diretório montado e sai. Roda como UID/GID 65532.",
       ],
       code: [
         {
@@ -102,8 +110,8 @@ export const cliPt: PageContent = {
       table: {
         head: ["Comando", "O que faz"],
         rows: [
-          ["cache warm", "Baixa o catálogo Hipparcos e as linhas de constelação para o cache local em parquet."],
-          ["catalog", "Escreve catalog.json e constellations.json para o navegador."],
+          ["cache warm", "Baixa o catálogo Hipparcos, as linhas de constelação e os nomes de estrelas para o cache local em parquet."],
+          ["catalog", "Escreve catalog.json, constellations.json e names.json para o navegador."],
         ],
       },
     },
@@ -114,7 +122,7 @@ export const cliPt: PageContent = {
         head: ["Flag", "Padrão", "Significado"],
         rows: [
           ["--mag-limit FLOAT", "6.5", "Estrela mais fraca incluída (magnitude Hipparcos)."],
-          ["--output-dir PATH", "site/public/data", "Diretório onde os dois JSON são escritos (criado se faltar)."],
+          ["--output-dir PATH", "site/public/data", "Diretório onde os três JSON são escritos (criado se faltar)."],
         ],
       },
     },
@@ -135,33 +143,34 @@ export const cliPt: PageContent = {
 };
 
 export const viewerPt: PageContent = {
-  title: "Guia do Viewer",
+  title: "Página do pôster",
   summary:
-    "Abra um céu compartilhado, leia o mapa, ajuste a vista, guarde o pôster em PNG, SVG ou PDF e entenda cada estado de erro.",
+    "Abra um pôster compartilhado, compartilhe, exporte em PNG, SVG ou PDF, entre no céu por trás dele e entenda cada estado de erro.",
   sections: [
     {
-      heading: "Abra um céu compartilhado",
+      heading: "Abra um pôster compartilhado",
       paragraphs: [
-        "Um link compartilhado termina em #s= seguido do payload. Abri-lo renderiza o céu exato: pôster, figuras de constelação e legenda. Nenhuma interação é necessária; o mapa é a página.",
-        "Fragmento corrompido, payload ausente ou versão não suportada rendem cada um seu estado nomeado com um próximo passo, nunca uma página em branco.",
+        "Um link compartilhado termina em #s= seguido do conteúdo. Abri-lo renderiza o pôster exato: a imagem e o seu título, nada mais. Não há mapa para mover nem formulário pela frente; o pôster é a página. O id de rota desta página continua viewer, para que links existentes sigam funcionando.",
+        "Fragmento corrompido, conteúdo ausente ou versão não suportada rendem cada um seu estado nomeado com um próximo passo, nunca uma página em branco.",
+        "A legenda do pôster está no idioma do pôster que o link traz (inglês quando não traz nenhum). A página em volta, incluindo a data sob o título, segue o idioma da sua interface.",
       ],
     },
     {
-      heading: "Leia e ajuste a vista",
+      heading: "O que dá para fazer nela",
       paragraphs: [
-        "Arraste para mover, role para zoom, use as setas com o mapa focado (+, -, 0 para reenquadrar). Os controles de vista sob o pôster fazem o mesmo por botão. Selecionar uma figura a ilumina e a anuncia para leitores de tela.",
+        "Quatro ações: compartilhar (copiar o link), exportar, Explorar este céu e Faça o seu. Explorar este céu abre o Explorador no lugar e momento do pôster; o link #s= em si nunca é reescrito. Faça o seu abre o Estúdio de pôster partindo do pôster compartilhado.",
       ],
     },
     {
       heading: "Guarde o pôster",
       paragraphs: [
-        "Exportação oferece PNG, SVG e PDF verdadeiramente vetorial com a tipografia do pôster embutida. A conclusão é anunciada no lugar, junto ao botão que iniciou; o foco nunca se move. Uma exportação que falha nomeia o formato, tranquiliza que o mapa segue intacto e deixa todos os controles ativos.",
+        "A exportação oferece PNG, SVG e PDF verdadeiramente vetorial com a tipografia do pôster embutida, no layout padrão ou no layout de story 9:16 (1080 × 1920). A conclusão é anunciada no lugar, junto ao botão que iniciou; o foco nunca se move. Uma exportação que falha nomeia o formato e deixa todos os controles ativos.",
       ],
     },
     {
       heading: "Títulos que a tipografia não desenha",
       paragraphs: [
-        "A fonte empacotada cobre acentos latinos e pontuação, mas não tem glifos de emoji ou CJK. Digitar tal caractere no formulário recusa nomeando o caractere. Abrir um link compartilhado que o contenha ainda renderiza: o caractere é deixado de fora e o ajuste é declarado, porque um link morto é pior que um título ajustado.",
+        "A fonte empacotada cobre acentos latinos e pontuação, mas não tem glifos de emoji ou CJK. Digitar tal caractere num formulário recusa nomeando o caractere. Abrir um link compartilhado que o contenha ainda renderiza: o caractere é deixado de fora e o ajuste é declarado, porque um link morto é pior que um título ajustado.",
       ],
     },
     {
@@ -176,7 +185,7 @@ export const viewerPt: PageContent = {
 export const conceptsPt: PageContent = {
   title: "Conceitos",
   summary:
-    "O vocabulário compartilhado: pôster, lugar, coordenadas, payload de compartilhamento, aparência e os arquivos de contrato que ligam a CLI ao navegador.",
+    "O vocabulário compartilhado: pôster, lugar, coordenadas, cena, os quatro fragmentos de link, aparência e os arquivos de contrato que ligam a CLI ao navegador.",
   sections: [
     {
       heading: "Glossário",
@@ -187,30 +196,36 @@ export const conceptsPt: PageContent = {
         head: ["Termo", "Definição", "Nunca"],
         rows: [
           ["Poster", "A imagem do céu noturno renderizada mais o bloco de legenda (PNG raster, SVG/PDF vetorial).", "chart, plot"],
-          ["Place", "Local em texto livre resolvido via Nominatim para coordenadas mais nomes.", "coordinates, search"],
-          ["Coordinates", "Latitude validada [-90,90] / longitude [-180,180].", "lat/lon em prosa"],
-          ["Viewer", "A superfície que renderiza um link #s=. O estado de repouso do produto.", "—"],
-          ["Studio", "Superfície planejada de construção e ajuste em #studio=. Ainda não construída.", "—"],
-          ["Landing", "A superfície de escolha: abrir um céu compartilhado ou mapear um momento.", "—"],
-          ["SharePayload", "JSON plano versionado (v=1) de lat/lon/place/when/tz/options.", "payload, fragment"],
-          ["Appearance", "O nome na interface para opções de render: projeção, fisheye, separação, magnitude, brilho, constelações, forma, título.", "render options"],
+          ["Place", "Local escolhido por busca (Nominatim), resolvido para coordenadas e um nome. Um pino solto ou coordenadas digitadas deixam o lugar vazio.", "coordinates, search"],
+          ["Coordinates", "Latitude validada [-90,90] / longitude [-180,180]; rejeitadas, nunca ajustadas, em links compartilhados.", "lat/lon em prosa"],
+          ["Landing", "A porta de entrada: de onde você quer explorar o céu? Sua única ação, Explorar este céu, abre o Explorador. Espelhada em #c=.", "—"],
+          ["Explorer", "A superfície principal: um céu navegável para um lugar e momento, em #e=.", "app de planetário"],
+          ["Studio", "O Estúdio de pôster em #studio=: componha o pôster e depois exporte ou copie um link #s=. Distinto da página do pôster, para que um rascunho nunca sobrescreva o artefato canônico.", "—"],
+          ["Viewer", "A página do pôster: renderiza um link #s= como a imagem e o seu título. Na interface chama-se página do pôster.", "—"],
+          ["Scene", "O lugar, o momento e o título compartilhados entre o Explorador e o pôster. Composição e câmera não fazem parte dela.", "—"],
+          ["Camera", "Uma rotação câmera-para-mundo em quaternion mais um campo de visão de 5–120° (padrão 100), no referencial equatorial.", "—"],
+          ["Figure", "Um desenho de constelação: estrelas, segmentos, nome. Uma estrela pertence a uma constelação só pelas linhas da sua figura.", "—"],
+          ["Abaixo do horizonte", "Altitude igual ou menor que 0. Esses objetos nunca são apresentados como observáveis.", "—"],
+          ["SharePayload", "JSON plano versionado (v=1) de lat/lon/place/when/tz/options, levado por #s= e #studio=.", "payload, fragment"],
+          ["Appearance", "O nome na interface das opções de render: projeção, olho de peixe, separação, magnitude, brilho, constelações, formato, título.", "render options"],
           ["Projection", "stereographic ou fisheye.", "mercator"],
-          ["Shape", "circle ou square.", "round, box"],
-          ["Figure", "Um desenho de constelação: estrelas, segmentos, nome.", "—"],
-          ["Caption", "[Título] mais coordenadas — lugar · hora local com zona.", "—"],
+          ["Shape", "circle ou square. Um pôster quadrado preenche o quadrado, inscrito no horizonte.", "round, box"],
+          ["Magnitude limite", "A estrela mais fraca desenhada.", "—"],
+          ["Formato story", "O layout de exportação 1080 × 1920 (9:16), escolhido na hora de exportar e nunca guardado em um link.", "—"],
+          ["Caption", "[Título] mais coordenadas — lugar · hora local com fuso.", "—"],
         ],
       },
     },
     {
-      heading: "O payload de compartilhamento",
+      heading: "Os quatro fragmentos de link",
       paragraphs: [
-        "JSON canônico, zlib nível 9, base64 URL-safe sem padding, após #s=. Versão 1. Valores fora do intervalo são rejeitados em vez de ajustados, então um link nunca pode significar silenciosamente outra coisa. Campos desconhecidos são rejeitados em vez de renderizados.",
+        "Todo estado compartilhável é um fragmento de URL versionado: #c= (formulário inicial), #e= (Explorador), #studio= (rascunho do Estúdio) e #s= (o pôster). Veja Página inicial e links para o que cada um guarda. Todos usam a mesma codificação: JSON canônico, zlib nível 9, base64 seguro para URL sem preenchimento. Valores fora de faixa num link de pôster são rejeitados em vez de ajustados, então um link nunca passa a significar outra coisa em silêncio.",
       ],
     },
     {
       heading: "O contrato de render",
       paragraphs: [
-        "site/render-spec.json detém todos os tokens visuais — cores, dimensionamento de estrelas, brilho, linhas, rótulos, anel, layout da legenda e a seção de link compartilhado. O navegador é o único renderizador, então o arquivo é um contrato normativo para uma implementação, com teste de conformidade que falha em divergência.",
+        "site/render-spec.json é dono de todo token visual — cores, tamanho de estrelas, brilho, linhas, rótulos, anel, layout da legenda e a seção do link de compartilhamento. O navegador é o único renderizador, então o arquivo é um contrato normativo para uma única implementação, com um teste de conformidade que falha diante de desvio.",
       ],
     },
   ],
@@ -219,7 +234,7 @@ export const conceptsPt: PageContent = {
 export const architecturePt: PageContent = {
   title: "Arquitetura",
   summary:
-    "Estático primeiro, sem servidor de runtime: um cliente React + TypeScript no R2, uma CLI de dados em Python e render-spec.json como contrato entre eles.",
+    "Estático primeiro, sem servidor de runtime: um cliente React + TypeScript no R2, uma CLI de dados em Python e render-spec.json como contrato entre eles. O OpenStreetMap é a única dependência externa e o maior risco.",
   sections: [
     {
       heading: "Topologia",
@@ -229,13 +244,13 @@ export const architecturePt: PageContent = {
       code: [
         {
           lang: "text",
-          text: "Hipparcos + Stellarium ──► starsky catalog ──► catalog.json ──┐\n                                                        ├─► R2 ──► navegador\n                                      build do site ──► dist/ ────┘",
+          text: "Hipparcos + Stellarium ──► starsky catalog ──► catalog / constellations / names .json ──┐\n                                                                                    ├─► R2 ──► navegador\n                                                           build do site ──► dist/ ────┘",
         },
       ],
     },
     {
       heading: "Decisões",
-      paragraphs: ["Cinco registros de decisão de arquitetura em docs/product/adr/."],
+      paragraphs: ["Oito registros de decisão de arquitetura em docs/product/adr/."],
       table: {
         head: ["ADR", "Decisão"],
         rows: [
@@ -244,13 +259,25 @@ export const architecturePt: PageContent = {
           ["0003", "render-spec.json é o contrato normativo de render."],
           ["0004", "Postura de resiliência e observabilidade estática."],
           ["0005", "Stack cliente TypeScript 7 + Bun + React."],
+          ["0006", "Contrato da câmera do Explorador: um quaternion no referencial equatorial."],
+          ["0007", "O Explorador renderiza em Canvas 2D; WebGL só se os limites forem atingidos."],
+          ["0008", "Blocos do OpenStreetMap para o mapa de localização, sob demanda."],
         ],
       },
     },
     {
       heading: "Fluxo de dados",
       paragraphs: [
-        "Fontes Hipparcos e Stellarium baixam para caches locais em parquet (cache warm). catalog exporta o JSON do navegador com filtro de magnitude. O site busca o JSON mesma-origem, calcula alt/az sozinho, resolve lugares via Nominatim no navegador e renderiza tudo em canvas com exportações geradas no cliente.",
+        "Fontes Hipparcos e Stellarium baixam para caches locais em parquet (cache warm). catalog exporta o JSON do navegador com filtro de magnitude. O site busca o JSON mesma-origem, calcula alt/az sozinho e renderiza o céu em canvas, com exportações geradas no cliente. A busca de lugares vai ao Nominatim a partir do navegador.",
+        "O código do cliente é organizado por contexto em site/src/lib: sky (vetores, observador, câmera, cena), explorer, landing, scene (a tradução do Explorador para o pôster), studio e render.",
+      ],
+    },
+    {
+      heading: "OpenStreetMap: o maior risco",
+      paragraphs: [
+        "O risco que o dono põe em primeiro lugar é ser bloqueado pelo OpenStreetMap. Dois serviços dele são usados, ambos a partir do navegador do visitante: o Nominatim para buscar lugares e o servidor de blocos para o mapa da página inicial. Nenhum dos dois usa credencial.",
+        "Mitigações: a busca só roda com Enter, com o botão de busca ou ao sair do campo, nunca enquanto se digita; os resultados ficam em cache na sessão e as requisições têm pelo menos um segundo de intervalo; os blocos do mapa são carregados só para a vista visível, com o Referer mantido e a atribuição sempre visível; os testes automatizados nunca tocam nenhum dos hosts e falham com qualquer requisição sem stub. As coordenadas sempre funcionam sem nenhum dos serviços.",
+        "O mapa existe só na página inicial. O Explorador, o Estúdio e a página do pôster não fazem nenhuma requisição ao OpenStreetMap. Em caso de bloqueio, o plano B é um geocodificador com chave ou blocos hospedados por nós.",
       ],
     },
   ],
@@ -269,7 +296,8 @@ export const deliveryPt: PageContent = {
         rows: [
           ["ci.yml", "Python: ruff, ty, pytest, checagem no-server, cache warm + catalog real afirmando forma e contagens."],
           ["site_ci.yml", "Site: lint, typecheck, acordo i18n, testes unitários/componente/referência, build, orçamentos brotli, varredura de segredos."],
-          ["site_e2e.yml", "Jornadas Playwright em Chromium e Firefox, incluindo exportação offline e integridade da fonte."],
+          ["site_e2e.yml", "Jornadas Playwright em Chromium e Firefox, incluindo exportação offline, integridade da fonte e uma guarda de rede que falha com qualquer requisição ao OpenStreetMap sem stub."],
+          ["site_docs.yml", "Verifica esta documentação e a publica no bucket de docs sob /starsky/."],
           ["site_r2.yml", "Reconstrói dados + site, verifica e faz deploy no R2 em main."],
           ["security.yml", "Revisão de dependências, Trivy, CodeQL."],
           ["release.yml", "Tags, SBOM + atestação, GitHub Release."],
@@ -300,24 +328,192 @@ export const deliveryPt: PageContent = {
 export const roadmapPt: PageContent = {
   title: "Roteiro",
   summary:
-    "O que está construído, o que vem a seguir e o que foi aposentado de propósito. Itens planejados são rotulados e nunca misturados às páginas de como-fazer.",
+    "O que está construído, o que vem a seguir e o que foi aposentado de propósito. Itens planejados são rotulados e nunca misturados com as páginas de como-fazer.",
   sections: [
     {
-      heading: "Status",
-      paragraphs: ["Por specs/README.md. Implementado significa que o caminho de código existe e roda; Verificado significa suítes e2e passando em CI — nada está Verificado ainda."],
+      heading: "Situação",
+      paragraphs: ["Conforme specs/README.md. Implementado significa que o caminho de código existe e roda na branch dev; Verificado significa que as suítes e2e passam no CI — nada está Verificado ainda. A promoção de dev para main está pendente, então o site em produção ainda pode servir um build anterior."],
       table: {
-        head: ["Funcionalidade", "Status", "Nota"],
+        head: ["Funcionalidade", "Situação", "Nota"],
         rows: [
-          ["design-system", "Implementado", "Tokens, classes atlas, guardas i18n."],
-          ["catalog-cli + data-cache", "Implementado", "starsky catalog e cache warm entregues."],
-          ["viewer", "Implementado", "Landing, viewer #s=, codec de share, busca de lugar."],
-          ["renderer-export", "Implementado", "Render do pôster e exportação PNG/SVG/PDF com fonte embutida."],
-          ["site-delivery", "Parcial", "Deploy, orçamentos e portões ligados; prefixos versionados, smoke e drills em aberto."],
-          ["Studio (#studio=)", "Planejado — ainda não implementado.", "Superfície de construção e ajuste; share recodifica para #s=."],
-          ["Locale pt-BR do produto", "Planejado — ainda não implementado.", "Entrega como fatia própria após o catálogo existir."],
-          ["App Gradio / renderer Python / HF Space", "Aposentado.", "Removidos por BCR-0001/0003/0005; não voltam."],
+          ["design-system", "Implementado", "Tokens, classes atlas, guardas de i18n."],
+          ["catalog-cli + data-cache", "Implementado", "starsky catalog e cache warm estão entregues."],
+          ["viewer (006), renderer-export (007)", "Implementado", "A página do pôster #s=, codec de compartilhamento, exportação PNG/SVG/PDF com fonte embutida."],
+          ["sky-domain (009)", "Implementado", "Câmera, observador, cena, #e=, nomes de estrelas."],
+          ["explorer-canvas, explorer-ui (010, 011)", "Implementado", "Explorador em Canvas 2D, inspetor, busca, camadas, barra de ferramentas."],
+          ["poster-studio (012)", "Implementado", "O Estúdio em #studio=, exportação story."],
+          ["explorer-polish, visual-identity (014, 015)", "Implementado", "Recolhimento por inatividade, lista por horizonte, dicas, fonte de interface empacotada, página do pôster só com imagem."],
+          ["location-first (013)", "Implementado", "Página inicial com mapa, link #c=."],
+          ["square-fill (016)", "Implementado", "O pôster quadrado preenche o quadrado."],
+          ["pt-br (018)", "Implementado", "Interface em en-US e pt-BR com seletor no rodapé; idioma do pôster escolhido no Estúdio e guardado no link (BCR-0015)."],
+          ["constellation-tooltip (019)", "Implementado", "Dica ao pousar o cursor numa constelação e a lista de estrelas da figura no inspetor."],
+          ["site-delivery (008)", "Parcial", "Deploy, orçamentos e portões ligados; prefixos versionados, smoke test e simulações em aberto."],
+          ["hardening (017)", "Parcial", "Em andamento: passes de acessibilidade, falhas, desempenho e estabilidade, indexação estrita, docs."],
+          ["Promoção de dev para main", "Planejado — ainda não implementado.", "Aguardando o aval do dono."],
+          ["Prefixos versionados no R2, manifesto, simulação de rollback", "Planejado — ainda não implementado.", "008 T003, T018, T021."],
+          ["Renderizador WebGL", "Planejado — ainda não implementado.", "Depois, e só se os limites do Canvas 2D forem atingidos (ADR-0007)."],
+          ["App Gradio / renderizador Python / HF Space", "Aposentado.", "Removidos por BCR-0001/0003/0005; não voltam."],
         ],
       },
+    },
+  ],
+};
+
+
+export const explorerPt: PageContent = {
+  title: "Explorador",
+  summary:
+    "A superfície principal: um céu navegável para o seu lugar e momento. Olhe em volta, aproxime, alterne camadas, inspecione estrelas e constelações e depois faça um pôster.",
+  sections: [
+    {
+      heading: "Abra o Explorador",
+      paragraphs: [
+        "Aperte Explorar este céu na página inicial ou abra um link #e=. O céu ocupa a janela, desenhado em Canvas 2D para o lugar e momento que você escolheu. O mesmo link sempre mostra o mesmo céu e a mesma vista.",
+        "Objetos abaixo do horizonte nunca são apresentados como observáveis: ficam ocultos ou esmaecidos, e o céu diz isso.",
+      ],
+    },
+    {
+      heading: "Olhe em volta",
+      paragraphs: [
+        "Arraste para olhar em volta, role ou faça pinça para aproximar, dê duplo clique para centralizar num ponto. Com o céu em foco, as setas giram a vista, mais e menos aproximam, 0 volta ao início e Esc limpa a seleção. O campo de visão vai de 5° a 120°. Reenquadrar desliza de volta à vista inicial e termina exatamente nela.",
+      ],
+    },
+    {
+      heading: "Camadas, busca e lista",
+      paragraphs: [
+        "A barra de ferramentas liga e desliga as linhas de constelação, os rótulos, o horizonte, os pontos cardeais e a grade, e define se os objetos abaixo do horizonte ficam ocultos ou esmaecidos. A busca encontra estrelas e constelações pelo nome.",
+        "A lista de constelações é agrupada pelo horizonte: o que está no alto agora vem antes do que está abaixo. Uma estrela pertence a uma constelação só pelas linhas da sua figura. Selecionar uma figura, na lista ou no céu, a ilumina.",
+      ],
+    },
+    {
+      heading: "Estrelas, dicas e o inspetor",
+      paragraphs: [
+        "Pousar o cursor numa estrela por cerca de um segundo e meio mostra uma dica. Selecionar uma estrela ou uma constelação abre o inspetor: um painel à direita com uma aba em telas grandes, uma folha inferior em celulares. Uma linha-resumo do lugar e do momento fica sempre visível; ela se expande durante a atividade.",
+        "Pousar o cursor nas linhas ou no nome de uma constelação pelo mesmo tempo mostra o nome dela, quantas estrelas formam a figura e até três das suas estrelas com nome, da mais brilhante para a menos, por exemplo \"Orion • 22 estrelas\" sobre \"Rigel, Betelgeuse, Bellatrix +19\". Uma estrela sob o cursor mantém a própria dica, e uma figura que não está desenhada não reage ao cursor. As dicas pedem mouse ou caneta; numa tela de toque, toque.",
+        "O inspetor de uma constelação selecionada lista todas as estrelas da figura, da mais brilhante para a menos, pelo nome ou número HIP com a magnitude, e diz por escrito quais estão abaixo do horizonte. Escolher uma seleciona essa estrela. Nomes de estrelas e constelações nunca são traduzidos.",
+      ],
+    },
+    {
+      heading: "Controles que saem da frente",
+      paragraphs: [
+        "Os controles se recolhem após quatro segundos de inatividade, a menos que algo os mantenha abertos: um popover, o foco, o ponteiro, um pino ou um arraste. Eles começam recolhidos ao carregar, para que o céu seja a primeira coisa que você vê.",
+      ],
+    },
+    {
+      heading: "Em seguida: um pôster",
+      paragraphs: [
+        "Criar pôster na barra de ferramentas abre o Estúdio de pôster com o mesmo lugar, momento e título. Voltar ao Explorador no Estúdio retorna à câmera que você deixou, se a aba ainda se lembrar dela. Essa memória vive só no armazenamento de sessão desta aba e nunca aparece em um link.",
+      ],
+    },
+  ],
+};
+
+export const linksPt: PageContent = {
+  title: "Página inicial e links",
+  summary:
+    "O formulário da página inicial, os quatro fragmentos de link (#c=, #e=, #studio=, #s=), o que cada um guarda e com que rigor cada um é lido.",
+  sections: [
+    {
+      heading: "A página inicial",
+      paragraphs: [
+        "A página inicial faz uma pergunta: de onde você quer explorar o céu? Busque um lugar ou troque para coordenadas. Um mapa do OpenStreetMap sempre visível mostra o lugar e aceita um clique ou um pino arrastado. Acrescente um título opcional, data, hora e fuso, e defina a magnitude limite em Avançado. A única ação, Explorar este céu, abre o Explorador.",
+        "A busca de lugares roda com Enter, com o botão de busca ou ao sair do campo com texto novo. Nunca roda enquanto você digita: a política do Nominatim, do OpenStreetMap, proíbe autocompletar. Os resultados ficam em cache na sessão e as requisições têm pelo menos um segundo de intervalo. Se a busca ou o mapa falharem, a mensagem aparece no próprio lugar e as coordenadas continuam funcionando.",
+      ],
+    },
+    {
+      heading: "Privacidade",
+      paragraphs: [
+        "O starsky não guarda nenhum registro sobre você e não tem contas. Um link leva o conteúdo no fragmento da URL, que o navegador nunca envia ao servidor. A busca de lugares (Nominatim) e o mapa da página inicial (blocos do OpenStreetMap) rodam a partir do seu navegador, então o OpenStreetMap vê o seu endereço IP. A página de Privacidade do produto (`#privacy`, com link na dica do mapa da página inicial) explica isso e lista as duas pequenas informações que o navegador guarda: o idioma escolhido e, por aba, a vista do Explorador para onde voltar. O starsky não tem credenciais de nenhum dos dois serviços.",
+      ],
+    },
+    {
+      heading: "Os quatro fragmentos",
+      paragraphs: [
+        "Todo fragmento leva v: 1 e usa a mesma codificação: JSON canônico, zlib nível 9, base64 seguro para URL sem preenchimento. Nenhum pode passar de 4096 caracteres.",
+      ],
+      table: {
+        head: ["Fragmento", "Guarda", "Abre", "Regra de leitura"],
+        rows: [
+          ["#c=", "Um formulário inicial preenchido: lugar, coordenadas, data e hora local, fuso, título, magnitude limite, idioma do pôster.", "A página inicial", "Tolerante por campo"],
+          ["#e=", "Uma cena (lugar, momento, título, magnitude limite, idioma do pôster) mais uma vista durável: câmera, campo de visão, camadas, seleção.", "O Explorador", "Estrito, no conteúdo todo"],
+          ["#studio=", "Um pôster em composição: o mesmo conteúdo de #s=.", "O Estúdio de pôster", "Estrito"],
+          ["#s=", "O pôster pronto: coordenadas, momento, fuso, opções de aparência, idioma do pôster.", "A página do pôster", "Estrito, com migração de versão"],
+        ],
+      },
+    },
+    {
+      heading: "Regras de tolerância",
+      paragraphs: [
+        "O #c= é indulgente de propósito. Um campo que falha na regra do próprio formulário é descartado e o resto ainda preenche. Um link que não dá para ler, ou de outra versão, resulta em formulário em branco e um aviso curto. Ele nunca dispara uma busca e nunca cria entrada no histórico; a página o reescreve no lugar conforme você edita, então a barra de endereço é sempre o link para compartilhar.",
+        "#e=, #studio= e #s= são estritos. Um valor fora de faixa é rejeitado, nunca ajustado. No #e= a câmera precisa ser uma rotação válida, o campo de visão fica entre 5° e 120° e a seleção precisa nomear uma estrela (HIP) ou uma constelação (CON). Uma versão desconhecida nunca é adivinhada: é informada como não suportada.",
+        "Um link #e= nunca leva estado de ponteiro, de passar o cursor, de animação ou de painel.",
+      ],
+    },
+    {
+      heading: "Por que o #s= é separado e estável",
+      paragraphs: [
+        "O #s= é o artefato canônico: o céu que alguém lhe enviou. O Estúdio usa um fragmento próprio para que um rascunho ajustado nunca o substitua. Copiar o link no Estúdio gera um link #s=, não um #studio=, então o que você compartilha é o pôster pronto, não uma sessão de edição.",
+        "O #s= permanece compatível byte a byte com todo link emitido desde a versão 1. O layout de exportação (padrão ou story) nunca é guardado em nenhum link.",
+      ],
+    },
+    {
+      heading: "O idioma do pôster: lang",
+      paragraphs: [
+        "Todo fragmento pode levar um campo opcional de primeiro nível, lang, com um único valor possível: \"pt-BR\". É o idioma do pôster, e a ausência significa inglês (en-US). O inglês nunca é escrito, então todo link feito antes do campo existir mantém os mesmos bytes e desenha o mesmo pôster.",
+        "#s=, #studio= e #e= rejeitam qualquer outro valor, inclusive \"en-US\", como rejeitam qualquer campo fora de faixa. O #c= descarta um lang desconhecido e preenche o resto. O idioma da interface nunca vai para um link: ele é de quem lê, o idioma do pôster é do pôster.",
+      ],
+    },
+  ],
+};
+
+export const studioPt: PageContent = {
+  title: "Estúdio de pôster",
+  summary:
+    "Componha o pôster com pré-visualização ao vivo e exporte em PNG, SVG ou PDF no layout padrão ou story, ou copie um link do pôster pronto.",
+  sections: [
+    {
+      heading: "Abra o Estúdio",
+      paragraphs: [
+        "Escolha Criar pôster no Explorador, ou Faça o seu numa página de pôster. O Estúdio abre em #studio= com o mesmo lugar, momento, fuso e título. Abrir a partir de uma página de pôster parte desse pôster. Mudar o lugar ou o momento é feito na página inicial; o Estúdio avisa isso e leva até lá.",
+      ],
+    },
+    {
+      heading: "Aparência",
+      paragraphs: [
+        "A pré-visualização acompanha as mudanças após uma breve pausa, e o fragmento acompanha a pré-visualização. Os controles são projeção (estereográfica ou olho de peixe), formato (quadrado ou círculo), intensidade do olho de peixe, separação mínima entre estrelas, brilho e o título.",
+        "Um título que a tipografia do pôster não desenha é recusado no Estúdio. Um que chega por um link perde os caracteres que não dá para desenhar, e o Estúdio avisa.",
+      ],
+    },
+    {
+      heading: "Idioma do pôster",
+      paragraphs: [
+        "Idioma do pôster define o idioma da data na legenda: inglês (Jun 24, 2025, 8:30 PM) ou português (24 de jun. de 2025, 20:30). Um pôster novo começa no idioma da interface, ou no idioma que o link do Explorador já traz; um link de rascunho ou de pôster mantém o idioma que guarda. A escolha fica no #studio= e no link #s= que você copia, então todo destinatário vê a mesma legenda, seja qual for o idioma do navegador dele.",
+        "Só a data muda: o título é texto seu, e nomes de constelações e estrelas são nomes próprios. O inglês não escreve nada no link, então um pôster em inglês tem exatamente o link que sempre teve.",
+      ],
+    },
+    {
+      heading: "O quadrado preenche o quadrado",
+      paragraphs: [
+        "Um pôster quadrado é só céu: a vista é ampliada para que o quadrado fique inscrito no horizonte, com os cantos sobre o horizonte, e recortada no quadrado. O círculo mantém o disco inteiro do horizonte com seu anel.",
+      ],
+    },
+    {
+      heading: "Exportação",
+      paragraphs: [
+        "A exportação oferece PNG, SVG e PDF verdadeiramente vetorial com a tipografia do pôster embutida. Escolha o layout na hora de exportar: padrão, ou story, um layout 9:16 de 1080 × 1920 para celulares. O layout nunca faz parte de um link. Os arquivos mantêm a faixa da legenda e a conclusão é anunciada junto ao botão que a iniciou.",
+      ],
+    },
+    {
+      heading: "Compartilhar e voltar",
+      paragraphs: [
+        "Copiar link gera um link #s= do pôster pronto. Voltar ao Explorador reabre a mesma cena na câmera que você deixou, ou na vista inicial se esta aba não se lembrar mais dela. A pré-visualização é estática; aproximar e explorar acontecem no Explorador.",
+      ],
+    },
+    {
+      heading: "Se o pôster for retido",
+      paragraphs: [
+        "Como na página do pôster, a falta da fonte do pôster ou dos dados de estrelas impede o desenho do pôster em vez de substituir qualquer coisa, e a página diz o motivo.",
+      ],
     },
   ],
 };

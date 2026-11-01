@@ -24,16 +24,6 @@ describe("async announcements (T035)", () => {
   it("announces the poster when it is ready", () => {
     expect(viewer).toContain('t("viewer.announced.ready")');
   });
-
-  it("announces the figure that was selected, by name", () => {
-    expect(viewer).toContain('t("viewer.announced.figureSelected"');
-    // The name must be interpolated, not a bare "something selected".
-    expect(viewer).toContain("name: fig.name");
-  });
-
-  it("announces returning to the whole sky", () => {
-    expect(viewer).toContain('t("viewer.announced.viewReset")');
-  });
 });
 
 describe("alert vs. status (T034)", () => {
@@ -72,19 +62,10 @@ describe("the canvas is not image-only (T036, DS-A11Y-006)", () => {
     expect(canvas).toMatch(/<span className="sr-only">\{caption\}<\/span>/);
   });
 
-  it("exposes the focused figure's name as text", () => {
-    expect(canvas).toContain("focusedName");
-    expect(canvas).toContain('t("viewer.announced.figureSelected"');
-  });
-
   it("labels the canvas for a titled and an untitled poster", () => {
     expect(canvas).toContain('t("viewer.canvasLabel"');
     expect(canvas).toContain('t("viewer.canvasLabel.untitled")');
     // No literal English left in the aria-label.
     expect(canvas).not.toMatch(/aria-label=\{\s*`/);
-  });
-
-  it("still names the keyboard path for a canvas that cannot take focus", () => {
-    expect(canvas).toContain('t("figures.hint")');
   });
 });

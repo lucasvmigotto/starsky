@@ -32,7 +32,11 @@
   },
   "shape": {
     "ringWidth": 2.0,
-    "ringAlpha": 0.9
+    "ringAlpha": 0.9,
+    "square": {
+      "fill": "inscribed",
+      "note": "BCR-0014: the sky square is inscribed in the horizon disc (corners on the horizon, half-side 1/sqrt(2) in unit-disc terms) and clipped to the square. Circle keeps the axes extent. Nothing below the horizon is ever drawn."
+    }
   },
   "projection": {
     "stereographic": "cos(alt) / (1 + sin(alt)), north-up (x=sin(az), y=-cos(az))",
@@ -45,6 +49,9 @@
     "singleCaptionFontSize": 11,
     "coordsFormat": "{abs(lat):.4f}°N|S, {abs(lon):.4f}°E|W",
     "detailTemplate": "{coords} — {place} · {local} {tz} (place segment omitted when unresolved; title line omitted when empty)"
+  },
+  "formats": {
+    "story": { "widthPx": 1080, "heightPx": 1920 }
   },
   "fonts": ["Cormorant Garamond"],
   "shareLink": {

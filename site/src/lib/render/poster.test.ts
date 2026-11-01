@@ -12,6 +12,7 @@ import { buildPosterSvg } from "./export.ts";
 import {
   AXIS_EXTENT,
   REFERENCE_DPI,
+  insideSkySquare,
   posterGeometry,
   unitToCanvas,
 } from "./poster.ts";
@@ -205,5 +206,60 @@ describe("star geometry (parity harness finding)", () => {
     const largeMatch = large.match(/font-size="([\d.]+)"[^>]*text-anchor/);
     expect(largeMatch).not.toBeNull();
     expect(match?.[1]).toBe(largeMatch?.[1]);
+  });
+});
+
+describe("square fill geometry (BCR-0014)", () => {
+  it("circle keeps today's mapping exactly", () => {
+    const g = posterGeometry(800);
+    expect(g.extent).toBe(AXIS_EXTENT);
+    expect(posterGeometry(800, "circle").extent).toBe(AXIS_EXTENT);
+    expect(unitToCanvas(0.3, -0.4, g)).toEqual([
+      400 + (0.3 / AXIS_EXTENT) * 400,
+      400 + (-0.4 / AXIS_EXTENT) * 400,
+    ]);
+  });
+
+  it("keeps the centre of a square where it was", () => {
+    const g = posterGeometry(800, "square");
+    expect(unitToCanvas(0, 0, g)).toEqual([400, 400]);
+  });
+
+  it("maps the square's corners to unit radius 1 (on the horizon)", () => {
+    const g = posterGeometry(800, "square");
+    const unit = 1 / Math.SQRT2;
+    expect(g.extent).toBeCloseTo(unit, 12);
+    // Each pixel corner of the sky square is a unit-disc point of radius 1.
+    for (const [px, py] of [[0, 0], [800, 0], [0, 800], [800, 800]] as const) {
+      const u = ((px - 400) / 400) * g.extent;
+      const v = ((py - 400) / 400) * g.extent;
+      expect(Math.hypot(u, v)).toBeCloseTo(1, 12);
+    }
+    const [x, y] = unitToCanvas(unit, unit, g);
+    expect(x).toBeCloseTo(800, 9);
+    expect(y).toBeCloseTo(800, 9);
+  });
+
+  it("zooms the square by sqrt(2) * AXIS_EXTENT relative to the circle", () => {
+    const c = posterGeometry(800, "circle");
+    const s = posterGeometry(800, "square");
+    expect(c.extent / s.extent).toBeCloseTo(Math.SQRT2 * AXIS_EXTENT, 12);
+  });
+
+  it("draws nothing below the horizon: the square never exceeds unit radius 1", () => {
+    const s = posterGeometry(800, "square");
+    expect(Math.hypot(s.extent, s.extent)).toBeLessThanOrEqual(1 + 1e-12);
+  });
+
+  it("insideSkySquare gates labels on the drawn square", () => {
+    const s = posterGeometry(800, "square");
+    expect(insideSkySquare(0.7, -0.7, s)).toBe(true);
+    expect(insideSkySquare(0.72, 0, s)).toBe(false);
+    expect(insideSkySquare(0.72, 0, posterGeometry(800, "circle"))).toBe(true);
+  });
+
+  it("square SVG clips to the sky square, not a disc", () => {
+    const svg = buildPosterSvg(makePayload({ shape: "square" }), makeModel([star()]), 800);
+    expect(svg).toContain('<clipPath id="disc"><rect x="0" y="0" width="800" height="800"/>');
   });
 });

@@ -82,7 +82,7 @@ export function pageMarkdown(locale: Locale, page: Page): string {
 export function llmsTxt(): string {
   const lines: string[] = [
     "# starsky docs\n",
-    "> Static, client-only night-sky poster studio: install, CLI reference, viewer guide, concepts, architecture, delivery, roadmap.\n",
+    "> Static, client-only night-sky poster studio: install, CLI reference, landing and links, Explorer, Poster Studio, poster page, concepts, architecture, delivery, roadmap.\n",
     "## Pages\n",
   ];
   for (const page of pages) {

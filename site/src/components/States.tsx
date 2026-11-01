@@ -19,14 +19,17 @@ function goToSample(): void {
 function State({
   title,
   body,
+  alert = false,
 }: {
   title: string;
   body: ReactNode;
+  /** A failure the visitor must hear about, rather than a state they chose. */
+  alert?: boolean;
 }): JSX.Element {
   return (
-    <div className="atlas-empty">
+    <div className="atlas-empty" role={alert ? "alert" : undefined}>
       <p className="font-display text-3xl">{title}</p>
-      <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-cream/70">
+      <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-text-muted">
         {body}
       </p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -64,6 +67,7 @@ export function InvalidState({ detail }: { detail: string }): JSX.Element {
     <State
       title={t("invalid.title")}
       body={t("invalid.body", { detail })}
+      alert
     />
   );
 }

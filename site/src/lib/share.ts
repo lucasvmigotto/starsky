@@ -1,4 +1,5 @@
 import { inflate } from "pako";
+import type { Locale } from "../i18n/locale.ts";
 import { SPEC } from "./spec.ts";
 
 export type Projection = "stereographic" | "fisheye";
@@ -17,6 +18,13 @@ export interface RenderOptions {
   title: string | null;
 }
 
+/**
+ * The only value a link's `lang` field may hold (018-pt-br, BCR-0015). `en-US`
+ * is the meaning of an absent field and is never written, so every link made
+ * before 018 keeps its canonical bytes.
+ */
+export type LinkLang = "pt-BR";
+
 export interface SharePayload {
   v: number;
   lat: number;
@@ -25,6 +33,34 @@ export interface SharePayload {
   when_utc: string;
   tz: string;
   options: RenderOptions;
+  /** The poster's language; absent means `en-US`. */
+  lang?: LinkLang;
+}
+
+/**
+ * Validate an optional `lang` field: absent, or exactly `"pt-BR"`. Anything
+ * else — `"en-US"` included, which is never written — is refused rather than
+ * read as a default (BCR-0008: a link is never silently changed).
+ */
+export function isValidLinkLang(record: Record<string, unknown>): boolean {
+  return !("lang" in record) || record["lang"] === "pt-BR";
+}
+
+/** The language a poster draws its words in. */
+export function posterLocale(payload: { lang?: LinkLang }): Locale {
+  return payload.lang ?? "en-US";
+}
+
+/** The `lang` field a link carries for a locale: present only for pt-BR. */
+export function linkLangOf(locale: Locale): { lang?: LinkLang } {
+  return locale === "pt-BR" ? { lang: "pt-BR" } : {};
+}
+
+/** The payload drawn in `locale`, with `lang` written only when it is not en-US. */
+export function withPosterLocale<T extends { lang?: LinkLang }>(payload: T, locale: Locale): T {
+  const next = { ...payload };
+  delete next.lang;
+  return { ...next, ...linkLangOf(locale) };
 }
 
 export class ShareVersionError extends Error {
@@ -73,7 +109,7 @@ export function decodeShareFragment(fragment: string): SharePayload {
   const bytes = base64UrlToBytes(fragment);
   let raw: string;
   try {
-    raw = inflate(bytes, { to: "string" });
+    raw = inflate(bytes, { toText: true });
   } catch (error) {
     throw new ShareDecodeError(
       `Invalid share payload: ${error instanceof Error ? error.message : String(error)}`,
@@ -185,6 +221,13 @@ export function migrateSharePayload(data: unknown): SharePayload {
     record["options"] === null
   ) {
     throw new ShareDecodeError("Invalid share payload: missing fields");
+  }
+  // Rendering formats this moment and throws on a non-date, blanking the page.
+  if (Number.isNaN(new Date(record["when_utc"]).getTime())) {
+    throw new ShareDecodeError("Invalid share payload: when_utc is not a date");
+  }
+  if (!isValidLinkLang(record)) {
+    throw new ShareDecodeError('Invalid share payload: lang must be "pt-BR" or absent');
   }
   validateOptions(data as unknown as SharePayload);
   return data as unknown as SharePayload;

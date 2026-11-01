@@ -24,10 +24,11 @@ Three consequences run through every decision below:
 
 1. **The map is the page.** Chrome recedes; the poster is the brightest object
    in the view and nothing competes with it.
-2. **Two surfaces, one product.** Someone arriving from a shared link and
-   someone arriving to build one are equally likely and must both be served
-   excellently. They are different surfaces — **Viewer** and **Studio** — not
-   one page with two moods.
+2. **Distinct surfaces, one product.** Someone arriving from a shared link and
+   someone arriving to explore a sky are equally likely and must both be served
+   excellently. They get different surfaces — the **Explorer** (primary),
+   the **Poster Studio** and the **poster page** (the Viewer) — not one page
+   with several moods.
 3. **The UI agrees with the artifact.** The poster is drawn in Cormorant
    Garamond; the interface uses the same face for the same words, so the name
    "Cassiopeia" is not set twice in two different voices on the same screen.
@@ -68,8 +69,8 @@ Kept, evolved or replaced — the `frontend:build` stage needs this list.
 | Element | Today | Verdict |
 |---|---|---|
 | Routing | `HashRouter`, one wildcard route; `#s=` holds the payload | **Keep, extend.** No SPA fallback on the static host, and the share fragment must not fight router paths. Studio adds `#studio=`; both stay in one hash, not two router paths. |
-| Landing | A form — coordinates/place, date/time, tz, render options | **Replace with Studio.** The form is the Studio's controls; the landing becomes the choice between the two surfaces. |
-| Viewer | Map + constellation list + hover scrim + focus overlay | **Keep and elevate.** It is the product. |
+| Landing | A form — coordinates/place, date/time, tz, render options | **Replaced (013).** The landing is location-first and asks one question; the poster controls moved to the Studio, which is reached from the Explorer. |
+| Viewer | Map + constellation list + hover scrim + focus overlay | **Keep and elevate.** It is the product. *(Since BCR-0013 the page shows the image only: no figure list, no caption band on the page.)* |
 | Tokens | `--color-ink #0b0f19`, `--color-cream #f5efe0`, `--color-rose #b98a8a` | **Replace — in the UI only.** See *Two palettes*: `render-spec.json` keeps these exact values for the poster and is normative. The old CSS values were the *same* three colours as the poster's, which is what made the overlap easy to miss. |
 | Display face | Cormorant Garamond, `font-display` | **Keep, with a defined role.** Load-bearing: BCR-0006/0007 withhold the poster if it fails to load. |
 | `atlas-*` class names | ~50 classes | **Keep the names, replace the values.** Renaming them churns 506 lines and the e2e suite for no user-visible gain; retheming is a token change. |
@@ -132,27 +133,137 @@ Five product-specific rules that settle future disputes.
 
 ---
 
+## Sky Explorer direction (BCR-0011)
+
+This section supersedes D1 and D2 and the surface map below wherever they
+conflict. **The sky is the product; the poster is an artifact made from it.**
+
+```
+/                 landing: where do you want to explore the sky from?
+│                 (013: one card, one button, "Explore this sky" → #e=)
+│
+├── Explorer      #e=<payload>        primary, full-viewport celestial map
+│                 ├── adaptive metadata (one line on load; expanded, compact, pinned)
+│                 ├── toolbar, bottom right: zoom, reset, layers, search, poster
+│                 └── inspector: right panel with a tab; bottom sheet on phones
+│
+├── Viewer        #s=<payload>        a shared poster, exactly as before
+│                 └── explore this sky → Explorer
+│
+└── Poster Studio #studio=<draft>     composition, preview, share, export
+                  └── return to Explorer
+```
+
+A visitor with a `#s=` link still sees their poster first, with no form (P1).
+The metadata never disappears: it opens as one line, expands during activity
+and collapses to one line when idle.
+Constellation labels are always on and subtle. Stars below the horizon are
+dimmed and say so; selection is never shown by color alone.
+
+Copy keys for this direction live in *Key-screen copy*.
+
+**Explorer interface (011-explorer-ui, reworked by 014-explorer-polish).** The
+canvas fills the viewport; nothing sits over its centre. The side panel floats
+over the sky instead of taking width, so opening or closing it never resizes
+the canvas.
+
+```
+desktop                                          phone (portrait and landscape)
+┌───────────────────────────────┬─────────────┐  ┌──────────────────────────────┐
+│ moment strip [⛓][Keep open]   │ inspector   │  │ moment strip   [⛓][Keep open]│
+│ (one line, then expanded)     │ 300–360px   │  │ (wraps; top, never over the  │
+│                               │ floats over │  │  selection)                  │
+│                         canvas│ the sky     │  │            canvas            │
+│                             ┌─┤             │  │                              │
+│                             │<│             │  │      [+][−][Reset][Layers].. │
+│                             └─┤             │  ├──────────────────────────────┤
+│            [+][−][Reset][Layers][Search][Poster]│ ▲ Show details · Sirius      │
+└───────────────────────────────┴─────────────┘  └──────────────────────────────┘
+toolbar: bottom right, a row; popovers open    bottom sheet: collapsed handle,
+upward from it. The tab (<  or  > when open)   expanded half-height; the toolbar
+rides the panel's left edge. 44px targets.     row sits above it, right-aligned.
+```
+
+The moment strip starts as one line on load, expands during activity, returns
+to one line after 2.5 s idle, and is pinned on request; it wraps. After 4 s
+without activity the toolbar, the tab, the side panel or sheet and the strip's
+buttons fade out, leaving the one-line moment (see *Idle collapse* below). With
+the side panel open the toolbar sits to the panel's left, never under it. The
+sheet and panel share one body. Escape closes a tooltip first, then
+search or layers, then clears the selection, and focus returns to the control
+that opened the panel (the tab, on wide screens).
+
+**Idle collapse (014-explorer-polish).** The Explorer opens collapsed: only the
+one-line moment (title, place, date and time) shows, even for a link with a
+selection, which stays marked in the sky. Any pointer movement, touch, scroll or
+key press brings everything back, and after 4 s without activity the toolbar,
+the panel tab, the side panel or sheet, and the strip's pin and copy buttons
+fade out again; the line stays. Nothing hides while search or layers is open,
+while keyboard focus is on a control, while the pointer rests on a control or
+the panel, while a drag is under way, or while the strip is pinned (pinned shows
+the strip expanded). The controls fade with opacity only, so they stay in the
+tab order and the accessibility tree and keep their names; tabbing to one
+brings all of them back. With reduced motion they appear and disappear without
+a fade. A selected star or constellation stays selected and marked, and its
+panel returns with the controls.
+
+On a touch screen the first tap while the controls are hidden only wakes them
+and never selects anything in the sky; the second tap selects. A first-time
+phone visitor therefore taps once to get the controls. A mouse click selects as
+usual, because moving the mouse already woke the controls.
+
+**Star tooltip (014-explorer-polish).** Holding a mouse or pen pointer still
+over a star for 1.5 s shows a small one-line tooltip beside it: the name (or HIP
+number), then "• Magnitude" and the apparent magnitude, for example
+"Sirius • Magnitude -1.44". It says nothing about the horizon. It closes when the pointer moves to another spot, when a drag or a zoom
+starts, when the pointer leaves the map, and on Escape, which closes it before
+anything else and leaves the selection alone. It never covers the star and
+stays inside the screen. Touch and keyboard keep using selection and the panel,
+which show the same facts, so the tooltip is hidden from screen readers. It
+does not depend on the idle collapse.
+
+**Constellation hover (015).** A mouse or pen resting over a constellation's
+figure (near one of its lines, or over its name) draws that figure's lines a
+little brighter and thicker than resting lines, softer than a selection, with
+its name in the selected colour; a star under the pointer keeps the pointer for
+its tooltip. With the side panel open the matching list item is shaded and
+scrolled into view, without taking focus or changing the order; in the closed
+Below group the group's heading is shaded instead. Resting on a list item
+lights the figure in the sky. Selection wins over hover. Touch does not hover.
+
+**Constellation tooltip and star list (019).** Resting a mouse or pen on a
+constellation for the same 1.5 s shows a tooltip at the pointer: its name and
+how many stars form its figure ("Orion • 22 stars"), then up to three of its
+named stars, brightest first, joined by commas, ending in "+N" when more stars
+remain ("Rigel, Betelgeuse, Bellatrix +19"). A figure with no named star shows
+the first line only. Names are never translated. It opens only where the
+figure can be hovered, closes like the star tooltip, and a star under the
+pointer keeps its own tooltip. A selected constellation's panel lists every
+star of its figure, brightest first: its name or HIP number with its
+magnitude, and "below the horizon" in words for a star that is. Each entry is
+a button that selects that star, as picking it in the sky does; a long figure
+scrolls within the panel.
+
 ## Information architecture
 
 No navigation chrome. Two surfaces, entered by intent, sharing one hash.
 
 ```
-/                         landing — choose a surface
+/                         landing — where to explore the sky from (see below)
 │
 ├── Viewer        #s=<payload>        a shared or canonical moment
-│                 ├── the map (primary, largest element)
-│                 ├── moment caption — title, local time, projection
-│                 ├── figure list — constellations, selectable
+│                 ├── heading — title, local time, projection
+│                 ├── the sky image (primary, centred; BCR-0013)
 │                 ├── share actions — copy link
+│                 ├── explore this sky — → Explorer
 │                 ├── make your own — → #studio=
 │                 └── export — PNG · SVG · PDF (secondary)
 │
-└── Studio        #studio=<draft>     build and tune a moment
-                  ├── the map (still primary, live)
-                  ├── location — coordinates | place
-                  ├── moment — date, time, timezone
+└── Studio        #studio=<draft>     compose the poster (012, 013)
+                  ├── the poster preview (primary, live)
+                  ├── moment — a one-line summary, edited on the start page
                   └── appearance — projection, fisheye, separation,
-                                  magnitude, glow, constellations, shape, title
+                                  glow, shape, title
 ```
 
 **Why no tabs or sidebar.** Two surfaces, reachable from one decision, plus a
@@ -170,9 +281,58 @@ protecting (a shared memory) would be silently replaced. Separate prefixes make
 that impossible by construction, and `#s=` stays byte-compatible with every
 link already in the wild.
 
-**The landing is not a form.** It is the choice: *open a shared sky* (paste a
-link) or *map a moment* (Studio). A visitor with a link — P1 — must never be
-made to fill in a form to see it.
+**The landing asks one question** (013-location-first, superseding the choice
+of surfaces): *where do you want to explore the sky from?* Its single action is
+**Explore this sky**, which opens `#e=`. The flow is landing → Explorer → export;
+a poster is made from the Explorer, never from the landing. A visitor with a
+link — P1 — never sees the landing at all.
+
+```
+┌ Where do you want to explore the sky from? ───────────────┐
+│ Search for a place                                         │
+│ [ City, address or landmark     [Q] ]   (o) Coordinates   │
+│ ┌────────────────────────────────────────────────────────┐ │
+│ │ map, 280 px (220 on phones), always shown              │ │
+│ └────────────────────────────────────────────────────────┘ │
+│ Click or drag the pin to set the place · Search by Nominatim│
+│ Place search and the map come from OpenStreetMap, which …  │
+│ Newark • 40.7357°N, 74.1724°W                              │
+│ Title (optional)                                           │
+│ [ Date and time          ] [ Timezone          ] [◎]     │
+│ > Advanced (limiting magnitude only)                       │
+│                    [ Explore this sky ]                    │
+└────────────────────────────────────────────────────────────┘
+Just browsing? Load a random sky.
+```
+
+The card is one column at every width and fits one screen on a large display
+(1440x900, 1920x1080) with Advanced closed: the map gives up height first, the
+map hint and the search credit share a line, Advanced has a full-width row,
+and "Explore this sky" is centred on the row below it. The search runs only on Enter, the magnifier button inside the field, or leaving
+the field with new text, never while typing (Nominatim policy, issue #65). Detect is a locate icon button beside the
+timezone. `#c=<fragment>` opens the landing pre-filled (a creation link, see
+`docs/product/architecture.md`); the page keeps it in step with the form, so the
+address bar is the link to share. A link it cannot read leaves a blank form with
+a short notice.
+
+The Poster Studio (013) fits one screen the same way from 1024 px wide: no
+visible page title (an `sr-only` heading remains), the preview as large as the
+height and column allow, a Moment card with the landing's one-line summary and a
+short note linking to the start page, compact Appearance controls, the shape
+switch reading `square | circle`. Square means the whole sky square is sky:
+the view is zoomed so the square is inscribed in the horizon, its corners on
+the horizon, and clipped to the square (BCR-0014); circle keeps the full
+horizon disc with its ring.
+
+The footer, on every page, is one row: data credits on the left, the page's
+actions then the `starsky@v<version>` link at the end (stacked on phones).
+
+With the Coordinates switch on, Latitude and Longitude replace the search field
+in place; the map stays and follows them. The summary reads
+`<place> • <coordinates>` on one line (its "Exploring from" label,
+`landing.selected.label`, is visually hidden and read before it), the coordinates alone for a dropped pin
+(announced as "Dropped pin"). If tiles or Leaflet fail, the map's own box says so
+and points to the switch.
 
 **Terminology** uses the brief's glossary unchanged: **poster**, **place**,
 **coordinates**, **observation**, **projection**, **shape**, **RenderOptions**.
@@ -189,7 +349,7 @@ Entry: a `#s=` link, possibly pasted or retyped.
 1. Parse the fragment. *Fail → F1-E1.*
 2. Load `catalog.json` + `constellations.json`. *Fail → F1-E2.*
 3. Confirm the caption font loaded (`document.fonts.check`). *Fail → F1-E3.*
-4. Draw the poster, then the figure list.
+4. Draw the poster's sky image.
 5. Done — map visible, no interaction required.
 
 **Five steps, none removable.** Step 3 exists because BCR-0007 withholds the
@@ -201,8 +361,9 @@ that decide whether the visitor sees anything.
 
 ### F2 — Map a moment (P2, P3)
 
-Entry: landing → "Map a moment" (`#studio=`), or the Viewer → "Make your own
-from this sky", which seeds Studio from the shared payload.
+Entry (as first designed; superseded by F4 and the location-first landing):
+the Viewer → "Make your own from this sky", which seeds Studio from the shared
+payload. Today a poster is made from the Explorer, never from the landing.
 1. Choose coordinates or place.
 2. Enter coordinates, *or* a place name → geocode → resolved coordinates
    shown for confirmation before anything renders.
@@ -224,13 +385,33 @@ opens `#studio=` and lands in an editor rather than on the map they were sent.
 
 ### F3 — Keep it (P2, P3)
 
-Entry: from the Viewer, once the map is right.
-1. Choose PNG, SVG or PDF.
+Entry: from the Studio or the poster page, once the poster is right.
+1. Choose a layout, Standard or Story (9:16, 1080 × 1920), then PNG, SVG or PDF.
+   The layout is chosen at export time and is never part of a link.
 2. Export renders at print resolution; the PNG is the current view.
 3. Confirm completion in place, next to the button that started it.
 
 **Secondary by design** (principle 3), but one click from the map — it is the
 most *personal* action in the product, so it is never more than two steps away.
+
+### F4 — Make a poster from the sky, and come back (012-poster-studio)
+
+Entry: the Explorer toolbar's "Create poster", or the Viewer's "Make your own
+from this sky".
+1. The Studio opens as `#studio=` with the same place, moment, timezone, title
+   and magnitude (clamped to what a share link accepts), and default poster
+   composition. From the Viewer it opens with the shared poster itself.
+2. Tune the poster-only controls. The preview follows after a short pause; the
+   fragment follows it with `replaceState`.
+3. "Return to Explorer" opens the same scene at the camera the visitor left, if
+   this tab still remembers it, and at the initial view if not. That memory is
+   per tab, held only in `sessionStorage`, and never appears in a link.
+4. In the Viewer, "Explore this sky" opens the Explorer for the poster's place
+   and moment. The `#s=` link is not rewritten.
+
+A title the poster face cannot draw is refused in the Studio, as on the
+landing. One that arrives from the Explorer or a link loses the characters it
+cannot draw and the Studio says so, as the Viewer does.
 
 ---
 
@@ -279,60 +460,59 @@ mobile                             desktop
 ┌──────────────────────┐          ┌────────────────────────────────────────┐
 │ Starsky      v1.0.0  │          │ Starsky                       v1.0.0    │
 │                      │          │                                        │
-│ Our first flat       │          │ Our first flat                           │
-│ 12 Jun 2024, 21:40   │          │ 12 Jun 2024, 21:40 · stereographic      │
+│ Our first flat       │          │             Our first flat              │
+│ 12 Jun 2024, 21:40   │          │          12 Jun 2024, 21:40 UTC         │
 │                      │          │                                        │
-│  ┌────────────────┐  │          │  ┌────────────────────────┐ ┌──────────┐ │
-│  │                │  │          │  │                        │ │ Cassiopeia│ │
-│  │      ★  ·      │  │          │  │       ★    ·           │ │ 42 stars │ │
-│  │   ·    ✦   ·   │  │          │  │                        │ │ mag 1.6  │ │
-│  │                │  │          │  │                        │ │──────────││ │
-│  └────────────────┘  │          │  └────────────────────────┘ │ Orion    │ │
-│                      │          │                                │ 58 stars │ │
-│  [Copy link] [PNG ▾] │          │ [Copy link] [SVG] [PDF] [PNG ▾]   │ │
-│                      │          │                                └──────────┘ │
-│  Figures             │          │                                        │
-│  · Cassiopeia        │          │ starsky v1.0.0 · GPL-3.0 · OSM       │
-│  · Orion             │          └────────────────────────────────────────┘
-└──────────────────────┘
+│  ┌────────────────┐  │          │        ┌────────────────────────┐      │
+│  │                │  │          │        │                        │      │
+│  │      ★  ·      │  │          │        │       ★    ·           │      │
+│  │   ·    ✦   ·   │  │          │        │                        │      │
+│  │                │  │          │        │                        │      │
+│  └────────────────┘  │          │        └────────────────────────┘      │
+│                      │          │                                        │
+│  [Share] [Export]    │          │ [Share] [Export] [Explore] [Make yours] │
+└──────────────────────┘          └────────────────────────────────────────┘
 ```
 
-The map is the largest element at every width. On mobile the figure list
-becomes a horizontal scroller rather than a column, so the map keeps its
-aspect ratio.
+The page is the heading and the sky image, centred, then share, export and the
+two actions (BCR-0013). The caption band under the image and the "Figures in
+this sky" panel are gone from the page; exploring figures is the Explorer's job.
+The exported PNG, SVG and PDF keep their caption band, byte for byte. The image
+is static: no drag, wheel, pinch, keys or zoom buttons; zooming and exploring
+live in the Explorer, reached from "Explore this sky".
 
-### 3. Studio — build and tune
+### 3. Poster Studio — compose
 
-Purpose: compose a moment, seeing every change as it happens.
-Primary action: the map redraws live; the share link updates silently.
+Purpose: compose the poster, seeing every change as it happens.
+Primary action: the preview redraws after a short pause; the `#studio=` fragment
+follows it silently. The place and moment are not edited here: they come from
+the Explorer (or the poster page) and are changed on the start page.
 
 ```
-desktop
+desktop (from 1024 px, one screen)
 ┌──────────────────────────────────────────────────────────────┐
-│ Starsky — adjust this sky                        v1.0.0      │
+│ Starsky                                                      │
 ├────────────────────────────────┬─────────────────────────────┤
-│                                │ Location                    │
-│      ★     ·        ✦          │ ( • ) Coordinates           │
-│   ·          ★·                 │ (   ) Place                 │
-│                                │   40.7580   -73.9855        │
-│                                │                             │
 │                                │ Moment                      │
-│                                │   Date  2024-06-12          │
-│                                │   Time  21:40   Zone UTC    │
-│  ┌──────────────────────────┐  │                             │
-│  │ Our first flat           │  │ Appearance                  │
-│  │ 40.7580°N, 73.9855°W     │  │   Projection  stereographic▾│
-│  └──────────────────────────┘  │   Magnitude ──────●────     │
-│                                │   Shape      (•) Circle      │
-│  [Copy link] [PNG] [SVG] [PDF] │              ( ) Square      │
-├─────────────────────────────┴─────────────────────────────┤
-│ starsky v1.0.0 · GPL-3.0 · Stellarium CC BY-SA · OSM        │
+│                                │   Newark • 40.7357°N, 74.2°W│
+│      poster preview            │   From the sky you started  │
+│      (as large as the height   │   with. Change it on the    │
+│       and column allow)        │   start page.               │
+│                                │                             │
+│                                │ Appearance                  │
+│                                │   Projection  Stereographic▾│
+│                                │   Shape       square|circle │
+│                                │   Fisheye · Separation · Glow│
+│                                │   Title                     │
+│  [Copy link] [PNG] [SVG] [PDF] │ [Return to Explorer]        │
+├────────────────────────────────┴─────────────────────────────┤
+│ Stars: Hipparcos · Lines and names: Stellarium · © OpenStreetMap │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Controls on the right, map always visible on the left.** Not a submit-then-
-reveal: the map draws from the moment the place resolves, so every control has
-visible consequences.
+**Controls on the right, the preview always visible on the left.** Every
+control has a visible consequence. Export offers the Standard or Story (9:16)
+layout, chosen at export time.
 
 ---
 
@@ -370,9 +550,7 @@ poster's rose constellation lines (`#b98a8a`) will sit beside verdigris accents
 boundary:
 
 > **`color.accent` is for interactive chrome only — never for anything that
-> represents a constellation in the map.** A selected figure's highlight in the
-> `FiguresPanel` is chrome (verdigris border, verdigris scrim). But anything
-> drawn *inside* the canvas takes its colour from `render-spec.json` and never
+> represents a constellation in the map.** Anything drawn *inside* the canvas takes its colour from `render-spec.json` and never
 > from a UI token.
 
 If the rose/verdigris tension proves too strong once seen, the correct fix is a
@@ -408,12 +586,12 @@ not and is therefore restricted to decoration.
 | Role | Face | Notes |
 |---|---|---|
 | Display, celestial proper names, caption preview | Cormorant Garamond 300–700 | Same face as the artifact |
-| UI chrome, labels, body, numbers | `system-ui` stack | Never a display face |
-| Coordinates, dates, counts | system sans + `tabular-nums` | Cormorant has no tabular figures; numbers would jitter |
+| UI chrome, labels, body, numbers | Inter Variable (latin, self-hosted, OFL), then the `system-ui` stack | Never a display face. Bundled so every machine shows the same face (015) |
+| Coordinates, dates, counts | Inter + `tabular-nums` | Cormorant has no tabular figures; numbers would jitter |
 
 **The serif boundary is nouns from the sky vs. the interface's furniture.**
-Constellation names in `FiguresPanel` are *the words the poster draws in the
-same face*, so they are Cormorant. Buttons, labels and hints are not.
+Constellation names the poster draws are in the same face, so they are
+Cormorant. Buttons, labels and hints are not.
 
 Cormorant is retained deliberately: BCR-0006/0007 make a font failure withhold
 the poster, and it is already bundled (no third-party request).
@@ -426,8 +604,20 @@ serif tolerates more than sans, but the copy is short.
 
 ### Spacing, radius, elevation
 
-4px base scale (`.25rem` … `4rem`). Radius `2px` on controls, `4px` on panels —
-small, because the artifact's circle is the only curve the product needs.
+4px base scale (`.25rem` … `4rem`). Radius `8px` on controls (`radius.control`),
+`12px` on panels, the moment strip and popovers (`radius.panel`), and `0` on
+anything that shows the poster itself (`radius.artifact`).
+
+The first draft kept corners at `2px` and `4px` because the artifact's circle
+was the only curve the product needed. The Explorer changes that argument: its
+controls float over a sky of points and arcs, and hard rectangles against that
+read as cut-outs, so the controls are rounded. Two radii by role stays true,
+and so does the rule against pills: no button or panel is a stadium shape.
+Icon-only buttons (zoom, copy link) are circles; the panel tab is rounded only
+on the side that faces the sky and square against the screen edge. A poster
+preview is a print, not chrome, so its corners follow the artifact, never the
+controls: the Square shape stays square.
+
 Elevation is expressed with **surface lightness, not shadows**: a night sky has
 no drop shadows, and `rgba(0,0,0,.1)` card shadows are an AI-default tell.
 
@@ -435,7 +625,7 @@ no drop shadows, and `rgba(0,0,0,.1)` card shadows are an AI-default tell.
 
 One orchestrated moment: the map fades up once, when it is ready
 (`atlas-rise`, 700 ms). Everything else is motion that answers an action — the
-figure list on hover, the export button's progress. No entrance animations on
+export button's progress, the side panel sliding in and out. No entrance animations on
 sections, no hover transitions on every card. `prefers-reduced-motion` is
 already honoured in `index.css` and must survive the token change.
 
@@ -454,7 +644,7 @@ already honoured in `index.css` and must survive the token change.
 `color.bg`, `color.surface`, `color.raised`, `color.text`, `color.text.muted`,
 `color.text.faint`, `color.accent`, `color.accent.ink`, `color.border`,
 `color.border.soft`, `color.focus`; `font.display`, `font.ui`; `space.1`–`space.8`;
-`radius.control`, `radius.panel`; `motion.duration.short`, `motion.duration.reveal`;
+`radius.control`, `radius.panel`, `radius.artifact`; `motion.duration.short`, `motion.duration.reveal`;
 `shadow.none` (deliberately empty).
 
 ---
@@ -496,12 +686,11 @@ Breakpoints by content, not by device:
 
 | Width | Change |
 |---|---|
-| ≥ 64rem | Viewer splits map / figure list side by side; Studio splits map / controls |
-| 40–64rem | Single column; figure list beside the map where it fits |
-| < 40rem | Single column; figure list becomes a horizontal scroller so the map keeps its aspect ratio; export actions wrap to their own row |
+| ≥ 64rem | Viewer is one centred column (heading, image, actions); Studio splits map / controls |
+| 40–64rem | Single column |
+| < 40rem | Single column; export actions wrap to their own row |
 
-Touch targets: 44px minimum for every control, including figure buttons in the
-scroller. Nothing is hidden at small widths except the subtitle line, which is
+Touch targets: 44px minimum for every control. Nothing is hidden at small widths except the subtitle line, which is
 redundant with the caption below it.
 
 ---
@@ -532,7 +721,7 @@ WCAG 2.2 AA minimum, verified not assumed.
 - **Announcements** — poster ready, figure selected, export complete, and each
   error state are announced politely; only the font failure is `assertive`
   (`role="alert"`, already implemented for BCR-0007).
-- **Language** — `<html lang="en">` today; the i18n keys below assume more.
+- **Language** — `<html lang>` follows the active locale (`en-US` or `pt-BR`, 018); the switcher is in the footer.
 
 ---
 
@@ -617,42 +806,82 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 
 | Key | Copy |
 |---|---|
-| `landing.title` | The night sky over any place and moment |
-| `landing.subtitle` | Drawn from 8 000+ stars, in your browser |
-| `landing.locale.label` | Language |
+| `landing.title` | Where do you want to explore the sky from? |
+| `footer.tagline` | Drawn from 8 000+ stars, in your browser |
 | `landing.randomSky` | Load a random sky → renders `viewer.randomSky` |
-| `landing.mode.label` | Input mode |
 | `landing.moment.legend` | Date and time |
-| `landing.sky.legend` | Sky |
-| `landing.appearance.legend` | Appearance |
-| `landing.observation.legend` | Observation |
+| `landing.advanced.legend` | Advanced |
 | `landing.render.fisheye` | Fisheye strength |
-| `landing.render.separation` | Minimum separation |
+| `landing.render.separation` | Min. separation |
 | `landing.render.magnitude` | Limiting magnitude |
 | `landing.render.lines` | Constellation lines |
 | `landing.render.labels` | Constellation labels |
 | `landing.render.glow` | Glow intensity |
+| `landing.render.projection` | Projection *(the poster fields, Studio)* |
+| `landing.render.shape` | Shape |
+| `landing.render.shape.square` | square |
+| `landing.render.shape.circle` | circle |
+| `landing.render.glowToggle` | Glow *(the checkbox beside Glow intensity)* |
 | `landing.browse` | Just browsing? |
 | `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
-| `landing.explain` | What is this page? |
-
-**Landing · the figure panel**
-
-| Key | Copy |
-|---|---|
-| `figures.legend` | Figures in this sky |
-| `figures.subtitle` | {count} figures above the horizon. Rest on a name to light it up, open one to draw closer. |
-| `figures.hint` | Use the list of figures beside the sky to explore each constellation by keyboard. *(screen-reader only)* |
-| `figures.reset` | Reset view |
-| `figures.stat` | {count} stars, brightest mag {mag} |
-| `figures.tooltip` | {count} stars · brightest mag {mag} *(the hover tooltip)* |
-| `figures.title` | Constellation figures |
+| `landing.render.projection.stereographic` | Stereographic |
+| `landing.render.projection.fisheye` | Fisheye |
+| `landing.creation.invalid` | That link could not be read, so the form is blank. |
+| `landing.explore` | Explore this sky |
+| `landing.error.when` | Pick a date and time for the sky. |
+| `landing.error.timezone` | Unknown timezone {zone}. Use an IANA name like "America/New_York". |
+| `landing.tz.label` | Timezone |
+| `landing.tz.detect` | Detect my timezone |
+| `landing.coords.toggle` | Coordinates |
+| `landing.coords.lat` | Latitude |
+| `landing.coords.lon` | Longitude |
+| `landing.error.lat` | Latitude must be a number between -90 and 90. |
+| `landing.error.lon` | Longitude must be a number between -180 and 180. |
+| `landing.selected.label` | Exploring from |
+| `landing.selected.pin` | Dropped pin |
+| `landing.selected.typed` | Typed coordinates |
+| `landing.map.label` | Map for choosing a place |
+| `landing.map.loading` | Loading the map… |
+| `landing.map.hint` | Click or drag the pin to set the place |
+| `landing.map.marker` | Observing place |
+| `landing.map.attribution` | © {osm} contributors · {report} |
+| `landing.map.osm` | OpenStreetMap |
+| `landing.map.report` | Report a problem |
+| `landing.map.tilesFailed` | The map tiles could not be loaded. Search still works, or turn on Coordinates to type a place. |
+| `landing.map.chunkFailed` | The map could not be loaded. Search still works, or turn on Coordinates to type a place. |
+| `landing.search.label` | Search for a place |
+| `landing.search.placeholder` | City, address or landmark |
+| `landing.privacy.link` | Privacy |
+| `site.privacy.title` | Privacy |
+| `site.privacy.browser` | starsky runs entirely in your browser. It has no accounts and no analytics, sets no cookies, and keeps no record of you or of the skies you make. |
+| `site.privacy.links` | A sky lives in its link, after the #. Browsers never send that part to the site, but anyone you share the link with can read the place and time in it. |
+| `site.privacy.osm` | Place search and the map on the start page come from {osm}. When you search or the map loads, your browser contacts OpenStreetMap, which sees your IP address. Its {policy} applies. |
+| `site.privacy.osm.name` | OpenStreetMap |
+| `site.privacy.osm.policy` | privacy policy |
+| `site.privacy.device` | This browser keeps two small things on this device: your language choice and, until you close the tab, the Explorer view to return to. |
+| `site.privacy.host` | Like any website, the host that serves starsky's files receives your IP address with each request. |
+| `site.privacy.back` | Back to the start |
+| `landing.search.submit` | Search |
+| `landing.search.credit` | Search by Nominatim |
+| `landing.search.listLabel` | Matching places |
+| `landing.search.searching` | Searching… |
+| `landing.search.results` | {count} places found. Use the arrow keys to choose one. |
+| `landing.search.resultsOne` | 1 place found. Use the arrow keys to choose it. |
+| `landing.search.empty` | No place found for “{query}”. Try another name, or use the map or coordinates. |
+| `landing.search.error` | Place search is unavailable right now. Use the map or coordinates instead. |
 
 **Viewer · shell**
 
 | Key | Copy |
 |---|---|
-| `viewer.subtitle` | A night-sky atlas moment, recomputed in your browser |
+| `site.name` | Starsky *(the header's one item, a link to the start; on the Studio and Viewer, not on the full-bleed Explorer)* |
+| `site.error.title` | This page could not be loaded |
+| `site.error.body` | Part of the page did not load, or something went wrong. Check your connection and reload. |
+| `site.error.reload` | Reload |
+| `site.error.start` | Back to the start |
+| `site.language.label` | Language *(the footer switcher's label, 018; screen-reader only)* |
+| `site.language.en` | English *(each language named in itself, in every locale)* |
+| `site.language.ptBR` | Português (Brasil) |
 | `viewer.loading` | Charting the stars… |
 
 **Viewer · announcements** (`role="status"`, `aria-live="polite"`, `sr-only`)
@@ -660,21 +889,12 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | Key | Copy |
 |---|---|
 | `viewer.announced.ready` | Night sky poster ready. |
-| `viewer.announced.figureSelected` | Showing {name}. |
-| `viewer.announced.viewReset` | Showing the whole sky again. |
 | `viewer.announcementRegion` | Sky viewer status *(the region's `aria-label`, so it is distinguishable from the export row's)* |
 | `viewer.canvasLabel` | Night sky poster titled {title} |
 | `viewer.canvasLabel.untitled` | Night sky poster |
-| `viewer.canvasHint` | Night sky map. Drag to move it, scroll to zoom. With the map focused, use the arrow keys to move, plus and minus to zoom, and 0 to show the whole sky. *(screen-reader only, the canvas's `aria-describedby`)* |
-| `viewer.viewControls` | View controls *(the button group's `aria-label`)* |
-| `viewer.zoomIn` | Zoom in |
-| `viewer.zoomOut` | Zoom out |
-| `viewer.resetView` | Show the whole sky |
 | `dataError.title` | Star data could not be loaded |
 | `dataError.body` | Regenerate it with `starsky catalog` and reload. |
 | `fontError.title` | The poster font could not be loaded |
-| `landing.locale.en` | English |
-| `landing.locale.ptBR` | Português (Brasil) |
 | `landing.openShared` | Open a shared sky |
 | `landing.openShared.help` | Paste a link that ends in `#s=…` |
 | `landing.mapMoment` | Map a moment |
@@ -698,6 +918,15 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `studio.title.label` | Title |
 | `studio.title.placeholder` | Our first flat |
 | `studio.updated` | Map updated |
+| `studio.poster.heading` | Poster Studio |
+| `studio.advanced.legend` | Advanced |
+| `studio.summary.noteBefore` | From the sky you started with. Change it on the  |
+| `studio.summary.noteLink` | start page |
+| `studio.summary.noteAfter` | . |
+| `studio.returnToExplorer` | Return to Explorer |
+| `studio.back` | Back to the start |
+| `studio.lang.label` | Poster language *(018; options are `site.language.*`)* |
+| `studio.lang.hint` | The date on the poster and its exports is written in this language. *(the select's description, screen-reader only)* |
 
 **Viewer**
 
@@ -709,6 +938,9 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `viewer.share.open` | Share |
 | `viewer.share.close` | Close share |
 | `viewer.share.heading` | Share this sky |
+| `viewer.share.summary` | {where} · {when} · {projection} projection · mag {mag} |
+| `viewer.share.projection.stereographic` | stereographic |
+| `viewer.share.projection.fisheye` | fisheye |
 | `viewer.copyLink` | Copy link |
 | `viewer.linkCopied` | Link copied |
 | `viewer.randomSky` | Load a random sky |
@@ -729,7 +961,11 @@ so an empty state can override the wording later without touching three files.
 | `viewer.export.close` | Close export |
 | `viewer.export.formats` | Export formats |
 | `viewer.export.preparing` | Preparing {format}… |
+| `viewer.export.layout` | Layout |
+| `viewer.export.layout.standard` | Standard |
+| `viewer.export.layout.story` | Story (9:16) |
 | `viewer.makeYourOwn` | Make your own from this sky |
+| `viewer.exploreSky` | Explore this sky |
 
 The disclosure trigger carries **two** keys rather than one key plus a suffix.
 The format group carries its own name (`viewer.export.formats`) via
@@ -815,35 +1051,398 @@ parts read as one sentence, asserted by `i18n.test.ts`.
 
 | Key | Copy |
 |---|---|
-| `footer.version` | starsky v{version} |
-| `footer.source` | source |
-| `footer.attribution` | Star data from Hipparcos and JPL. Constellation lines from Stellarium (CC BY-SA 4.0). Place lookup by OpenStreetMap contributors. |
+| `footer.version` | starsky@v{version} |
+| `footer.attribution` | Stars: Hipparcos · Lines and names: Stellarium (CC BY-SA 4.0) · Map and places: © OpenStreetMap contributors |
+
+**Explorer** (`#e=`; the map is 010-explorer-canvas, the interface around it is 011-explorer-ui)
+
+The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for missing star data. Its selection announcements go to one `role="status"` region and never say a star can be seen: a star below the horizon is announced as below it. The inspector keeps catalog facts apart from values derived for the place and moment; altitude and azimuth read "about" and carry a note on precision (ADR-0006). Missing data is left out, not filled in.
+
+| Key | Copy |
+|---|---|
+| `explorer.heading` | Sky Explorer *(screen-reader only, the page's `h1`)* |
+| `explorer.loading` | Charting the stars… |
+| `explorer.canvasLabel` | Sky map above {place} *(the canvas's `aria-label`)* |
+| `explorer.canvasLabel.untitled` | Sky map |
+| `explorer.canvasHint` | Drag to look around, scroll or pinch to zoom, double-click to center on a spot. With the map focused, the arrow keys turn the view, plus and minus zoom, 0 returns to the start and Escape clears the selection. *(screen-reader only, the canvas's `aria-describedby`)* |
+| `explorer.announced.ready` | Sky Explorer ready. |
+| `explorer.announced.starAbove` | {name} selected, above the horizon. |
+| `explorer.announced.starBelow` | {name} selected, below the horizon. |
+| `explorer.announced.constellation` | {name} constellation selected. |
+| `explorer.announced.cleared` | Selection cleared. |
+| `explorer.cardinal.n` | N |
+| `explorer.cardinal.e` | E |
+| `explorer.cardinal.s` | S |
+| `explorer.cardinal.w` | W |
+| `explorer.back` | Back to the start |
+| `explorer.inspector.label` | Inspector |
+| `explorer.inspector.empty` | Nothing is selected. Choose a star or a constellation on the map, or from the list. |
+| `explorer.inspector.close` | Close inspector |
+| `explorer.inspector.expand` | Show details |
+| `explorer.inspector.collapse` | Hide details |
+| `explorer.inspector.catalog` | Catalog |
+| `explorer.inspector.derived` | For this place and moment |
+| `explorer.inspector.name` | Name |
+| `explorer.inspector.hip` | HIP number |
+| `explorer.inspector.magnitude` | Apparent magnitude |
+| `explorer.inspector.ra` | Right ascension |
+| `explorer.inspector.dec` | Declination |
+| `explorer.inspector.altitude` | Altitude |
+| `explorer.inspector.azimuth` | Azimuth |
+| `explorer.inspector.horizon` | Horizon |
+| `explorer.inspector.horizon.above` | Above the horizon |
+| `explorer.inspector.horizon.below` | Below the horizon |
+| `explorer.inspector.approximate` | about {value} |
+| `explorer.inspector.precision` | Approximate, to 0.1°. The catalog is not corrected for precession, so positions can be off by up to about 1° far from the year 2000. |
+| `explorer.inspector.figureOf` | Part of the figure of {name} |
+| `explorer.inspector.abbr` | IAU abbreviation |
+| `explorer.inspector.starCount` | Stars in the figure |
+| `explorer.inspector.aboveCount` | Above the horizon now |
+| `explorer.inspector.aboveValue` | {above} of {total} |
+| `explorer.inspector.brightest` | Brightest star |
+| `explorer.inspector.brightestValue` | {name}, magnitude {mag} |
+| `explorer.inspector.center` | Center on map |
+| `explorer.inspector.clear` | Clear selection |
+| `explorer.kind.star` | Star |
+| `explorer.kind.constellation` | Constellation |
+| `explorer.tooltip.detail` | {name} • Magnitude {mag} *(the hover tooltip; {name} is the star's name or its HIP number)* |
+| `explorer.tooltip.constellation` | {name} • {count} stars *(the constellation hover tooltip's first line; {name} is never translated)* |
+| `explorer.tooltip.constellationOne` | {name} • 1 star |
+| `explorer.tooltip.namedMore` | {names} +{rest} *(the tooltip's second line when more stars remain: up to three named stars, brightest first, joined by ", "; {rest} counts every other star of the figure)* |
+| `explorer.members.title` | Stars in the figure *(the constellation inspector's list of its figure's stars, brightest first)* |
+| `explorer.members.detail` | magnitude {mag} |
+| `explorer.members.detailBelow` | magnitude {mag}, below the horizon |
+| `explorer.list.title` | Constellations |
+| `explorer.list.above` | Above the horizon ({count}) |
+| `explorer.list.below` | Below the horizon ({count}) |
+| `explorer.list.partly` | partly above the horizon *(visually hidden, read by screen readers)* |
+| `explorer.search.input` | Search constellations and stars |
+| `explorer.search.placeholder` | Name, abbreviation or HIP number |
+| `explorer.search.results` | Search results |
+| `explorer.search.none` | No matches. |
+| `explorer.search.countOne` | 1 result. |
+| `explorer.search.countMany` | {count} results. |
+| `explorer.search.close` | Close search |
+| `explorer.search.starDetail` | HIP {hip}, magnitude {mag} |
+| `explorer.moment.label` | Moment |
+| `explorer.moment.pin` | Keep details open |
+| `explorer.link.copy` | Copy link |
+| `explorer.link.copied` | Link copied. |
+| `explorer.link.failed` | Could not copy the link. Copy it from the address bar. |
+| `explorer.toolbar.label` | Map controls |
+| `explorer.toolbar.zoomIn` | Zoom in |
+| `explorer.toolbar.zoomOut` | Zoom out |
+| `explorer.toolbar.reset` | Reset view |
+| `explorer.toolbar.layers` | Layers |
+| `explorer.toolbar.search` | Search |
+| `explorer.toolbar.poster` | Create poster |
+| `explorer.toolbar.shortcut` | {label} ({key}) |
+| `explorer.layers.title` | Layers |
+| `explorer.layers.constellationLines` | Constellation lines |
+| `explorer.layers.constellationLabels` | Constellation names |
+| `explorer.layers.horizon` | Horizon |
+| `explorer.layers.cardinalDirections` | Cardinal points |
+| `explorer.layers.equatorialGrid` | Equatorial grid |
+| `explorer.layers.below` | Below the horizon |
+| `explorer.layers.below.dimmed` | Dimmed |
+| `explorer.layers.below.hidden` | Hidden |
+| `explorer.layers.close` | Close layers |
+| `explorer.announced.label` | Map announcements |
+
+---
+
+## Key-screen copy — pt-BR
+
+The same keys as *Key-screen copy*, in Brazilian Portuguese (018-pt-br,
+BCR-0015). This table is the source for `site/src/i18n/pt-BR.ts`:
+`site/scripts/check_i18n_keys.py` fails unless the catalogue has exactly these
+keys with exactly these values (leading and trailing spaces, which a table
+cannot hold, are the catalogue's own), and the en-US keys above are the same
+set.
+
+- **Voice**: *você*, sentence case, plain verbs ("Explorar este céu", not
+  "Vamos explorar"); no *gerundismo*, no calques of the English word order.
+- **Terms**: céu, estrela, constelação, pôster, horizonte, magnitude, projeção
+  estereográfica, olho de peixe; the surfaces are the **Explorador** and the
+  **Estúdio** (de pôster). Cardinal points read N, L, S, O in the Explorer;
+  coordinates keep the poster's °N/°S/°E/°W.
+- **Kept as they are**: fragment formats, coordinates, the version string,
+  licence and attribution notices (Hipparcos, Stellarium, CC BY-SA 4.0,
+  © OpenStreetMap contributors — only the labels around them are translated),
+  constellation and star names, OpenStreetMap and Nominatim. Each language is
+  named in itself (`site.language.*`).
+
+| Key | Copy |
+|---|---|
+| `landing.title` | De onde você quer explorar o céu? |
+| `footer.tagline` | 8 000+ estrelas, desenhadas no navegador |
+| `landing.moment.legend` | Data e hora |
+| `landing.advanced.legend` | Avançado |
+| `landing.render.fisheye` | Intensidade do olho de peixe |
+| `landing.render.separation` | Separação mín. |
+| `landing.render.magnitude` | Magnitude limite |
+| `landing.render.lines` | Linhas das constelações |
+| `landing.render.labels` | Nomes das constelações |
+| `landing.render.glow` | Intensidade do brilho |
+| `landing.browse` | Só quer dar uma olhada? |
+| `landing.browse.action` | Carregar um céu aleatório |
+| `landing.render.projection.stereographic` | Estereográfica |
+| `landing.render.projection.fisheye` | Olho de peixe |
+| `landing.creation.invalid` | Não foi possível ler esse link, então o formulário está em branco. |
+| `landing.explore` | Explorar este céu |
+| `landing.error.when` | Escolha uma data e uma hora para o céu. |
+| `landing.error.timezone` | Fuso horário desconhecido: {zone}. Use um nome IANA, como "America/Sao_Paulo". |
+| `landing.tz.label` | Fuso horário |
+| `landing.tz.detect` | Detectar meu fuso horário |
+| `landing.coords.toggle` | Coordenadas |
+| `landing.coords.lat` | Latitude |
+| `landing.coords.lon` | Longitude |
+| `landing.error.lat` | A latitude deve ser um número entre -90 e 90. |
+| `landing.error.lon` | A longitude deve ser um número entre -180 e 180. |
+| `landing.selected.label` | Explorando a partir de |
+| `landing.selected.pin` | Ponto marcado no mapa |
+| `landing.selected.typed` | Coordenadas digitadas |
+| `landing.map.label` | Mapa para escolher um lugar |
+| `landing.map.loading` | Carregando o mapa… |
+| `landing.map.hint` | Clique ou arraste o marcador para definir o lugar |
+| `landing.map.marker` | Local de observação |
+| `landing.map.attribution` | © {osm} contributors · {report} |
+| `landing.map.osm` | OpenStreetMap |
+| `landing.map.report` | Relatar um problema |
+| `landing.map.tilesFailed` | Não foi possível carregar as imagens do mapa. A busca continua funcionando, ou ative Coordenadas para digitar um lugar. |
+| `landing.map.chunkFailed` | Não foi possível carregar o mapa. A busca continua funcionando, ou ative Coordenadas para digitar um lugar. |
+| `landing.search.label` | Buscar um lugar |
+| `landing.search.placeholder` | Cidade, endereço ou ponto de referência |
+| `landing.privacy.link` | Privacidade |
+| `site.privacy.title` | Privacidade |
+| `site.privacy.browser` | O starsky roda inteiramente no seu navegador. Não tem contas nem ferramentas de análise, não grava cookies e não guarda nenhum registro sobre você nem sobre os céus que você cria. |
+| `site.privacy.links` | Um céu vive no próprio link, depois do #. Os navegadores nunca enviam essa parte ao site, mas qualquer pessoa com quem você compartilhar o link pode ler o lugar e a data nele. |
+| `site.privacy.osm` | A busca de lugares e o mapa da página inicial vêm do {osm}. Quando você busca ou o mapa carrega, seu navegador se conecta ao OpenStreetMap, que vê o seu endereço IP. Vale a {policy} dele. |
+| `site.privacy.osm.name` | OpenStreetMap |
+| `site.privacy.osm.policy` | política de privacidade |
+| `site.privacy.device` | Este navegador guarda duas pequenas informações neste dispositivo: o idioma escolhido e, até você fechar a aba, a vista do Explorador para onde voltar. |
+| `site.privacy.host` | Como qualquer site, o servidor que entrega os arquivos do starsky recebe o seu endereço IP a cada acesso. |
+| `site.privacy.back` | Voltar ao início |
+| `landing.search.submit` | Buscar |
+| `landing.search.credit` | Busca pelo Nominatim |
+| `landing.search.listLabel` | Lugares encontrados |
+| `landing.search.searching` | Buscando… |
+| `landing.search.results` | {count} lugares encontrados. Use as setas do teclado para escolher um. |
+| `landing.search.resultsOne` | 1 lugar encontrado. Use as setas do teclado para escolhê-lo. |
+| `landing.search.empty` | Nenhum lugar encontrado para “{query}”. Tente outro nome, ou use o mapa ou as coordenadas. |
+| `landing.search.error` | A busca de lugares está indisponível agora. Use o mapa ou as coordenadas. |
+| `landing.openShared` | Abrir um céu compartilhado |
+| `landing.openShared.help` | Cole um link que termine em `#s=…` |
+| `landing.mapMoment` | Mapear um momento |
+| `landing.mapMoment.help` | Escolha um lugar e uma data |
+| `landing.render.projection` | Projeção |
+| `landing.render.shape` | Formato |
+| `landing.render.shape.square` | quadrado |
+| `landing.render.shape.circle` | círculo |
+| `landing.render.glowToggle` | Brilho |
+| `studio.heading` | Mapear um momento |
+| `studio.mode.coordinates` | Coordenadas |
+| `studio.mode.place` | Lugar |
+| `studio.place.label` | Lugar |
+| `studio.place.placeholder` | Avenida Paulista, São Paulo |
+| `studio.place.resolving` | Procurando esse lugar… |
+| `studio.place.resolved` | Mostrando {place} |
+| `studio.place.unresolved` | Não foi possível encontrar “{query}”. Tente um nome de lugar mais completo, ou mude para Coordenadas. |
+| `studio.moment.legend` | Momento |
+| `studio.zone.hint` | Opcional — detectado a partir do lugar. |
+| `studio.appearance.legend` | Aparência |
+| `studio.title.label` | Título |
+| `studio.title.placeholder` | Nosso primeiro apartamento |
+| `studio.updated` | Mapa atualizado |
+| `studio.poster.heading` | Estúdio de pôster |
+| `studio.advanced.legend` | Avançado |
+| `studio.summary.noteBefore` | Do céu com que você começou. Para mudá-lo, volte à |
+| `studio.summary.noteLink` | página inicial |
+| `studio.summary.noteAfter` | . |
+| `studio.returnToExplorer` | Voltar ao Explorador |
+| `studio.back` | Voltar ao início |
+| `studio.lang.label` | Idioma do pôster |
+| `studio.lang.hint` | A data no pôster e nas exportações é escrita neste idioma. |
+| `site.name` | Starsky |
+| `site.error.title` | Não foi possível carregar esta página |
+| `site.error.body` | Parte da página não carregou, ou algo deu errado. Verifique sua conexão e recarregue. |
+| `site.error.reload` | Recarregar |
+| `site.error.start` | Voltar ao início |
+| `site.language.label` | Idioma |
+| `site.language.en` | English |
+| `site.language.ptBR` | Português (Brasil) |
+| `viewer.heading.default` | Este céu noturno |
+| `viewer.heading.abovePlace` | Céu noturno sobre {place} |
+| `viewer.loading` | Mapeando as estrelas… |
+| `viewer.announced.ready` | Pôster do céu noturno pronto. |
+| `viewer.announcementRegion` | Status do visualizador do céu |
+| `viewer.canvasLabel` | Pôster do céu noturno com o título {title} |
+| `viewer.canvasLabel.untitled` | Pôster do céu noturno |
+| `viewer.caption` | {coords} — {place} · {local} {tz} |
+| `viewer.copyLink` | Copiar link |
+| `viewer.share.open` | Compartilhar |
+| `viewer.share.close` | Fechar compartilhamento |
+| `viewer.share.heading` | Compartilhar este céu |
+| `viewer.share.summary` | {where} · {when} · projeção {projection} · mag. {mag} |
+| `viewer.share.projection.stereographic` | estereográfica |
+| `viewer.share.projection.fisheye` | olho de peixe |
+| `viewer.linkCopied` | Link copiado |
+| `viewer.linkFailed` | Não foi possível copiar o link. Selecione a barra de endereço e copie. |
+| `viewer.randomSky` | Carregar um céu aleatório |
+| `viewer.makeYourOwn` | Criar o seu a partir deste céu |
+| `viewer.exploreSky` | Explorar este céu |
+| `viewer.export.png` | PNG |
+| `viewer.export.svg` | SVG |
+| `viewer.export.pdf` | PDF |
+| `viewer.export.working` | Desenhando em resolução máxima… |
+| `viewer.export.done` | {filename} salvo |
+| `viewer.export.failed` | A exportação em {format} falhou ({detail}). O mapa não foi afetado — tente de novo. |
+| `viewer.export.open` | Exportar |
+| `viewer.export.close` | Fechar exportação |
+| `viewer.export.formats` | Formatos de exportação |
+| `viewer.export.preparing` | Preparando {format}… |
+| `viewer.export.layout` | Layout |
+| `viewer.export.layout.standard` | Padrão |
+| `viewer.export.layout.story` | Story (9:16) |
+| `empty.title` | Ainda não há um céu nesta página |
+| `empty.bodyPrefix` | Esta página lê um momento compartilhado no próprio endereço — procure um link que termine em |
+| `empty.bodySuffix` | . |
+| `empty.action` | Carregar um céu aleatório |
+| `legacy.title` | Um tipo antigo de link |
+| `legacy.body` | Esse link vem de uma versão anterior. Mapeie um novo momento. |
+| `invalid.title` | Este link não contém um céu |
+| `invalid.body` | Não foi possível ler o link ({detail}). Talvez ele tenha sido cortado. |
+| `landing.randomSky` | Carregar um céu aleatório |
+| `dataError.title` | Não foi possível carregar os dados das estrelas |
+| `dataError.body` | Gere-os de novo com `starsky catalog` e recarregue. |
+| `dataError.bodyPrefix` | Não foi possível carregar os dados das estrelas ({detail}). Gere-os de novo com |
+| `dataError.command` | starsky catalog |
+| `dataError.bodySuffix` | e publique de novo. |
+| `fontError.title` | Não foi possível carregar a fonte do pôster |
+| `fontError.body` | O pôster não é exibido para não ser desenhado com uma fonte substituta. |
+| `fontError.bodyPrefix` | Não foi possível carregar a fonte do pôster ({detail}). |
+| `fontError.bodySuffix` | O pôster não é exibido, porque seria desenhado com uma fonte substituta, e não com a fonte para a qual foi criado. |
+| `fontError.titleUnsupported` | A fonte do pôster não consegue desenhar {character}. Remova esse caractere ou escolha um título que a fonte consiga desenhar. |
+| `fontError.titleAdjusted` | Este título continha {characters}, que a fonte do pôster não consegue desenhar. Esses caracteres foram removidos para que o pôster corresponda às exportações. |
+| `loading.poster` | Desenhando o céu… |
+| `footer.version` | starsky@v{version} |
+| `footer.attribution` | Estrelas: Hipparcos · Linhas e nomes: Stellarium (CC BY-SA 4.0) · Mapa e lugares: © OpenStreetMap contributors |
+| `explorer.heading` | Explorador do céu |
+| `explorer.loading` | Mapeando as estrelas… |
+| `explorer.canvasLabel` | Mapa do céu sobre {place} |
+| `explorer.canvasLabel.untitled` | Mapa do céu |
+| `explorer.canvasHint` | Arraste para olhar ao redor, role ou faça pinça para dar zoom e clique duas vezes para centralizar um ponto. Com o mapa em foco, as setas giram a vista, mais e menos dão zoom, 0 volta ao início e Esc limpa a seleção. |
+| `explorer.announced.ready` | Explorador do céu pronto. |
+| `explorer.announced.starAbove` | {name} selecionada, acima do horizonte. |
+| `explorer.announced.starBelow` | {name} selecionada, abaixo do horizonte. |
+| `explorer.announced.constellation` | Constelação {name} selecionada. |
+| `explorer.announced.cleared` | Seleção removida. |
+| `explorer.cardinal.n` | N |
+| `explorer.cardinal.e` | L |
+| `explorer.cardinal.s` | S |
+| `explorer.cardinal.w` | O |
+| `explorer.back` | Voltar ao início |
+| `explorer.inspector.label` | Inspetor |
+| `explorer.inspector.empty` | Nada selecionado. Escolha uma estrela ou uma constelação no mapa ou na lista. |
+| `explorer.inspector.close` | Fechar inspetor |
+| `explorer.inspector.expand` | Mostrar detalhes |
+| `explorer.inspector.collapse` | Ocultar detalhes |
+| `explorer.inspector.catalog` | Catálogo |
+| `explorer.inspector.derived` | Para este lugar e momento |
+| `explorer.inspector.name` | Nome |
+| `explorer.inspector.hip` | Número HIP |
+| `explorer.inspector.magnitude` | Magnitude aparente |
+| `explorer.inspector.ra` | Ascensão reta |
+| `explorer.inspector.dec` | Declinação |
+| `explorer.inspector.altitude` | Altitude |
+| `explorer.inspector.azimuth` | Azimute |
+| `explorer.inspector.horizon` | Horizonte |
+| `explorer.inspector.horizon.above` | Acima do horizonte |
+| `explorer.inspector.horizon.below` | Abaixo do horizonte |
+| `explorer.inspector.approximate` | cerca de {value} |
+| `explorer.inspector.precision` | Aproximado, com precisão de 0,1°. O catálogo não é corrigido pela precessão, então as posições podem se desviar até cerca de 1° longe do ano 2000. |
+| `explorer.inspector.figureOf` | Parte da figura de {name} |
+| `explorer.inspector.abbr` | Abreviatura da UAI |
+| `explorer.inspector.starCount` | Estrelas na figura |
+| `explorer.inspector.aboveCount` | Acima do horizonte agora |
+| `explorer.inspector.aboveValue` | {above} de {total} |
+| `explorer.inspector.brightest` | Estrela mais brilhante |
+| `explorer.inspector.brightestValue` | {name}, magnitude {mag} |
+| `explorer.inspector.center` | Centralizar no mapa |
+| `explorer.inspector.clear` | Limpar seleção |
+| `explorer.kind.star` | Estrela |
+| `explorer.kind.constellation` | Constelação |
+| `explorer.tooltip.detail` | {name} • Magnitude {mag} |
+| `explorer.tooltip.constellation` | {name} • {count} estrelas |
+| `explorer.tooltip.constellationOne` | {name} • 1 estrela |
+| `explorer.tooltip.namedMore` | {names} +{rest} |
+| `explorer.members.title` | Estrelas na figura |
+| `explorer.members.detail` | magnitude {mag} |
+| `explorer.members.detailBelow` | magnitude {mag}, abaixo do horizonte |
+| `explorer.list.title` | Constelações |
+| `explorer.list.above` | Acima do horizonte ({count}) |
+| `explorer.list.below` | Abaixo do horizonte ({count}) |
+| `explorer.list.partly` | parcialmente acima do horizonte |
+| `explorer.search.input` | Buscar constelações e estrelas |
+| `explorer.search.placeholder` | Nome, abreviatura ou número HIP |
+| `explorer.search.results` | Resultados da busca |
+| `explorer.search.none` | Nenhum resultado. |
+| `explorer.search.countOne` | 1 resultado. |
+| `explorer.search.countMany` | {count} resultados. |
+| `explorer.search.close` | Fechar busca |
+| `explorer.search.starDetail` | HIP {hip}, magnitude {mag} |
+| `explorer.moment.label` | Momento |
+| `explorer.moment.pin` | Manter os detalhes abertos |
+| `explorer.link.copy` | Copiar link |
+| `explorer.link.copied` | Link copiado. |
+| `explorer.link.failed` | Não foi possível copiar o link. Copie-o da barra de endereço. |
+| `explorer.toolbar.label` | Controles do mapa |
+| `explorer.toolbar.zoomIn` | Aproximar |
+| `explorer.toolbar.zoomOut` | Afastar |
+| `explorer.toolbar.reset` | Redefinir a vista |
+| `explorer.toolbar.layers` | Camadas |
+| `explorer.toolbar.search` | Buscar |
+| `explorer.toolbar.poster` | Criar pôster |
+| `explorer.toolbar.shortcut` | {label} ({key}) |
+| `explorer.layers.title` | Camadas |
+| `explorer.layers.constellationLines` | Linhas das constelações |
+| `explorer.layers.constellationLabels` | Nomes das constelações |
+| `explorer.layers.horizon` | Horizonte |
+| `explorer.layers.cardinalDirections` | Pontos cardeais |
+| `explorer.layers.equatorialGrid` | Grade equatorial |
+| `explorer.layers.below` | Abaixo do horizonte |
+| `explorer.layers.below.dimmed` | Esmaecido |
+| `explorer.layers.below.hidden` | Oculto |
+| `explorer.layers.close` | Fechar camadas |
+| `explorer.announced.label` | Avisos do mapa |
 
 ---
 
 ## Localization
 
-- **Locales: `en-US` default, `pt-BR` secondary.** The keys above are the
-  contract; `pt-BR` ships as its own slice after the retheme, so neither change
-  is buried in the other's diff.
-- **No i18n framework is installed today** — every string is inline JSX
-  (`LandingPage.tsx` alone holds ~15). Copy lands extraction-ready against these
-  keys even before the framework is chosen.
-- **The UI localizes; the poster does not.** `formatDetailLine`
-  (`site/src/lib/caption.ts`) feeds *both* the UI caption and the poster
-  artifact (`export.ts:112`, `poster.ts:300`), and
-  `reference.test.ts:229` asserts the caption equals a stored string in
-  `render-matrix.json`. A locale-dependent caption would make the **same
-  `#s=` link render a different poster in São Paulo than in London**, and fail
-  the reference test for any non-`en-US` visitor. A share link is a promise
-  that everyone sees the same sky.
-  - **UI chrome**: the active locale (`pt-BR` → `12 de jun. de 2024, 21:40`).
-  - **Artifact**: fixed `en-US`, permanently — a product constraint, not a
-    default that may drift.
-  - `formatLocalTime` currently passes `undefined` to
-    `Intl.DateTimeFormat`, which means "whatever the visitor's browser wants":
-    neither `en-US` nor deterministic. Both call sites get an **explicit**
-    locale parameter.
+- **Locales: `en-US` default, `pt-BR` secondary** (018-pt-br). The keys
+  above are the contract; the pt-BR table beside them is the second catalogue.
+  The interface locale is the visitor's stored choice (`localStorage`,
+  `starsky.locale`, guarded), else the first `en*` or `pt*` tag in
+  `navigator.languages`, else `en-US`; the footer switcher changes it in place,
+  without a reload.
+- **No i18n framework.** `t(key, params)` resolves against the active
+  catalogue; a missing key still renders `⟨key⟩` and warns.
+- **The interface follows the visitor; the poster follows its link**
+  (BCR-0015, superseding D16). `formatDetailLine` (`site/src/lib/caption.ts`)
+  takes an explicit locale at every call site:
+  - **UI chrome** (the moment line, the share summary, the Studio hint, the
+    Explorer's moment strip): the active locale
+    (`pt-BR` → `12 de jun. de 2024, 21:40`).
+  - **Artifact** (canvas, PNG, SVG, PDF, and the canvas's text alternative):
+    the link's `lang`, absent = `en-US`. The Studio's *Poster language* select
+    sets it, defaulting to the interface language on the way in from the
+    Explorer. A link without `lang` draws exactly what it drew before 018, so
+    a share link still promises everyone the same poster.
+  - Only the date is localized on the poster: coordinates, the place, the
+    zone name, the title and the constellation names are the same in every
+    language.
+  - `Intl.DateTimeFormat` never receives `undefined` as its locale.
 - **Text expansion: 40% allowance** on buttons and legend text — Portuguese is
   the near target and expands on both.
 - **Do not translate:** the `#s=` / `#studio=` fragment formats; coordinate
@@ -857,6 +1456,9 @@ parts read as one sentence, asserted by `i18n.test.ts`.
   the pattern in `caption.ts`; the i18n layer must not reintroduce a
   locale-dependent default.
 - **`<html lang>`** follows the active locale, not a hardcoded `en`.
+- **Numbers in the interface** use the active locale's decimal separator
+  (`4,5` in pt-BR) and never group digits; the poster's numbers (coordinates)
+  keep their own format.
 
 ---
 
@@ -915,9 +1517,14 @@ survives the answer.*
 | D13 | Studio gets `#studio=`; the Viewer keeps `#s=` | One shared fragment | A tuned draft would overwrite the canonical artifact, and "the sky I was sent" would stop being distinguishable from "the sky I tweaked". Separate prefixes make it impossible by construction and keep `#s=` byte-compatible with existing links. |
 | D14 | "Make your own from this sky" | "Adjust this sky" | "Adjust" implies the shared sky was wrong. A visitor who received a link is not repairing anything. |
 | D15 | One export surface (`ExportControls`) | Footer "Save image" + controls | One action must have one name. A `button` download also cannot be middle-clicked, exposes no URL, and is invisible when scanning for a download. |
-| D16 | The poster stays `en-US` permanently | Localizing the artifact | `reference.test.ts:229` pins the caption; a locale-dependent caption would render the same `#s=` link differently per visitor and fail the test. A share link promises everyone the same sky. |
+| D16 | ~~The poster stays `en-US` permanently~~ — superseded by BCR-0015 (2026-11-01): the poster's language is the creator's choice, stored in the link, absent = `en-US` | Localizing the artifact | `reference.test.ts:229` pins the caption; a locale-dependent caption would render the same `#s=` link differently per visitor and fail the test. A share link promises everyone the same sky. |
 | D17 | `pt-BR` after the retheme, as its own slice | Both in one change | A ~60-file diff mixing palette and copy is where design regressions hide. Split, each stays reviewable; the keys exist now either way. |
 | D18 | `site/package.json` is the version source, renamed to `starsky` | `pyproject.toml`; keeping `starsky-site` | One source for a static-only site, and the package name then matches what the footer prints. |
+| D20 | **Explorer is primary; Viewer and Studio are secondary** (supersedes D1, D2) | Two surfaces of equal weight | Owner decision, BCR-0011. `#s=` still opens the poster directly, so P1 keeps its path. |
+| D21 | Full sphere through a rotating camera | A flat all-sky map | A sphere cannot project flat without distortion (ADR-0006). |
+| D22 | Metadata collapses to one line, never hides by default | Auto-hide | Owner decision: the moment stays readable. |
+| D23 | Constellation labels always visible, subtle, decluttered | Hover-only labels | Owner decision: orientation matters more than an empty sky. |
+| D24 | Search + Leaflet map for location, on demand | Search only | Owner decision. Tiles load only when opened (ADR-0008); coordinates always work without the map. |
 | D19 | **The UI palette is independent of the poster's**; `render-spec.json` is untouched | Repainting the poster to match the new palette | `render-spec.json` is normative (constitution II) and pinned by `spec.test.ts:32`, by literal hex assertions in `boundaries.test.ts`/`poster.test.ts`, and by stored reference PNGs. Changing it is a BCR that regenerates every fixture and alters the artifact for every existing share link. The poster is a print; it does not take the browser's theme. Accepted cost: rose lines beside verdigris chrome, bounded by "accent is chrome only, never a constellation in the map". |
 
 ---

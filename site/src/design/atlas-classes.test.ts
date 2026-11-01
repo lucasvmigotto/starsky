@@ -28,7 +28,7 @@ const REQUIRED: ReadonlyArray<readonly [string, readonly string[]]> = [
     ["atlas-moment", "atlas-explorer", "atlas-loaded"],
   ],
   ["panels and states", ["atlas-panel", "atlas-empty", "atlas-alert", "atlas-loading"]],
-  ["controls", ["atlas-btn", "atlas-btn-ghost", "atlas-btn-subtle", "atlas-link", "atlas-figure", "atlas-figure-active", "atlas-tooltip"]],
+  ["controls", ["atlas-btn", "atlas-btn-ghost", "atlas-btn-icon", "atlas-link"]],
   ["the landing form", ["atlas-form", "atlas-form-wrap", "atlas-form-legend", "atlas-form-field"]],
   [
     "the form's controls",
@@ -48,7 +48,6 @@ const REQUIRED: ReadonlyArray<readonly [string, readonly string[]]> = [
       "atlas-form-submit",
       "atlas-form-alt",
       "atlas-form-linkbtn",
-      "atlas-form-explainer",
       "atlas-form-input",
       "atlas-form-label",
     ],
@@ -57,13 +56,11 @@ const REQUIRED: ReadonlyArray<readonly [string, readonly string[]]> = [
     "export",
     [
       "atlas-export",
-      // The disclosure trigger replaced the `atlas-export-label` eyebrow: the
-      // label *is* the control now, so a separate label element was redundant
-      // (and the eyebrow was an AI-default the vision bans).
-      "atlas-export-trigger",
-      "atlas-export-actions",
-      "atlas-export-button",
+      // The disclosure trigger and the format buttons are ghost buttons (015):
+      // one button family, no export-only styles.
+      "atlas-popover",
       "atlas-export-status",
+      "atlas-actions",
     ],
   ],
   ["inline code in prose", ["atlas-code"]],
@@ -138,40 +135,30 @@ describe("atlas-* class vocabulary (DS-003)", () => {
   });
 
   it("keeps the export row quiet, so the poster stays the loudest thing", () => {
-    // Vision principle 2. The export buttons were cream fills — the brightest
-    // thing on the page after the poster, which the ui.md wireframe contradicts.
-    const block = CSS.replace(/\/\*[\s\S]*?\*\//g, "").match(
-      /\.atlas-export-button \{([\s\S]*?)\n\}/,
+    // Vision principle 2. The export controls are ghost buttons: transparent,
+    // bordered, never a cream fill and never an accent-coloured control.
+    const sources = ["ExportControls.tsx", "ShareDialog.tsx"].map((file) =>
+      readFileSync(join(import.meta.dirname, "..", "components", file), "utf-8"),
     );
-    expect(block).not.toBeNull();
-    expect(block?.[1]).toContain("background: transparent");
-    expect(block?.[1]).not.toMatch(/background:\s*var\(--color-text\)/);
+    for (const source of sources) {
+      expect(source).toContain('className="atlas-btn-ghost"');
+      expect(source).not.toContain('className="atlas-btn"');
+    }
+    const ghost = CSS.replace(/\/\*[\s\S]*?\*\//g, "").match(
+      /\n\n\.atlas-btn-ghost,\n\.atlas-btn-icon \{([\s\S]*?)\n\}/,
+    );
+    expect(ghost?.[1]).toContain("background: transparent");
   });
 
-  it("gives the export trigger the accent, so one control reads as actionable", () => {
-    // Ghosting the formats left them looking like plain labels. The single
-    // trigger carries the affordance instead.
-    const block = CSS.replace(/\/\*[\s\S]*?\*\//g, "").match(
-      /\.atlas-export-trigger \{([\s\S]*?)\n\}/,
-    );
-    expect(block?.[1]).toContain("var(--color-accent)");
-  });
-
-  it("keeps `hidden` winning over the actions' flex display", () => {
+  it("keeps `hidden` winning over the popover's flex display", () => {
     // Without this the collapsed formats stay on screen: `display: flex` beats
     // the `hidden` attribute's UA `display: none`.
-    expect(CSS).toMatch(/\.atlas-export-actions\[hidden\]\s*\{\s*display:\s*none/);
+    expect(CSS).toMatch(/\.atlas-popover\[hidden\]\s*\{\s*display:\s*none/);
   });
 
   it("gives every button at least the 44px target height (DS-A11Y-003)", () => {
-    for (const name of [
-      "atlas-btn",
-      "atlas-btn-ghost",
-      "atlas-export-button",
-      "atlas-export-trigger",
-    ]) {
-      const block = CSS.match(new RegExp(`\\.${name} \\{([\\s\\S]*?)\\n\\}`));
-      expect(block?.[1], `${name} has no min-height`).toContain("min-height: 44px");
-    }
+    // Primary, ghost and icon share one base rule.
+    const base = CSS.match(/\.atlas-btn,\n\.atlas-btn-ghost,\n\.atlas-btn-icon \{([\s\S]*?)\n\}/);
+    expect(base?.[1]).toContain("min-height: 44px");
   });
 });

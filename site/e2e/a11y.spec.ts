@@ -30,11 +30,11 @@ async function analyze(page: import("@playwright/test").Page) {
 }
 
 test.describe("accessibility", () => {
-  test("the landing form has no serious or critical violations", async ({
+  test("the landing has no serious or critical violations", async ({
     page,
   }) => {
     await page.goto("/");
-    await expect(page.getByRole("button", { name: /show my sky/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /explore this sky/i })).toBeVisible();
     const results = await analyze(page);
     const blocking = results.violations.filter(
       (v) => v.impact === "serious" || v.impact === "critical",
@@ -42,6 +42,16 @@ test.describe("accessibility", () => {
     expect(
       blocking.map((v) => `${v.id}: ${v.help}`).join("\n"),
     ).toBe("");
+  });
+
+  test("the privacy page has no serious or critical violations", async ({ page }) => {
+    await page.goto("/#privacy");
+    await expect(page.getByRole("heading", { level: 1, name: "Privacy" })).toBeVisible();
+    const results = await analyze(page);
+    const blocking = results.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(blocking.map((v) => `${v.id}: ${v.help}`).join("\n")).toBe("");
   });
 
   test("the viewer has no serious or critical violations", async ({ page }) => {

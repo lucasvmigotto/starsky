@@ -50,7 +50,11 @@ export function canonicalJson(value: unknown, path = ""): string {
   }
   if (typeof value === "object") {
     const record = value as Record<string, unknown>;
-    const keys = Object.keys(record).sort();
+    // An `undefined` member is absent, as in `JSON.stringify`: an optional
+    // field such as `lang` is never written as a key with no value.
+    const keys = Object.keys(record)
+      .filter((key) => record[key] !== undefined)
+      .sort();
     const parts = keys.map(
       (key) => `${JSON.stringify(key)}:${canonicalJson(record[key], `${path}/${key}`)}`,
     );
@@ -74,6 +78,7 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
  */
 export function encodePayload(payload: SharePayload): string {
   const raw = new TextEncoder().encode(canonicalJson(payload));
-  const compressed = deflate(raw, { level: 9 });
+  // legacyHash: pako 3 defaults to a hash whose output differs from canonical zlib (FR-001).
+  const compressed = deflate(raw, { level: 9, legacyHash: true });
   return bytesToBase64Url(compressed);
 }

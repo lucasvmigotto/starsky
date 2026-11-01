@@ -33,6 +33,10 @@ updates:
     commit-message:
       prefix: "build"
       include: "scope"
+    # Bumped by hand with the image in site_e2e.yml: the browsers come from
+    # that image, so a package-only bump fails every e2e run.
+    ignore:
+      - dependency-name: "@playwright/test"
     groups:
       site-minor-patch:
         patterns: ["*"]

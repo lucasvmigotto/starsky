@@ -1,5 +1,6 @@
 Reconstructed by project:introspec on 2026-09-29 from 51287a78a915da74fab965cc2c27a85e4616d0e0.
 Refreshed by project:init on 2026-10-04 to the static-first reality (BCR-0001–BCR-0009, ADRs 0001–0005); see Decision log.
+Refreshed on 2026-11-01 at the owner's request to the product as built after BCR-0011 (features 009–016); see Decision log.
 
 # starsky — brief
 
@@ -7,88 +8,139 @@ Status: Draft
 
 ## Problem
 
-People want a personalized night-sky poster for a place and moment ("our night") without proprietary SaaS or manual planetarium work. The poster must be exactly shareable — the same link renders the same sky for everyone — and keepable as a print-grade file.
+People want to see the night sky of a place and moment that matters to them ("our night"), explore it, and keep it as a personalized poster, without proprietary SaaS or manual planetarium work. What they make must be exactly shareable: the same link shows the same sky to everyone. The poster must be keepable as a print-grade file.
 
 ## What the product does (observed)
 
-starsky is a static, client-only night-sky poster studio. The browser is the product's sole renderer (BCR-0005); Python is a build-time data CLI. No server, no accounts, no backend. [OBSERVED: src/starsky/cli.py:1-6; docs/product/bcr/0005-remove-python-renderer.md; docs/product/adr/0001-static-first-no-server.md]
+starsky is a static, client-only night-sky explorer and poster studio. The browser is the sole renderer (BCR-0005). Python is a build-time data CLI. There is no server, no accounts and no backend. [OBSERVED: src/starsky/cli.py; docs/product/adr/0001-static-first-no-server.md]
 
-- Landing: pick coordinates or a free-text place (browser Nominatim lookup), a date/time/timezone, and appearance options → the poster renders live. [OBSERVED: site/src/components/LandingPage.tsx; site/src/lib/geocode.ts]
-- Viewer: a `#s=` link (canonical JSON → zlib-9 → URL-safe base64, payload v1) renders the exact shared sky — map, constellation figures, caption — with pan/zoom/keyboard navigation and a figure list. [OBSERVED: site/src/components/ViewerPage.tsx; site/src/lib/share.ts:72-105; site/render-spec.json shareLink]
-- Keep it: one export surface offers PNG, SVG and true-vector PDF with the poster typeface embedded; failures name the format and leave the map untouched. [OBSERVED: site/src/components/ExportControls.tsx:58-160; site/src/lib/render/export.ts]
-- Share it: copy-link yields the canonical `#s=` artifact; "Make your own from this sky" seeds a new draft. A separate `#studio=` build-and-tune surface is planned, not built. [OBSERVED: site/src/i18n/en-US.ts:81; specs/006-viewer/tasks.md:81-108]
-- Data tool: `starsky catalog` (Hipparcos mag ≤ 6.5 default + Stellarium lines → `catalog.json`/`constellations.json`) and `starsky cache warm` (parquet caches). It opens no socket and renders nothing. [OBSERVED: src/starsky/cli.py:26-101]
-- Delivery: static site on Cloudflare R2 under the docs-hub prefix; CLI data-tool images on GHCR/Docker Hub; releases cut by automation. [OBSERVED: .github/workflows/site_r2.yml:199-235; docs/product/delivery.md:7-17]
+- **Landing (013).** "Where do you want to explore the sky from?" The visitor searches for a place (Nominatim, on explicit submit or on leaving the field, never as you type: #65), or switches to coordinates. An always-visible OpenStreetMap map shows the place and accepts a click or a dragged pin. They add an optional title, a date, time and timezone, and a limiting magnitude under Advanced. The one action, **Explore this sky**, opens the Explorer. The form is mirrored to a `#c=` link in the address bar. [OBSERVED: site/src/components/LandingPage.tsx; site/src/lib/landing/]
+- **Explorer (009–011, 014; BCR-0011, the primary experience).** A navigable sky at `#e=`, Canvas 2D:
+  - Drag to look around, zoom between 5 and 120°, and reset with a glide.
+  - Star tooltips, an inspector, search, layers (lines, labels, horizon, cardinal points, grid, below-horizon hidden or dimmed) and a constellation list grouped by the horizon.
+  - The controls collapse after 4 s idle.
+  - Objects below the horizon are never presented as observable.
+
+  [OBSERVED: site/src/lib/explorer/; site/src/lib/sky/]
+- **Poster Studio (012, 015, 016).** At `#studio=`: projection, shape (square fills the square, BCR-0014), fisheye strength, minimum separation, glow and title, with a live preview. It exports PNG, SVG and true-vector PDF in standard or 9:16 story layout (BCR-0012), and copies a `#s=` link. [OBSERVED: site/src/components/studio/StudioPage.tsx; site/src/lib/render/]
+- **Poster page (Viewer).** A `#s=` link renders the exact shared poster: the image and its heading only (BCR-0013). It offers share, export, "Explore this sky" and "Make your own". Corrupt, absent and wrong-version links are handled. [OBSERVED: site/src/components/ViewerPage.tsx; site/src/lib/share.ts]
+- **Data tool.** `starsky catalog` builds the browser's data from Hipparcos (mag ≤ 6.5 by default, 8,870 stars), Stellarium modern lines (843 segments, 88 figures) and HIP-keyed names (520): `catalog.json`, `constellations.json` and `names.json`. `starsky cache warm` fills the parquet caches. It opens no socket and renders nothing. [OBSERVED: src/starsky/cli.py; specs/002-catalog-cli/contracts/seam.md]
+- **Delivery.** A static site on Cloudflare R2, data-tool images on GHCR and Docker Hub, and releases cut by automation. `dev` integrates and promotes to `main`, which deploys. [OBSERVED: .github/workflows/site_r2.yml; docs/product/delivery.md]
 
 ## Audiences
 
-Decided with the owner 2026-09-30 (see docs/product/ux-vision.md:52-60); both are equally likely and get the same quality:
+Decided with the owner on 2026-09-30 (see docs/product/ux-vision.md). Both audiences are equally likely and get the same quality:
 
-- **P1 — the recipient.** Arrives from a link someone sent. Goal: see the map as shared, keep it. Phone, mobile data, never returns. Leaves when the link looks broken, the poster is blank, or the page is slow.
-- **P2 — the giver.** Builds a keepsake for a place and date. Goal: get the moment right, adjust until it looks right, share it, keep the file. Leaves when controls seem to do nothing.
-- **Operator (secondary).** Solo self-hoster running their own instance; wants cheap static hosting and deterministic data builds.
+- **P1, the recipient.** Arrives from a link someone sent. Goal: see the sky as shared, explore it, keep it. Uses a phone on mobile data and never returns. Leaves when the link looks broken, the sky is blank, or the page is slow.
+- **P2, the giver.** Starts from a place and a moment, explores the sky, then makes and shares a poster. Leaves when controls seem to do nothing.
+- **Operator (secondary).** A solo self-hoster running their own instance. Wants cheap static hosting and deterministic data builds.
 
-Priority order: read the map first, then explore and tune, then share, then export.
+Flow, owner decision of 2026-11-01: landing → Explorer → export.
 
 ## Scope
 
-In scope: browser Landing + Viewer, `#s=` share codec, PNG/SVG/PDF export, CLI data build (`catalog`, `cache warm`), R2 static delivery with fitness gates.
+In scope:
+- Landing (place search, map, coordinates, moment, `#c=`).
+- Explorer (`#e=`).
+- Poster Studio (`#studio=`).
+- Poster page (`#s=`).
+- PNG, SVG and PDF export in standard and story layouts.
+- The CLI data build.
+- R2 static delivery with fitness gates.
 
-Out of scope: accounts, payments, multi-user library, mobile app (none observed; no backend exists to host them). No light theme (offered and declined, ux-vision D5). `pt-BR` catalogue ships as its own later slice (D17). No server-side render endpoint for v1 (rejected; revisit only on funded-backend triggers in site/PLAN.md).
+Out of scope:
+- Accounts, payments, a multi-user library and a mobile app (no backend exists to host them).
+- WebGL (not in this milestone).
+- A light theme (offered and declined, ux-vision D5).
+- A server-side render endpoint.
+- Place autocomplete (forbidden by the Nominatim policy).
+
+Later: a `pt-BR` catalogue as its own slice (D17).
 
 ## Capabilities (observed)
 
-MVP — the primary job end to end (all shipped):
-1. Render the poster in-browser from `render-spec.json` (stereographic/fisheye, declutter, glow, masks, caption). Reason: the map is the product. [OBSERVED: site/src/lib/render/poster.ts; site/src/lib/spec.ts]
-2. Open a shared sky from `#s=` with corrupt/absent/wrong-version handling. Reason: the link is the primary artifact. [OBSERVED: site/src/lib/share.ts:72-105]
-3. Build a moment on the Landing (coordinates | place lookup, date/time/tz, appearance). Reason: P2's entry point. [OBSERVED: site/src/components/LandingPage.tsx]
-4. Export PNG/SVG/PDF + copy link. Reason: keep and share. [OBSERVED: site/src/components/ExportControls.tsx]
-5. CLI data build + warm cache. Reason: the browser's data dependency. [OBSERVED: src/starsky/cli.py:26-101]
-6. R2 deploy + fitness gates (budgets, no-secrets, no-server, i18n agreement, conformance). Reason: static hosting that cannot silently regress. [OBSERVED: .github/workflows/site_ci.yml:76-105]
+MVP, the primary job end to end (all shipped on `dev`):
+1. Choose a place and moment on the landing, with search, a map or coordinates. Reason: the giver's entry point. [OBSERVED: site/src/lib/landing/]
+2. Explore the sky honestly: correct orientation, nothing below the horizon presented as visible, figure-based constellations. Reason: the primary experience (BCR-0011). [OBSERVED: site/src/lib/sky/observer.ts; site/src/lib/explorer/visibility.ts]
+3. Compose and export a poster from `render-spec.json`, the one render implementation. Reason: keep it. [OBSERVED: site/src/lib/render/]
+4. Share by link: four versioned fragments (`#c=`, `#e=`, `#studio=`, `#s=`), with `#s=` byte-compatible forever. Reason: the link is the primary artifact. [OBSERVED: docs/product/domain-model.md, Links context]
+5. CLI data build and warm cache. Reason: the browser's only data dependency. [OBSERVED: src/starsky/cli.py]
+6. R2 deploy plus fitness gates (budgets, no secrets, no server, i18n agreement, conformance, reference images, third-party guard). Reason: static hosting that cannot silently regress. [OBSERVED: .github/workflows/site_ci.yml; site/e2e/network-guard.spec.ts]
 
-Next: Studio `#studio=` build-and-tune surface with `#studio=`→`#s=` share re-encode (specs/006-viewer FT001–FT016); versioned R2 prefixes + manifest (specs/008-site-delivery T003); post-deploy smoke + rollback drill (008 T018/T021); `pt-BR` locale slice.
+Next: hardening (#55): accessibility and performance passes, docs, stability re-measure. Then promotion of `dev` to `main`, versioned R2 prefixes and a manifest (008 T003), a post-deploy smoke and rollback drill (008 T018/T021), and the `pt-BR` locale slice.
 
-Later: reference-image regeneration inside the tools image (deferred by finding-reference-drift.md decision); server render endpoint only if revisit triggers fire.
+Later: WebGL renderer, only if Canvas 2D limits are hit (ADR-0007). A keyed geocoder or self-hosted tiles, if OpenStreetMap limits are hit (architecture evolution path).
 
 ## Constraints
 
-- Licenses: code GPL-3.0-only; Hipparcos public domain; Stellarium lines CC BY-SA 4.0 (one-way compatible to GPL-3.0, attributed in-app); Cormorant Garamond OFL 1.1, bundled. [OBSERVED: pyproject.toml:7; THIRD_PARTY_NOTICES.md:3-41]
-- Toolchain: Python >= 3.14, Bun 1.4.2, TypeScript native (`tsgo`), React 19, Vite 6, Tailwind 4 — pinned in `.tool-versions`. [OBSERVED: pyproject.toml:6; .tool-versions]
-- Python is Click + Polars only; no server framework in `src/` (CI-enforced `scripts/check_no_server.py`). No raw-hex or inline-copy in components (ESLint design rules). [OBSERVED: scripts/check_no_server.py]
-- Hosting: R2 free tier + docs-hub prefix `/starsky/`; budgets 500 KB bundle / 400 KB data brotli (CI-enforced). [OBSERVED: site/scripts/check_bundle_budget.sh; vite.config.ts:14]
-- Accessibility: WCAG 2.2 AA — axe suites + computed-contrast checks + 44px targets + keyboard-only paths (verified, not assumed). [OBSERVED: site/e2e/a11y.spec.ts; site/e2e/contrast.spec.ts; specs/000-design-system/tasks.md:71-77]
-- Browsers: Chromium + Firefox (the e2e matrix); mobile widths via responsive single-column + horizontal figure scroller. [OBSERVED: .github/workflows/site_e2e.yml; docs/product/ux-vision.md:493-505]
-- Compliance: N/A — no regime applies. No backend, no accounts, no stored personal data; the only outbound call is the visitor's own place lookup. No SLOs defined (static host; unknown).
-- Integrations and their failures: Nominatim (place lookup fails inline, no navigation, map unchanged); Hipparcos/Stellarium source hosts (CI retries `cache warm` + `catalog` 3×, then fails the build without deploying — no partial site); R2 (failed deploy leaves the previous build serving; entry `index.html` uploads last). [OBSERVED: site/src/lib/geocode.ts; .github/workflows/site_ci.yml:49-59; .github/workflows/site_r2.yml]
-- Team: solo; no freeze window; owner is sole BCR approver. Cost target: near-zero static hosting.
-- Privacy: no backend, no accounts, no stored personal data — a share link carries its own payload in the URL. Place lookup is a client-side Nominatim fetch (Referer-identified, ~1 req/s); no credentials exist for it. [OBSERVED: docs/product/delivery.md:109-122]
+- **Licenses.** Code is GPL-3.0-only. Hipparcos is public domain. Stellarium lines are CC BY-SA 4.0 (one-way compatible with GPL-3.0, attributed in the footer). Cormorant Garamond (poster) and Inter (interface) are OFL 1.1, bundled. OpenStreetMap data is ODbL, attributed on the map and in the footer. [OBSERVED: THIRD_PARTY_NOTICES.md; site/src/components/SiteFooter.tsx]
+- **Toolchain.** Python ≥ 3.14, Bun, TypeScript native (`tsgo`), React 19, Vite 8, Tailwind 4 and Leaflet (lazy, landing only), pinned in `.tool-versions` and `site/package.json`.
+- **Code rules.** Python is Click plus Polars only, with no server framework in `src/` (CI-enforced). Components may not use raw hex or inline copy (ESLint design rules), and copy must agree with ux-vision (`check_i18n_keys.py`).
+- **Hosting.** R2 free tier. Budgets are 500 KB bundle and 400 KB data, brotli, CI-enforced. Today: 390 KB and 132 KB.
+- **Accessibility.** WCAG 2.2 AA: axe suites, computed contrast, 44 px targets and keyboard-only paths, verified, not assumed.
+- **Browsers.** Chromium and Firefox, plus a mobile viewport (the e2e matrix). WebKit is untested and not claimed.
+- **Compliance.** No regime applies to starsky itself: no backend, no accounts, no stored personal data. Two third parties see the visitor's IP address (Nominatim on search, OSM tiles on the landing map). The landing says so in one line, and nothing is collected by us. Not legal advice.
+- **Integrations and their failures:**
+  - **Nominatim** (search only on explicit submit or leaving the field; per-session cache; at least 1 s between requests). A failure shows inline, and the map and coordinates still work.
+  - **OSM tiles** (visible view only, Referer kept, attribution always visible; ADR-0008). A failure shows in the map box, and search and coordinates still work.
+  - **Hipparcos and Stellarium hosts.** CI retries 3 times, then fails the build without deploying.
+  - **R2.** A failed deploy leaves the previous build serving, because `index.html` uploads last.
+
+  [OBSERVED: site/src/lib/geocode.ts; site/src/lib/landing/; .github/workflows/]
+- **Top risk.** Being blocked by OpenStreetMap. Owner, 2026-11-01: "block is a Bigger no for us". See `architecture.md`, Risks.
+- **Team and cost.** Solo; no freeze window; the owner is the sole BCR approver. Target: near-zero static hosting.
+- **Privacy.** A link carries its own payload in the URL fragment, which never reaches the starsky host. Place text goes only to Nominatim, from the visitor's browser. No credentials exist for either OpenStreetMap service.
 
 ## Metrics
 
-[ASSUMPTION: none defined in repo. Suggest leading: time-to-first-poster on mobile data, Nominatim failure rate, export success rate; lagging: shared-link opens, release cadence. Confirm with owner.]
+[ASSUMPTION: none defined in the repo. Suggested leading metrics: time to first sky on mobile data, Nominatim failure rate, export success rate. Lagging: shared-link opens, release cadence. Confirm with the owner.]
 
 ## Glossary
 
 - Poster — the rendered night-sky image + caption block (PNG raster, SVG/PDF vector). Not: chart, plot. [OBSERVED: site/src/lib/render/poster.ts]
-- Place — free-text location resolved via Nominatim to lat/lon + names. Not: coordinates, search. [OBSERVED: site/src/lib/geocode.ts]
+- Place — a location chosen by search (Nominatim), resolved to lat/lon and a name; a dropped pin or typed coordinates leave the place empty. Not: coordinates, search. [OBSERVED: site/src/lib/geocode.ts; site/src/lib/landing/state.ts]
 - Coordinates — validated lat [-90,90] / lon [-180,180]; rejected, never clamped, in shared links. [OBSERVED: site/src/lib/share.ts:130-134]
-- Viewer — the surface that renders a `#s=` link. The product's resting state. [OBSERVED: site/src/components/ViewerPage.tsx]
-- Studio — the planned build-and-tune surface at `#studio=`; distinct from the Viewer so a draft can never overwrite the canonical artifact. Not built yet. [OBSERVED: docs/product/ux-vision.md:163-171]
+- Viewer — the poster page: renders a `#s=` link as the image and its heading only (BCR-0013), with share, export, explore and "make your own" actions. In the interface: the poster page. [OBSERVED: site/src/components/ViewerPage.tsx]
+- Studio — the Poster Studio at `#studio=`: compose appearance and title, then export or copy a `#s=` link; distinct from the Viewer so a draft can never overwrite the canonical artifact. Built (012). [OBSERVED: site/src/components/studio/StudioPage.tsx]
 - SharePayload — versioned (`v=1`) flat JSON of lat/lon/place/when/tz/options; canonical-JSON → zlib-9 → base64url-no-pad after `#s=`. [OBSERVED: site/src/lib/share.ts:20-29; site/render-spec.json shareLink]
 - RenderOptions — projection, fisheye_strength [0.1,3], min_separation [0,0.05], magnitude_limit [1,7], glow + glow_intensity [0,3], constellations, labels, shape, title; out-of-range shared values are rejected (BCR-0008). In the interface called "Appearance". [OBSERVED: site/src/lib/share.ts:9-18,122-129]
 - Projection — `stereographic` | `fisheye`. Not: mercator. [OBSERVED: site/src/lib/share.ts:5]
-- Shape — `circle` | `square`. [OBSERVED: site/src/lib/share.ts:6]
-- Landing — the choice surface (open a shared sky | map a moment); owns no sky state itself. [OBSERVED: site/src/components/LandingPage.tsx; site/src/App.tsx:18-30]
-- Figure — one constellation drawing (stars + segments + name); selectable via the figure list or canvas hover. [OBSERVED: site/src/lib/skymodel.ts]
+- Shape — `square` | `circle`. A square poster fills the square, inscribed in the horizon (BCR-0014). [OBSERVED: site/src/lib/share.ts; site/src/lib/render/poster.ts]
+- Landing — the location-first front door (013): "Where do you want to explore the sky from?" Place search or coordinates, an always-visible map, title, moment, limiting magnitude; its one action, "Explore this sky", opens the Explorer. Mirrored to `#c=`. [OBSERVED: site/src/components/LandingPage.tsx]
+- Figure — one constellation drawing (stars + segments + name). A star belongs to a constellation only through its figure lines. Selectable in the Explorer's list or on the sky. [OBSERVED: site/src/lib/sky/scene.ts]
 - Caption — the poster text block: `[Title]` + `coords — place · local tz`, drawn from the same formatter the UI speaks. [OBSERVED: site/src/lib/caption.ts]
+- Explorer — the primary surface (BCR-0011): a navigable sky for a place and moment, opened from `#e=`. Not: planetarium app. [added by backend:domain 2026-11-01; site/src/lib/explorer]
+- Explorer link — `#e=` fragment: scene (place, moment, title, limiting magnitude) plus durable view (camera, FOV, layers, selection). [site/src/lib/sky/payload.ts]
+- Creation link — `#c=` fragment: a pre-filled landing form; tolerant per field. [site/src/lib/landing/creation.ts]
+- Studio draft — `#studio=` fragment: the poster being composed; same codec as `#s=`, never overwrites it. The Studio is built (012). [site/src/lib/studio/draft.ts]
+- Scene — the place, moment and title shared between Explorer and poster; composition and camera are not shared. [site/src/lib/scene/convert.ts]
+- Camera — quaternion camera→world plus field of view (5–120°, default 100) in the equatorial frame (ADR-0006). [site/src/lib/sky/camera.ts]
+- Limiting magnitude — faintest star drawn; 1–7 for posters and creation links, wider in `#e=`. Interface label "Limiting magnitude". [site/src/lib/share.ts]
+- Below the horizon — altitude ≤ 0; such objects are never presented as observable. [site/src/lib/sky/observer.ts]
+- Story format — 1080 × 1920 export layout chosen at export time, never stored in a link (BCR-0012). [site/src/lib/render/format.ts]
+- Interface language — `en-US` or `pt-BR` for everything around the poster: the stored choice from the footer switcher, else the browser language (`pt*` gives pt-BR), else en-US. Remembered on this browser only; never in a link. [site/src/i18n/locale.ts]
+- Poster language — the language of the poster's caption date, chosen in the Studio and defaulting to the interface language. Stored in the link as an optional `lang: "pt-BR"`; absent means en-US, so every older link draws the same poster. The visitor's browser never changes it (BCR-0015). Not: interface language. [site/src/lib/share.ts; site/src/lib/caption.ts]
 - Retired: Observation, Gradio app, Python renderer, HF Space (BCR-0001/0003/0005) — must not reappear in UI, API, or docs copy.
 
 ## Open items
 
-- Success metrics unconfirmed (assumed suggestions above).
-- R2 deploy token lacks ListObjects scope — `Site to R2` deploy fails; product serves the 2026-09-18 build until fixed (infra, not scope).
-- `contracts/openapi.yaml` is N/A — no API exists (CLI flags + `#s=` codec are the seams).
+- Success metrics are unconfirmed (assumed suggestions above).
+- `dev` is not yet promoted to `main` (owner rule: "Do not PR into main yet"), so production still serves an older build and nothing is Verified.
+- The R2 deploy token's ListObjects scope (delivery.md, Known gaps).
+- `contracts/openapi.yaml` is N/A, re-verified on 2026-11-01: there is no API. The seams are the CLI JSON, `render-spec.json` and the four link fragments.
 
 ## Decision log
 
-- 2026-10-04: brief refreshed to static-first reality (BCR-0001/0002/0003/0005/0006/0007/0008/0009, ADRs 0001–0005). Removed Gradio app, Python renderer, ephemeris/Skyfield, HF Space, `STARSKY__GEOCODING__USER_AGENT` from every section; promoted P1/P2 audiences from assumption to owner-decided (ux-vision 2026-09-30); tagged capabilities MVP/Next/Later against specs/README.md statuses; retired glossary terms struck. Reason: introspec reconstruction predated the refactor and contradicted the code in every section.
+- 2026-10-04: brief refreshed to the static-first reality (BCR-0001/0002/0003/0005/0006/0007/0008/0009, ADRs 0001–0005). Removed the Gradio app, Python renderer, ephemeris/Skyfield, HF Space and `STARSKY__GEOCODING__USER_AGENT` from every section. Promoted the P1/P2 audiences from assumption to owner-decided (ux-vision 2026-09-30). Tagged capabilities MVP/Next/Later against specs/README.md statuses. Struck the retired glossary terms. Reason: the introspec reconstruction predated the refactor and contradicted the code in every section.
+- 2026-11-01: brief refreshed to the product after BCR-0011 to BCR-0014 and features 009–016, at the owner's request ("update brief"):
+  - The Explorer is primary.
+  - The landing is location-first, with one action.
+  - The Studio is built.
+  - The poster page is image-only.
+  - Square fills the square.
+  - Story export.
+  - Four link fragments.
+  - OpenStreetMap policy compliance is the top risk.
+  - The privacy line was added at the owner's request, then moved to its own page (`#privacy`, linked from the landing map hint) on the owner's request the same day, so it no longer takes a line of the landing.
+
+  The glossary updates Viewer, Studio, Landing, Place, Shape and Figure in place. The domain-model terms were appended the same day.

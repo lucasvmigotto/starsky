@@ -1,8 +1,49 @@
-"""hip_main.dat parser tests (fixed-width, no network)."""
+"""hip_main.dat parser and download tests (fixed-width, no network)."""
 
+from collections.abc import Iterator
+from contextlib import contextmanager
+from hashlib import sha256
+
+from httpx import ConnectTimeout as httpx_ConnectTimeout
+from httpx import Request as httpx_Request
+from httpx import Response as httpx_Response
 from polars import DataFrame as pl_DataFrame
+from pytest import MonkeyPatch, raises
 
-from starsky.data.catalog import parse_hip_main, parse_hip_main_line
+from starsky.data import catalog
+from starsky.data.catalog import (
+    HIPPARCOS_URLS,
+    download_hip_main,
+    parse_hip_main,
+    parse_hip_main_line,
+)
+
+BODY: bytes = b"catalog bytes"
+BODY_SHA256: str = sha256(BODY).hexdigest()
+PRIMARY: str = "https://primary.test/hip_main.dat"
+MIRROR: str = "https://mirror.test/hip_main.dat"
+
+
+def serve(
+    monkeypatch: MonkeyPatch, sources: dict[str, bytes | int | None]
+) -> list[str]:
+    """Fake the network: a body, an HTTP status, or ``None`` for a dead host."""
+    requested: list[str] = []
+
+    @contextmanager
+    def fake_stream(method: str, url: str, **_: object) -> Iterator[httpx_Response]:
+        requested.append(url)
+        source: bytes | int | None = sources[url]
+        request: httpx_Request = httpx_Request(method, url)
+        if source is None:
+            raise httpx_ConnectTimeout("timed out", request=request)
+        if isinstance(source, int):
+            yield httpx_Response(source, request=request)
+        else:
+            yield httpx_Response(200, content=source, request=request)
+
+    monkeypatch.setattr(catalog, "httpx_stream", fake_stream)
+    return requested
 
 
 def make_line(
@@ -41,3 +82,45 @@ def test_parse_frame_skips_short_and_blank() -> None:
     df: pl_DataFrame = parse_hip_main(text)
     assert df.height == 1
     assert df.get_column("hip").to_list() == [1]
+
+
+def test_download_uses_the_first_source_when_it_works(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    requested: list[str] = serve(monkeypatch, {PRIMARY: BODY, MIRROR: BODY})
+    assert download_hip_main((PRIMARY, MIRROR), BODY_SHA256) == BODY.decode()
+    assert requested == [PRIMARY]
+
+
+def test_download_falls_back_when_the_host_is_down(monkeypatch: MonkeyPatch) -> None:
+    requested: list[str] = serve(monkeypatch, {PRIMARY: None, MIRROR: BODY})
+    assert download_hip_main((PRIMARY, MIRROR), BODY_SHA256) == BODY.decode()
+    assert requested == [PRIMARY, MIRROR]
+
+
+def test_download_falls_back_on_an_http_error(monkeypatch: MonkeyPatch) -> None:
+    serve(monkeypatch, {PRIMARY: 503, MIRROR: BODY})
+    assert download_hip_main((PRIMARY, MIRROR), BODY_SHA256) == BODY.decode()
+
+
+def test_download_rejects_a_file_with_the_wrong_checksum(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    requested: list[str] = serve(monkeypatch, {PRIMARY: b"tampered", MIRROR: BODY})
+    assert download_hip_main((PRIMARY, MIRROR), BODY_SHA256) == BODY.decode()
+    assert requested == [PRIMARY, MIRROR]
+
+
+def test_download_raises_naming_every_source_when_all_fail(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    serve(monkeypatch, {PRIMARY: None, MIRROR: b"tampered"})
+    with raises(RuntimeError) as caught:
+        download_hip_main((PRIMARY, MIRROR), BODY_SHA256)
+    assert PRIMARY in str(caught.value)
+    assert MIRROR in str(caught.value)
+
+
+def test_sources_start_with_cds_and_include_a_mirror() -> None:
+    assert "cdsarc.cds.unistra.fr" in HIPPARCOS_URLS[0]
+    assert len(HIPPARCOS_URLS) >= 2

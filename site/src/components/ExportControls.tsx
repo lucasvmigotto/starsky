@@ -17,14 +17,31 @@ import {
   exportPng,
   exportSvg,
 } from "../lib/render/export.ts";
+import type { PosterFormat } from "../lib/render/format.ts";
+import { storyGeometry } from "../lib/render/format.ts";
 import { renderPosterToCanvas } from "../lib/render/poster.ts";
+import { Icon } from "./icons.tsx";
+import { usePopoverStyle } from "./popover.ts";
 
 /** Export size in CSS px (the poster's sky width, matching the CLI's default). */
 export const EXPORT_SIZE_PX = 1600;
 
+/** The story format's own export width: 1080 px, never the standard size. */
+export const STORY_EXPORT_SIZE_PX = storyGeometry().widthPx;
+
+const LAYOUTS: readonly PosterFormat[] = ["standard", "story"];
+
+const LAYOUT_KEYS: Record<PosterFormat, string> = {
+  standard: "viewer.export.layout.standard",
+  story: "viewer.export.layout.story",
+};
+
 interface Props {
   payload: SharePayload;
   model: SkyModel;
+  /** Controlled by the action area, so only one disclosure is open at a time. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 type Format = "png" | "svg" | "pdf";
@@ -47,15 +64,16 @@ function labelOf(format: Format): string {
   return t(LABEL_KEYS[format]);
 }
 
-function safeFilename(payload: SharePayload): string {
+function safeFilename(payload: SharePayload, layout: PosterFormat): string {
   const base = (payload.options.title ?? payload.place ?? "starsky-poster")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  return base.length > 0 ? base : "starsky-poster";
+  const name = base.length > 0 ? base : "starsky-poster";
+  return layout === "story" ? `${name}-story` : name;
 }
 
-export default function ExportControls({ payload, model }: Props) {
+export default function ExportControls({ payload, model, open: controlled, onOpenChange }: Props) {
   const [busy, setBusy] = useState<Format | null>(null);
   const [status, setStatus] = useState<string>("");
   /**
@@ -67,7 +85,14 @@ export default function ExportControls({ payload, model }: Props) {
    * **Never persisted.** The hash is the share payload, so writing "expanded"
    * into it would change what a shared link means. It reverts on reload.
    */
-  const [open, setOpen] = useState(false);
+  const [own, setOwn] = useState(false);
+  const open = controlled ?? own;
+  const setOpen = (next: boolean): void => {
+    setOwn(next);
+    onOpenChange?.(next);
+  };
+  /** Never persisted, like `open`: the layout is chosen at export time (BCR-0012). */
+  const [layout, setLayout] = useState<PosterFormat>("standard");
   const panelId = "export-formats";
   const triggerId = "export-trigger";
 
@@ -76,20 +101,23 @@ export default function ExportControls({ payload, model }: Props) {
     setBusy(format);
     setStatus(t("viewer.export.working"));
     try {
-      const filename = `${safeFilename(payload)}.${format}`;
+      const filename = `${safeFilename(payload, layout)}.${format}`;
+      const sizePx = layout === "story" ? STORY_EXPORT_SIZE_PX : EXPORT_SIZE_PX;
       if (format === "svg") {
-        downloadBlob(exportSvg(payload, model, EXPORT_SIZE_PX), filename);
+        downloadBlob(exportSvg(payload, model, sizePx, layout), filename);
       } else if (format === "pdf") {
         downloadBlob(
-          await exportPdf(payload, model, EXPORT_SIZE_PX),
+          await exportPdf(payload, model, sizePx, layout),
           filename,
         );
       } else {
         const canvas = renderPosterToCanvas(
           payload,
           model,
-          EXPORT_SIZE_PX,
+          sizePx,
           { diskCx: DISK_CX, diskCy: DISK_CY, diskR: DISK_R },
+          1,
+          layout,
         );
         downloadBlob(await exportPng(canvas), filename);
       }
@@ -108,6 +136,9 @@ export default function ExportControls({ payload, model }: Props) {
     }
   };
 
+  const popover = usePopoverStyle(open, triggerId);
+  const label = open ? t("viewer.export.close") : t("viewer.export.open");
+
   return (
     <div className="atlas-export">
       {/*
@@ -118,28 +149,51 @@ export default function ExportControls({ payload, model }: Props) {
       <button
         type="button"
         id={triggerId}
-        className="atlas-export-trigger"
+        className="atlas-btn-icon"
+        aria-label={label}
+        title={label}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => {
-          setOpen((value) => !value);
+          setOpen(!open);
         }}
       >
-        {open ? t("viewer.export.close") : t("viewer.export.open")}
+        <Icon name="download" />
       </button>
 
       <div
         id={panelId}
-        className="atlas-export-actions"
+        className="atlas-popover"
         role="group"
         aria-label={t("viewer.export.formats")}
+        style={popover}
         hidden={!open}
       >
+        <div
+          className="atlas-form-radio-row atlas-export-layout"
+          role="radiogroup"
+          aria-label={t("viewer.export.layout")}
+        >
+          {LAYOUTS.map((value) => (
+            <label key={value} className="atlas-form-radio">
+              <input
+                type="radio"
+                name="export-layout"
+                value={value}
+                checked={layout === value}
+                onChange={() => {
+                  setLayout(value);
+                }}
+              />
+              {t(LAYOUT_KEYS[value])}
+            </label>
+          ))}
+        </div>
         {(["png", "svg", "pdf"] as const).map((format) => (
           <button
             key={format}
             type="button"
-            className="atlas-export-button"
+            className="atlas-btn-ghost"
             onClick={() => {
               void handleExport(format);
             }}
@@ -151,10 +205,10 @@ export default function ExportControls({ payload, model }: Props) {
               : labelOf(format)}
           </button>
         ))}
+        <p className="atlas-export-status" role="status" aria-live="polite">
+          {status}
+        </p>
       </div>
-      <p className="atlas-export-status" role="status" aria-live="polite">
-        {status}
-      </p>
     </div>
   );
 }

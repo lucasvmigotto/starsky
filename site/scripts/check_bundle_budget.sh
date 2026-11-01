@@ -5,7 +5,8 @@
 #   bundle (dist JS+CSS, fonts excluded) > 500 KB
 #   data   (data/*.json)                 > 400 KB
 #
-# Fonts are excluded from the bundle by design: the poster face is a fixed
+# Fonts (*.woff2) are excluded from the bundle sum by design: the poster face
+# and the interface face (Inter, 015) are fixed
 # first-party asset (BCR-0006), not code that grows with features.
 set -euo pipefail
 
@@ -33,15 +34,16 @@ if [ -z "$DATA_DIR" ] || [ -z "$(ls "$DATA_DIR"/*.json 2>/dev/null)" ]; then
 fi
 
 sizes() {
-  bun -e '
+  BUDGET_DIRS="$(IFS=:; echo "$*")" bun -e '
     const { readdirSync, readFileSync, statSync } = require("node:fs");
     const { join } = require("node:path");
     const { brotliCompressSync, constants } = require("node:zlib");
     const files = [];
-    for (const dir of process.argv.slice(2)) {
+    for (const dir of process.env.BUDGET_DIRS.split(":")) {
       let entries = [];
       try { entries = readdirSync(dir); } catch { continue; }
       for (const e of entries) {
+        if (e.endsWith(".woff2")) continue; // fonts are excluded by design
         const p = join(dir, e);
         try { if (statSync(p).isFile()) files.push(p); } catch {}
       }
@@ -53,10 +55,15 @@ sizes() {
       }).length;
     }
     console.log(total);
-  ' "$@"
+  '
 }
 
 bundle=$(sizes "$ROOT/dist/assets")
+# Measuring nothing is a broken check, not a passing one.
+if [ "$bundle" -eq 0 ]; then
+  echo "FAIL: measured 0 bytes in $ROOT/dist/assets" >&2
+  exit 1
+fi
 
 echo "bundle brotli: $((bundle / 1024)) KB (budget $((BUNDLE_BUDGET / 1024)) KB, fonts excluded)"
 
@@ -68,6 +75,10 @@ fi
 
 data=0
 data=$(sizes "$DATA_DIR")
+if [ "$data" -eq 0 ]; then
+  echo "FAIL: measured 0 bytes in $DATA_DIR" >&2
+  exit 1
+fi
 echo "data brotli:   $((data / 1024)) KB (budget $((DATA_BUDGET / 1024)) KB) from $DATA_DIR"
 if [ "$data" -gt "$DATA_BUDGET" ]; then
   echo "FAIL: data $data bytes > budget $DATA_BUDGET bytes" >&2

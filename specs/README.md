@@ -2,11 +2,12 @@ Reconstructed by project:introspec on 2026-09-29; re-scoped by project:refactor 
 
 # Specs — feature index
 
-Status: `002` and `005` are **Implemented** (the CLI data tool ships today).
-`006` is Implemented, `000` is now **Implemented** (built 2026-09-30, reconciled
-2026-10-01), `007` is **Implemented** — exports wired, all FT/QA tasks closed,
-`Site e2e` green on `dev` — and `008` is **In progress** (T002 done, deploy +
-budgets underway). `003` is retired. Nothing is Verified.
+Status: `000`, `002`, `005`, `006`, `007` and `009`–`017` are **Implemented**
+(on `dev`; promotion to `main` is pending). `018` is **Implemented** on its
+branch (`feat/018-pt-br`, #71), and `019` on `feat/019-constellation-tooltip`
+(#74). `008` is **In progress** (T002 done,
+deploy and budgets underway; versioned prefixes, smoke test and drills open).
+`003` is retired. Nothing is Verified.
 
 | # | Feature | Priority | Depends | Frontend | Backend | Notes |
 |---|---|---|---|---|---|---|
@@ -15,8 +16,19 @@ budgets underway). `003` is retired. Nothing is Verified.
 | 003 | — | — | — | — | — | **Retired by BCR-0001** (Gradio removed); see `003-gradio-app/DEPRECATED.md` |
 | 005 | data-cache | P1 | — | N/A | Implemented | Hipparcos + Stellarium → parquet; ephemeris gone (BCR-0005) |
 | 006 | viewer | P1 | 005 | Implemented | N/A | Landing + `#s=` viewer, share codec, place lookup |
-| 007 | renderer-export | P1 | 006 | Implemented | N/A | The browser is the sole renderer (ADR-0003); exports wired, `Site e2e` green on `dev`; reference-regen deferred to 008 (`finding-reference-drift.md`) |
+| 007 | renderer-export | P1 | 006 | Implemented | N/A | The browser is the sole renderer (ADR-0003); exports wired, `Site e2e` green on `main`; reference-regen deferred to 008 (`finding-reference-drift.md`) |
 | 008 | site-delivery | P1 | 006, 007 | In progress | N/A | R2-only deploy, font bundling, budgets, fitness functions; T002 done |
+| 009 | sky-domain | P1 | 005 | Implemented | N/A | Camera, observer, scene, `#e=`, star names, measured precision (BCR-0011, ADR-0006) |
+| 010 | explorer-canvas | P1 | 009 | Implemented | N/A | Canvas 2D renderer, navigation, selection behind `#e=` (ADR-0007) |
+| 011 | explorer-ui | P1 | 010 | Implemented | N/A | Inspector, search, adaptive metadata, toolbar, layers, responsive layout, live link |
+| 012 | poster-studio | P1 | 011 | Implemented | N/A | Studio surface, Explorer and Viewer links, 9:16 export (BCR-0011, BCR-0012) |
+| 014 | explorer-polish | P1 | 012 | Implemented | N/A | Idle collapse, horizon list, copy icon, star tooltip, brighter stars, controls, panel tab, rounder corners (lands before 013) |
+| 015 | visual-identity | P1 | 014 | Implemented | N/A | Bundled UI font, icon buttons, sliding panel, image-only poster page, one layout language (BCR-0013; lands before 013) |
+| 013 | location-first | P1 | 015 | Implemented | N/A | Map-first landing: search, lazy Leaflet map, coordinates, moment, opens the Explorer, `#c=` link; Studio on one screen (ADR-0008) |
+| 016 | square-fill | P1 | 013 | Implemented | N/A | Square poster fills the square, inscribed in the horizon (BCR-0014) |
+| 017 | hardening | P1 | 009–016 | Implemented | N/A | Accessibility, failure, performance, stability, strict indexing, docs (#55) |
+| 018 | pt-br | P1 | 017 | Implemented | N/A | Brazilian Portuguese interface; poster language chosen by the creator and stored in the link (#71, BCR-0015) |
+| 019 | constellation-tooltip | P2 | 014, 018 | Implemented | N/A | Constellation hover tooltip (name, count, top named stars) and the figure star list in the inspector (#74) |
 
 ## Removed features
 
@@ -31,6 +43,14 @@ budgets underway). `003` is retired. Nothing is Verified.
 - **Implemented** — the code path exists and runs (evidence in the feature).
 - **Verified** — e2e tests pass in CI. Nothing is Verified yet.
 
-`contracts/openapi.yaml` remains **N/A** — the architecture has no API
-(ADR-0001). The seams are `render-spec.json`, the `#s=` share payload, and the
-exported JSON shapes documented in `002-catalog-cli/contracts/seam.md`.
+`contracts/openapi.yaml` remains **N/A**, re-verified 2026-11-01: the
+architecture has no API (ADR-0001), the repo has no server route, and the only
+outbound calls are to third-party OpenStreetMap services (Nominatim, tiles;
+ADR-0008), which we consume and don't define. `asyncapi.yaml` is N/A too, since
+no events leave the browser. The seams are:
+
+- `render-spec.json`, the poster render contract.
+- The four versioned URL fragments, `#s=`, `#studio=`, `#e=` and `#c=`, whose
+  invariants are in `docs/product/domain-model.md` (Links context).
+- The exported JSON shapes (`catalog.json`, `constellations.json`,
+  `names.json`) documented in `002-catalog-cli/contracts/seam.md`.

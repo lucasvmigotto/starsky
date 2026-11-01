@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install uv
         uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
@@ -64,6 +64,7 @@ jobs:
           uv run python -m starsky catalog --output-dir /tmp/starsky-data
           test -s /tmp/starsky-data/catalog.json
           test -s /tmp/starsky-data/constellations.json
+          test -s /tmp/starsky-data/names.json
           uv run python - <<'PY'
           import json
           from pathlib import Path
@@ -73,5 +74,8 @@ jobs:
           assert len(stars) > 8000, len(stars)
           assert len(segs) > 500, len(segs)
           assert len(stars[0]) == 4 and len(segs[0]) == 4
-          print(f"ok: {len(stars)} stars, {len(segs)} segments")
+          names = json.loads(Path("/tmp/starsky-data/names.json").read_text())["names"]
+          assert len(names) > 100, len(names)
+          assert [32349, "Sirius"] in names, "Sirius (HIP 32349) missing"
+          print(f"ok: {len(stars)} stars, {len(segs)} segments, {len(names)} names")
           PY

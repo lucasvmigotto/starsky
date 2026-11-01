@@ -2,6 +2,8 @@
  * Normative visual tokens mirrored from `site/render-spec.json`.
  * Change both together; `src/tests/spec.test.ts` guards against drift.
  */
+const SQUARE_FILL: string = "inscribed";
+
 export const SPEC = {
   units: {
     referenceDpi: 150,
@@ -30,12 +32,18 @@ export const SPEC = {
   shape: {
     ringWidth: 2.0,
     ringAlpha: 0.9,
+    square: {
+      fill: SQUARE_FILL,
+    },
   },
   caption: {
     bandFraction: 0.22,
     titleFontSize: 17,
     detailFontSize: 10.5,
     singleCaptionFontSize: 11,
+  },
+  formats: {
+    story: { widthPx: 1080, heightPx: 1920 },
   },
   shareLink: {
     fragmentParam: "s",

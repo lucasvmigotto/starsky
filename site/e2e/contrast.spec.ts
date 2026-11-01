@@ -11,7 +11,7 @@
  * applies the WCAG relative-luminance formula. Disabling axe's rule without
  * this replacement would hide genuine regressions.
  */
-import { expect, fragmentFor, test, viewerUrl } from "./fixtures.ts";
+import { SIRIUS, expect, explorerUrl, fragmentFor, studioUrl, test, viewerUrl, wakeChrome } from "./fixtures.ts";
 
 /** WCAG 2.x relative luminance. */
 function luminance([r, g, b]: [number, number, number]): number {
@@ -65,11 +65,10 @@ async function sample(
       ctx.fillRect(0, 0, 1, 1);
       ctx.fillStyle = css;
       ctx.fillRect(0, 0, 1, 1);
-      const data = ctx.getImageData(0, 0, 1, 1).data;
-      return {
-        rgb: [data[0], data[1], data[2]],
-        alpha: data[3] / 255,
-      };
+      // Runs in the browser: Node-side helpers (`at` from testing.ts) do
+      // not exist here, so destructure with defaults instead.
+      const [r = 0, g = 0, b = 0, a = 0] = ctx.getImageData(0, 0, 1, 1).data;
+      return { rgb: [r, g, b], alpha: a / 255 };
     };
 
     const results: Sample[] = [];
@@ -104,11 +103,13 @@ async function sample(
   }, selectors);
 }
 
+// The Viewer is the heading and the image since BCR-0013: no figures panel, so
+// the pairs are the heading, its detail line, the buttons and the footer.
 const VIEWER_TEXT = [
-  "h2",
-  ".text-cream\\/60",
-  ".atlas-figure span:first-child",
-  ".atlas-figure span:last-child",
+  ".atlas-moment p:first-child",
+  ".atlas-moment p + p",
+  ".atlas-footer-meta",
+  ".atlas-footer",
 ];
 
 test.describe("contrast (WCAG 2.2 AA)", () => {
@@ -137,15 +138,23 @@ test.describe("contrast (WCAG 2.2 AA)", () => {
     expect(failures.join("\n")).toBe("");
   });
 
-  test("landing form text meets 4.5:1", async ({ page }) => {
+  test("landing text meets 4.5:1", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("button", { name: /show my sky/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /explore this sky/i })).toBeVisible();
+    // The coordinates replace the search when the switch is on; measure them too.
+    await page.getByRole("switch", { name: "Coordinates" }).click();
+    await page.getByLabel("Latitude").fill("95");
 
     const samples = await sample(page, [
       "label[for='landing-lat']",
+      "label[for='landing-when']",
       ".atlas-form-hint",
+      ".landing-selected-name",
+      ".landing-selected-coords",
+      ".atlas-form-error",
+      "h1",
     ]);
-    expect(samples.length).toBeGreaterThanOrEqual(1);
+    expect(samples.length).toBeGreaterThanOrEqual(5);
 
     const failures: string[] = [];
     for (const s of samples) {
@@ -159,5 +168,79 @@ test.describe("contrast (WCAG 2.2 AA)", () => {
       }
     }
     expect(failures.join("\n")).toBe("");
+  });
+
+  /** Assert each resolved pair clears 4.5:1 (3:1 for large text). */
+  async function expectReadable(
+    page: import("@playwright/test").Page,
+    selectors: string[],
+    minimum: number,
+  ): Promise<void> {
+    const samples = await sample(page, selectors);
+    expect(samples.length, "the selectors must resolve").toBeGreaterThanOrEqual(minimum);
+    const failures: string[] = [];
+    for (const s of samples) {
+      const ratio = contrast(s.fg, s.bg);
+      const large = s.fontSizePx >= 24 || (s.bold && s.fontSizePx >= 18.66);
+      const required = large ? 3 : 4.5;
+      if (ratio < required) {
+        failures.push(`${s.selector}: ${ratio.toFixed(2)}:1 (needs ${required.toString()}:1)`);
+      }
+    }
+    expect(failures.join("\n")).toBe("");
+  }
+
+  // 015: the pairs the shared identity added or moved. Header name on the page,
+  // ghost-button text on the panel surface, hints and legends on the panel, and
+  // the Explorer's panel text on its solid surface.
+  test("the shared header, buttons and panel text meet 4.5:1 in the Viewer", async ({ page }) => {
+    await page.goto(viewerUrl(fragmentFor()));
+    await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
+    await expectReadable(
+      page,
+      [".atlas-site-name", ".atlas-footer-meta", ".atlas-footer", ".atlas-footer a"],
+      3,
+    );
+  });
+
+  test("the footer popovers' text meets 4.5:1", async ({ page }) => {
+    await page.goto(viewerUrl(fragmentFor()));
+    await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
+    await page.locator("#share-trigger").click();
+    await expectReadable(page, ["#share-details .atlas-form-hint", "#share-details .atlas-btn-ghost"], 2);
+    await page.locator("#export-trigger").click();
+    await expectReadable(page, ["#export-formats .atlas-form-radio", "#export-formats .atlas-btn-ghost"], 2);
+  });
+
+  test("the shared header, buttons, panel, hints and legends meet 4.5:1 in the Studio", async ({ page }) => {
+    await page.goto(studioUrl(fragmentFor()));
+    await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
+    await expectReadable(
+      page,
+      [
+        ".atlas-site-name",
+        "fieldset.atlas-panel > legend",
+        "fieldset.atlas-panel .atlas-form-hint",
+        ".atlas-form-label",
+        ".atlas-form-input",
+        ".atlas-form-value",
+        ".atlas-form-check",
+      ],
+      6,
+    );
+  });
+
+  test("the Explorer's panel text meets 4.5:1", async ({ page }) => {
+    await page.goto(explorerUrl(SIRIUS, { sel: "HIP:32349" }));
+    await expect(page.getByRole("img", { name: /sky map/i })).toHaveAttribute("data-frames", /^[1-9]\d*$/);
+    await wakeChrome(page);
+    test.skip((page.viewportSize()?.width ?? 0) < 768, "the sheet is covered by the explorer specs");
+    if (!(await page.locator("#explorer-inspector-body").isVisible())) await page.locator(".explorer-tab").click();
+    await expect(page.locator("#explorer-inspector-body")).toBeVisible();
+    await expectReadable(
+      page,
+      [".explorer-kind", ".explorer-list-item span", ".explorer-inspector .atlas-btn-ghost", ".explorer-fact dt", ".explorer-fact dd"],
+      4,
+    );
   });
 });

@@ -9,7 +9,10 @@ renders:
   reference in `site/src/lib/render/__references__/`.
 
 Inputs per case: `id`, `lat`, `lon`, `place`, `when_utc` (ISO-8601 UTC), `tz`,
-`options`, `size_px`, `expected`.
+`options`, `size_px`, `expected`, an optional `format` (`"story"` renders the
+1080 × 1920 story format, BCR-0012; absent means the standard poster), and an
+optional `lang` (`"pt-BR"` draws the caption date in Portuguese, BCR-0015;
+absent means en-US, exactly as in a link).
 
 This file was the browser↔CLI *parity* matrix while two renderers existed. The
 Python renderer was removed (BCR-0005), so "parity" is gone; what remains is the
@@ -91,6 +94,40 @@ deliberately, regenerate the references with
       "options": {"magnitude_limit": 3.5, "glow_intensity": 2.0},
       "size_px": 320,
       "expected": {"stars": 143, "segments": 120, "figures": 20}
+    },
+    {
+      "id": "nyc-newyear-story",
+      "format": "story",
+      "lat": 40.758,
+      "lon": -73.9855,
+      "place": "Times Square",
+      "when_utc": "2026-01-01T00:00:00Z",
+      "tz": "America/New_York",
+      "options": {"magnitude_limit": 4.5, "shape": "circle", "title": "New Year"},
+      "size_px": 1080,
+      "expected": {
+        "stars": 428,
+        "segments": 330,
+        "figures": 38,
+        "caption": "40.7580°N, 73.9855°W — Times Square · Dec 31, 2025, 7:00 PM America/New_York"
+      }
+    },
+    {
+      "id": "sao-paulo-ptbr-caption",
+      "lang": "pt-BR",
+      "lat": -23.5505,
+      "lon": -46.6333,
+      "place": "São Paulo",
+      "when_utc": "2025-06-24T23:30:00Z",
+      "tz": "America/Sao_Paulo",
+      "options": {"magnitude_limit": 4.5, "shape": "circle", "title": "Noite de São João"},
+      "size_px": 320,
+      "expected": {
+        "stars": 463,
+        "segments": 348,
+        "figures": 46,
+        "caption": "23.5505°S, 46.6333°W — São Paulo · 24 de jun. de 2025, 20:30 America/Sao_Paulo"
+      }
     }
   ]
 }
