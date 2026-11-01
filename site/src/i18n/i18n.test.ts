@@ -134,6 +134,8 @@ describe("copy", () => {
     // (`landing.render.projection`, `.shape`, `.shape.square`, `.shape.circle`,
     // `.glowToggle`); and the share summary (`viewer.share.summary`,
     // `.projection.stereographic`, `.projection.fisheye`).
-    expect(copyKeys().length).toBe(227);
+    // 227 → 233 for the constellation tooltip and star list (019): `explorer.tooltip.constellation`,
+    // `.constellationOne`, `.namedMore` and `explorer.members.title`, `.detail`, `.detailBelow`.
+    expect(copyKeys().length).toBe(233);
   });
 });
