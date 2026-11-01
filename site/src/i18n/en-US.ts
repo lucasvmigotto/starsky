@@ -48,6 +48,9 @@ export const enUS = {
   "landing.map.chunkFailed": "The map could not be loaded. Search still works, or turn on Coordinates to type a place.",
   "landing.search.label": "Search for a place",
   "landing.search.placeholder": "City, address or landmark",
+  "landing.privacy": "Place search and the map come from {osm}, which sees your IP address. starsky stores nothing.",
+  "landing.privacy.osm": "OpenStreetMap",
+  "landing.search.submit": "Search",
   "landing.search.credit": "Search by Nominatim",
   "landing.search.listLabel": "Matching places",
   "landing.search.searching": "Searching…",
@@ -160,7 +163,7 @@ export const enUS = {
 
   "footer.version": "starsky@v{version}",
   "footer.attribution":
-    "Stars: Hipparcos, JPL · Lines: Stellarium (CC BY-SA 4.0) · Places: © OpenStreetMap contributors",
+    "Stars: Hipparcos · Lines and names: Stellarium (CC BY-SA 4.0) · Map and places: © OpenStreetMap contributors",
 
   "explorer.heading": "Sky Explorer",
   "explorer.loading": "Charting the stars…",

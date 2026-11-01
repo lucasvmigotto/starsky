@@ -8,7 +8,7 @@
  * renamed `starsky-site` → `starsky` so the name printed here and the package
  * name are the same string.
  *
- * Attribution is legal text (Hipparcos/JPL public domain, Stellarium CC
+ * Attribution is legal text (Hipparcos public domain, Stellarium CC
  * BY-SA4.0, Nominatim © OpenStreetMap contributors) and is deliberately **not**
  * translated or abbreviated.
  */

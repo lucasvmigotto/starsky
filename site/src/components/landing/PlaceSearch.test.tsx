@@ -28,7 +28,6 @@ function mount(result: ResolvedPlace[] | Error, fieldText = ""): Harness {
   render(
     <PlaceSearch
       fieldText={fieldText}
-      debounceMs={5}
       search={(query, signal) => {
         h.queries.push(query);
         h.signals.push(signal);
@@ -46,6 +45,14 @@ function type(text: string): void {
   fireEvent.change(input(), { target: { value: text } });
 }
 
+const searchButton = () => screen.getByRole("button", { name: "Search" });
+
+/** Type, then press the search button. */
+function typeAndSearch(text: string): void {
+  type(text);
+  fireEvent.click(searchButton());
+}
+
 describe("PlaceSearch", () => {
   it("is a combobox tied to a listbox, closed at first", () => {
     mount([PARIS]);
@@ -54,10 +61,11 @@ describe("PlaceSearch", () => {
     expect(screen.queryByRole("listbox")).toBeNull();
   });
 
-  it("searches after the pause, lists the results and announces the count", async () => {
+  it("typing sends nothing; the button searches, lists the results and announces the count", async () => {
     const h = mount([PARIS, PARIS_TX]);
     type("paris");
     expect(h.queries).toHaveLength(0);
+    fireEvent.click(searchButton());
     await waitFor(() => {
       expect(screen.getAllByRole("option")).toHaveLength(2);
     });
@@ -67,9 +75,71 @@ describe("PlaceSearch", () => {
     expect(screen.getByRole("status").textContent).toBe("2 places found. Use the arrow keys to choose one.");
   });
 
+  it("leaving the field with new text searches once", () => {
+    const h = mount([PARIS]);
+    type("paris");
+    fireEvent.blur(input());
+    expect(h.queries).toEqual(["paris"]);
+    fireEvent.blur(input());
+    expect(h.queries).toEqual(["paris"]);
+  });
+
+  it("leaving the field with empty, unchanged or chosen text searches nothing", () => {
+    const h = mount([PARIS], "Paris, France");
+    fireEvent.blur(input());
+    type("  ");
+    fireEvent.blur(input());
+    type("paris, france");
+    fireEvent.blur(input());
+    expect(h.queries).toHaveLength(0);
+  });
+
+  it("blur after a button search sends nothing extra", () => {
+    const h = mount([PARIS]);
+    typeAndSearch("paris");
+    fireEvent.blur(input());
+    expect(h.queries).toEqual(["paris"]);
+  });
+
+  it("blur after choosing a result, or towards the button, sends nothing", async () => {
+    const h = mount([PARIS]);
+    typeAndSearch("paris");
+    await waitFor(() => {
+      expect(screen.getAllByRole("option")).toHaveLength(1);
+    });
+    fireEvent.click(screen.getAllByRole("option")[0]);
+    fireEvent.blur(input());
+    type("rome");
+    fireEvent.blur(input(), { relatedTarget: searchButton() });
+    expect(h.queries).toEqual(["paris"]);
+  });
+
+  it("has a search button named and titled Search", () => {
+    mount([PARIS]);
+    expect(searchButton().getAttribute("title")).toBe("Search");
+    expect(searchButton().className).toContain("atlas-btn-icon");
+  });
+
+  it("the button with an empty field searches nothing", () => {
+    const h = mount([PARIS]);
+    fireEvent.click(searchButton());
+    expect(h.queries).toHaveLength(0);
+  });
+
+  it("typing after results closes the list", async () => {
+    mount([PARIS]);
+    typeAndSearch("paris");
+    await waitFor(() => {
+      expect(screen.getAllByRole("option")).toHaveLength(1);
+    });
+    type("parisx");
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(screen.getByRole("status").textContent).toBe("");
+  });
+
   it("announces a single result with its own wording", async () => {
     mount([PARIS]);
-    type("paris");
+    typeAndSearch("paris");
     await waitFor(() => {
       expect(screen.getByRole("status").textContent).toBe("1 place found. Use the arrow keys to choose it.");
     });
@@ -77,7 +147,7 @@ describe("PlaceSearch", () => {
 
   it("moves with the arrow keys and chooses with Enter", async () => {
     const h = mount([PARIS, PARIS_TX]);
-    type("paris");
+    typeAndSearch("paris");
     await waitFor(() => {
       expect(screen.getAllByRole("option")).toHaveLength(2);
     });
@@ -95,7 +165,7 @@ describe("PlaceSearch", () => {
 
   it("wraps around at both ends", async () => {
     mount([PARIS, PARIS_TX]);
-    type("paris");
+    typeAndSearch("paris");
     await waitFor(() => {
       expect(screen.getAllByRole("option")).toHaveLength(2);
     });
@@ -105,7 +175,7 @@ describe("PlaceSearch", () => {
 
   it("chooses on a click", async () => {
     const h = mount([PARIS, PARIS_TX]);
-    type("paris");
+    typeAndSearch("paris");
     await waitFor(() => {
       expect(screen.getAllByRole("option")).toHaveLength(2);
     });
@@ -125,7 +195,7 @@ describe("PlaceSearch", () => {
 
   it("Escape closes the list and keeps the text", async () => {
     mount([PARIS]);
-    type("paris");
+    typeAndSearch("paris");
     await waitFor(() => {
       expect(screen.getAllByRole("option")).toHaveLength(1);
     });
@@ -137,7 +207,7 @@ describe("PlaceSearch", () => {
 
   it("says so when nothing matches, and points to the map and coordinates", async () => {
     mount([]);
-    type("zzzzz");
+    typeAndSearch("zzzzz");
     await waitFor(() => {
       expect(screen.getByRole("status").textContent).toContain("No place found for “zzzzz”");
     });
@@ -146,7 +216,7 @@ describe("PlaceSearch", () => {
 
   it("says so, politely, when the service fails, and the field keeps working", async () => {
     mount(new Error("HTTP 503"));
-    type("paris");
+    typeAndSearch("paris");
     await waitFor(() => {
       expect(screen.getByRole("status").textContent).toBe(
         "Place search is unavailable right now. Use the map or coordinates instead.",
@@ -163,8 +233,7 @@ describe("PlaceSearch", () => {
     render(
       <PlaceSearch
         fieldText=""
-        debounceMs={5}
-        search={(query, signal) => {
+          search={(query, signal) => {
           h.queries.push(query);
           h.signals.push(signal);
           return new Promise<ResolvedPlace[]>(() => undefined);
@@ -172,7 +241,7 @@ describe("PlaceSearch", () => {
         onChoose={() => undefined}
       />,
     );
-    type("paris");
+    typeAndSearch("paris");
     await waitFor(() => {
       expect(h.signals).toHaveLength(1);
     });
@@ -182,10 +251,10 @@ describe("PlaceSearch", () => {
 
   it("follows the page when the place changes elsewhere", () => {
     const { rerender } = render(
-      <PlaceSearch fieldText="Paris" debounceMs={5} search={() => Promise.resolve([])} onChoose={() => undefined} />,
+      <PlaceSearch fieldText="Paris" search={() => Promise.resolve([])} onChoose={() => undefined} />,
     );
     expect((input() as HTMLInputElement).value).toBe("Paris");
-    rerender(<PlaceSearch fieldText="" debounceMs={5} search={() => Promise.resolve([])} onChoose={() => undefined} />);
+    rerender(<PlaceSearch fieldText="" search={() => Promise.resolve([])} onChoose={() => undefined} />);
     expect((input() as HTMLInputElement).value).toBe("");
   });
 });

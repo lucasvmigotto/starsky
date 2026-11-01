@@ -1,10 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import type { ResolvedPlace } from "../geocode.ts";
-import { type SearchState, createSearchController } from "./search.ts";
+import { SEARCH_MIN_INTERVAL_MS, type SearchState, createSearchController } from "./search.ts";
 
 const PARIS: ResolvedPlace = { lat: 48.85, lon: 2.35, displayName: "Paris, France", short: "Paris, France" };
 
-/** Timers the test fires by hand, so no real waiting. */
+/** Timers the test fires by hand, and a clock it advances by hand: no real waiting. */
 function fakeTimers() {
   const pending = new Map<number, { fn: () => void; ms: number }>();
   let next = 1;
@@ -33,10 +33,11 @@ interface Call {
   reject: (e: unknown) => void;
 }
 
-function setup(minLength?: number) {
+function setup() {
   const timers = fakeTimers();
   const calls: Call[] = [];
   const states: SearchState[] = [];
+  const clock = { t: 10_000 };
   const controller = createSearchController({
     search: (query, signal) =>
       new Promise<ResolvedPlace[]>((resolve, reject) => {
@@ -44,9 +45,9 @@ function setup(minLength?: number) {
       }),
     onState: (s) => states.push(s),
     timers: { set: timers.set, clear: timers.clear },
-    ...(minLength === undefined ? {} : { minLength }),
+    now: () => clock.t,
   });
-  return { controller, timers, calls, states };
+  return { controller, timers, calls, states, clock };
 }
 
 function last<T>(items: T[]): T | undefined {
@@ -56,108 +57,177 @@ function last<T>(items: T[]): T | undefined {
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
 
 describe("search controller", () => {
-  it("waits 400 ms after the last keystroke", () => {
-    const { controller, timers, calls } = setup();
-    controller.input("par");
-    controller.input("pari");
-    expect(timers.count()).toBe(1);
-    expect(timers.lastDelay()).toBe(400);
-    expect(calls).toHaveLength(0);
-    timers.fire();
-    expect(calls.map((c) => c.query)).toEqual(["pari"]);
-  });
-
-  it("does not search below the minimum length, and goes idle", () => {
+  it("typing sends nothing, sets no timer, and goes idle", () => {
     const { controller, timers, calls, states } = setup();
-    controller.input("pa");
-    expect(timers.count()).toBe(0);
+    controller.input();
+    controller.input();
     expect(calls).toHaveLength(0);
+    expect(timers.count()).toBe(0);
     expect(last(states)).toEqual({ status: "idle" });
   });
 
-  it("reports loading, then results", async () => {
-    const { controller, timers, calls, states } = setup();
-    controller.input("paris");
-    timers.fire();
+  it("typing aborts the request in flight and returns to idle", async () => {
+    const { controller, calls, states } = setup();
+    controller.submit("paris");
+    const first = calls[0];
+    expect(first.signal.aborted).toBe(false);
+    controller.input();
+    expect(first.signal.aborted).toBe(true);
+    expect(last(states)).toEqual({ status: "idle" });
+    // The aborted request settling late must not overwrite the state.
+    first.reject(new DOMException("aborted", "AbortError"));
+    await tick();
+    expect(last(states)).toEqual({ status: "idle" });
+  });
+
+  it("typing closes a stale results list", async () => {
+    const { controller, calls, states } = setup();
+    controller.submit("paris");
+    calls[0]?.resolve([PARIS]);
+    await tick();
+    expect(last(states)?.status).toBe("results");
+    controller.input();
+    expect(last(states)).toEqual({ status: "idle" });
+  });
+
+  it("submit searches once, reporting loading then results", async () => {
+    const { controller, calls, states } = setup();
+    controller.submit("  paris ");
+    expect(calls.map((c) => c.query)).toEqual(["paris"]);
     expect(last(states)).toEqual({ status: "loading", query: "paris" });
-    calls[0].resolve([PARIS]);
+    calls[0]?.resolve([PARIS]);
     await tick();
     expect(last(states)).toEqual({ status: "results", query: "paris", results: [PARIS] });
   });
 
+  it("submit with only spaces asks for nothing", () => {
+    const { controller, calls, states } = setup();
+    controller.submit("  ");
+    expect(calls).toHaveLength(0);
+    expect(states).toHaveLength(0);
+  });
+
   it("reports empty for no matches and error for a failure", async () => {
-    const { controller, timers, calls, states } = setup();
-    controller.input("zzzz");
-    timers.fire();
-    calls[0].resolve([]);
+    const { controller, calls, states, clock } = setup();
+    controller.submit("zzzz");
+    calls[0]?.resolve([]);
     await tick();
     expect(last(states)).toEqual({ status: "empty", query: "zzzz" });
-    controller.input("boom");
-    timers.fire();
-    calls[1].reject(new Error("HTTP 500"));
+    clock.t += SEARCH_MIN_INTERVAL_MS;
+    controller.submit("boom");
+    calls[1]?.reject(new Error("HTTP 500"));
     await tick();
     expect(last(states)).toEqual({ status: "error", query: "boom" });
   });
 
-  it("aborts the request in flight when the text changes", async () => {
-    const { controller, timers, calls, states } = setup();
-    controller.input("paris");
-    timers.fire();
-    const first = calls[0];
-    expect(first.signal.aborted).toBe(false);
-    controller.input("parisx");
-    expect(first.signal.aborted).toBe(true);
-    // The aborted request settling late must not overwrite the state.
-    first.reject(new DOMException("aborted", "AbortError"));
+  it("a repeated submit answers from the cache with no request, even inside the window", async () => {
+    const { controller, calls, states, timers } = setup();
+    controller.submit("Paris");
+    calls[0]?.resolve([PARIS]);
     await tick();
-    expect(states.some((s) => s.status === "error")).toBe(false);
-  });
-
-  it("ignores a late answer from a superseded request", async () => {
-    const { controller, timers, calls, states } = setup();
-    controller.input("paris");
-    timers.fire();
-    controller.input("london");
-    timers.fire();
-    calls[0].resolve([PARIS]);
-    await tick();
-    expect(last(states)).toEqual({ status: "loading", query: "london" });
-  });
-
-  it("submit searches at once, without the wait", () => {
-    const { controller, timers, calls } = setup();
-    controller.input("paris");
-    controller.submit("paris");
+    controller.submit(" paris  ");
+    expect(calls).toHaveLength(1);
     expect(timers.count()).toBe(0);
-    expect(calls.map((c) => c.query)).toEqual(["paris"]);
+    expect(last(states)).toEqual({ status: "results", query: "paris", results: [PARIS] });
   });
 
-  it("submit with too little text asks for nothing", () => {
-    const { controller, calls } = setup();
-    controller.submit("  ");
-    expect(calls).toHaveLength(0);
+  it("caches an empty answer too", async () => {
+    const { controller, calls, states } = setup();
+    controller.submit("zzzz");
+    calls[0]?.resolve([]);
+    await tick();
+    controller.submit("ZZZZ");
+    expect(calls).toHaveLength(1);
+    expect(last(states)).toEqual({ status: "empty", query: "ZZZZ" });
   });
 
-  it("cancel aborts, clears the timer and returns to idle", () => {
-    const { controller, timers, calls, states } = setup();
-    controller.input("paris");
+  it("does not cache an error: the same query is requested again", async () => {
+    const { controller, calls, clock } = setup();
+    controller.submit("paris");
+    calls[0]?.reject(new Error("HTTP 503"));
+    await tick();
+    clock.t += SEARCH_MIN_INTERVAL_MS;
+    controller.submit("paris");
+    expect(calls).toHaveLength(2);
+  });
+
+  it("a second submit within a second waits for the rest of the window, and aborts the first", () => {
+    const { controller, calls, timers, states, clock } = setup();
+    controller.submit("paris");
+    clock.t += 300;
+    controller.submit("london");
+    expect(calls[0]?.signal.aborted).toBe(true);
+    expect(calls).toHaveLength(1);
+    expect(timers.lastDelay()).toBe(SEARCH_MIN_INTERVAL_MS - 300);
+    expect(last(states)).toEqual({ status: "loading", query: "london" });
+    clock.t += 700;
     timers.fire();
-    controller.input("parisx");
-    controller.cancel();
-    expect(calls[0].signal.aborted).toBe(true);
+    expect(calls.map((c) => c.query)).toEqual(["paris", "london"]);
+  });
+
+  it("a newer submit supersedes one that is still waiting", () => {
+    const { controller, calls, timers, clock } = setup();
+    controller.submit("paris");
+    clock.t += 100;
+    controller.submit("london");
+    clock.t += 100;
+    controller.submit("rome");
+    expect(timers.count()).toBe(1);
+    clock.t += 800;
+    timers.fire();
+    expect(calls.map((c) => c.query)).toEqual(["paris", "rome"]);
+  });
+
+  it("typing during the wait cancels it", () => {
+    const { controller, calls, timers, states, clock } = setup();
+    controller.submit("paris");
+    clock.t += 100;
+    controller.submit("london");
+    controller.input();
     expect(timers.count()).toBe(0);
     expect(last(states)).toEqual({ status: "idle" });
+    clock.t += 2000;
+    timers.fire();
+    expect(calls).toHaveLength(1);
+  });
+
+  it("cancel during the wait stops the pending request and goes idle", () => {
+    const { controller, calls, timers, states, clock } = setup();
+    controller.submit("paris");
+    clock.t += 100;
+    controller.submit("london");
+    controller.cancel();
+    expect(timers.count()).toBe(0);
+    expect(last(states)).toEqual({ status: "idle" });
+    expect(calls).toHaveLength(1);
+  });
+
+  it("a late answer from a superseded request is ignored and not cached", async () => {
+    const { controller, calls, states, clock } = setup();
+    controller.submit("paris");
+    clock.t += SEARCH_MIN_INTERVAL_MS;
+    controller.submit("london");
+    calls[0]?.resolve([PARIS]);
+    await tick();
+    expect(last(states)).toEqual({ status: "loading", query: "london" });
+    clock.t += SEARCH_MIN_INTERVAL_MS;
+    controller.submit("paris");
+    expect(calls).toHaveLength(3);
   });
 
   it("dispose stops everything without reporting", () => {
-    const { controller, timers, calls, states } = setup();
-    controller.input("paris");
-    timers.fire();
+    const { controller, timers, calls, states, clock } = setup();
+    controller.submit("paris");
+    clock.t += 100;
+    controller.submit("london");
     const seen = states.length;
     controller.dispose();
-    expect(calls[0].signal.aborted).toBe(true);
-    expect(states).toHaveLength(seen);
-    controller.input("again");
+    expect(calls[0]?.signal.aborted).toBe(true);
     expect(timers.count()).toBe(0);
+    expect(states).toHaveLength(seen);
+    controller.input();
+    controller.submit("again");
+    expect(calls).toHaveLength(1);
+    expect(states).toHaveLength(seen);
   });
 });

@@ -31,6 +31,7 @@ test.describe("J4 place lookup", () => {
 
     await startLanding(page);
     await page.getByRole("combobox", { name: SEARCH }).fill("Eiffel Tower");
+    await page.getByRole("button", { name: "Search", exact: true }).click();
     await page.getByRole("option").first().click();
     await page.getByRole("button", { name: "Explore this sky" }).click();
 
@@ -44,6 +45,7 @@ test.describe("J4 place lookup", () => {
 
     await startLanding(page);
     await page.getByRole("combobox", { name: SEARCH }).fill("Nowhere At All");
+    await page.getByRole("button", { name: "Search", exact: true }).click();
 
     await expect(
       page.getByRole("status").filter({ hasText: "Place search is unavailable right now." }),
@@ -59,6 +61,7 @@ test.describe("J4 place lookup", () => {
 
     await startLanding(page);
     await page.getByRole("combobox", { name: SEARCH }).fill("Nowhere At All");
+    await page.getByRole("button", { name: "Search", exact: true }).click();
 
     await expect(
       page.getByRole("status").filter({ hasText: "No place found for “Nowhere At All”" }),

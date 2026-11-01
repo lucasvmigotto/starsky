@@ -1,16 +1,21 @@
 /**
- * Debounced, cancellable place search for the landing. Pure of React: the
- * controller owns the timer and the request in flight and reports state to a
- * callback, so the rules are testable with a stubbed search and fake timers.
+ * Place search for the landing, on explicit submit only. Pure of React: the
+ * controller owns the wait timer, the request in flight and the cache, and
+ * reports state to a callback, so the rules are testable with a stubbed search,
+ * a fake clock and fake timers.
  *
- * Nominatim's policy asks for about one request a second and no heavy use, so
- * typing waits for a pause, and a request is aborted the moment the text
- * changes.
+ * Nominatim usage policy (https://operations.osmfoundation.org/policies/nominatim/):
+ * auto-complete search "must not" be implemented on the client side with the
+ * API, at most 1 request per second, and repeated queries should be cached.
+ * So typing never sends anything (it only aborts and goes idle), a request
+ * starts only on Enter or the search button, starts are at least
+ * SEARCH_MIN_INTERVAL_MS apart, and answers are cached for the page session
+ * (issue #65).
  */
 import type { ResolvedPlace } from "../geocode.ts";
 
-export const SEARCH_DEBOUNCE_MS = 400;
-export const SEARCH_MIN_CHARS = 3;
+/** The policy's "maximum of 1 request per second": gap between request starts. */
+export const SEARCH_MIN_INTERVAL_MS = 1000;
 
 export type SearchState =
   | { status: "idle" }
@@ -29,15 +34,15 @@ interface Timers {
 interface Options {
   search: SearchFn;
   onState: (state: SearchState) => void;
-  debounceMs?: number;
-  minLength?: number;
   timers?: Timers;
+  /** Milliseconds, monotonic enough for spacing requests. */
+  now?: () => number;
 }
 
 export interface SearchController {
-  /** The text changed: wait for a pause, then search. */
-  input: (text: string) => void;
-  /** Enter was pressed: search now. */
+  /** The text changed: abort anything pending and go idle. Never sends a request. */
+  input: () => void;
+  /** Enter or the search button: answer from the cache, else search (after the rate wait). */
   submit: (text: string) => void;
   /** Abort and return to idle (a place was chosen, or the field was cleared). */
   cancel: () => void;
@@ -55,16 +60,21 @@ const BROWSER_TIMERS: Timers = {
 export function createSearchController({
   search,
   onState,
-  debounceMs = SEARCH_DEBOUNCE_MS,
-  minLength = SEARCH_MIN_CHARS,
   timers = BROWSER_TIMERS,
+  now = () => performance.now(),
 }: Options): SearchController {
   let timer: number | null = null;
   let inflight: AbortController | null = null;
+  let lastStart = Number.NEGATIVE_INFINITY;
   let disposed = false;
+  const cache = new Map<string, ResolvedPlace[]>();
 
   const emit = (state: SearchState): void => {
     if (!disposed) onState(state);
+  };
+
+  const report = (query: string, results: ResolvedPlace[]): void => {
+    emit(results.length > 0 ? { status: "results", query, results } : { status: "empty", query });
   };
 
   const stop = (): void => {
@@ -74,15 +84,15 @@ export function createSearchController({
     inflight = null;
   };
 
-  const run = (query: string): void => {
-    stop();
+  const run = (query: string, key: string): void => {
     const controller = new AbortController();
     inflight = controller;
-    emit({ status: "loading", query });
+    lastStart = now();
     search(query, controller.signal).then(
       (results) => {
         if (controller.signal.aborted) return;
-        emit(results.length > 0 ? { status: "results", query, results } : { status: "empty", query });
+        cache.set(key, results);
+        report(query, results);
       },
       () => {
         if (controller.signal.aborted) return;
@@ -92,24 +102,32 @@ export function createSearchController({
   };
 
   return {
-    input(text) {
+    input() {
       if (disposed) return;
       stop();
-      const query = text.trim();
-      if (query.length < minLength) {
-        emit({ status: "idle" });
-        return;
-      }
-      timer = timers.set(() => {
-        timer = null;
-        run(query);
-      }, debounceMs);
+      emit({ status: "idle" });
     },
     submit(text) {
       if (disposed) return;
       const query = text.trim();
       if (query === "") return;
-      run(query);
+      stop();
+      const key = query.toLowerCase();
+      const cached = cache.get(key);
+      if (cached) {
+        report(query, cached);
+        return;
+      }
+      emit({ status: "loading", query });
+      const wait = lastStart + SEARCH_MIN_INTERVAL_MS - now();
+      if (wait > 0) {
+        timer = timers.set(() => {
+          timer = null;
+          run(query, key);
+        }, wait);
+      } else {
+        run(query, key);
+      }
     },
     cancel() {
       stop();

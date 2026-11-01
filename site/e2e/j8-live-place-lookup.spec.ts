@@ -44,6 +44,7 @@ test.describe("J8 live place lookup", () => {
     await page
       .getByRole("combobox", { name: "Search for a place" })
       .fill("Times Square, New York, NY");
+    await page.getByRole("button", { name: "Search", exact: true }).click();
 
     // A real result list appears only if the lookup succeeded.
     const first = page.getByRole("option").first();
