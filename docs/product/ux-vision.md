@@ -189,7 +189,7 @@ to one line after 2.5 s idle, and is pinned on request; it wraps. After 4 s
 without activity the toolbar, the tab, the side panel or sheet and the strip's
 buttons fade out, leaving the one-line moment (see *Idle collapse* below). With
 the side panel open the toolbar sits to the panel's left, never under it. The
-sheet and panel share one body. Escape closes a star's tooltip first, then
+sheet and panel share one body. Escape closes a tooltip first, then
 search or layers, then clears the selection, and focus returns to the control
 that opened the panel (the tab, on wide screens).
 
@@ -230,6 +230,19 @@ its tooltip. With the side panel open the matching list item is shaded and
 scrolled into view, without taking focus or changing the order; in the closed
 Below group the group's heading is shaded instead. Resting on a list item
 lights the figure in the sky. Selection wins over hover. Touch does not hover.
+
+**Constellation tooltip and star list (019).** Resting a mouse or pen on a
+constellation for the same 1.5 s shows a tooltip at the pointer: its name and
+how many stars form its figure ("Orion • 22 stars"), then up to three of its
+named stars, brightest first, joined by commas, ending in "+N" when more stars
+remain ("Rigel, Betelgeuse, Bellatrix +19"). A figure with no named star shows
+the first line only. Names are never translated. It opens only where the
+figure can be hovered, closes like the star tooltip, and a star under the
+pointer keeps its own tooltip. A selected constellation's panel lists every
+star of its figure, brightest first: its name or HIP number with its
+magnitude, and "below the horizon" in words for a star that is. Each entry is
+a button that selects that star, as picking it in the sky does; a long figure
+scrolls within the panel.
 
 ## Information architecture
 
@@ -1085,6 +1098,12 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 | `explorer.kind.star` | Star |
 | `explorer.kind.constellation` | Constellation |
 | `explorer.tooltip.detail` | {name} • Magnitude {mag} *(the hover tooltip; {name} is the star's name or its HIP number)* |
+| `explorer.tooltip.constellation` | {name} • {count} stars *(the constellation hover tooltip's first line; {name} is never translated)* |
+| `explorer.tooltip.constellationOne` | {name} • 1 star |
+| `explorer.tooltip.namedMore` | {names} +{rest} *(the tooltip's second line when more stars remain: up to three named stars, brightest first, joined by ", "; {rest} counts every other star of the figure)* |
+| `explorer.members.title` | Stars in the figure *(the constellation inspector's list of its figure's stars, brightest first)* |
+| `explorer.members.detail` | magnitude {mag} |
+| `explorer.members.detailBelow` | magnitude {mag}, below the horizon |
 | `explorer.list.title` | Constellations |
 | `explorer.list.above` | Above the horizon ({count}) |
 | `explorer.list.below` | Below the horizon ({count}) |
@@ -1338,6 +1357,12 @@ set.
 | `explorer.kind.star` | Estrela |
 | `explorer.kind.constellation` | Constelação |
 | `explorer.tooltip.detail` | {name} • Magnitude {mag} |
+| `explorer.tooltip.constellation` | {name} • {count} estrelas |
+| `explorer.tooltip.constellationOne` | {name} • 1 estrela |
+| `explorer.tooltip.namedMore` | {names} +{rest} |
+| `explorer.members.title` | Estrelas na figura |
+| `explorer.members.detail` | magnitude {mag} |
+| `explorer.members.detailBelow` | magnitude {mag}, abaixo do horizonte |
 | `explorer.list.title` | Constelações |
 | `explorer.list.above` | Acima do horizonte ({count}) |
 | `explorer.list.below` | Abaixo do horizonte ({count}) |
