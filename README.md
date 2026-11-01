@@ -115,6 +115,17 @@ That file is the renderer's normative contract; there is no second renderer.
 | `STARSKY__CATALOG__CACHE_DIR` | Where the Hipparcos and Stellarium parquet caches live. |
 | `STARSKY__LOG__LEVEL` | CLI log level. |
 
+### Site build variables
+
+Read by Vite when the site is built, so they are fixed per deploy (set them in
+the build step's environment):
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_DEFAULT_PLACE`, `VITE_DEFAULT_LAT`, `VITE_DEFAULT_LON` | The place the landing starts at. All three or none; an incomplete, non-numeric or out-of-range set is ignored. Default: São Bernardo do Campo, SP, Brazil (-23.6914, -46.5647). |
+| `VITE_BASE_PATH` | URL prefix the site is served under (`/` at the domain root). |
+| `VITE_FULL_APP_URL` | Absolute product origin for the OG and Twitter image URLs. |
+
 > **Renamed from `starpy` (BCR-0009).** The project, the Python package and the
 > environment prefix were renamed when Python stopped being the protagonist: the
 > browser is the whole application now, and Python only builds its sky data.
