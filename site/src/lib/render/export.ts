@@ -17,8 +17,8 @@ import {
 } from "./caption.ts";
 import { type PosterFormat, storyGeometry, storyMargin } from "./format.ts";
 import {
-  AXIS_EXTENT,
   REFERENCE_DPI,
+  insideSkySquare,
   posterGeometry,
   unitToCanvas,
 } from "./poster.ts";
@@ -70,9 +70,9 @@ export function buildPosterSvg(
   format: PosterFormat = "standard",
 ): string {
   if (format === "story") sizePx = storyGeometry().widthPx;
-  const geometry = posterGeometry(sizePx);
+  const geometry = posterGeometry(sizePx, payload.options.shape);
   const [cx, cy] = unitToCanvas(0, 0, geometry);
-  const radius = (1 / AXIS_EXTENT) * (sizePx / 2);
+  const radius = (1 / geometry.extent) * (sizePx / 2);
   const parts: string[] = [];
 
   const pageHeight =
@@ -123,6 +123,7 @@ export function buildPosterSvg(
     for (const figure of model.figures) {
       const ux = (figure.centroidX - previewCx) / previewR;
       const uy = (figure.centroidY - previewCy) / previewR;
+      if (!insideSkySquare(ux, uy, geometry)) continue;
       const [x, y] = unitToCanvas(ux, uy, geometry);
       const label = figure.name.toUpperCase();
       parts.push(
@@ -167,7 +168,9 @@ export function buildPosterSvg(
   parts.push(`</g>`);
 
   parts.push(
-    `<defs><clipPath id="disc"><circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${radius.toFixed(2)}"/></clipPath></defs>`,
+    payload.options.shape === "square"
+      ? `<defs><clipPath id="disc"><rect x="0" y="0" width="${sizePx.toString()}" height="${geometry.skyPx.toString()}"/></clipPath></defs>`
+      : `<defs><clipPath id="disc"><circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${radius.toFixed(2)}"/></clipPath></defs>`,
   );
   if (format === "story") parts.push(`</g>`);
   parts.push(`</svg>`);
@@ -209,7 +212,7 @@ export async function exportPdf(
   const svg = buildPosterSvg(payload, model, sizePx, undefined, format);
   const { jsPDF } = await import("jspdf");
   const { svg2pdf } = await import("svg2pdf.js");
-  const geometry = posterGeometry(sizePx);
+  const geometry = posterGeometry(sizePx, payload.options.shape);
   const pageHeight =
     format === "story" ? storyGeometry().heightPx : geometry.canvasHeight;
   const doc = new jsPDF({

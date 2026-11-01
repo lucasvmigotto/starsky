@@ -2,6 +2,8 @@
  * FR-002 / BCR-0012: with no story option the SVG is byte-identical to what it
  * was before the story format existed. The hashes were captured from the code
  * before any story change, from a synthetic model so no sky data is involved.
+ * The square hash was re-pinned for BCR-0014 (the square now fills its square);
+ * the circle hash is unchanged.
  */
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "bun:test";
@@ -63,7 +65,7 @@ describe("standard SVG is pinned (FR-002)", () => {
   });
   it("square, untitled, 800", () => {
     expect(sha(buildPosterSvg(payload({ shape: "square", title: null }), MODEL, 800))).toBe(
-      "b8e7416c49e01126bfa6721e3392e443efc30bbb5f38d42cff494b0d94a5a88f",
+      "7514f361e966b80af935ecca31ff640bb39d8ac5b68ce8a4ec2b6ef559776174",
     );
   });
 });

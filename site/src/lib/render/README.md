@@ -63,3 +63,16 @@ means the renderer is unchanged — not that the site works in a browser.
   pixels. The radius is derived (`half / AXIS_EXTENT`), never a literal.
 - `shape: "circle"` applies a circular alpha mask (`destination-in`) to the sky
   only; the caption band stays opaque.
+- `shape: "square"` fills the whole sky square (BCR-0014, feature 016). The
+  square is inscribed in the horizon disc: its corners sit on the horizon, so
+  its half-side is `1 / sqrt(2)` in unit-disc terms (`shape.square.fill:
+  "inscribed"` in `render-spec.json`). `skyExtent(shape)` in `poster.ts` is the
+  one place that decides the extent; `posterGeometry(sizePx, shape)` carries it
+  as `geometry.extent`, and `unitToCanvas`, the canvas clip, the SVG clip and
+  the PDF (which is the SVG) all read it, so they cannot disagree. Against the
+  circle the sky is zoomed by `sqrt(2) * AXIS_EXTENT`; stars, lines, glow and
+  labels scale with it and are clipped to the square. A label whose anchor lies
+  outside the square is not drawn (`insideSkySquare`); one that crosses the edge
+  is clipped, never moved. All visible stars are above the horizon, so the zoom
+  and clip can only remove sky, never add any. The circle path is unchanged
+  byte for byte (its references and the circle standard pin).

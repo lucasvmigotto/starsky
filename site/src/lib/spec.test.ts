@@ -61,6 +61,7 @@ describe("render-spec conformance", () => {
     const shape = renderSpec["shape"];
     eq(SPEC.shape.ringWidth, shape["ringWidth"]);
     eq(SPEC.shape.ringAlpha, shape["ringAlpha"]);
+    expect((shape["square"] as { fill: string }).fill).toBe(SPEC.shape.square.fill);
     const caption = renderSpec["caption"];
     eq(SPEC.caption.bandFraction, caption["bandFraction"]);
     eq(SPEC.caption.titleFontSize, caption["titleFontSize"]);
