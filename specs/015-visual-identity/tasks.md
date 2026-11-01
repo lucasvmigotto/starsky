@@ -1,0 +1,11 @@
+# Tasks: One visual identity
+
+Feature: `015-visual-identity` | Branch: `feat/015-visual-identity` | Input: `specs/015-visual-identity/spec.md`
+
+- [ ] T001 FR-001 bundled Inter, body and canvas label stacks
+- [ ] T002 FR-002 icon module and icon buttons (lock, toolbar, close)
+- [ ] T003 FR-003 list shows names only
+- [ ] T004 FR-004/FR-005 sliding panel, tab restyle, accent audit
+- [ ] T005 FR-006 Viewer image only (BCR-0013)
+- [ ] T006 FR-007 shared layout language; Studio preview image only
+- [ ] T007 e2e, axe, phone widths; screenshots of all surfaces
