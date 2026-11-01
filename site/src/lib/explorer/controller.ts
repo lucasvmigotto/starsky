@@ -377,6 +377,23 @@ export class ExplorerController {
     return at ? { id: hit.id, x: at.x, y: at.y } : null;
   }
 
+  /**
+   * What the hover tooltip is about at a point (019): the star there, else the
+   * constellation a hover would light there, else nothing. A star is anchored
+   * where it is drawn; a figure has no single point, so it is anchored at the
+   * pointer. Picks on the data, asks for no frame and changes nothing.
+   */
+  tooltipAt(x: number, y: number): { id: string; x: number; y: number } | null {
+    const star = this.starAt(x, y);
+    if (star) return star;
+    const id = pickConstellationAt(this.scene, this.view, this.camera, this.viewport, this.labels, x, y, {
+      magLimit: this.magLimit,
+      below: this.layers.below,
+      lines: this.layers.constellationLines,
+    });
+    return id === null ? null : { id, x, y };
+  }
+
   /** Centre on the star or constellation under the pointer, else on the point itself. */
   doubleClick(x: number, y: number): void {
     this.cancelAnimation();

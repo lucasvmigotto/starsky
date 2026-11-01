@@ -1,13 +1,15 @@
 /**
- * The star tooltip: a page overlay, not canvas drawing, so showing it paints no
- * frame. It opens when a mouse or pen rests on a star and closes on any
- * movement away, a drag, a zoom, leaving the map, or Escape. It repeats facts
- * the inspector already gives, so it is hidden from screen readers.
+ * The hover tooltip: a page overlay, not canvas drawing, so showing it paints no
+ * frame. It opens when a mouse or pen rests on a star, or on a constellation
+ * where no star is (019), and closes on any movement away, a drag, a zoom,
+ * leaving the map, or Escape. It repeats facts the inspector already gives, so
+ * it is hidden from screen readers.
  */
 import { useLayoutEffect, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { JSX } from "react";
 import { t } from "../../i18n/index.ts";
 import type { ExplorerController } from "../../lib/explorer/controller.ts";
+import { type ConstellationTip, constellationTip } from "../../lib/explorer/figure.ts";
 import { describeStar } from "../../lib/explorer/inspect.ts";
 import { HoverMachine, placeTooltip } from "../../lib/explorer/tooltip.ts";
 import type { SkyScene } from "../../lib/sky/scene.ts";
@@ -38,8 +40,8 @@ export default function ExplorerTooltip({ controller, scene, canvas, rightInset,
     (listener) => machine.subscribe(listener),
     () => machine.open,
   );
-  /** Where the star under the pointer is drawn, as of the last move. */
-  const star = useRef<{ x: number; y: number } | null>(null);
+  /** Where the tooltip is anchored, as of the last move: the star, or the pointer over a figure. */
+  const anchor = useRef<{ x: number; y: number } | null>(null);
   const el = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -50,8 +52,8 @@ export default function ExplorerTooltip({ controller, scene, canvas, rightInset,
         return;
       }
       const r = canvas.getBoundingClientRect();
-      const hit = controller.starAt(e.clientX - r.left, e.clientY - r.top);
-      if (hit) star.current = { x: hit.x, y: hit.y };
+      const hit = controller.tooltipAt(e.clientX - r.left, e.clientY - r.top);
+      if (hit) anchor.current = { x: hit.x, y: hit.y };
       machine.over(hit?.id ?? null);
     };
     const close = (): void => {
@@ -83,7 +85,7 @@ export default function ExplorerTooltip({ controller, scene, canvas, rightInset,
   // Placed before paint, once its size is known, so it never flashes in the wrong place.
   useLayoutEffect(() => {
     const node = el.current;
-    const at = star.current;
+    const at = anchor.current;
     if (!node || !canvas || !at) return;
     const box = canvas.getBoundingClientRect();
     const spot = placeTooltip(
@@ -97,13 +99,31 @@ export default function ExplorerTooltip({ controller, scene, canvas, rightInset,
   }, [open, canvas, rightInset]);
 
   if (open === null) return null;
-  const detail = describeStar(scene, controller.view.ctx, open);
-  if (!detail) return null;
+  const lines = tooltipLines(scene, controller, open);
+  if (!lines) return null;
   return (
     <div ref={el} className="explorer-tooltip" aria-hidden="true">
-      <p className="explorer-tooltip-detail">
-        {t("explorer.tooltip.detail", { name: detail.title, mag: formatMagnitude(detail.mag) })}
-      </p>
+      <p className="explorer-tooltip-detail">{lines[0]}</p>
+      {lines[1] !== undefined && <p className="explorer-tooltip-members">{lines[1]}</p>}
     </div>
   );
+}
+
+/** A star's one line, or a constellation's one or two. */
+function tooltipLines(scene: SkyScene, controller: ExplorerController, id: string): [string, string?] | null {
+  const star = describeStar(scene, controller.view.ctx, id);
+  if (star) return [t("explorer.tooltip.detail", { name: star.title, mag: formatMagnitude(star.mag) })];
+  const tip = constellationTip(scene, id);
+  return tip ? constellationLines(tip) : null;
+}
+
+/** "{name} • {count} stars", then up to three named stars and "+{rest}" (FR-002). */
+function constellationLines(tip: ConstellationTip): [string, string?] {
+  const first =
+    tip.count === 1
+      ? t("explorer.tooltip.constellationOne", { name: tip.name })
+      : t("explorer.tooltip.constellation", { name: tip.name, count: tip.count });
+  if (tip.named.length === 0) return [first];
+  const names = tip.named.join(", ");
+  return [first, tip.rest > 0 ? t("explorer.tooltip.namedMore", { names, rest: tip.rest }) : names];
 }

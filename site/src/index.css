@@ -1244,6 +1244,13 @@ select.atlas-form-input option {
   font-size: 0.9375rem;
 }
 
+/* A constellation's named stars (019): the second line, quieter than the first. */
+.explorer-tooltip-members {
+  margin-top: var(--space-1);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
 /* Inspector: a right panel that floats over the sky, so opening it never resizes the canvas. */
 .explorer-inspector {
   position: absolute;
