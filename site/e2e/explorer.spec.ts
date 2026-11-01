@@ -185,7 +185,7 @@ test.describe("explorer", () => {
     await page.goto("/#e=not-a-payload");
     await expect(page.getByRole("heading", { name: "This link holds no sky" })).toBeVisible();
     await page.getByRole("link", { name: "Back to the start" }).click();
-    await expect(page.getByRole("button", { name: /show my sky/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /explore this sky/i })).toBeVisible();
   });
 
   test("#s= still opens the poster, without loading Explorer code", async ({ page }) => {

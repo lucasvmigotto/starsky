@@ -1,102 +1,76 @@
 /**
  * J4 — place lookup (qa:strategy).
  *
- * Place search is the product's only outbound call. Both outcomes must be
- * handled: a resolved place renders, and a failure is surfaced rather than
- * silently ignored. The lookup is intercepted — an automated suite must never
- * hit Nominatim's live service.
+ * Place search is the product's geocoder call. Both outcomes must be handled:
+ * a resolved place carries into the Explorer, and a failure is surfaced rather
+ * than silently ignored. The lookup is stubbed (`stubSearch`) — an automated
+ * suite must never hit Nominatim's live service; `j8` is the opt-in live check.
  */
-import { expect, test } from "./fixtures.ts";
+import { decodeExplorer } from "../src/lib/sky/payload.ts";
+import { expect, stubSearch, test } from "./fixtures.ts";
 
-const NOMINATIM = "**/nominatim.openstreetmap.org/**";
-const PLACE_INPUT = "#landing-place";
-const WHEN_INPUT = "#landing-when";
-const TZ_INPUT = "#landing-tz";
+const SEARCH = "Search for a place";
 
-/** Fill the form completely: the submit requires a date and time. */
-async function completeForm(
-  page: import("@playwright/test").Page,
-  place: string,
-): Promise<void> {
-  await page.getByRole("radio", { name: "place", exact: true }).check();
-  await page.locator(PLACE_INPUT).fill(place);
-  await page.locator(WHEN_INPUT).fill("2026-01-01T00:00");
-  await page.locator(TZ_INPUT).fill("UTC");
+async function startLanding(page: import("@playwright/test").Page): Promise<void> {
+  await page.goto("/");
+  await page.getByLabel("Date and time").fill("2026-01-01T00:00");
+  await page.getByLabel("Timezone").fill("UTC");
 }
 
 test.describe("J4 place lookup", () => {
-  test("a resolved place renders a poster", async ({ page }) => {
-    await page.route(NOMINATIM, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify([
-          {
-            lat: "48.8584",
-            lon: "2.2945",
-            display_name: "Eiffel Tower, Paris, France",
-            name: "Eiffel Tower",
-            address: { city: "Paris", country: "France" },
-          },
-        ]),
-      });
-    });
+  test("a resolved place opens the Explorer there", async ({ page }) => {
+    await stubSearch(page, [
+      {
+        lat: "48.8584",
+        lon: "2.2945",
+        display_name: "Eiffel Tower, Paris, France",
+        name: "Eiffel Tower",
+        address: { city: "Paris", country: "France" },
+      },
+    ]);
 
-    await page.goto("/");
-    await completeForm(page, "Eiffel Tower");
-    await page.getByRole("button", { name: /show my sky/i }).click();
+    await startLanding(page);
+    await page.getByRole("combobox", { name: SEARCH }).fill("Eiffel Tower");
+    await page.getByRole("option").first().click();
+    await page.getByRole("button", { name: "Explore this sky" }).click();
+
+    await expect(page.getByRole("img", { name: /sky map/i })).toBeVisible();
+    const payload = decodeExplorer(new URL(page.url()).hash.slice("#e=".length));
+    expect(payload).toMatchObject({ lat: 48.8584, lon: 2.2945, place: "Eiffel Tower, Paris, France" });
+  });
+
+  test("a failing lookup is announced, does not navigate, and leaves the form usable", async ({ page }) => {
+    await stubSearch(page, { status: 500 });
+
+    await startLanding(page);
+    const urlBefore = page.url();
+    await page.getByRole("combobox", { name: SEARCH }).fill("Nowhere At All");
 
     await expect(
-      page.getByRole("img", { name: /night sky poster/i }),
+      page.getByRole("status").filter({ hasText: "Place search is unavailable right now." }),
+    ).toBeVisible();
+    expect(page.url()).toBe(urlBefore);
+    await expect(page.getByRole("combobox", { name: SEARCH })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Explore this sky" })).toBeEnabled();
+  });
+
+  test("an empty result is announced", async ({ page }) => {
+    await stubSearch(page, []);
+
+    await startLanding(page);
+    await page.getByRole("combobox", { name: SEARCH }).fill("Nowhere At All");
+
+    await expect(
+      page.getByRole("status").filter({ hasText: "No place found for “Nowhere At All”" }),
     ).toBeVisible();
   });
 
-  test("a failing lookup surfaces an error and does not navigate", async ({
-    page,
-  }) => {
-    await page.route(NOMINATIM, async (route) => {
-      await route.fulfill({ status: 500, body: "boom" });
-    });
+  test("an empty moment is named and blocks leaving", async ({ page }) => {
+    await startLanding(page);
+    await page.getByLabel("Date and time").fill("");
+    await page.getByRole("button", { name: "Explore this sky" }).click();
 
-    await page.goto("/");
-    const urlBefore = page.url();
-    await completeForm(page, "Nowhere At All");
-    await page.getByRole("button", { name: /show my sky/i }).click();
-
-    await expect(page.getByRole("alert")).toBeVisible();
-    expect(page.url()).toBe(urlBefore);
-  });
-
-  test("an empty result surfaces an error", async ({ page }) => {
-    await page.route(NOMINATIM, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: "[]",
-      });
-    });
-
-    await page.goto("/");
-    await completeForm(page, "Nowhere At All");
-    await page.getByRole("button", { name: /show my sky/i }).click();
-
-    await expect(page.getByRole("alert")).toBeVisible();
-  });
-
-  test("the date is required, so an empty one blocks submission natively", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    await page.getByRole("radio", { name: "place", exact: true }).check();
-    await page.locator(PLACE_INPUT).fill("Paris");
-    // The input is `required`; the browser refuses to submit, so React's
-    // handler never runs and no alert appears. Assert that, not an alert.
-    const when = page.locator(WHEN_INPUT);
-    await page.getByRole("button", { name: /show my sky/i }).click();
-    expect(await when.evaluate((el: HTMLInputElement) => el.checkValidity())).toBe(
-      false,
-    );
-    // Still on the form.
-    await expect(page.locator(PLACE_INPUT)).toBeVisible();
+    await expect(page.getByRole("alert")).toHaveText("Pick a date and time for the sky.");
+    await expect(page.getByRole("combobox", { name: SEARCH })).toBeVisible();
   });
 });

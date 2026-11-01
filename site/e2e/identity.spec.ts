@@ -388,11 +388,11 @@ test.describe("the shared form layout (FR-009)", () => {
 
   test("the landing has no explainer, and its primary button is centred at its natural width", async ({ page }) => {
     await page.goto("/");
-    const submit = page.getByRole("button", { name: "Show my sky" });
+    const submit = page.getByRole("button", { name: "Explore this sky" });
     await expect(submit).toBeVisible();
     await expect(page.getByText("What is this page?")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Load a random sky" })).toBeVisible();
-    const form = await page.locator("form.atlas-panel").boundingBox();
+    const form = await page.locator(".atlas-form-wrap .atlas-panel").boundingBox();
     const box = await submit.boundingBox();
     if (!form || !box) throw new Error("no boxes");
     expect(box.x + box.width / 2).toBeCloseTo(form.x + form.width / 2, 0);
@@ -410,20 +410,10 @@ test.describe("the shared form layout (FR-009)", () => {
     else expect(await top(zone)).toBeGreaterThan(await top(when));
   });
 
-  test("radios and checkboxes sit inline and wrap", async ({ page }) => {
-    await page.goto("/");
-    const modes = page.getByRole("radiogroup", { name: "Input mode" }).getByRole("radio");
-    await expect(modes).toHaveCount(2);
-    expect(await top(modes.first())).toBe(await top(modes.last()));
-    await page.getByText("Advanced", { exact: true }).click();
-    const lines = page.getByLabel("Constellation lines");
-    const labels = page.getByLabel("Constellation labels");
-    if (wide(page)) expect(await top(lines)).toBe(await top(labels));
-  });
-
   test("Appearance pairs its controls, and Shape is a two-option segmented switch", async ({ page }) => {
-    await page.goto("/");
-    await page.getByText("Appearance", { exact: true }).click();
+    // The poster options left the landing (013); the Studio is where they live.
+    await page.goto(studioUrl(fragmentFor()));
+    await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
     const projection = page.getByLabel("Projection", { exact: true });
     const shape = page.getByRole("radiogroup", { name: "Shape" });
     await expect(shape.getByRole("radio")).toHaveCount(2);
@@ -441,7 +431,7 @@ test.describe("the shared form layout (FR-009)", () => {
       expect(await top(separation)).toBeGreaterThan(await top(fisheye));
     }
     // The title is full width, below the pairs.
-    expect(await top(page.getByLabel("Title (optional)"))).toBeGreaterThan(await top(glow));
+    expect(await top(page.getByLabel("Title", { exact: true }))).toBeGreaterThan(await top(glow));
     // Choosing a segment works through the real radio and is announced as checked.
     await shape.getByRole("radio", { name: "square" }).check();
     await expect(shape.getByRole("radio", { name: "square" })).toBeChecked();
@@ -488,7 +478,7 @@ test.describe("phone widths", () => {
         test(`${name} does not scroll sideways`, async ({ page }) => {
           await page.goto(url());
           if (name === "explorer") await openExplorer(page);
-          else if (name === "landing") await expect(page.getByRole("button", { name: "Show my sky" })).toBeVisible();
+          else if (name === "landing") await expect(page.getByRole("button", { name: "Explore this sky" })).toBeVisible();
           else await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
           if (name === "viewer") await openExport(page);
           if (name === "landing" || name === "studio") {
@@ -500,6 +490,8 @@ test.describe("phone widths", () => {
             const out: string[] = [];
             if ((document.scrollingElement?.scrollWidth ?? 0) > w) out.push("page scrolls sideways");
             for (const el of Array.from(document.querySelectorAll("body *"))) {
+              // Map tiles run past the map's edge and are clipped by it, as they should be.
+              if (el.closest(".leaflet-container") && !el.classList.contains("leaflet-container")) continue;
               const r = el.getBoundingClientRect();
               if (r.width > 0 && (r.right > w + 1 || r.left < -1) && getComputedStyle(el).position !== "fixed") {
                 out.push(`${el.tagName.toLowerCase()}.${el.getAttribute("class") ?? ""}`);

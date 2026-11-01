@@ -30,11 +30,11 @@ async function analyze(page: import("@playwright/test").Page) {
 }
 
 test.describe("accessibility", () => {
-  test("the landing form has no serious or critical violations", async ({
+  test("the landing has no serious or critical violations", async ({
     page,
   }) => {
     await page.goto("/");
-    await expect(page.getByRole("button", { name: /show my sky/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /explore this sky/i })).toBeVisible();
     const results = await analyze(page);
     const blocking = results.violations.filter(
       (v) => v.impact === "serious" || v.impact === "critical",

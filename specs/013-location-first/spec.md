@@ -8,28 +8,29 @@ The landing is still the old poster form. Under BCR-0011 the Explorer is the pri
 
 ## User stories
 
+Revised after the owner tried the page (see "Owner direction" at the end): the map is always shown, there is no expand, the coordinates are a switch, the Title is back, and Explore is the only action.
+
 ### US1 (P1): choose a place on a map
 
-- **Given** the landing, **then** a heading asks where to explore from, with a place search field and a map preview.
-- Typing in search queries the existing geocoder (`site/src/lib/geocode.ts`, Nominatim), debounced at about 400 ms, with in-flight requests cancelled (AbortController) when the text changes. Results show as a listbox (ARIA combobox pattern). Choosing one moves the marker and pans the map.
-- Clicking the map or dragging the marker sets the location. The coordinates shown update, and the place name becomes "Dropped pin" plus formatted coordinates; no reverse geocoding.
-- The map preview is visible but not dominant: about 280 px tall on desktop and 220 px on phones. An "Expand map" icon button enlarges it within the page, and Escape or the same button shrinks it.
+- **Given** the landing, **then** a heading asks where to explore from, followed by one row: the "Search for a place" field with a "Coordinates" switch (`role="switch"`) on its right (wrapping below on phones), and the map directly under it. Below the map: the Nominatim/OSM credit, the hint "Click the map or drag the marker to set the place.", then the summary "Exploring from" as one line `<place> • <coordinates>`.
+- The map is always rendered, about 280 px tall on desktop and 220 px on phones; Leaflet loads lazily, and until it does (or if it fails) a placeholder of the same size holds the space so nothing shifts. There is no hide or expand control.
+- Typing in search queries the geocoder (`site/src/lib/geocode.ts`, Nominatim), debounced at about 400 ms, with in-flight requests cancelled (AbortController) when the text changes. Results show as a listbox (ARIA combobox pattern). Choosing one moves the marker and pans the map.
+- Clicking the map or dragging the marker sets the location with no place name (no reverse geocoding); the summary shows the coordinates alone, announced to screen readers as "Dropped pin".
 
 ### US2 (P1): coordinates without the map
 
-- A "Coordinates" toggle reveals latitude and longitude inputs with validation (lat -90..90, lon -180..180) and the existing error copy pattern. Valid input moves the marker.
-- If tiles fail to load, the geocoder fails, or Leaflet's chunk fails, the page says so in place and the coordinate inputs and search still work. The map is never required to continue.
+- Turning the Coordinates switch on replaces the search field, in place, with Latitude and Longitude inputs (lat -90..90, lon -180..180, per-field errors). Valid input moves the pin; dragging the pin or clicking the map updates the fields. Turning it off brings the search field back.
+- If tiles fail to load, the geocoder fails, or Leaflet's chunk fails, the page says so in the map's own box or beside the field, suggests the Coordinates switch, and the rest still works. The map is never required to continue.
 
 ### US3 (P1): choose the moment
 
-- Date and time and Timezone (with Detect) share one row, stacking on phones. The default timezone is detected from the chosen place where the existing code supports it, else the browser's, else UTC.
-- A collapsed "Advanced" holds limiting magnitude only (an Explorer setting).
+- An optional Title is the first field of the moment section, validated as in the Studio (200 characters; a title the poster face cannot draw is refused in place with the Studio's message). Date and time and Timezone (with Detect) share the next row, stacking on phones. The default timezone is the browser's, else UTC (the code has no place-based zone).
+- A collapsed "Advanced" holds limiting magnitude only (an Explorer setting). Other poster options stay in the Studio, reached from the Explorer.
 
 ### US4 (P1): open the Explorer
 
-- The primary button "Explore this sky" (centred) encodes an `#e=` payload (place, lat, lon, tz, when_utc, mag, title null, initial camera from `initialCamera`, default layers, sel null) and navigates to it.
-- A secondary "Make a poster instead" opens the Studio (`#studio=`) with the same scene and default composition.
-- "Just browsing? Load a random sky" stays.
+- The only button, "Explore this sky" (centred), encodes an `#e=` payload (place, lat, lon, tz, when_utc, mag, title from the field or null, initial camera from `initialCamera`, default layers, sel null) and navigates to it. The flow is landing → Explorer → export; posters are made from the Explorer, not from the landing.
+- "Just browsing? Load a random sky" stays under the card.
 
 ### US5 (P1): compatibility and identity
 
@@ -41,8 +42,15 @@ The landing is still the old poster form. Under BCR-0011 the Explorer is the pri
 - **FR-001 Leaflet** is an npm dependency, loaded lazily (dynamic import) only by the landing, never in the main chunk; its CSS and marker images are bundled locally. No CDN.
 - **FR-002 Tiles** follow ADR-0008 exactly: `https://tile.openstreetmap.org/{z}/{x}/{y}.png` from one config value; on demand only, no prefetch, no offline cache; attribution "© OpenStreetMap contributors" always visible with the fixthemap link; Referer kept (no `referrerPolicy: no-referrer`).
 - **FR-003 State** lives in a typed reducer or focused hooks (`site/src/lib/landing/`), not many independent `useState`s. Pure functions for payload building and validation, unit tested.
-- **FR-004 Poster options leave the landing.** Projection, shape, glow, fisheye, separation, title and constellation toggles are Studio-only. Remove landing-only code and copy that becomes unused; `PosterFields` stays for the Studio.
+- **FR-004 Poster options leave the landing.** Projection, shape, glow, fisheye, separation and the constellation toggles are Studio-only; the landing keeps the Title and, in Advanced, the limiting magnitude. There is no "Make a poster" action on the landing. Remove landing-only code and copy that becomes unused; `PosterFields` stays for the Studio.
 - **FR-005 Network in tests:** e2e stubs tile and geocoder requests (`page.route`); the real-Nominatim job keeps working. No test reaches tile.openstreetmap.org.
-- **FR-006 Accessibility:** the map has a label and is skippable; every map action has a keyboard equivalent (search, coordinates); the marker is not the only way to set a place. axe clean, keyboard journey, 360/390 px without horizontal overflow.
+- **FR-006 Accessibility:** the map has a label and is skippable; every map action has a keyboard equivalent (search, the Coordinates switch); the map container is not a tab stop; the marker is not the only way to set a place. axe clean, keyboard journey, 360/390 px without horizontal overflow.
+- **FR-009 Layout:** nothing positioned absolutely may cover the summary; the map box keeps its size while loading, failed or clicked.
 - **FR-007 Budget:** main chunk does not grow by Leaflet; report the lazy chunk size; the bundle budget passes.
 - **FR-008 Docs:** vision (landing flow, copy tables), README quickstart line if it mentions the form, ADR-0008 cross-reference.
+
+## Owner direction (after trying the page)
+
+"Clicking in map, the layout brokes. Map should be always visible. Full screen map is not necessary. Make Place input search and right bellow, the map. Coordinate input could be a switch right side in line of place input - if active, replace place input with two lat lon inputs." Then: "Explore this sky should be the only CTA button here" (landing → Explorer → export); the Title returns; the summary is one line `<place> • <coordinates>`.
+
+Consequence for ADR-0008: its line "Tiles load only after the visitor opens the map" no longer holds, because the map is always on the landing. Tiles are still on demand for the visible view only, with no prefetch or storage; the ADR needs a one-line amendment by its owner.

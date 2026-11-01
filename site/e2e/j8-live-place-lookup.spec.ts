@@ -21,7 +21,7 @@
  * also why no CI variable is needed for it.
  */
 import { expect, test } from "@playwright/test";
-import { openExport } from "./fixtures.ts";
+import { decodeExplorer } from "../src/lib/sky/payload.ts";
 
 const LIVE = process.env["STARTSKY_LIVE_SMOKE"] === "1";
 
@@ -32,42 +32,38 @@ test.describe("J8 live place lookup", () => {
   // not generous enough for a cold third-party round trip.
   test.setTimeout(30_000);
 
-  test("a real query resolves and reaches the poster caption", async ({
+  test("a real query resolves, and the place reaches the Explorer link", async ({
     page,
   }) => {
+    // The map stays closed, so no tile is requested; abort any that would be.
+    await page.route(/^https:\/\/tile\.openstreetmap\.org\//, (route) => route.abort());
     await page.goto("/");
 
-    // Place mode, a real query, and the fields the form requires.
-    await page.getByRole("radio", { name: "place", exact: true }).check();
-    await page.locator("#landing-place").fill("Times Square, New York, NY");
-    await page.locator("#landing-when").fill("2026-01-01T00:00");
-    await page.locator("#landing-tz").fill("UTC");
+    await page.getByLabel("Date and time").fill("2026-01-01T00:00");
+    await page.getByLabel("Timezone").fill("UTC");
+    await page
+      .getByRole("combobox", { name: "Search for a place" })
+      .fill("Times Square, New York, NY");
 
-    await page.getByRole("button", { name: /show my sky/i }).click();
+    // A real result list appears only if the lookup succeeded.
+    const first = page.getByRole("option").first();
+    await expect(first).toBeVisible({ timeout: 20_000 });
+    await first.click();
+    await page.getByRole("button", { name: "Explore this sky" }).click();
 
-    // The poster renders — which only happens if the lookup succeeded.
-    await expect(
-      page.getByRole("img", { name: /night sky poster/i }),
-    ).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("img", { name: /sky map/i })).toBeVisible({
+      timeout: 20_000,
+    });
 
-    // The resolved label reaches the caption, which is the part that proves the
-    // response was parsed, not merely received.
-    const download = page.waitForEvent("download");
-    await openExport(page);
-    await page.getByRole("button", { name: "SVG", exact: true }).click();
-    const file = await download;
-    const stream = await file.createReadStream();
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) {
-      chunks.push(chunk as Buffer);
-    }
-    const svg = Buffer.concat(chunks).toString("utf-8");
-
-    // The caption carries the coordinates Nominatim returned — Times Square is
-    // near 40.758, -73.9855, but the point is that *a* coordinate pair arrived
-    // and was formatted, not the exact value (the service may refine it).
-    expect(svg).toMatch(/4\d\.\d{4}°N/);
-    expect(svg).toMatch(/7\d\.\d{4}°W/);
-    expect(svg).toContain("New York");
+    // The link carries the coordinates Nominatim returned and the label built
+    // from them, which is the part that proves the response was parsed, not
+    // merely received. Times Square is near 40.758, -73.9855, but the service
+    // may refine the value, so assert the neighbourhood and the label.
+    const payload = decodeExplorer(new URL(page.url()).hash.slice("#e=".length));
+    expect(payload.lat).toBeGreaterThan(40.5);
+    expect(payload.lat).toBeLessThan(41);
+    expect(payload.lon).toBeGreaterThan(-74.3);
+    expect(payload.lon).toBeLessThan(-73.7);
+    expect(payload.place).toContain("New York");
   });
 });
