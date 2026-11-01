@@ -214,7 +214,7 @@ test.describe("idle collapse", () => {
     await page.keyboard.press("Tab");
     await expect(stage(page)).toHaveAttribute("data-chrome", "visible");
     const focused = await page.evaluate(() => document.activeElement?.className ?? "");
-    expect(focused).toMatch(/explorer-(pin|tool|tab|copy|close|action|list)/);
+    expect(focused).toMatch(/atlas-btn|explorer-(tab|copy|link|list)/);
     await page.clock.runFor(IDLE_MS * 3);
     await expect(stage(page)).toHaveAttribute("data-chrome", "visible");
     await canvasOf(page).focus();
@@ -488,7 +488,9 @@ test.describe("toolbar and panel tab", () => {
     expect(closed.width).toBeGreaterThanOrEqual(44);
     expect(closed.height).toBeGreaterThanOrEqual(44);
     expect(closed.x + closed.width).toBeCloseTo(vp?.width ?? 0, 0);
-    expect(closed.y + closed.height / 2).toBeCloseTo((vp?.height ?? 0) / 2, 0);
+    // Centred in the stage, which sits under the shared header.
+    const stageBox = await boxOf(stage(page));
+    expect(closed.y + closed.height / 2).toBeCloseTo(stageBox.y + stageBox.height / 2, 0);
     // Rounded only on the sky-facing side, with the toolbar container's radius.
     const face = tab(page).locator(".explorer-tab-face");
     const radius = await face.evaluate((el) => {
@@ -509,7 +511,7 @@ test.describe("toolbar and panel tab", () => {
       })
       .toBeLessThan(1);
     const onPanel = await boxOf(tab(page));
-    expect(onPanel.y + onPanel.height / 2).toBeCloseTo((vp?.height ?? 0) / 2, 0);
+    expect(onPanel.y + onPanel.height / 2).toBeCloseTo(stageBox.y + stageBox.height / 2, 0);
     await tab(page).click();
     await expect(tab(page)).toHaveAttribute("aria-expanded", "false");
   });
