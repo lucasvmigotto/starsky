@@ -48,10 +48,25 @@ afterEach(() => {
   cleanup();
 });
 
+describe("ExplorerMetadata actions", () => {
+  it("shows what it is given beside the pin, inside the strip", () => {
+    const machine = new MetadataMachine({ now: () => 0 });
+    render(
+      <ExplorerMetadata moment={MOMENT} machine={machine}>
+        <button type="button" aria-label="side-action" />
+      </ExplorerMetadata>,
+    );
+    const pin = screen.getByRole("button", { name: "Keep details open" });
+    const action = screen.getByRole("button", { name: "side-action" });
+    expect(region().contains(action)).toBe(true);
+    expect(pin.parentElement).toBe(action.parentElement);
+  });
+});
+
 describe("ExplorerMetadata", () => {
-  it("starts expanded and shows the moment", () => {
+  it("starts compact and shows the moment", () => {
     mount();
-    expect(region().getAttribute("data-mode")).toBe("expanded");
+    expect(region().getAttribute("data-mode")).toBe("compact");
     expect(region().textContent).toContain("First night");
     expect(region().textContent).toContain("Tokyo");
     expect(region().textContent).toContain("Nov 17, 1998, 11:17 AM GMT+9");
@@ -70,10 +85,6 @@ describe("ExplorerMetadata", () => {
 
   it("goes compact when idle and expands again on pointer, touch or key activity", () => {
     const { clock, machine } = mount();
-    clock.t = 3000;
-    act(() => {
-      machine.tick();
-    });
     expect(region().getAttribute("data-mode")).toBe("compact");
     for (const type of ["pointermove", "touchstart", "keydown", "pointerdown"]) {
       act(() => {
@@ -134,6 +145,10 @@ describe("ExplorerMetadata", () => {
   it("compacts by itself after the idle time, using a real timer", async () => {
     const machine = new MetadataMachine({ now: () => Date.now(), idleMs: 30 });
     render(<ExplorerMetadata moment={MOMENT} machine={machine} />);
+    expect(region().getAttribute("data-mode")).toBe("compact");
+    act(() => {
+      document.dispatchEvent(new Event("pointermove", { bubbles: true }));
+    });
     expect(region().getAttribute("data-mode")).toBe("expanded");
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 80));

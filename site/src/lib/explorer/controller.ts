@@ -7,6 +7,7 @@
 import {
   type ExplorerCamera,
   clampFov,
+  projectToViewport,
   rotateByDrag,
   screenRay,
   zoomAnchored,
@@ -223,7 +224,8 @@ export class ExplorerController {
     this.dragTo(x, y);
   }
 
-  pointerUp(id: number, x: number, y: number): void {
+  /** `select: false` ends a tap without picking: the page uses it when a tap only wakes the controls. */
+  pointerUp(id: number, x: number, y: number, options: { select?: boolean } = {}): void {
     if (!this.pointers.has(id)) return;
     this.pointers.delete(id);
     if (this.pointers.size === 0) {
@@ -232,7 +234,7 @@ export class ExplorerController {
         !this.dragging &&
         Math.hypot(x - this.start.x, y - this.start.y) <= DRAG_THRESHOLD_PX;
       this.endGesture();
-      if (wasClick) this.click(x, y);
+      if (wasClick && options.select !== false) this.click(x, y);
       return;
     }
     this.continueAsDrag();
@@ -282,6 +284,22 @@ export class ExplorerController {
       default:
         return false;
     }
+  }
+
+  /**
+   * The star under a point and where it is drawn, for the hover tooltip. Picks
+   * on the data, asks for no frame and changes nothing.
+   */
+  starAt(x: number, y: number): { id: string; x: number; y: number } | null {
+    const hit = pickAt(this.scene, this.view, this.camera, this.viewport, x, y, {
+      magLimit: this.magLimit,
+      below: this.layers.below,
+      lines: false,
+    });
+    if (hit?.kind !== "star") return null;
+    const vec = this.starVector(hit.id);
+    const at = vec ? projectToViewport(this.camera, vec, this.viewport.width, this.viewport.height) : null;
+    return at ? { id: hit.id, x: at.x, y: at.y } : null;
   }
 
   /** Centre on the star or constellation under the pointer, else on the point itself. */

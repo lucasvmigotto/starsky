@@ -10,7 +10,7 @@ import type { Locator, Page } from "@playwright/test";
 import { rotate } from "../src/lib/sky/quat.ts";
 import { type ExplorerPayload, decodeExplorer, explorerFragmentFromHash } from "../src/lib/sky/payload.ts";
 import { angularDistanceDeg, raDecToVec } from "../src/lib/sky/vec.ts";
-import { SIRIUS, expect, explorerUrl, test } from "./fixtures.ts";
+import { SIRIUS, expect, explorerUrl, test, wakeChrome } from "./fixtures.ts";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const STATUS = "Map announcements";
@@ -25,6 +25,7 @@ async function openExplorer(page: Page, url: string): Promise<Locator> {
   await expect(canvas).toBeVisible();
   await expect(canvas).toHaveAttribute("data-frames", /^[1-9]\d*$/);
   await expect(page.getByRole("toolbar", { name: "Map controls" })).toBeVisible();
+  await wakeChrome(page);
   return canvas;
 }
 
@@ -77,9 +78,9 @@ test.describe("explorer interface: inspector and search", () => {
 
   test("inspects a constellation from the list and centers on it", async ({ page }) => {
     await openExplorer(page, explorerUrl(SIRIUS));
-    await page.getByRole("button", { name: "Inspector", exact: true }).click();
+    await page.getByRole("button", { name: "Show details" }).click();
     await page
-      .getByRole("list", { name: "Constellations" })
+      .getByRole("list", { name: /Above the horizon/ })
       .getByRole("button", { name: /^Orion/ })
       .click();
     await expect(page.getByRole("heading", { name: "Orion", level: 2 })).toBeVisible();
@@ -125,33 +126,31 @@ test.describe("explorer interface: inspector and search", () => {
     await expect(page.getByRole("option")).toHaveCount(0);
   });
 
-  test("the canvas resizes when the inspector opens, which is 300 to 360 px wide; closing returns focus", async ({ page }) => {
+  test("the panel floats over the sky: the canvas keeps its size when it opens, and closing returns focus to the tab", async ({ page }) => {
     const canvas = await openExplorer(page, explorerUrl(SIRIUS));
     const before = await canvas.boundingBox();
-    const frames = Number(await canvas.getAttribute("data-frames"));
-    const toggle = page.getByRole("button", { name: "Inspector", exact: true });
+    const toggle = page.getByRole("button", { name: "Show details" });
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
     await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    const hide = page.getByRole("button", { name: "Hide details" });
+    await expect(hide).toHaveAttribute("aria-expanded", "true");
     const inspector = page.getByRole("complementary", { name: "Inspector" });
     await expect(inspector).toBeVisible();
     const width = (await inspector.boundingBox())?.width ?? 0;
     expect(width).toBeGreaterThanOrEqual(300);
     expect(width).toBeLessThanOrEqual(360);
-    const after = await canvas.boundingBox();
-    expect(after?.width).toBeCloseTo((before?.width ?? 0) - width, 0);
-    await expect.poll(async () => Number(await canvas.getAttribute("data-frames"))).toBeGreaterThan(frames);
+    expect(await canvas.boundingBox()).toEqual(before);
     await page.getByRole("button", { name: "Close inspector" }).click();
     await expect(inspector).toBeHidden();
-    await expect(toggle).toBeFocused();
-    await expect.poll(async () => (await canvas.boundingBox())?.width).toBeCloseTo(before?.width ?? 0, 0);
+    await expect(page.getByRole("button", { name: "Show details" })).toBeFocused();
+    expect(await canvas.boundingBox()).toEqual(before);
   });
 });
 
 test.describe("explorer interface: moment strip", () => {
   const strip = (page: Page): Locator => page.getByRole("region", { name: "Moment" });
 
-  test("is expanded on load, one line after idle time, and expands again on activity", async ({ page }) => {
+  test("is expanded by activity, one line after idle time, and expands again on activity", async ({ page }) => {
     const canvas = await openExplorer(page, explorerUrl(SIRIUS, { title: "Midwinter", place: "Times Square" }));
     await expect(strip(page)).toHaveAttribute("data-mode", "expanded");
     await expect(strip(page)).toContainText("Midwinter");
@@ -229,6 +228,7 @@ test.describe("explorer interface: toolbar and layers", () => {
       .toEqual([false, true, "hidden"]);
     await page.reload();
     await expect(canvasOf(page)).toBeVisible();
+    await wakeChrome(page);
     await page.getByRole("button", { name: "Layers", exact: true }).click();
     await expect(page.getByRole("checkbox", { name: "Horizon" })).not.toBeChecked();
     await expect(page.getByRole("checkbox", { name: "Equatorial grid" })).toBeChecked();

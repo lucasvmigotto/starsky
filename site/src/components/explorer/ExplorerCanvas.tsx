@@ -21,15 +21,28 @@ interface Props {
   onController?: (controller: ExplorerController | null) => void;
   /** So the page can return focus to the map. */
   canvasRef?: RefObject<HTMLCanvasElement | null>;
+  /**
+   * Asked when a touch lands, before anything else reacts to it: true means the
+   * controls are hidden, so this tap only wakes them and selects nothing.
+   */
+  wakesOnly?: () => boolean;
 }
 
 const HINT_ID = "explorer-canvas-hint";
 /** Wheel `deltaMode` 1 is lines; scale to roughly pixels. */
 const LINE_HEIGHT_PX = 16;
 
-export default function ExplorerCanvas({ scene, payload, onController, canvasRef: external }: Props): JSX.Element {
+export default function ExplorerCanvas({
+  scene,
+  payload,
+  onController,
+  canvasRef: external,
+  wakesOnly,
+}: Props): JSX.Element {
   const own = useRef<HTMLCanvasElement | null>(null);
   const canvasRef = external ?? own;
+  const wakesOnlyRef = useRef(wakesOnly);
+  wakesOnlyRef.current = wakesOnly;
   const [announcement, setAnnouncement] = useState("");
 
   useEffect(() => {
@@ -71,8 +84,10 @@ export default function ExplorerCanvas({ scene, payload, onController, canvasRef
       const r = canvas.getBoundingClientRect();
       return { x: event.clientX - r.left, y: event.clientY - r.top };
     };
+    const quietTaps = new Set<number>();
     const onPointerDown = (e: PointerEvent): void => {
       if (e.pointerType === "mouse" && e.button !== 0) return;
+      if (e.pointerType === "touch" && wakesOnlyRef.current?.() === true) quietTaps.add(e.pointerId);
       canvas.setPointerCapture(e.pointerId);
       const p = local(e);
       controller.pointerDown(e.pointerId, p.x, p.y);
@@ -83,9 +98,10 @@ export default function ExplorerCanvas({ scene, payload, onController, canvasRef
     };
     const onPointerUp = (e: PointerEvent): void => {
       const p = local(e);
-      controller.pointerUp(e.pointerId, p.x, p.y);
+      controller.pointerUp(e.pointerId, p.x, p.y, { select: !quietTaps.delete(e.pointerId) });
     };
     const onPointerCancel = (e: PointerEvent): void => {
+      quietTaps.delete(e.pointerId);
       controller.pointerCancel(e.pointerId);
     };
     const onWheel = (e: WheelEvent): void => {

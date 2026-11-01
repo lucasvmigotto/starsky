@@ -130,6 +130,23 @@ export function explorerUrl(
   return `/#e=${encodeExplorer({ ...BASE_EXPLORER, q, ...overrides })}`;
 }
 
+/**
+ * The Explorer opens with its controls hidden (014-explorer-polish), and a hidden
+ * control takes no pointer. A pointer move brings them back, as it does for a
+ * visitor. They hide again 4 s after the last activity, so a test that waits
+ * longer than that before using a control wakes it again.
+ */
+export async function wakeChrome(page: import("@playwright/test").Page): Promise<void> {
+  const canvas = page.getByRole("img", { name: /sky map/i });
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error("the Explorer canvas has no box");
+  const x = box.x + 24;
+  const y = box.y + box.height * 0.55;
+  await page.mouse.move(x, y);
+  await page.mouse.move(x + 6, y + 4);
+  await expect(page.locator(".explorer-stage-inner")).toHaveAttribute("data-chrome", "visible");
+}
+
 /** A shared `test` that fails the test on any unexpected console error. */
 export const test = base.extend<{ consoleErrors: string[] }>({
   consoleErrors: [

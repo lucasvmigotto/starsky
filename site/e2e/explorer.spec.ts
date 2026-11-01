@@ -101,6 +101,8 @@ test.describe("explorer", () => {
     test.skip(testInfo.project.name !== "mobile-chromium", "touch input needs the mobile project");
     const canvas = await openExplorer(page, explorerUrl(SIRIUS));
     const c = await centreOf(canvas);
+    // The first tap only wakes the hidden controls (explorer-polish.spec.ts); the second selects.
+    await page.touchscreen.tap(c.x, c.y);
     await page.touchscreen.tap(c.x, c.y);
     await expect(page.getByRole("status", { name: "Map announcements" })).toHaveText(/^Sirius selected/);
   });

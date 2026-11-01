@@ -42,6 +42,8 @@ export interface FrameInput {
 /** Stars of one visual class, as x, y pairs. */
 export interface StarBatch {
   radius: number;
+  /** Opacity tier by magnitude, 0.6 to 1; the renderer multiplies `dim` on top. */
+  alpha: number;
   dim: boolean;
   glow: boolean;
   xy: number[];
@@ -106,15 +108,36 @@ const BRIGHT_CLEARANCE_PX = 4;
 /** One label per this many square pixels, so small viewports thin out first. */
 const LABEL_AREA_PX2 = 60_000;
 const LABEL_CAP_MIN = 2;
-const GLOW_CLASS = 2.5;
+/** Stars at or brighter than this magnitude get a glow circle. */
+const GLOW_MAG = 2;
+const RADIUS_BASE_PX = 3.6;
+const RADIUS_PER_MAG_PX = 0.5;
+const RADIUS_MIN_PX = 0.8;
+const RADIUS_MAX_PX = 4.5;
+/** Opacity falls linearly from 1 at the first magnitude to the faint value at the second. */
+const ALPHA_FULL_MAG = 4;
+const ALPHA_FAINT_MAG = 6.5;
+const ALPHA_FAINT = 0.6;
+/** Steps between full and faint opacity, so batches stay few. */
+const ALPHA_STEPS = 4;
 const SAMPLE_DEG = 3;
 const GRID_STEP_DEG = 30;
 const DEFAULT_CARDINALS = ["N", "E", "S", "W"] as const;
 
-/** Radius class (0.5 px steps) from magnitude, before the zoom factor. */
+/** Radius class (0.5 px steps, never under the floor) from magnitude, before the zoom factor. */
 function radiusClass(mag: number): number {
-  const raw = Math.min(3.6, Math.max(0.6, 2.9 - 0.4 * mag));
-  return Math.max(0.5, Math.round(raw * 2) / 2);
+  const raw = Math.min(RADIUS_MAX_PX, Math.max(RADIUS_MIN_PX, RADIUS_BASE_PX - RADIUS_PER_MAG_PX * mag));
+  return Math.max(RADIUS_MIN_PX, Math.round(raw * 2) / 2);
+}
+
+/** Opacity tier, 0 (full) to ALPHA_STEPS (faintest). */
+function alphaTier(mag: number): number {
+  const t = (mag - ALPHA_FULL_MAG) / (ALPHA_FAINT_MAG - ALPHA_FULL_MAG);
+  return Math.round(Math.min(1, Math.max(0, t)) * ALPHA_STEPS);
+}
+
+function tierAlpha(tier: number): number {
+  return 1 - (tier * (1 - ALPHA_FAINT)) / ALPHA_STEPS;
 }
 
 function zoomScale(fovDeg: number): number {
@@ -227,11 +250,13 @@ function planStars(input: FrameInput): StarBatch[] {
     const alt = view.altitudesDeg[i] ?? 0;
     if (!starShown(layers.below, alt)) continue;
     const cls = radiusClass(star.mag);
+    const tier = alphaTier(star.mag);
     const dim = isBelow(alt);
-    const key = cls * 4 + (dim ? 1 : 0);
+    const glow = star.mag <= GLOW_MAG && !dim;
+    const key = (((cls * 2) * (ALPHA_STEPS + 1) + tier) * 2 + (glow ? 1 : 0)) * 2 + (dim ? 1 : 0);
     let batch = batches.get(key);
     if (!batch) {
-      batch = { radius: cls * zoom, dim, glow: cls >= GLOW_CLASS && !dim, xy: [] };
+      batch = { radius: cls * zoom, alpha: tierAlpha(tier), dim, glow, xy: [] };
       batches.set(key, batch);
     }
     batch.xy.push(sx, sy);

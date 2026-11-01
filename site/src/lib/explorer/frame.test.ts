@@ -1,8 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import { type ExplorerCamera, lookAt, screenRay } from "../sky/camera.ts";
 import { dot } from "../sky/vec.ts";
+import { explorer } from "../../design/tokens.ts";
 import { CTX, dirAt, sceneOf } from "./fixture.ts";
-import { type FrameInput, type FramePlan, planFrame } from "./frame.ts";
+import { type FrameInput, type FramePlan, type StarBatch, planFrame } from "./frame.ts";
 import { DEFAULT_LAYERS } from "./layers.ts";
 
 const VIEWPORT = { width: 800, height: 600 };
@@ -75,6 +76,68 @@ describe("planFrame stars", () => {
     const faint = plan.stars.find((b) => b.radius === Math.min(...radii));
     expect(bright?.glow).toBe(true);
     expect(faint?.glow).toBe(false);
+  });
+});
+
+/** One star alone, drawn at the default field of view so the zoom factor is 1. */
+function batchOf(mag: number, alt = 5): StarBatch {
+  const plan = planOf([{ hip: 1, dir: dirAt(alt, 0), mag }], { camera: horizonCamera(100) });
+  return plan.stars[0];
+}
+
+const shown = (b: StarBatch): number => b.alpha * (b.dim ? explorer.alpha.dim : 1);
+
+describe("brighter stars (014 T002)", () => {
+  it("grows radius as 3.6 - 0.5 mag, in half-pixel steps, between 0.8 and 4.5", () => {
+    expect(batchOf(0).radius).toBe(3.5);
+    expect(batchOf(2).radius).toBe(2.5);
+    expect(batchOf(4).radius).toBe(1.5);
+    expect(batchOf(-1.4).radius).toBe(4.5);
+  });
+
+  it("never draws a star under 0.8 px before zoom, however faint", () => {
+    for (const mag of [5, 5.4, 6, 6.5]) expect(batchOf(mag).radius).toBeGreaterThanOrEqual(0.8);
+    expect(batchOf(6.5).radius).toBe(1);
+  });
+
+  it("fades faint stars in tiers: full at magnitude 4, 0.6 at 6.5", () => {
+    expect(batchOf(1).alpha).toBe(1);
+    expect(batchOf(4).alpha).toBe(1);
+    expect(batchOf(6.5).alpha).toBeCloseTo(0.6, 9);
+    expect(batchOf(5.25).alpha).toBeCloseTo(0.8, 9);
+    const tiers = new Set<number>();
+    for (let mag = 4; mag <= 6.5; mag += 0.05) tiers.add(batchOf(mag).alpha);
+    expect(tiers.size).toBeLessThanOrEqual(6);
+  });
+
+  it("gives a glow to magnitude 2 and brighter only, at alpha 0.25", () => {
+    expect(batchOf(2).glow).toBe(true);
+    expect(batchOf(1.2).glow).toBe(true);
+    expect(batchOf(2.2).glow).toBe(false);
+    expect(batchOf(3).glow).toBe(false);
+    expect(explorer.alpha.glow).toBe(0.25);
+  });
+
+  it("keeps every below-horizon star dimmer than the faintest star above the horizon", () => {
+    const brightestBelow = batchOf(-1.4, -10);
+    const faintestAbove = batchOf(6.5, 10);
+    expect(brightestBelow.dim).toBe(true);
+    expect(shown(brightestBelow)).toBeLessThan(shown(faintestAbove));
+  });
+
+  it("derives the selection ring from the same radius", () => {
+    const stars = [{ hip: 1, dir: dirAt(5, 0), mag: 1.3 }];
+    const plan = planOf(stars, { camera: horizonCamera(100), selection: "HIP:1" });
+    expect(plan.marks[0]?.radius).toBe((plan.stars[0]?.radius ?? 0) + 5);
+  });
+
+  it("keeps the batches few across a whole sky of magnitudes", () => {
+    const stars = Array.from({ length: 400 }, (_, i) => ({
+      hip: i + 1,
+      dir: dirAt(((i * 7) % 60) - 20, (i * 13) % 50),
+      mag: -1 + (i % 76) / 10,
+    }));
+    expect(planOf(stars, { camera: horizonCamera(100) }).stars.length).toBeLessThanOrEqual(60);
   });
 });
 

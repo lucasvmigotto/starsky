@@ -58,10 +58,12 @@
   --space-7: 2rem;
   --space-8: 3rem;
 
-  /* Radius by role: small, because the artifact's circle is the only curve the
-     product needs. Two values, not one applied everywhere. */
-  --radius-control: 2px;
-  --radius-panel: 4px;
+  /* Radius by role. The Explorer's controls float over a sky of points and arcs,
+     so they are rounded; two values, never a pill. Anything that shows the
+     poster itself takes --radius-artifact, so a Square poster stays square. */
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --radius-artifact: 0px;
 
   /* Motion. The reveal is the single orchestrated moment (vision). */
   --motion-duration-short: 160ms;
@@ -710,10 +712,19 @@ select.atlas-form-input option {
 }
 
 .explorer-stage-inner {
+  position: relative;
   display: flex;
   flex: 1 1 auto;
   min-width: 0;
   height: 100%;
+  /* The side panel floats over the sky; this is how far in from the right the
+     controls must stay, and it is 0 whenever no panel sits at the right. */
+  --explorer-panel-w: clamp(300px, 26vw, 360px);
+  --explorer-inset: 0px;
+}
+
+.explorer-stage-inner:has(.explorer-inspector[data-open="true"]) {
+  --explorer-inset: var(--explorer-panel-w);
 }
 
 .explorer-view {
@@ -734,7 +745,7 @@ select.atlas-form-input option {
   position: absolute;
   top: var(--space-3);
   left: var(--space-3);
-  max-width: min(34rem, calc(100% - 6rem));
+  max-width: min(34rem, calc(100% - var(--explorer-inset) - 4rem));
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -747,7 +758,6 @@ select.atlas-form-input option {
 }
 
 .explorer-moment,
-.explorer-copy,
 .explorer-toolbar,
 .explorer-popover {
   background: color-mix(in srgb, var(--color-surface) 90%, transparent);
@@ -756,6 +766,7 @@ select.atlas-form-input option {
 }
 
 .explorer-moment {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
@@ -765,6 +776,7 @@ select.atlas-form-input option {
 }
 
 .explorer-moment-visual {
+  flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -839,6 +851,10 @@ select.atlas-form-input option {
     border-color var(--motion-duration-short) var(--motion-ease);
 }
 
+.explorer-pin {
+  white-space: nowrap;
+}
+
 .explorer-pin:hover,
 .explorer-close:hover,
 .explorer-tool:hover,
@@ -867,6 +883,21 @@ select.atlas-form-input option {
   outline-offset: 2px;
 }
 
+.explorer-icon-button,
+.explorer-tool-icon {
+  width: 44px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.explorer-icon-button {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
 .explorer-tool:disabled {
   opacity: 0.45;
   cursor: default;
@@ -880,49 +911,61 @@ select.atlas-form-input option {
   text-decoration: underline;
 }
 
-.explorer-copy {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  border: 0;
-  background: transparent;
-}
-
-.explorer-copy .explorer-pin {
-  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
-}
-
+/* A failed copy: text under the strip, out of its flow so the strip keeps its shape. */
 .explorer-copy-status {
-  max-width: 14rem;
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  padding: var(--space-2) var(--space-3);
   font-size: 0.8125rem;
-  color: var(--color-text-muted);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel);
 }
 
 .explorer-copy-status:empty {
   display: none;
 }
 
-.explorer-toolbar {
+/*
+ * Bottom right: the toolbar and, above it, whichever popover is open, so a
+ * popover is always anchored to the toolbar however many rows it wraps to.
+ * With the side panel open the dock sits to the panel's left.
+ */
+.explorer-dock {
   position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
+  right: calc(var(--space-3) + var(--explorer-inset));
+  bottom: var(--space-3);
   display: flex;
-  flex-flow: column wrap-reverse;
-  align-items: stretch;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: var(--space-2);
+  max-width: calc(100% - 2 * var(--space-3) - var(--explorer-inset));
+  max-height: calc(100% - 2 * var(--space-3));
+  pointer-events: none;
+}
+
+.explorer-dock > * {
+  pointer-events: auto;
+}
+
+.explorer-toolbar {
+  display: flex;
+  flex: none;
+  flex-flow: row wrap;
+  justify-content: flex-end;
+  align-items: center;
   gap: var(--space-1);
   padding: var(--space-1);
-  max-height: calc(100% - 2 * var(--space-3));
 }
 
 .explorer-popover {
-  position: absolute;
-  top: var(--space-3);
-  right: calc(var(--space-3) + 6rem);
-  width: min(20rem, calc(100% - 8rem));
-  max-height: calc(100% - 2 * var(--space-3));
+  width: min(20rem, 100%);
+  min-height: 0;
   overflow-y: auto;
   padding: var(--space-3);
-  z-index: 2;
 }
 
 .explorer-panel-head,
@@ -1003,16 +1046,91 @@ select.atlas-form-input option {
   color: var(--color-text-muted);
 }
 
-/* Inspector: a right panel by default. */
+/* Hover tooltip: beside the star, never taking the pointer. Placed by script before paint. */
+.explorer-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  visibility: hidden;
+  max-width: 16rem;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface) 95%, transparent);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-control);
+  pointer-events: none;
+}
+
+.explorer-tooltip-title {
+  font-size: 0.9375rem;
+}
+
+.explorer-tooltip-detail {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+/* Inspector: a right panel that floats over the sky, so opening it never resizes the canvas. */
 .explorer-inspector {
-  flex: 0 0 clamp(300px, 26vw, 360px);
-  width: clamp(300px, 26vw, 360px);
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  width: var(--explorer-panel-w);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   background: var(--color-surface);
   border-left: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel) 0 0 var(--radius-panel);
   color: var(--color-text);
+}
+
+/* The tab: small to look at, 44 px to hit. It rides the panel's left edge. */
+.explorer-tab {
+  position: absolute;
+  top: 50%;
+  right: var(--explorer-inset);
+  z-index: 4;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 44px;
+  height: 64px;
+  padding: 0;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.explorer-tab-face {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 56px;
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  border: 1px solid var(--color-border);
+  border-right: 0;
+  border-radius: var(--radius-control) 0 0 var(--radius-control);
+  transition: background var(--motion-duration-short) var(--motion-ease);
+}
+
+.explorer-tab:hover .explorer-tab-face {
+  background: var(--color-raised);
+}
+
+.explorer-tab:focus-visible {
+  /* The ring is drawn on the face, which is what the eye sees. */
+  outline-style: none;
+}
+
+.explorer-tab:focus-visible .explorer-tab-face {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .explorer-inspector[data-open="false"] {
@@ -1109,28 +1227,56 @@ select.atlas-form-input option {
   color: var(--color-text-muted);
 }
 
+.explorer-list-partly {
+  margin-inline: auto var(--space-2);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.explorer-group {
+  margin-top: var(--space-2);
+}
+
+.explorer-group-summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.explorer-group-summary:hover {
+  background: var(--color-raised);
+}
+
+.explorer-group-summary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 /* Narrow or short screens: the inspector becomes a bottom sheet. */
 @media (max-width: 47.99rem), (max-height: 32rem) {
+  .explorer-stage-inner:has(.explorer-inspector[data-open="true"]) {
+    --explorer-inset: 0px;
+  }
+
   .explorer-top {
     right: var(--space-3);
     max-width: none;
   }
 
   /*
-   * A row above the sheet: within thumb reach, and off the sky's center. It
-   * spans the screen (centered) so it wraps to a second row only when six
-   * buttons do not fit, instead of wrapping at half the width.
+   * A row above the sheet, right-aligned: within thumb reach and off the sky's
+   * centre. The dock wraps to a second row only when the buttons do not fit.
    */
-  .explorer-toolbar {
-    top: auto;
+  .explorer-dock {
     right: var(--space-2);
     bottom: calc(44px + var(--space-2));
-    left: var(--space-2);
-    width: fit-content;
-    margin-inline: auto;
-    flex-flow: row wrap;
-    justify-content: center;
-    max-height: none;
+    max-width: calc(100% - 2 * var(--space-2));
+    max-height: calc(100% - 44px - 2 * var(--space-2) - var(--space-3));
     z-index: 2;
   }
 
@@ -1140,34 +1286,34 @@ select.atlas-form-input option {
     white-space: nowrap;
   }
 
-  .explorer-stage-inner:has(.explorer-inspector[data-open="true"]) .explorer-toolbar {
+  .explorer-stage-inner:has(.explorer-inspector[data-open="true"]) .explorer-dock {
     bottom: calc(38dvh + var(--space-2));
+    max-height: calc(100% - 38dvh - 2 * var(--space-2));
   }
 
   .explorer-popover {
-    top: auto;
-    right: var(--space-3);
-    bottom: calc(44px + 44px + 3 * var(--space-2));
-    left: var(--space-3);
-    width: auto;
     max-height: 50dvh;
   }
 
   .explorer-inspector {
-    position: absolute;
+    top: auto;
     left: 0;
     right: 0;
     bottom: 0;
     width: auto;
-    flex: none;
     overflow: hidden;
     border-left: 0;
+    border-radius: 0;
     border-top: 1px solid var(--color-border-soft);
     z-index: 3;
   }
 
   .explorer-inspector[data-open="false"] {
     display: flex;
+  }
+
+  .explorer-tab {
+    display: none;
   }
 
   .explorer-sheet-handle {
@@ -1198,22 +1344,37 @@ select.atlas-form-input option {
     overflow-y: auto;
     max-height: calc(38dvh - 44px);
   }
-
-  .explorer-tool-inspector {
-    display: none;
-  }
 }
 
-/* Short screens have the width to spare: keep the row off the sky's center. */
-@media (max-height: 32rem) {
-  .explorer-toolbar {
-    right: var(--space-2);
-    left: auto;
-    margin-inline: 0;
-  }
+/*
+ * Idle collapse (014): the controls fade out but stay in the tab order and the
+ * accessibility tree, so never display:none or visibility:hidden. Focusing one
+ * brings them all back. The one-line moment stays.
+ */
+.explorer-toolbar,
+.explorer-tab,
+.explorer-inspector,
+.explorer-moment > button {
+  transition: opacity var(--motion-duration-panel) var(--motion-ease);
+}
+
+.explorer-stage-inner[data-chrome="hidden"] :is(.explorer-toolbar, .explorer-tab, .explorer-inspector, .explorer-moment > button) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Out of the strip's flow, so the strip fits the line alone. */
+.explorer-stage-inner[data-chrome="hidden"] .explorer-moment > button {
+  position: absolute;
+  top: 0;
+  right: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .explorer-toolbar,
+  .explorer-tab,
+  .explorer-inspector,
+  .explorer-moment > button,
   .explorer-moment-full,
   .explorer-moment-line,
   .explorer-pin,
@@ -1250,6 +1411,7 @@ select.atlas-form-input option {
 
 .atlas-studio-canvas {
   display: block;
+  border-radius: var(--radius-artifact);
   width: 100%;
   height: auto;
 }

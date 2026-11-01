@@ -1,5 +1,5 @@
 /**
- * Floating map controls. It follows the controller only through its settled
+ * Map controls, bottom right. It follows the controller only through its settled
  * event, and only for whether the zoom buttons are at a limit, so a moving sky
  * never renders it (FR-001). Buttons act on the controller directly.
  */
@@ -13,16 +13,12 @@ interface Props {
   controller: ExplorerController;
   searchOpen: boolean;
   layersOpen: boolean;
-  inspectorOpen: boolean;
   onToggleSearch: () => void;
   onToggleLayers: () => void;
-  onToggleInspector: () => void;
   /** Open the Poster Studio with this scene; the button shows only when given. */
   onCreatePoster?: () => void;
   searchRef?: RefObject<HTMLButtonElement | null>;
   layersRef?: RefObject<HTMLButtonElement | null>;
-  inspectorRef?: RefObject<HTMLButtonElement | null>;
-  inspectorId?: string;
 }
 
 function tip(label: string, key: string): string {
@@ -33,15 +29,11 @@ function ExplorerToolbar({
   controller,
   searchOpen,
   layersOpen,
-  inspectorOpen,
   onToggleSearch,
   onToggleLayers,
-  onToggleInspector,
   onCreatePoster,
   searchRef,
   layersRef,
-  inspectorRef,
-  inspectorId,
 }: Props): JSX.Element {
   const [atMin, setAtMin] = useState(() => controller.getCamera().fovDeg <= FOV_MIN_DEG);
   const [atMax, setAtMax] = useState(() => controller.getCamera().fovDeg >= FOV_MAX_DEG);
@@ -80,7 +72,7 @@ function ExplorerToolbar({
       <button
         ref={zoomInRef}
         type="button"
-        className="explorer-tool"
+        className="explorer-tool explorer-tool-icon"
         aria-label={zoomInLabel}
         title={tip(zoomInLabel, "+")}
         disabled={atMin}
@@ -93,7 +85,7 @@ function ExplorerToolbar({
       <button
         ref={zoomOutRef}
         type="button"
-        className="explorer-tool"
+        className="explorer-tool explorer-tool-icon"
         aria-label={zoomOutLabel}
         title={tip(zoomOutLabel, "-")}
         disabled={atMax}
@@ -135,17 +127,6 @@ function ExplorerToolbar({
         onClick={onToggleSearch}
       >
         {t("explorer.toolbar.search")}
-      </button>
-      <button
-        ref={inspectorRef}
-        type="button"
-        className="explorer-tool explorer-tool-text explorer-tool-inspector"
-        title={t("explorer.toolbar.inspector")}
-        aria-expanded={inspectorOpen}
-        aria-controls={inspectorId}
-        onClick={onToggleInspector}
-      >
-        {t("explorer.toolbar.inspector")}
       </button>
       {onCreatePoster && (
         <button

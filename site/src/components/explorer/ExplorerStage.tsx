@@ -4,10 +4,11 @@
  * here in a reducer; everything that moves lives in the controller, and the
  * link follows it without React (history.replaceState on settle).
  */
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState, useSyncExternalStore } from "react";
 import type { JSX, KeyboardEvent } from "react";
 import type { ExplorerController } from "../../lib/explorer/controller.ts";
 import { absoluteLink, bindLink, currentHash } from "../../lib/explorer/link.ts";
+import { MetadataMachine } from "../../lib/explorer/metadata.ts";
 import { createPosterHash } from "../../lib/scene/handoff.ts";
 import type { ExplorerPayload } from "../../lib/sky/payload.ts";
 import type { SkyScene } from "../../lib/sky/scene.ts";
@@ -16,8 +17,11 @@ import ExplorerCopyLink from "./ExplorerCopyLink.tsx";
 import ExplorerInspector, { INSPECTOR_BODY_ID } from "./ExplorerInspector.tsx";
 import ExplorerLayers from "./ExplorerLayers.tsx";
 import ExplorerMetadata from "./ExplorerMetadata.tsx";
+import ExplorerPanelTab from "./ExplorerPanelTab.tsx";
 import ExplorerSearch from "./ExplorerSearch.tsx";
 import ExplorerToolbar from "./ExplorerToolbar.tsx";
+import ExplorerTooltip from "./ExplorerTooltip.tsx";
+import useChrome from "./useChrome.ts";
 
 interface Props {
   scene: SkyScene;
@@ -48,6 +52,13 @@ function sheetLayout(): boolean {
   return typeof window.matchMedia === "function" && window.matchMedia(SHEET_QUERY).matches;
 }
 
+/** How much of the map's right side the open side panel covers; 0 for the sheet. */
+function panelInset(): number {
+  if (sheetLayout()) return 0;
+  const panel = document.querySelector<HTMLElement>('.explorer-inspector[data-open="true"]');
+  return panel ? panel.getBoundingClientRect().width : 0;
+}
+
 export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
   const [controller, setController] = useState<ExplorerController | null>(null);
   const [selection, setSelection] = useState<string | null>(payload.sel);
@@ -60,9 +71,15 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const searchButton = useRef<HTMLButtonElement | null>(null);
   const layersButton = useRef<HTMLButtonElement | null>(null);
-  const inspectorButton = useRef<HTMLButtonElement | null>(null);
+  const tabButton = useRef<HTMLButtonElement | null>(null);
   const searchInput = useRef<HTMLInputElement | null>(null);
   const layersPanel = useRef<HTMLDivElement | null>(null);
+  const [metadata] = useState(() => new MetadataMachine({ now: () => Date.now() }));
+  const pinned = useSyncExternalStore(
+    (listener) => metadata.subscribe(listener),
+    () => metadata.mode === "pinned",
+  );
+  const chrome = useChrome({ rootRef: layoutRef, popoverOpen: panels.search || panels.layers, pinned });
 
   useEffect(() => {
     if (!controller) return;
@@ -107,7 +124,7 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
   const closeInspector = useCallback((): void => {
     dispatch({ type: "close", panel: "inspector" });
     const handle = layoutRef.current?.querySelector<HTMLElement>(".explorer-sheet-handle");
-    (sheetLayout() ? handle : inspectorButton.current)?.focus();
+    (sheetLayout() ? handle : tabButton.current)?.focus();
   }, []);
 
   const toggleSearch = useCallback((): void => {
@@ -175,45 +192,61 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
   };
 
   return (
-    <div className="explorer-stage-inner" ref={layoutRef} onKeyDownCapture={onKeyDownCapture}>
+    <div
+      className="explorer-stage-inner"
+      ref={layoutRef}
+      data-chrome={chrome.state}
+      onKeyDownCapture={onKeyDownCapture}
+    >
       <div className="explorer-view">
-        <ExplorerCanvas scene={scene} payload={payload} onController={setController} canvasRef={canvasRef} />
+        <ExplorerCanvas
+          scene={scene}
+          payload={payload}
+          onController={setController}
+          canvasRef={canvasRef}
+          wakesOnly={chrome.hiddenNow}
+        />
         {controller && (
           <>
-            <div className="explorer-top">
-              <ExplorerMetadata moment={moment} />
-              <ExplorerCopyLink getLink={() => absoluteLink(currentHash(controller, payload), window.location)} />
-            </div>
-            <ExplorerToolbar
+            <ExplorerTooltip
               controller={controller}
-              searchOpen={panels.search}
-              layersOpen={panels.layers}
-              inspectorOpen={panels.inspector}
-              onToggleSearch={toggleSearch}
-              onToggleLayers={toggleLayers}
-              onToggleInspector={toggleInspector}
-              onCreatePoster={createPoster}
-              searchRef={searchButton}
-              layersRef={layersButton}
-              inspectorRef={inspectorButton}
-              inspectorId={INSPECTOR_BODY_ID}
+              scene={scene}
+              canvas={canvasRef.current}
+              rightInset={panelInset}
             />
-            {panels.search && (
-              <div className="explorer-popover">
-                <ExplorerSearch
-                  scene={scene}
-                  magLimit={payload.mag}
-                  onChoose={chooseFromSearch}
-                  onClose={closeSearch}
-                  inputRef={searchInput}
-                />
-              </div>
-            )}
-            {panels.layers && (
-              <div className="explorer-popover" ref={layersPanel}>
-                <ExplorerLayers controller={controller} onClose={closeLayers} />
-              </div>
-            )}
+            <div className="explorer-top">
+              <ExplorerMetadata moment={moment} machine={metadata}>
+                <ExplorerCopyLink getLink={() => absoluteLink(currentHash(controller, payload), window.location)} />
+              </ExplorerMetadata>
+            </div>
+            <div className="explorer-dock">
+              <ExplorerToolbar
+                controller={controller}
+                searchOpen={panels.search}
+                layersOpen={panels.layers}
+                onToggleSearch={toggleSearch}
+                onToggleLayers={toggleLayers}
+                onCreatePoster={createPoster}
+                searchRef={searchButton}
+                layersRef={layersButton}
+              />
+              {panels.search && (
+                <div className="explorer-popover">
+                  <ExplorerSearch
+                    scene={scene}
+                    magLimit={payload.mag}
+                    onChoose={chooseFromSearch}
+                    onClose={closeSearch}
+                    inputRef={searchInput}
+                  />
+                </div>
+              )}
+              {panels.layers && (
+                <div className="explorer-popover" ref={layersPanel}>
+                  <ExplorerLayers controller={controller} onClose={closeLayers} />
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
@@ -228,6 +261,14 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
           onClear={clear}
           onToggle={toggleInspector}
           onClose={closeInspector}
+        />
+      )}
+      {controller && (
+        <ExplorerPanelTab
+          open={panels.inspector}
+          controls={INSPECTOR_BODY_ID}
+          onToggle={toggleInspector}
+          buttonRef={tabButton}
         />
       )}
     </div>

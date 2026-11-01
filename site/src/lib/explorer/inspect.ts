@@ -111,3 +111,33 @@ export function listConstellations(scene: SkyScene): ConstellationItem[] {
     .map((c) => ({ id: c.id, name: c.name, abbr: c.abbr }))
     .sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }) || (a.id < b.id ? -1 : 1));
 }
+
+export interface GroupedConstellation extends ConstellationItem {
+  /** Above the horizon with some of its stars below it. Never set in the bottom group. */
+  partly: boolean;
+}
+
+export interface ConstellationGroups {
+  above: GroupedConstellation[];
+  below: GroupedConstellation[];
+}
+
+const byName = (a: ConstellationItem, b: ConstellationItem): number =>
+  a.name.localeCompare(b.name, "en", { sensitivity: "base" }) || (a.id < b.id ? -1 : 1);
+
+/**
+ * The browse list split by the horizon: a constellation with any star above it
+ * goes in `above`. Depends on the place and moment only, so compute it once per scene.
+ */
+export function groupConstellations(scene: SkyScene, view: ObserverView): ConstellationGroups {
+  const above: GroupedConstellation[] = [];
+  const below: GroupedConstellation[] = [];
+  for (const con of scene.constellations) {
+    let up = 0;
+    for (const i of con.memberIndices) if (!isBelow(view.altitudesDeg[i] ?? 0)) up++;
+    const item = { id: con.id, name: con.name, abbr: con.abbr };
+    if (up === 0) below.push({ ...item, partly: false });
+    else above.push({ ...item, partly: up < con.memberIndices.length });
+  }
+  return { above: above.sort(byName), below: below.sort(byName) };
+}

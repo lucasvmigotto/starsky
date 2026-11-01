@@ -83,7 +83,7 @@ export const explorer = {
     /** Stars and lines below the horizon. */
     dim: 0.3,
     grid: 0.7,
-    glow: 0.16,
+    glow: 0.25,
     halo: 0.75,
   },
   font: {

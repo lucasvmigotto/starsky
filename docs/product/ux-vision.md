@@ -141,9 +141,9 @@ conflict. **The sky is the product; the poster is an artifact made from it.**
 /                 landing: where do you want to explore the sky from?
 │
 ├── Explorer      #e=<payload>        primary, full-viewport celestial map
-│                 ├── adaptive metadata (expanded, compact one line, pinned)
-│                 ├── floating toolbar: zoom, reset, layers, search, poster
-│                 └── inspector: right panel; bottom sheet on phones
+│                 ├── adaptive metadata (one line on load; expanded, compact, pinned)
+│                 ├── toolbar, bottom right: zoom, reset, layers, search, poster
+│                 └── inspector: right panel with a tab; bottom sheet on phones
 │
 ├── Viewer        #s=<payload>        a shared poster, exactly as before
 │                 └── explore this sky → Explorer
@@ -153,34 +153,72 @@ conflict. **The sky is the product; the poster is an artifact made from it.**
 ```
 
 A visitor with a `#s=` link still sees their poster first, with no form (P1).
-The metadata never disappears by default: it collapses to one line when idle.
+The metadata never disappears: it opens as one line, expands during activity
+and collapses to one line when idle.
 Constellation labels are always on and subtle. Stars below the horizon are
 dimmed and say so; selection is never shown by color alone.
 
 Copy keys for this direction live in *Key-screen copy*.
 
-**Explorer interface (011-explorer-ui).** The canvas fills the viewport; nothing
-sits over its centre.
+**Explorer interface (011-explorer-ui, reworked by 014-explorer-polish).** The
+canvas fills the viewport; nothing sits over its centre. The side panel floats
+over the sky instead of taking width, so opening or closing it never resizes
+the canvas.
 
 ```
-desktop                                      phone (portrait and landscape)
-┌─────────────────────────────┬───────────┐  ┌──────────────────────────┬──┐
-│ moment strip        [Copy]  │ inspector │  │ moment strip   [Copy]    │⊕ │
-│ (expanded → one line)       │ 300–360px │  │ (wraps; top, never over  │⊖ │
-│                          ┌─┐│ collapsed │  │  the selection)          │⟲ │
-│                  canvas  │T││ until a   │  │          canvas          │≡ │
-│                          │o││ selection │  │                          │⌕ │
-│                          │o││ or toggle │  ├──────────────────────────┴──┤
-│                          │l││           │  │ ▲ Show details · Sirius     │
-│                          └─┘│           │  └─────────────────────────────┘
-└─────────────────────────────┴───────────┘  bottom sheet: collapsed handle,
-toolbar: top-right edge, one column          expanded half-height; 44px targets
+desktop                                          phone (portrait and landscape)
+┌───────────────────────────────┬─────────────┐  ┌──────────────────────────────┐
+│ moment strip [⛓][Keep open]   │ inspector   │  │ moment strip   [⛓][Keep open]│
+│ (one line, then expanded)     │ 300–360px   │  │ (wraps; top, never over the  │
+│                               │ floats over │  │  selection)                  │
+│                         canvas│ the sky     │  │            canvas            │
+│                             ┌─┤             │  │                              │
+│                             │<│             │  │      [+][−][Reset][Layers].. │
+│                             └─┤             │  ├──────────────────────────────┤
+│            [+][−][Reset][Layers][Search][Poster]│ ▲ Show details · Sirius      │
+└───────────────────────────────┴─────────────┘  └──────────────────────────────┘
+toolbar: bottom right, a row; popovers open    bottom sheet: collapsed handle,
+upward from it. The tab (<  or  > when open)   expanded half-height; the toolbar
+rides the panel's left edge. 44px targets.     row sits above it, right-aligned.
 ```
 
-The moment strip is expanded on load and during activity, one line after 2.5 s
-idle, and pinned on request; it never hides and it wraps. The sheet and panel
-share one body. Escape closes search or layers first, then clears the
-selection, and focus returns to the control that opened the panel.
+The moment strip starts as one line on load, expands during activity, returns
+to one line after 2.5 s idle, and is pinned on request; it wraps. After 4 s
+without activity the toolbar, the tab, the side panel or sheet and the strip's
+buttons fade out, leaving the one-line moment (see *Idle collapse* below). With
+the side panel open the toolbar sits to the panel's left, never under it. The
+sheet and panel share one body. Escape closes a star's tooltip first, then
+search or layers, then clears the selection, and focus returns to the control
+that opened the panel (the tab, on wide screens).
+
+**Idle collapse (014-explorer-polish).** The Explorer opens collapsed: only the
+one-line moment (title, place, date and time) shows, even for a link with a
+selection, which stays marked in the sky. Any pointer movement, touch, scroll or
+key press brings everything back, and after 4 s without activity the toolbar,
+the panel tab, the side panel or sheet, and the strip's pin and copy buttons
+fade out again; the line stays. Nothing hides while search or layers is open,
+while keyboard focus is on a control, while the pointer rests on a control or
+the panel, while a drag is under way, or while the strip is pinned (pinned shows
+the strip expanded). The controls fade with opacity only, so they stay in the
+tab order and the accessibility tree and keep their names; tabbing to one
+brings all of them back. With reduced motion they appear and disappear without
+a fade. A selected star or constellation stays selected and marked, and its
+panel returns with the controls.
+
+On a touch screen the first tap while the controls are hidden only wakes them
+and never selects anything in the sky; the second tap selects. A first-time
+phone visitor therefore taps once to get the controls. A mouse click selects as
+usual, because moving the mouse already woke the controls.
+
+**Star tooltip (014-explorer-polish).** Holding a mouse or pen pointer still
+over a star for 1.5 s shows a small tooltip beside it: the name (or HIP
+number), the apparent magnitude, and whether the star is above or below the
+horizon. It closes when the pointer moves to another spot, when a drag or a zoom
+starts, when the pointer leaves the map, and on Escape, which closes it before
+anything else and leaves the selection alone. It never covers the star and
+stays inside the screen. Touch and keyboard keep using selection and the panel,
+which show the same facts, so the tooltip is hidden from screen readers. It
+does not depend on the idle collapse.
 
 ## Information architecture
 
@@ -496,8 +534,20 @@ serif tolerates more than sans, but the copy is short.
 
 ### Spacing, radius, elevation
 
-4px base scale (`.25rem` … `4rem`). Radius `2px` on controls, `4px` on panels —
-small, because the artifact's circle is the only curve the product needs.
+4px base scale (`.25rem` … `4rem`). Radius `8px` on controls (`radius.control`),
+`12px` on panels, the moment strip and popovers (`radius.panel`), and `0` on
+anything that shows the poster itself (`radius.artifact`).
+
+The first draft kept corners at `2px` and `4px` because the artifact's circle
+was the only curve the product needed. The Explorer changes that argument: its
+controls float over a sky of points and arcs, and hard rectangles against that
+read as cut-outs, so the controls are rounded. Two radii by role stays true,
+and so does the rule against pills: no button or panel is a stadium shape.
+Icon-only buttons (zoom, copy link) are circles; the panel tab is rounded only
+on the side that faces the sky and square against the screen edge. A poster
+preview is a print, not chrome, so its corners follow the artifact, never the
+controls: the Square shape stays square.
+
 Elevation is expressed with **surface lightness, not shadows**: a night sky has
 no drop shadows, and `rgba(0,0,0,.1)` card shadows are an AI-default tell.
 
@@ -524,7 +574,7 @@ already honoured in `index.css` and must survive the token change.
 `color.bg`, `color.surface`, `color.raised`, `color.text`, `color.text.muted`,
 `color.text.faint`, `color.accent`, `color.accent.ink`, `color.border`,
 `color.border.soft`, `color.focus`; `font.display`, `font.ui`; `space.1`–`space.8`;
-`radius.control`, `radius.panel`; `motion.duration.short`, `motion.duration.reveal`;
+`radius.control`, `radius.panel`, `radius.artifact`; `motion.duration.short`, `motion.duration.reveal`;
 `shadow.none` (deliberately empty).
 
 ---
@@ -951,7 +1001,11 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 | `explorer.inspector.clear` | Clear selection |
 | `explorer.kind.star` | Star |
 | `explorer.kind.constellation` | Constellation |
+| `explorer.tooltip.detail` | Magnitude {mag} · {horizon} *(the hover tooltip; {horizon} is `explorer.inspector.horizon.above` or `.below`)* |
 | `explorer.list.title` | Constellations |
+| `explorer.list.above` | Above the horizon ({count}) |
+| `explorer.list.below` | Below the horizon ({count}) |
+| `explorer.list.partly` | partly |
 | `explorer.search.input` | Search constellations and stars |
 | `explorer.search.placeholder` | Name, abbreviation or HIP number |
 | `explorer.search.results` | Search results |
@@ -971,7 +1025,6 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 | `explorer.toolbar.reset` | Reset view |
 | `explorer.toolbar.layers` | Layers |
 | `explorer.toolbar.search` | Search |
-| `explorer.toolbar.inspector` | Inspector |
 | `explorer.toolbar.poster` | Create poster |
 | `explorer.toolbar.shortcut` | {label} ({key}) |
 | `explorer.layers.title` | Layers |
