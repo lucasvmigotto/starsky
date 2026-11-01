@@ -1,6 +1,6 @@
 # Feature: One visual identity across the Explorer, Studio and Viewer
 
-Feature: `015-visual-identity` | Status: In progress | Depends: 014 | Issue: #60 | Direction: BCR-0013
+Feature: `015-visual-identity` | Status: Implemented | Depends: 014 | Issue: #60 | Direction: BCR-0013
 
 Owner feedback after using 014 (2026-10-31). Lands before 013 (#54), so the new landing is built on this identity.
 
