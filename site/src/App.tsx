@@ -26,6 +26,12 @@ function studioHash(): string | null {
   return hash.startsWith("#studio=") && hash.length > 8 ? hash : null;
 }
 
+/** The `#c=` hash, or null: it opens the landing, pre-filled, and a pasted one remounts it. */
+function creationHash(): string | null {
+  const { hash } = window.location;
+  return hash.startsWith("#c=") && hash.length > 3 ? hash : null;
+}
+
 function hasShareFragment(): boolean {
   return fragmentFromHash(window.location.hash) !== null;
 }
@@ -41,11 +47,13 @@ function Root() {
   const [ready, setReady] = useState(hasShareFragment);
   const [explorer, setExplorer] = useState(explorerHash);
   const [studio, setStudio] = useState(studioHash);
+  const [creation, setCreation] = useState(creationHash);
   useEffect(() => {
     const onHash = () => {
       setReady(hasShareFragment());
       setExplorer(explorerHash());
       setStudio(studioHash());
+      setCreation(creationHash());
     };
     window.addEventListener("hashchange", onHash);
     return () => {
@@ -83,7 +91,9 @@ function Root() {
       </Suspense>
     );
   }
-  return <LandingPage />;
+  // Keyed by the fragment so a pasted `#c=` link refills the form; the landing's own
+  // `replaceState` writes raise no `hashchange`, so typing never remounts it.
+  return <LandingPage key={creation ?? "blank"} />;
 }
 
 export default function App() {

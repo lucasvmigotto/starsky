@@ -73,6 +73,13 @@ const PATHS = {
       <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
     </>
   ),
+  locate: (
+    <>
+      <circle cx="12" cy="12" r="3.5" />
+      <circle cx="12" cy="12" r="7.5" />
+      <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" />
+    </>
+  ),
   check: <path d="M20 6 9 17l-5-5" />,
   "chevron-left": <path d="m15 18-6-6 6-6" />,
   "chevron-right": <path d="m9 18 6-6-6-6" />,

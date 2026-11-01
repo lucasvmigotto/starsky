@@ -124,6 +124,7 @@ No database. Stores are files, all build artifacts or browser-local:
 | Font (woff2/otf) | bundle | per release | bundled (BCR-0004) |
 | Poster exports | visitor's device | ephemeral | never uploaded |
 | Share payload | URL fragment | ephemeral | v1 codec, backward compatible |
+| Creation link `#c=` | URL fragment | ephemeral | pre-filled landing form (013): same encoding (canonical JSON, zlib 9, base64url), `{v:1}` with optional `place`, `lat`, `lon`, `when_local`, `tz`, `title`, `magnitude_limit`; each field validated and dropped alone if invalid; `site/src/lib/landing/creation.ts` |
 
 No personal data is stored or transmitted (place text goes only to Nominatim, from the browser — `site/src/lib/geocode.ts:15,80`).
 

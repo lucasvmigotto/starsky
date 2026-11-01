@@ -115,6 +115,18 @@ describe("copy", () => {
     // `viewer.canvasHint`, `viewer.viewControls`, `viewer.zoomIn`, `viewer.zoomOut` and
     // `viewer.resetView` retire.
     // 178 → 177 for the footer (FR-011): `footer.source` retires; the version is the link.
-    expect(copyKeys().length).toBe(177);
+    // 177 → 186 for the landing's place search (013-location-first).
+    // 186 → 203 for the location map and the selected-place line (013-location-first).
+    // 203 → 208 for the coordinates toggle and its errors (013-location-first).
+    // 208 → 208 for the moment row (+2: timezone label, Detect) and the retired
+    // landing form (−2: `landing.mode.label`, `landing.appearance.legend`).
+    // 208 → 212 for the landing actions and the moment and timezone errors (013-location-first).
+    // 212 → 207 for the always-visible map and the Coordinates switch: `landing.map.show`,
+    // `.hide`, `.expand`, `.collapse` and `.skip` retire, and 212 → 206 with `landing.poster`
+    // ("Make a poster instead": Explore this sky is the only action) (013-location-first).
+    // 206 → 207 for the unreadable `#c=` link notice (013-location-first); 207 → 208 for the Studio:
+    // the subtitle retires and the summary note splits around its link to the start page;
+    // 208 → 210 for the capitalised Projection options (`landing.render.projection.*`).
+    expect(copyKeys().length).toBe(210);
   });
 });

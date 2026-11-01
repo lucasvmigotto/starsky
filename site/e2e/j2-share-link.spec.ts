@@ -16,17 +16,19 @@ test.describe("J2 shared link", () => {
     await expect(page.getByText("E2E Night")).toBeVisible();
   });
 
-  test("no fragment shows the landing form", async ({ page }) => {
+  test("no fragment shows the location-first landing", async ({ page }) => {
     await page.goto("/");
-    // With no `#s=` the landing form owns the page. (The `EmptyState` exists
-    // too, but inside a closed `<details>` explainer — hidden, deliberately.)
+    // With no link the landing owns the page: it asks where to explore from.
     await expect(
-      page.getByRole("button", { name: /show my sky/i }),
+      page.getByRole("heading", { name: "Where do you want to explore the sky from?" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /explore this sky/i }),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: /load a random sky/i }),
     ).toBeVisible();
-    await expect(page.getByRole("radiogroup", { name: /input mode/i })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: /search for a place/i })).toBeVisible();
   });
 
   test("a corrupt fragment shows the invalid state, not a crash", async ({

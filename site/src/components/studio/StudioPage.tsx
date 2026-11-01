@@ -12,7 +12,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import { t } from "../../i18n/index.ts";
 import { encodePayload } from "../../lib/encode.ts";
-import { formatCoords, formatLocalTime } from "../../lib/caption.ts";
+import { formatLocalTime } from "../../lib/caption.ts";
 import { absoluteLink } from "../../lib/explorer/link.ts";
 import { posterGeometry, renderPoster } from "../../lib/render/poster.ts";
 import {
@@ -41,6 +41,9 @@ import {
   draftHash,
   studioFragmentFromHash,
 } from "../../lib/studio/draft.ts";
+import { encodeCreation } from "../../lib/landing/creation.ts";
+import { formatLocalNow } from "../../lib/landing/payload.ts";
+import LocationSummary from "../landing/LocationSummary.tsx";
 import PosterActions from "../PosterActions.tsx";
 import PosterFields, { type PosterFieldValues } from "../poster/PosterFields.tsx";
 import PosterHeading from "../PosterHeading.tsx";
@@ -302,6 +305,21 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
 
   const model = useSkyModel(applied, catalog, segments);
 
+  // The start page, pre-filled with this scene so changing the place or moment is one step.
+  const startHref = useMemo(
+    () =>
+      `#c=${encodeCreation({
+        place: applied.place,
+        lat: applied.lat,
+        lon: applied.lon,
+        when_local: formatLocalNow(new Date(applied.when_utc), applied.tz),
+        tz: applied.tz,
+        ...(applied.options.title === null ? {} : { title: applied.options.title }),
+        magnitude_limit: applied.options.magnitude_limit,
+      })}`,
+    [applied],
+  );
+
   const returnHref = useMemo((): string | null => {
     try {
       return returnToExplorerHash(applied);
@@ -311,14 +329,12 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
   }, [applied]);
 
   return (
-    <div className="atlas-page">
+    <div className="atlas-page atlas-studio-fit">
       <SiteHeader />
 
       <main className="atlas-main">
-        <div className="atlas-moment">
-          <h1 className="font-display text-3xl leading-tight sm:text-4xl">{t("studio.poster.heading")}</h1>
-          <p className="mt-2 text-sm text-text-muted">{t("studio.poster.subtitle")}</p>
-        </div>
+        {/* The heading is for the page's structure and screen readers; the poster's own title heads the preview. */}
+        <h1 className="sr-only">{t("studio.poster.heading")}</h1>
 
         {dataError !== null && (
           <p role="alert" className="atlas-alert">
@@ -343,7 +359,9 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
           <div className="atlas-studio-preview">
             <PosterHeading payload={applied} />
             {model && fontError === null ? (
-              <Preview payload={applied} model={model} fontsReady={fontsReady} />
+              <div className="atlas-studio-stage">
+                <Preview payload={applied} model={model} fontsReady={fontsReady} />
+              </div>
             ) : (
               dataError === null &&
               fontError === null && (
@@ -357,12 +375,22 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
           <div className="atlas-studio-side">
             <fieldset className="atlas-panel">
               <legend className="atlas-form-legend">{t("studio.moment.legend")}</legend>
-              {applied.place !== null && <p>{applied.place}</p>}
-              <p className={applied.place === null ? undefined : "atlas-form-hint"}>
-                {formatCoords(applied.lat, applied.lon)}
-              </p>
+              <LocationSummary
+                location={{
+                  lat: applied.lat,
+                  lon: applied.lon,
+                  place: applied.place,
+                  source: applied.place === null ? "typed" : "search",
+                }}
+              />
               <p className="atlas-form-hint">{formatLocalTime(applied.when_utc, applied.tz)}</p>
-              <p className="atlas-form-hint">{t("studio.summary.note")}</p>
+              <p className="atlas-form-hint">
+                {t("studio.summary.noteBefore")}
+                <a className="atlas-link" href={startHref}>
+                  {t("studio.summary.noteLink")}
+                </a>
+                {t("studio.summary.noteAfter")}
+              </p>
             </fieldset>
 
             <div className="atlas-panel atlas-form">
@@ -381,6 +409,27 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
                   setFields((current) => ({ ...current, ...patch }));
                 }}
               />
+              {/* Share, export and Explore sit under Advanced; their popovers open upward from here. */}
+              <div className="atlas-studio-buttons">
+          {model && (
+            <PosterActions
+              payload={applied}
+              model={model}
+              getLink={() => absoluteLink(`#s=${encodePayload(applied)}`, window.location)}
+            >
+              {returnHref !== null && (
+                <a
+                  className="atlas-btn-icon"
+                  href={returnHref}
+                  aria-label={t("studio.returnToExplorer")}
+                  title={t("studio.returnToExplorer")}
+                >
+                  <Icon name="explore" />
+                </a>
+              )}
+            </PosterActions>
+          )}
+              </div>
             </div>
           </div>
         </div>
@@ -390,26 +439,7 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
         </p>
       </main>
 
-      <SiteFooter>
-        {model && (
-          <PosterActions
-            payload={applied}
-            model={model}
-            getLink={() => absoluteLink(`#s=${encodePayload(applied)}`, window.location)}
-          >
-            {returnHref !== null && (
-              <a
-                className="atlas-btn-icon"
-                href={returnHref}
-                aria-label={t("studio.returnToExplorer")}
-                title={t("studio.returnToExplorer")}
-              >
-                <Icon name="explore" />
-              </a>
-            )}
-          </PosterActions>
-        )}
-      </SiteFooter>
+      <SiteFooter />
     </div>
   );
 }

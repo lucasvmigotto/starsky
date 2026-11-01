@@ -242,11 +242,13 @@ test.describe("the footer actions (FR-011)", () => {
     ["studio", () => studioUrl(fragmentFor()), "Return to Explorer"],
   ];
   for (const [name, url, third] of surfaces) {
-    test(`${name}: icon buttons of one size on the right of the footer, popovers above, one at a time`, async ({ page }) => {
+    test(`${name}: icon buttons of one size ${name === "viewer" ? "on the right of the footer" : "under Advanced, to the right"}, popovers above, one at a time`, async ({ page }) => {
       await page.goto(url());
       await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
       const footer = page.locator("footer");
-      const actions = footer.locator(".atlas-actions");
+      // The Viewer keeps its actions in the footer; the Studio puts them under Advanced (013).
+      const home = name === "viewer" ? footer : page.locator(".atlas-studio-buttons");
+      const actions = home.locator(".atlas-actions");
       await expect(actions).toBeVisible();
       const share = actions.locator("#share-trigger");
       const exp = actions.locator("#export-trigger");
@@ -268,17 +270,39 @@ test.describe("the footer actions (FR-011)", () => {
       }
       const vp = page.viewportSize();
       if (!vp) throw new Error("no viewport");
-      const foot = await must(footer);
-      // One row, vertically aligned, and on the right.
+      // One row, vertically aligned.
       expect(new Set(boxes.map((b) => Math.round(b.y))).size).toBe(1);
       const actionsBox = await must(actions);
-      const right = actionsBox.x + actionsBox.width;
-      expect(right).toBeGreaterThan(vp.width - 80);
-      expect(boxes[0]?.y ?? 0).toBeGreaterThanOrEqual(foot.y);
-      // On a phone the actions come before the version and attribution; on desktop they share a row.
-      const info = await must(footer.locator(".atlas-footer-info"));
-      if (vp.width < 768) expect(info.y).toBeGreaterThan((boxes[0]?.y ?? 0) + 40);
-      else expect(Math.abs(info.y + info.height / 2 - ((boxes[0]?.y ?? 0) + 22))).toBeLessThan(60);
+      if (name === "studio") {
+        // Under the Advanced accordion, right-aligned in its card.
+        const advanced = await must(page.locator("details", { has: page.getByText("Advanced", { exact: true }) }));
+        const card = await must(page.locator(".atlas-studio-buttons").locator("xpath=ancestor::div[contains(@class,'atlas-panel')][1]"));
+        expect(boxes[0]?.y ?? 0).toBeGreaterThanOrEqual(advanced.y + advanced.height - 1);
+        expect(actionsBox.x + actionsBox.width).toBeGreaterThan(card.x + card.width - 32);
+        expect(Math.round((boxes[1]?.x ?? 0) - ((boxes[0]?.x ?? 0) + (boxes[0]?.width ?? 0)))).toBe(8);
+        // The footer is credits, tagline and version only.
+        await expect(footer.locator(".atlas-actions")).toHaveCount(0);
+        // Keyboard order: Advanced, then the actions.
+        const order = await page.locator("summary, #share-trigger, #export-trigger, a[aria-label]").evaluateAll((els) => els.map((el) => el.id || el.textContent || el.getAttribute("aria-label") || ""));
+        expect(order.indexOf("Advanced")).toBeLessThan(order.indexOf("share-trigger"));
+      } else {
+        const foot = await must(footer);
+        const version = await must(footer.locator(".atlas-footer-version"));
+        // On a phone the tagline and version may wrap under the actions; they never overlap them.
+        const sameRow = actionsBox.x + actionsBox.width <= version.x + 1;
+        const below = version.y + 1 >= actionsBox.y + actionsBox.height;
+        expect(sameRow || (vp.width < 768 && below)).toBe(true);
+        expect(version.x + version.width).toBeGreaterThan(vp.width - 80);
+        expect(boxes[0]?.y ?? 0).toBeGreaterThanOrEqual(foot.y);
+        // The credits are on the left, ahead of everything else; on a phone they sit above the row.
+        const info = await must(footer.locator(".atlas-footer-info"));
+        expect(info.x).toBeLessThan(40 + 1);
+        if (vp.width < 768) expect(info.y + info.height).toBeLessThanOrEqual((boxes[0]?.y ?? 0) + 1);
+        else expect(info.x + info.width).toBeLessThanOrEqual(actionsBox.x + 1);
+        // Keyboard order follows the eye: the actions, then the version link.
+        const order = await footer.locator("a, button").evaluateAll((els) => els.map((el) => el.id || el.textContent || ""));
+        expect(order[order.length - 1]).toMatch(/^starsky@v/);
+      }
 
       // Share opens a popover above its button, inside the viewport.
       await expect(share).toHaveAttribute("aria-expanded", "false");
@@ -326,8 +350,8 @@ test.describe("the Studio preview is the image", () => {
     const head = await heading.boundingBox();
     if (!head) throw new Error("no heading box");
     expect(head.y + head.height).toBeLessThanOrEqual(box.y);
-    // It has the same panel and header as the Viewer.
-    await expect(page.locator("footer .atlas-actions")).toBeVisible();
+    // It has the same header as the Viewer; its actions sit under Advanced.
+    await expect(page.locator(".atlas-studio-buttons .atlas-actions")).toBeVisible();
     await expect(page.locator(".atlas-site-name")).toHaveText("Starsky");
   });
 });
@@ -386,17 +410,19 @@ test.describe("the shared form layout (FR-009)", () => {
     return Math.round(box.y);
   };
 
-  test("the landing has no explainer, and its primary button is centred at its natural width", async ({ page }) => {
+  test("the landing has no explainer and no subtitle; its one primary button is centred on a row of its own", async ({ page }) => {
     await page.goto("/");
-    const submit = page.getByRole("button", { name: "Show my sky" });
+    const submit = page.getByRole("button", { name: "Explore this sky" });
     await expect(submit).toBeVisible();
     await expect(page.getByText("What is this page?")).toHaveCount(0);
+    await expect(page.getByText("Drawn from 8 000+ stars, in your browser")).toHaveCount(1);
+    await expect(page.locator("main").getByText("Drawn from 8 000+ stars")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Load a random sky" })).toBeVisible();
-    const form = await page.locator("form.atlas-panel").boundingBox();
+    const form = await page.locator(".atlas-form-wrap .atlas-panel").boundingBox();
     const box = await submit.boundingBox();
     if (!form || !box) throw new Error("no boxes");
-    expect(box.x + box.width / 2).toBeCloseTo(form.x + form.width / 2, 0);
     expect(box.width).toBeLessThan(form.width * 0.7);
+    expect(box.x + box.width / 2).toBeCloseTo(form.x + form.width / 2, 0);
   });
 
   test("date and time sit beside the timezone on wide screens and stack on small ones, labels visible", async ({ page }) => {
@@ -405,31 +431,21 @@ test.describe("the shared form layout (FR-009)", () => {
     const zone = page.getByLabel("Timezone", { exact: true });
     await expect(when).toBeVisible();
     await expect(zone).toBeVisible();
-    await expect(page.getByRole("button", { name: "Detect" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Detect my timezone" })).toBeVisible();
     if (wide(page)) expect(await top(when)).toBe(await top(zone));
     else expect(await top(zone)).toBeGreaterThan(await top(when));
   });
 
-  test("radios and checkboxes sit inline and wrap", async ({ page }) => {
-    await page.goto("/");
-    const modes = page.getByRole("radiogroup", { name: "Input mode" }).getByRole("radio");
-    await expect(modes).toHaveCount(2);
-    expect(await top(modes.first())).toBe(await top(modes.last()));
-    await page.getByText("Advanced", { exact: true }).click();
-    const lines = page.getByLabel("Constellation lines");
-    const labels = page.getByLabel("Constellation labels");
-    if (wide(page)) expect(await top(lines)).toBe(await top(labels));
-  });
-
   test("Appearance pairs its controls, and Shape is a two-option segmented switch", async ({ page }) => {
-    await page.goto("/");
-    await page.getByText("Appearance", { exact: true }).click();
+    // The poster options left the landing (013); the Studio is where they live.
+    await page.goto(studioUrl(fragmentFor()));
+    await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
     const projection = page.getByLabel("Projection", { exact: true });
     const shape = page.getByRole("radiogroup", { name: "Shape" });
     await expect(shape.getByRole("radio")).toHaveCount(2);
     await expect(shape.getByRole("radio", { name: "circle" })).toBeChecked();
     const fisheye = page.getByLabel("Fisheye strength");
-    const separation = page.getByLabel("Minimum separation");
+    const separation = page.getByLabel("Min. separation");
     const glowToggle = page.getByLabel("Glow", { exact: true });
     const glow = page.getByLabel("Glow intensity");
     if (wide(page)) {
@@ -441,7 +457,7 @@ test.describe("the shared form layout (FR-009)", () => {
       expect(await top(separation)).toBeGreaterThan(await top(fisheye));
     }
     // The title is full width, below the pairs.
-    expect(await top(page.getByLabel("Title (optional)"))).toBeGreaterThan(await top(glow));
+    expect(await top(page.getByLabel("Title", { exact: true }))).toBeGreaterThan(await top(glow));
     // Choosing a segment works through the real radio and is announced as checked.
     await shape.getByRole("radio", { name: "square" }).check();
     await expect(shape.getByRole("radio", { name: "square" })).toBeChecked();
@@ -488,7 +504,7 @@ test.describe("phone widths", () => {
         test(`${name} does not scroll sideways`, async ({ page }) => {
           await page.goto(url());
           if (name === "explorer") await openExplorer(page);
-          else if (name === "landing") await expect(page.getByRole("button", { name: "Show my sky" })).toBeVisible();
+          else if (name === "landing") await expect(page.getByRole("button", { name: "Explore this sky" })).toBeVisible();
           else await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
           if (name === "viewer") await openExport(page);
           if (name === "landing" || name === "studio") {
@@ -500,6 +516,8 @@ test.describe("phone widths", () => {
             const out: string[] = [];
             if ((document.scrollingElement?.scrollWidth ?? 0) > w) out.push("page scrolls sideways");
             for (const el of Array.from(document.querySelectorAll("body *"))) {
+              // Map tiles run past the map's edge and are clipped by it, as they should be.
+              if (el.closest(".leaflet-container") && !el.classList.contains("leaflet-container")) continue;
               const r = el.getBoundingClientRect();
               if (r.width > 0 && (r.right > w + 1 || r.left < -1) && getComputedStyle(el).position !== "fixed") {
                 out.push(`${el.tagName.toLowerCase()}.${el.getAttribute("class") ?? ""}`);

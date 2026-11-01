@@ -139,15 +139,23 @@ test.describe("contrast (WCAG 2.2 AA)", () => {
     expect(failures.join("\n")).toBe("");
   });
 
-  test("landing form text meets 4.5:1", async ({ page }) => {
+  test("landing text meets 4.5:1", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("button", { name: /show my sky/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /explore this sky/i })).toBeVisible();
+    // The coordinates replace the search when the switch is on; measure them too.
+    await page.getByRole("switch", { name: "Coordinates" }).click();
+    await page.getByLabel("Latitude").fill("95");
 
     const samples = await sample(page, [
       "label[for='landing-lat']",
+      "label[for='landing-when']",
       ".atlas-form-hint",
+      ".landing-selected-name",
+      ".landing-selected-coords",
+      ".atlas-form-error",
+      "h1",
     ]);
-    expect(samples.length).toBeGreaterThanOrEqual(1);
+    expect(samples.length).toBeGreaterThanOrEqual(5);
 
     const failures: string[] = [];
     for (const s of samples) {

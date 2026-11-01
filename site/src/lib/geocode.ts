@@ -7,9 +7,9 @@
  *   name), so client-side identification relies on the automatic `Referer`
  *   header instead of the REQUIRED descriptive `User-Agent` the Python app
  *   sends. No `email` parameter is used.
- * - There is no response cache and no throttle here beyond the user's own
- *   clicks; Nominatim's usage policy (max ~1 req/s, no heavy/bulk use)
- *   applies — this call fires at most once per form submit, place mode only.
+ * - There is no response cache and no throttle here beyond the caller's own
+ *   (the landing debounces its search and cancels a request when the text
+ *   changes); Nominatim's usage policy (max ~1 req/s, no heavy/bulk use) applies.
  */
 
 const SEARCH_URL = "https://nominatim.openstreetmap.org/search";
@@ -66,20 +66,22 @@ export function shortPlaceName(item: NominatimItem): string {
   return toText(item.display_name ?? "").slice(0, 80);
 }
 
-/** Resolve `place` -> coordinates + labels. Throws on empty/no-result/HTTP. */
-export async function geocodePlace(place: string): Promise<ResolvedPlace> {
-  const query = place.trim();
-  if (!query) {
-    throw new Error("Enter a place name or switch to coordinates mode.");
-  }
+/** Nominatim's raw rows for `query`; throws on a network or HTTP failure. */
+async function fetchItems(
+  query: string,
+  limit: number,
+  signal: AbortSignal | undefined,
+): Promise<NominatimItem[]> {
   const url =
     `${SEARCH_URL}?q=${encodeURIComponent(query)}` +
-    "&format=jsonv2&limit=1&addressdetails=1";
+    `&format=jsonv2&limit=${String(limit)}&addressdetails=1`;
   let response: Response;
   try {
-    response = await fetch(url, { headers: { Accept: "application/json" } });
-  } catch {
-    throw new Error(`Geocoding request failed for ${JSON.stringify(query)}.`);
+    response = await fetch(url, { headers: { Accept: "application/json" }, signal });
+  } catch (error) {
+    // A cancelled search is the caller's doing, not a failure to report.
+    if (error instanceof DOMException && error.name === "AbortError") throw error;
+    throw new Error(`Geocoding request failed for ${JSON.stringify(query)}.`, { cause: error });
   }
   if (!response.ok) {
     throw new Error(
@@ -87,19 +89,32 @@ export async function geocodePlace(place: string): Promise<ResolvedPlace> {
     );
   }
   const items = (await response.json()) as NominatimItem[];
-  if (!Array.isArray(items) || items.length === 0) {
-    throw new Error(`No place found for ${JSON.stringify(query)}.`);
-  }
-  const first = (items[0] ?? {}) as NominatimItem & { lat?: unknown; lon?: unknown };
-  const lat = Number(first.lat);
-  const lon = Number(first.lon);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    throw new Error(`Geocoder returned bad coordinates for ${JSON.stringify(query)}.`);
-  }
+  return Array.isArray(items) ? items : [];
+}
+
+function toResolved(item: NominatimItem & { lat?: unknown; lon?: unknown }): ResolvedPlace | null {
+  const lat = Number(item.lat);
+  const lon = Number(item.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
   return {
     lat,
     lon,
-    displayName: toText(first.display_name ?? ""),
-    short: shortPlaceName(first),
+    displayName: toText(item.display_name ?? ""),
+    short: shortPlaceName(item),
   };
+}
+
+/**
+ * Up to `limit` matches for the landing's search list. An empty list means
+ * nothing matched; a rejection means the service failed, and an abort through
+ * `signal` rejects with an `AbortError`.
+ */
+export async function searchPlaces(
+  place: string,
+  { signal, limit = 5 }: { signal?: AbortSignal; limit?: number } = {},
+): Promise<ResolvedPlace[]> {
+  const query = place.trim();
+  if (!query) return [];
+  const items = await fetchItems(query, limit, signal);
+  return items.flatMap((item) => toResolved(item) ?? []);
 }

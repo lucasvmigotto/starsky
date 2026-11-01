@@ -130,8 +130,8 @@ export default function PosterFields({
                 onChange({ projection: e.target.value as Projection });
               }}
             >
-              <option value="stereographic">stereographic</option>
-              <option value="fisheye">fisheye</option>
+              <option value="stereographic">{t("landing.render.projection.stereographic")}</option>
+              <option value="fisheye">{t("landing.render.projection.fisheye")}</option>
             </select>
           </div>
           <div className="atlas-form-field">
@@ -139,7 +139,7 @@ export default function PosterFields({
               Shape
             </span>
             <div className="atlas-segmented" role="radiogroup" aria-labelledby={`${idPrefix}-shape-label`}>
-              {(["circle", "square"] as const).map((s) => (
+              {(["square", "circle"] as const).map((s) => (
                 <label key={s} className="atlas-segment">
                   <input
                     type="radio"

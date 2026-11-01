@@ -159,37 +159,59 @@ body {
   color: var(--color-text-muted);
 }
 
-/* The version and attribution on the left, the page's actions on the right. */
+/* The data credits on the left, the page's actions and the version link at the end. */
 .atlas-footer-main {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-2) var(--space-4);
 }
 
-/* A phone: the actions row first, then the version and attribution. */
-.atlas-footer-actions {
-  order: -1;
+.atlas-footer-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.atlas-footer-end {
   display: flex;
-  flex: 1 0 100%;
+  align-items: center;
   justify-content: flex-end;
+  gap: var(--space-3);
+  /* On a phone the credits sit above and this row takes the line, to the end, and may wrap. */
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  min-width: 0;
+  margin-left: auto;
 }
 
-@media (min-width: 48rem) {
-  .atlas-footer-actions {
-    order: 0;
-    flex: 0 0 auto;
+@media (min-width: 64rem) {
+  .atlas-footer-end {
+    flex: none;
+    flex-wrap: nowrap;
   }
 }
 
-/* Version + source, then the legal attribution. Two quiet lines, no eyebrow. */
+.atlas-footer-actions {
+  display: flex;
+}
+
+/* The tagline may wrap before the link, never inside it. */
+.atlas-footer-version {
+  text-align: right;
+}
+
+.atlas-footer-version a {
+  white-space: nowrap;
+}
+
 .atlas-footer-meta {
   max-width: 68ch;
 }
 
-.atlas-footer-meta + .atlas-footer-meta {
-  margin-top: 0.35rem;
+/* The credits are one short line: only the screen's edge wraps them. */
+.atlas-footer-info .atlas-footer-meta {
+  max-width: none;
 }
 
 /* The sky image: the square sky region, never wider than its column. */
@@ -1513,4 +1535,408 @@ select.atlas-form-input option {
     position: sticky;
     top: var(--space-4);
   }
+}
+
+/*
+ * Wide, tall screens (013): the Studio, like the landing and the Viewer, is one
+ * viewport tall. The preview column takes the height the header, poster heading and
+ * footer leave, and the poster is as large as that and the column's width allow, by
+ * CSS alone: the canvas keeps its pixel size and aspect, only its display size
+ * changes, so exports are untouched. The controls are compact. Phones stack and scroll.
+ */
+@media (min-width: 64rem) and (min-height: 36rem) {
+  .atlas-studio-fit {
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  .atlas-studio-fit .atlas-main {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-width: 96rem;
+    padding-block: var(--space-3);
+  }
+
+  .atlas-studio-fit .atlas-studio {
+    flex: 1 1 0;
+    min-height: 0;
+    gap: var(--space-5);
+    align-items: stretch;
+  }
+
+  .atlas-studio-fit .atlas-studio-preview {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .atlas-studio-fit .atlas-moment {
+    margin-bottom: var(--space-2);
+  }
+
+  /* The poster sits right under its heading, as one group at the top of the column. */
+  .atlas-studio-fit .atlas-studio-stage {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .atlas-studio-fit .atlas-studio-canvas {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .atlas-studio-fit .atlas-studio-side {
+    gap: var(--space-3);
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .atlas-studio-fit .atlas-panel {
+    padding: var(--space-4);
+  }
+
+  .atlas-studio-fit .atlas-form {
+    gap: var(--space-3);
+  }
+}
+
+/* Landing (013): the place search list sits in the flow, under its field. */
+/* The list floats under the field, so dismissing it never moves the page under a click. */
+.landing-search-box {
+  position: relative;
+}
+
+.landing-results {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 14rem;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+}
+
+.landing-result {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.landing-result[aria-selected="true"] {
+  background: var(--color-raised);
+  outline-offset: -2px;
+}
+
+.landing-search-status {
+  min-height: 1.1rem;
+  color: var(--color-text-muted);
+}
+
+/* Landing place (013): the field and its switch in one row, the map right under, then the summary. */
+.landing-place {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.landing-place-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.landing-place-field {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+/* Nudged down to the input, past the label, on wide rows; wraps below it on a phone. */
+.landing-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  margin-top: 1.5rem;
+  padding: 0 var(--space-1);
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+/* Wrapped under the field on a phone: no label to clear, so no nudge. */
+@media (max-width: 40rem) {
+  .landing-switch {
+    margin-top: 0;
+  }
+}
+
+.landing-switch:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.landing-switch-track {
+  display: inline-flex;
+  align-items: center;
+  width: 2.5rem;
+  height: 1.5rem;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-bg);
+}
+
+.landing-switch-thumb {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: calc(var(--radius-control) / 2);
+  background: var(--color-text-muted);
+  transition: transform var(--motion-duration-short) var(--motion-ease);
+}
+
+.landing-switch[aria-checked="true"] .landing-switch-track {
+  background: var(--color-accent);
+}
+
+.landing-switch[aria-checked="true"] .landing-switch-thumb {
+  background: var(--color-accent-ink);
+  transform: translateX(1rem);
+}
+
+.landing-map {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* The box is the map's size always (280 px, 220 on phones), loading or failed, so nothing shifts. */
+.landing-map-box {
+  position: relative;
+  height: 220px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+@media (min-width: 40rem) {
+  .landing-map-box {
+    height: 280px;
+  }
+}
+
+.landing-map-canvas {
+  height: 100%;
+  width: 100%;
+}
+
+.landing-map-notice {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.landing-map-canvas.leaflet-container {
+  z-index: 0;
+  font: inherit;
+}
+
+/* Leaflet draws its controls on a light ground over the tiles: dark text on it. */
+.landing-map-canvas .leaflet-control-attribution,
+.landing-map-canvas .leaflet-control-attribution a {
+  color: var(--color-bg);
+}
+
+.landing-map-canvas .leaflet-control-attribution a {
+  text-decoration: underline;
+}
+
+.landing-map-tiles-notice {
+  color: var(--color-text);
+}
+
+.landing-selected {
+  display: grid;
+  gap: var(--space-1);
+}
+
+/* Place and coordinates on one baseline; wraps between them, never inside the coordinates. */
+.landing-selected-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-2);
+}
+
+.landing-selected-lead {
+  min-width: 0;
+}
+
+.landing-selected-name {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+/* The coordinates keep the hint style they had on their own line. */
+.landing-selected-coords {
+  font-size: 0.78rem;
+  color: var(--color-text-faint);
+  white-space: nowrap;
+}
+
+
+/* Landing actions: the primary action centred on its own line, the secondary under it. */
+.landing-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Landing page (013): one column, tight enough to fit one screen on a large display. */
+.landing-main {
+  padding-block: var(--space-3) var(--space-4);
+}
+
+.landing-page .atlas-form-wrap {
+  max-width: 45rem;
+  margin-top: 0;
+}
+
+.landing-page .atlas-moment {
+  margin-bottom: var(--space-3);
+}
+
+.landing-page .atlas-form-alt {
+  margin-top: var(--space-3);
+}
+
+.landing-page .atlas-footer {
+  padding-block: var(--space-3);
+}
+
+.landing-card {
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.landing-card-notice {
+  grid-column: 1 / -1;
+}
+
+.landing-side {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.landing-search-status {
+  min-height: 0;
+}
+
+.landing-search-status:empty {
+  display: none;
+}
+
+/* Advanced on a full-width row of its own, then the action centred on the next. */
+.landing-foot {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.landing-actions {
+  display: flex;
+  justify-content: center;
+  padding-block: var(--space-2) var(--space-1);
+}
+
+/*
+ * On a large display the page is a full-height column and the map takes all the height
+ * the rest leaves, between 200 px and 60vh, so the landing fills the screen without
+ * scrolling. Phones keep the fixed map height above and scroll normally.
+ */
+@media (min-width: 64rem) {
+  .landing-page {
+    min-height: 100dvh;
+  }
+
+  .landing-main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .landing-page .atlas-form-wrap {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .landing-card {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .landing-place,
+  .landing-map {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .landing-map-region {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+  }
+
+  .landing-map-box {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 200px;
+    max-height: 60vh;
+  }
+
+  .landing-map-box .landing-map-canvas {
+    position: absolute;
+    inset: 0;
+    height: auto;
+  }
+}
+
+/* Share, export and Explore: a row under Advanced, to the right. */
+.atlas-studio-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.atlas-studio-buttons .atlas-actions {
+  gap: var(--space-2);
 }
