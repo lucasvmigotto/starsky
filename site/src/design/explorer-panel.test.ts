@@ -9,7 +9,7 @@ function rule(selector: string, from = 0): string {
   re.lastIndex = from;
   const m = re.exec(css);
   if (!m) throw new Error(`no rule for ${selector}`);
-  return m[3] ?? "";
+  return m[3];
 }
 
 describe("the side panel slides", () => {

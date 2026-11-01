@@ -69,7 +69,7 @@ Kept, evolved or replaced — the `frontend:build` stage needs this list.
 |---|---|---|
 | Routing | `HashRouter`, one wildcard route; `#s=` holds the payload | **Keep, extend.** No SPA fallback on the static host, and the share fragment must not fight router paths. Studio adds `#studio=`; both stay in one hash, not two router paths. |
 | Landing | A form — coordinates/place, date/time, tz, render options | **Replace with Studio.** The form is the Studio's controls; the landing becomes the choice between the two surfaces. |
-| Viewer | Map + constellation list + hover scrim + focus overlay | **Keep and elevate.** It is the product. |
+| Viewer | Map + constellation list + hover scrim + focus overlay | **Keep and elevate.** It is the product. *(Since BCR-0013 the page shows the image only: no figure list, no caption band on the page.)* |
 | Tokens | `--color-ink #0b0f19`, `--color-cream #f5efe0`, `--color-rose #b98a8a` | **Replace — in the UI only.** See *Two palettes*: `render-spec.json` keeps these exact values for the poster and is normative. The old CSS values were the *same* three colours as the poster's, which is what made the overlap easy to miss. |
 | Display face | Cormorant Garamond, `font-display` | **Keep, with a defined role.** Load-bearing: BCR-0006/0007 withhold the poster if it fails to load. |
 | `atlas-*` class names | ~50 classes | **Keep the names, replace the values.** Renaming them churns 506 lines and the e2e suite for no user-visible gain; retheming is a token change. |
@@ -228,9 +228,8 @@ No navigation chrome. Two surfaces, entered by intent, sharing one hash.
 /                         landing — choose a surface
 │
 ├── Viewer        #s=<payload>        a shared or canonical moment
-│                 ├── the map (primary, largest element)
-│                 ├── moment caption — title, local time, projection
-│                 ├── figure list — constellations, selectable
+│                 ├── heading — title, local time, projection
+│                 ├── the sky image (primary, centred; BCR-0013)
 │                 ├── share actions — copy link
 │                 ├── make your own — → #studio=
 │                 └── export — PNG · SVG · PDF (secondary)
@@ -277,7 +276,7 @@ Entry: a `#s=` link, possibly pasted or retyped.
 1. Parse the fragment. *Fail → F1-E1.*
 2. Load `catalog.json` + `constellations.json`. *Fail → F1-E2.*
 3. Confirm the caption font loaded (`document.fonts.check`). *Fail → F1-E3.*
-4. Draw the poster, then the figure list.
+4. Draw the poster's sky image.
 5. Done — map visible, no interaction required.
 
 **Five steps, none removable.** Step 3 exists because BCR-0007 withholds the
@@ -387,27 +386,25 @@ mobile                             desktop
 ┌──────────────────────┐          ┌────────────────────────────────────────┐
 │ Starsky      v1.0.0  │          │ Starsky                       v1.0.0    │
 │                      │          │                                        │
-│ Our first flat       │          │ Our first flat                           │
-│ 12 Jun 2024, 21:40   │          │ 12 Jun 2024, 21:40 · stereographic      │
+│ Our first flat       │          │             Our first flat              │
+│ 12 Jun 2024, 21:40   │          │   12 Jun 2024, 21:40 · stereographic    │
 │                      │          │                                        │
-│  ┌────────────────┐  │          │  ┌────────────────────────┐ ┌──────────┐ │
-│  │                │  │          │  │                        │ │ Cassiopeia│ │
-│  │      ★  ·      │  │          │  │       ★    ·           │ │ 42 stars │ │
-│  │   ·    ✦   ·   │  │          │  │                        │ │ mag 1.6  │ │
-│  │                │  │          │  │                        │ │──────────││ │
-│  └────────────────┘  │          │  └────────────────────────┘ │ Orion    │ │
-│                      │          │                                │ 58 stars │ │
-│  [Copy link] [PNG ▾] │          │ [Copy link] [SVG] [PDF] [PNG ▾]   │ │
-│                      │          │                                └──────────┘ │
-│  Figures             │          │                                        │
-│  · Cassiopeia        │          │ starsky v1.0.0 · GPL-3.0 · OSM       │
-│  · Orion             │          └────────────────────────────────────────┘
-└──────────────────────┘
+│  ┌────────────────┐  │          │        ┌────────────────────────┐      │
+│  │                │  │          │        │                        │      │
+│  │      ★  ·      │  │          │        │       ★    ·           │      │
+│  │   ·    ✦   ·   │  │          │        │                        │      │
+│  │                │  │          │        │                        │      │
+│  └────────────────┘  │          │        └────────────────────────┘      │
+│                      │          │                                        │
+│  [Share] [Export]    │          │ [Share] [Export] [Explore] [Make yours] │
+└──────────────────────┘          └────────────────────────────────────────┘
 ```
 
-The map is the largest element at every width. On mobile the figure list
-becomes a horizontal scroller rather than a column, so the map keeps its
-aspect ratio.
+The page is the heading and the sky image, centred, then share, export and the
+two actions (BCR-0013). The caption band under the image and the "Figures in
+this sky" panel are gone from the page; exploring figures is the Explorer's job.
+The exported PNG, SVG and PDF keep their caption band, byte for byte. The image
+is still draggable and zoomable, with three view controls under it.
 
 ### 3. Studio — build and tune
 
@@ -478,9 +475,7 @@ poster's rose constellation lines (`#b98a8a`) will sit beside verdigris accents
 boundary:
 
 > **`color.accent` is for interactive chrome only — never for anything that
-> represents a constellation in the map.** A selected figure's highlight in the
-> `FiguresPanel` is chrome (verdigris border, verdigris scrim). But anything
-> drawn *inside* the canvas takes its colour from `render-spec.json` and never
+> represents a constellation in the map.** Anything drawn *inside* the canvas takes its colour from `render-spec.json` and never
 > from a UI token.
 
 If the rose/verdigris tension proves too strong once seen, the correct fix is a
@@ -516,12 +511,12 @@ not and is therefore restricted to decoration.
 | Role | Face | Notes |
 |---|---|---|
 | Display, celestial proper names, caption preview | Cormorant Garamond 300–700 | Same face as the artifact |
-| UI chrome, labels, body, numbers | `system-ui` stack | Never a display face |
-| Coordinates, dates, counts | system sans + `tabular-nums` | Cormorant has no tabular figures; numbers would jitter |
+| UI chrome, labels, body, numbers | Inter Variable (latin, self-hosted, OFL), then the `system-ui` stack | Never a display face. Bundled so every machine shows the same face (015) |
+| Coordinates, dates, counts | Inter + `tabular-nums` | Cormorant has no tabular figures; numbers would jitter |
 
 **The serif boundary is nouns from the sky vs. the interface's furniture.**
-Constellation names in `FiguresPanel` are *the words the poster draws in the
-same face*, so they are Cormorant. Buttons, labels and hints are not.
+Constellation names the poster draws are in the same face, so they are
+Cormorant. Buttons, labels and hints are not.
 
 Cormorant is retained deliberately: BCR-0006/0007 make a font failure withhold
 the poster, and it is already bundled (no third-party request).
@@ -555,7 +550,7 @@ no drop shadows, and `rgba(0,0,0,.1)` card shadows are an AI-default tell.
 
 One orchestrated moment: the map fades up once, when it is ready
 (`atlas-rise`, 700 ms). Everything else is motion that answers an action — the
-figure list on hover, the export button's progress. No entrance animations on
+export button's progress, the side panel sliding in and out. No entrance animations on
 sections, no hover transitions on every card. `prefers-reduced-motion` is
 already honoured in `index.css` and must survive the token change.
 
@@ -616,12 +611,11 @@ Breakpoints by content, not by device:
 
 | Width | Change |
 |---|---|
-| ≥ 64rem | Viewer splits map / figure list side by side; Studio splits map / controls |
-| 40–64rem | Single column; figure list beside the map where it fits |
-| < 40rem | Single column; figure list becomes a horizontal scroller so the map keeps its aspect ratio; export actions wrap to their own row |
+| ≥ 64rem | Viewer is one centred column (heading, image, actions); Studio splits map / controls |
+| 40–64rem | Single column |
+| < 40rem | Single column; export actions wrap to their own row |
 
-Touch targets: 44px minimum for every control, including figure buttons in the
-scroller. Nothing is hidden at small widths except the subtitle line, which is
+Touch targets: 44px minimum for every control. Nothing is hidden at small widths except the subtitle line, which is
 redundant with the caption below it.
 
 ---
@@ -756,18 +750,6 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
 | `landing.explain` | What is this page? |
 
-**Landing · the figure panel**
-
-| Key | Copy |
-|---|---|
-| `figures.legend` | Figures in this sky |
-| `figures.subtitle` | {count} figures above the horizon. Rest on a name to light it up, open one to draw closer. |
-| `figures.hint` | Use the list of figures beside the sky to explore each constellation by keyboard. *(screen-reader only)* |
-| `figures.reset` | Reset view |
-| `figures.stat` | {count} stars, brightest mag {mag} |
-| `figures.tooltip` | {count} stars · brightest mag {mag} *(the hover tooltip)* |
-| `figures.title` | Constellation figures |
-
 **Viewer · shell**
 
 | Key | Copy |
@@ -780,7 +762,6 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | Key | Copy |
 |---|---|
 | `viewer.announced.ready` | Night sky poster ready. |
-| `viewer.announced.figureSelected` | Showing {name}. |
 | `viewer.announced.viewReset` | Showing the whole sky again. |
 | `viewer.announcementRegion` | Sky viewer status *(the region's `aria-label`, so it is distinguishable from the export row's)* |
 | `viewer.canvasLabel` | Night sky poster titled {title} |

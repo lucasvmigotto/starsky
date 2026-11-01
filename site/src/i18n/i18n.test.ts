@@ -106,6 +106,8 @@ describe("copy", () => {
     // 180 → 183 for the export layout choice (012-poster-studio, BCR-0012).
     // 183 → 190 for the Poster Studio page (012-poster-studio).
     // 190 → 192 for the Explorer and Viewer hand-offs (012-poster-studio).
-    expect(copyKeys().length).toBe(195);
+    // 195 → 187 for the image-only Viewer (015, BCR-0013): the figures panel's
+    // seven keys and `viewer.announced.figureSelected` retire.
+    expect(copyKeys().length).toBe(187);
   });
 });

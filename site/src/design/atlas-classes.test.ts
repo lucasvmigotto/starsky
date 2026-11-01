@@ -28,7 +28,7 @@ const REQUIRED: ReadonlyArray<readonly [string, readonly string[]]> = [
     ["atlas-moment", "atlas-explorer", "atlas-loaded"],
   ],
   ["panels and states", ["atlas-panel", "atlas-empty", "atlas-alert", "atlas-loading"]],
-  ["controls", ["atlas-btn", "atlas-btn-ghost", "atlas-btn-subtle", "atlas-link", "atlas-figure", "atlas-figure-active", "atlas-tooltip"]],
+  ["controls", ["atlas-btn", "atlas-btn-ghost", "atlas-btn-subtle", "atlas-link"]],
   ["the landing form", ["atlas-form", "atlas-form-wrap", "atlas-form-legend", "atlas-form-field"]],
   [
     "the form's controls",

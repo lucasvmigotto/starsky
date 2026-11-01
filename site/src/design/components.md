@@ -50,23 +50,15 @@ The three existing class families, which already satisfy the state matrix:
 - **Do**: the label says what happens ("Copy link" → "Link copied"). **Don't**:
   append `→`, use ALL CAPS, or give one action two names
 
-### `Tooltip` — built (as `.atlas-tooltip` + `FigureTooltip`)
+### `Tooltip` — built (as `ExplorerTooltip`)
 
-The hover/focus hint beside the canvas.
+The Explorer's star tooltip, one line: `<Name> • Magnitude <value>`
+(`explorer.tooltip.detail`). The Viewer has none since BCR-0013.
 
-- **States**: hidden · visible (on `onHover`/`onFocus`) · (dismissed on blur)
-- **Content**: the figure's name in Cormorant, then `figures.tooltip`
-- **A11y**: `pointer-events: none` — it must never steal the click the figure
-  was about to receive. The screen-reader path is `figures.hint`, not this
+- **States**: hidden · visible (after a mouse or pen rests on a star for 1.5 s)
+- **A11y**: `aria-hidden` and `pointer-events: none` — the inspector gives the
+  same facts to screen readers and it must never steal a click
 - **Motion**: none. It appears on an action, so an entrance animation would lag
-
-### `FigureList` — alias for `FiguresPanel`
-
-`specs/006-viewer/ui.md` names both. They are the same component: the list of
-figures beside the sky. **`FiguresPanel` is the real name** (it matches the
-file); `FigureList` is recorded here so the ui.md reference resolves, not
-because two components exist. If the two ever diverge in purpose, this alias
-becomes a real component and this note goes.
 
 ### `StatusRegion` — built (`.atlas-export-status`)
 
@@ -96,32 +88,17 @@ and a native control gets keyboard behaviour and the platform picker for free.
 The poster itself, drawn with the browser as the only renderer (ADR-0003).
 
 - **States**: loading (`viewer.loading`) · ready · error (`dataError.*`) ·
-  font-withheld (`fontError.*`, **assertive**, poster not drawn) ·
-  focus-overlay (a selected or hovered figure)
-- **Interaction**: click selects a figure (zoom to 2.4×); `Escape` resets;
-  hover draws a scrim + focus overlay on the *unzoomed* blit
+  font-withheld (`fontError.*`, **assertive**, poster not drawn)
+- **Interaction**: drag, wheel, pinch and keys move the image; `Escape` and `0`
+  return to the whole sky. No hover, no selection (BCR-0013)
+- **Image only**: the blit crops the composition to its square sky region, so
+  the caption band the exports carry is never on the page
 - **Zoom is a blit of a cached composition**, not a re-render (BCR-0002)
-- **A11y**: `role="img"` with a title-aware `aria-label`, plus `figures.hint`
-  in an `sr-only` span because the canvas is not keyboard-operable — the figure
-  list is the keyboard path
+- **A11y**: `role="img"` with a title-aware `aria-label`, `viewer.canvasHint`
+  as its description, and the caption as `sr-only` text. The canvas takes focus
+  and answers to the arrow keys, plus, minus and 0
 - **Never**: take a colour from a UI token. Everything inside the canvas comes
   from `render-spec.json` (vision D19)
-
-### `FiguresPanel` — built
-
-The list of constellation figures beside the sky.
-
-- **Anatomy**: `<section aria-label={figures.title}>` → `h2` + reset → subtitle
-  → `<ul>` of `<li><button aria-pressed>`
-- **States**: default · hover (`onHover`) · selected (`aria-pressed="true"`) ·
-  reset visible only when something is selected
-- **Selection is announced, not only coloured** — `aria-pressed`
-- **Sorting**: by name, recomputed from the model; index is preserved so
-  selection still refers to the model's figure
-- **Responsive**: single column; below 40rem the vision moves to a horizontal
-  scroller so the map keeps its aspect ratio
-- **Rule**: the figure names are the words the poster draws in the same face, so
-  they are set in Cormorant (vision principle 4)
 
 ### `ExportControls` — built
 

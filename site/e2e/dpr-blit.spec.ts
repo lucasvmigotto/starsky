@@ -1,5 +1,5 @@
 /**
- * The poster at non-1 device pixel ratios.
+ * The poster image at non-1 device pixel ratios.
  *
  * The offscreen composition lives in device pixels while the blit was coded in
  * logical ones, so at any `devicePixelRatio > 1` the visible canvas showed the
@@ -7,8 +7,10 @@
  * browser-zoomed display. Browser zoom-out "fixed" it only by dragging the
  * ratio back to 1, and only after a reload, because nothing recomposed.
  *
- * These journeys pin the whole poster on screen at 2x, where the old code
- * provably fails (the caption band shows magnified sky instead of text).
+ * These journeys pin the whole sky image on screen at 2x, where the old code
+ * provably fails (the ring shows magnified sky instead of a full circle). Since
+ * BCR-0013 the page shows the sky region only, so the discriminator is the ring
+ * rather than the caption band the exports still carry.
  */
 import type { Browser } from "@playwright/test";
 import { expect, fragmentFor, test, viewerUrl } from "./fixtures.ts";
@@ -23,19 +25,18 @@ interface PosterSample {
   /** CSS box, in viewport pixels. */
   css: { w: number; h: number };
   devicePixelRatio: number;
-  /** Light pixels in the caption band — the title and detail line. */
-  captionLight: number;
-  captionTotal: number;
+  /** How many of the four ring points (right, bottom, left, top) show the ring. */
+  ringPoints: number;
 }
 
 /**
  * Read the poster's own pixels, not a screenshot of it.
  *
  * A screenshot can be tinted by anything drawn *around* the canvas — a
- * tooltip, a caret — while the backing store is exactly what the blit put
- * there. The caption band is the discriminator: it carries text in a correct
- * render and magnified sky rows in the cropped one, two orders of magnitude
- * apart in light-pixel count.
+ * caret, a scrollbar — while the backing store is exactly what the blit put
+ * there. The ring is the discriminator: the unit circle is on screen at all
+ * four compass points in a correct render, and in the cropped one those points
+ * show magnified sky instead.
  */
 async function samplePoster(
   page: import("@playwright/test").Page,
@@ -48,26 +49,38 @@ async function samplePoster(
     const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("no 2d context");
-    // Logical caption strip, in backing-store pixels: x 100–700, y 880–960.
-    const scaleX = canvas.width / 800;
-    const scaleY = canvas.height / 1000;
-    const x0 = Math.round(100 * scaleX);
-    const x1 = Math.round(700 * scaleX);
-    const y0 = Math.round(880 * scaleY);
-    const y1 = Math.round(960 * scaleY);
-    const data = ctx.getImageData(x0, y0, x1 - x0, y1 - y0).data;
-    let light = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      const luma =
-        0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
-      if (luma > 120) light += 1;
+    // The sky is 800x800 logical; the ring sits at 400 / 1.06 from the centre.
+    const scale = canvas.width / 800;
+    const ringR = 400 / 1.06;
+    const luma = (x: number, y: number): number => {
+      const [r = 0, g = 0, b = 0] = ctx.getImageData(
+        Math.round(x * scale),
+        Math.round(y * scale),
+        1,
+        1,
+      ).data;
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const background = luma(4, 4);
+    let ringPoints = 0;
+    for (const [dx, dy] of [
+      [1, 0],
+      [0, 1],
+      [-1, 0],
+      [0, -1],
+    ] as const) {
+      // The brightest pixel across the ring's width, against the corner's.
+      let best = 0;
+      for (let r = ringR - 4; r <= ringR + 4; r += 0.5) {
+        best = Math.max(best, luma(400 + dx * r, 400 + dy * r));
+      }
+      if (best > background + 20) ringPoints += 1;
     }
     return {
       backing: { w: canvas.width, h: canvas.height },
       css: { w: rect.width, h: rect.height },
       devicePixelRatio: window.devicePixelRatio,
-      captionLight: light,
-      captionTotal: (x1 - x0) * (y1 - y0),
+      ringPoints,
     };
   });
 }
@@ -83,7 +96,7 @@ async function openViewer(
 }
 
 test.describe("poster at device pixel ratio 2", () => {
-  test("shows the whole poster, caption included", async ({
+  test("shows the whole sky image", async ({
     browser,
   }: {
     browser: Browser;
@@ -109,21 +122,16 @@ test.describe("poster at device pixel ratio 2", () => {
       // *not* the CSS box times the ratio — the element is laid out narrower
       // than 800px and the browser downscales.)
       expect(sample.backing.w).toBe(Math.round(800 * sample.devicePixelRatio));
-      expect(sample.backing.h).toBe(Math.round(1000 * sample.devicePixelRatio));
-      // The caption band carries the title and detail line: thousands of
-      // light pixels. The cropped render shows magnified sky rows here —
-      // sparse stars, two orders of magnitude fewer.
-      expect(
-        sample.captionLight,
-        `caption band has no text (light ${sample.captionLight.toString()}/${sample.captionTotal.toString()})`,
-      ).toBeGreaterThan(1000);
+      // Sky region only: no caption band rows on the page (BCR-0013).
+      expect(sample.backing.h).toBe(Math.round(800 * sample.devicePixelRatio));
+      expect(sample.ringPoints, "the ring is not whole on screen").toBe(4);
       expect(errors).toEqual([]);
     } finally {
       await context.close();
     }
   });
 
-  test("the default render keeps its caption too (control)", async ({
+  test("the default render is whole too (control)", async ({
     page,
   }: {
     page: import("@playwright/test").Page;
@@ -132,14 +140,14 @@ test.describe("poster at device pixel ratio 2", () => {
     const sample = await samplePoster(page);
     // Ratio-agnostic on purpose: the mobile project runs at a device ratio
     // above 1, so asserting exactly 1 here would fail on a phone for no
-    // reason. What must hold at *any* ratio is store-matches-ratio plus text
-    // in the caption band.
+    // reason. What must hold at *any* ratio is store-matches-ratio plus a whole
+    // ring.
     expect(sample.backing.w).toBe(
       Math.round(800 * sample.devicePixelRatio),
     );
     expect(sample.backing.h).toBe(
-      Math.round(1000 * sample.devicePixelRatio),
+      Math.round(800 * sample.devicePixelRatio),
     );
-    expect(sample.captionLight).toBeGreaterThan(200);
+    expect(sample.ringPoints).toBe(4);
   });
 });

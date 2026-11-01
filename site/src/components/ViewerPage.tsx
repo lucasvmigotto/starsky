@@ -19,8 +19,7 @@ import {
   type StarRow,
 } from "../lib/skymodel.ts";
 import { DISK_CX, DISK_CY } from "../lib/skymodel.ts";
-import { HOME_VIEW, zoomAt, type View } from "../lib/view.ts";
-import FiguresPanel from "./FiguresPanel.tsx";
+import { HOME_VIEW, isHomeView, zoomAt, type View } from "../lib/view.ts";
 import ExportControls from "./ExportControls.tsx";
 import ShareDialog from "./ShareDialog.tsx";
 import SkyCanvas from "./SkyCanvas.tsx";
@@ -75,9 +74,6 @@ export default function ViewerPage() {
   const [segments, setSegments] = useState<SegmentRow[] | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
   const [fontError, setFontError] = useState<string | null>(null);
-  const [hovered, setHovered] = useState<number | null>(null);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [tooltip, setTooltip] = useState<number | null>(null);
   const [view, setView] = useState<View>(HOME_VIEW);
   const [fontsReady, setFontsReady] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -93,8 +89,8 @@ export default function ViewerPage() {
   /**
    * Announced async outcomes (000-design-system T035).
    *
-   * A canvas that appears silently, and a figure that lights up without saying
-   * so, are both invisible to anyone not looking at the screen. The export row
+   * A canvas that appears silently, and a view that changes without saying so,
+   * are both invisible to anyone not looking at the screen. The export row
    * already announced via its own `role="status"`; these two were the gap.
    *
    * Polite, not assertive: nothing here is an error. The font failure stays
@@ -110,9 +106,6 @@ export default function ViewerPage() {
   useEffect(() => {
     const onHash = () => {
       setLink(readLink());
-      setSelected(null);
-      setHovered(null);
-      setTooltip(null);
       setView(HOME_VIEW);
     };
     window.addEventListener("hashchange", onHash);
@@ -286,10 +279,7 @@ export default function ViewerPage() {
   }, []);
 
   const resetView = useCallback(() => {
-    setSelected(null);
-    setHovered(null);
     setAnnouncement(t("viewer.announced.viewReset"));
-    setTooltip(null);
     animateView(HOME_VIEW);
   }, [animateView]);
 
@@ -325,13 +315,6 @@ export default function ViewerPage() {
    */
   const handleViewGesture = useCallback((next: View) => {
     cancelAnimationFrame(animRef.current);
-    /*
-     * A manual move leaves whatever was selected somewhere the visitor is now
-     * looking away from, so keeping it pressed in the panel would be claiming a
-     * focus the view no longer shows. It also drops the focus overlay, which
-     * would otherwise sit on top of unrelated sky.
-     */
-    setSelected(null);
     setView(next);
   }, []);
 
@@ -351,37 +334,16 @@ export default function ViewerPage() {
     zoomBy(1 / 1.5);
   }, [zoomBy]);
 
-  // Esc releases a focused figure.
+  // Esc returns to the whole sky.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && selected !== null) resetView();
+      if (e.key === "Escape" && !isHomeView(activeViewRef.current)) resetView();
     };
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
     };
-  }, [selected, resetView]);
-
-  const handleSelect = useCallback(
-    (index: number) => {
-      if (!model) return;
-      const fig = model.figures[index];
-      setSelected(index);
-      setTooltip(null);
-      // Announce what was focused *and* what now fills the view, since the
-      // zoom is the whole point of selecting.
-      setAnnouncement(
-        t("viewer.announced.figureSelected", { name: fig.name }),
-      );
-      animateView({ scale: 2.4, fx: fig.centroidX, fy: fig.centroidY });
-    },
-    [model, animateView],
-  );
-
-  const handleHoverFigure = useCallback((index: number | null) => {
-    setHovered(index);
-    setTooltip(index);
-  }, []);
+  }, [resetView]);
 
   return (
     <div className="atlas-page">
@@ -444,26 +406,14 @@ export default function ViewerPage() {
                     payload={payload}
                     model={model}
                     view={view}
-                    hovered={hovered}
-                    selected={selected}
                     canvasRef={canvasRef}
-                    onHoverFigure={handleHoverFigure}
-                    onSelectFigure={handleSelect}
                     onViewGesture={handleViewGesture}
                     onResetView={resetView}
                     fontsReady={fontsReady}
                   />
-                  {tooltip !== null && model.figures[tooltip] && (
-                    <div className="atlas-tooltip" role="status">
-                      <FigureTooltip
-                        figure={model.figures[tooltip]}
-                      />
-                    </div>
-                  )}
                   {/*
-                    Inside the poster's grid item rather than beside it: at two
-                    columns a third child would take a column of its own and
-                    push the figure list out of the layout.
+                    Under the image, centred: moving the image is by drag, wheel and
+                    keys, and these say that it can be moved at all.
                   */}
                   <ViewControls
                     view={view}
@@ -472,17 +422,6 @@ export default function ViewerPage() {
                     onReset={resetView}
                   />
                 </div>
-                <FiguresPanel
-                  figures={model.figures}
-                  hovered={hovered}
-                  selected={selected}
-                  onHover={(i) => {
-                    setHovered(i);
-                    setTooltip(i);
-                  }}
-                  onSelect={handleSelect}
-                  onReset={resetView}
-                />
               </div>
             ) : (
               !dataError && (
@@ -539,24 +478,6 @@ export default function ViewerPage() {
       </main>
 
       <SiteFooter />
-    </div>
-  );
-}
-
-function FigureTooltip({
-  figure,
-}: {
-  figure: { name: string; starIndices: number[]; brightestMag: number };
-}) {
-  return (
-    <div className="pointer-events-none mx-auto w-fit">
-      <p className="font-display text-lg leading-none">{figure.name}</p>
-      <p className="mt-1 text-xs text-cream/70">
-        {t("figures.tooltip", {
-          count: figure.starIndices.length,
-          mag: figure.brightestMag.toFixed(1),
-        })}
-      </p>
     </div>
   );
 }

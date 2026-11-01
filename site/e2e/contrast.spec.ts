@@ -104,11 +104,14 @@ async function sample(
   }, selectors);
 }
 
+// The Viewer is the heading and the image since BCR-0013: no figures panel, so
+// the pairs are the heading, its detail line, the buttons and the footer.
 const VIEWER_TEXT = [
-  "h2",
-  ".text-cream\\/60",
-  ".atlas-figure span:first-child",
-  ".atlas-figure span:last-child",
+  ".atlas-moment p:first-child",
+  ".atlas-moment p + p",
+  ".atlas-export-trigger",
+  ".atlas-btn-ghost",
+  ".atlas-footer",
 ];
 
 test.describe("contrast (WCAG 2.2 AA)", () => {

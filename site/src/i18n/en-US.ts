@@ -62,7 +62,6 @@ export const enUS = {
   "viewer.subtitle": "A night-sky atlas moment, recomputed in your browser",
   "viewer.loading": "Charting the stars…",
   "viewer.announced.ready": "Night sky poster ready.",
-  "viewer.announced.figureSelected": "Showing {name}.",
   "viewer.announced.viewReset": "Showing the whole sky again.",
   "viewer.announcementRegion": "Sky viewer status",
   "viewer.canvasLabel": "Night sky poster titled {title}",
@@ -106,19 +105,6 @@ export const enUS = {
   "viewer.export.layout.story": "Story (9:16)",
 
   "empty.title": "No sky on this page yet",
-  "figures.legend": "Figures in this sky",
-  "figures.subtitle":
-    "{count} figures above the horizon. Rest on a name to light it up, open one to draw closer.",
-  "figures.reset": "Reset view",
-  // The hover/focus tooltip beside the canvas. Distinct from `figures.stat`,
-  // which the panel uses — a tooltip wants the tighter phrasing.
-  "figures.tooltip": "{count} stars · brightest mag {mag}",
-  // Screen-reader-only: the canvas is not operable by pointer alone, so the
-  // figure list is the keyboard path and this says so.
-  "figures.hint":
-    "Use the list of figures beside the sky to explore each constellation by keyboard.",
-  "figures.stat": "{count} stars, brightest mag {mag}",
-  "figures.title": "Constellation figures",
   // Split around the `#s=…` fragment so it renders as `<code>` rather than as
   // literal backticks. The assembled sentence is exactly `empty.body` in the
   // vision; `i18n.test.ts` asserts the three parts read as one sentence.

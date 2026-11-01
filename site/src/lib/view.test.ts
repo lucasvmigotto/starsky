@@ -8,7 +8,7 @@
  * drag feels slightly wrong".
  */
 import { describe, expect, it } from "bun:test";
-import { CANVAS_H, CANVAS_W, DISK_CX, DISK_CY } from "./skymodel.ts";
+import { CANVAS_W, DISK_CX, DISK_CY, SKY_H } from "./skymodel.ts";
 import {
   clampScale,
   clampView,
@@ -78,11 +78,11 @@ describe("view transform", () => {
     });
 
     it("keeps the focus inside the poster however far it is flung", () => {
-      const flung = panBy({ scale: 4, fx: 400, fy: 400 }, -100000, 100000);
+      const flung = panBy({ scale: 4, fx: 400, fy: 400 }, 100000, -100000);
       expect(flung.fx).toBeGreaterThanOrEqual(0);
       expect(flung.fx).toBeLessThanOrEqual(CANVAS_W);
       expect(flung.fy).toBeGreaterThanOrEqual(0);
-      expect(flung.fy).toBeLessThanOrEqual(CANVAS_H);
+      expect(flung.fy).toBeLessThanOrEqual(SKY_H);
     });
   });
 

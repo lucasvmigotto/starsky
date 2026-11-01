@@ -156,10 +156,10 @@ body {
   margin-bottom: 1.75rem;
 }
 
+/* The sky image: one centred column, never wider than the image is useful at. */
 .atlas-explorer {
-  display: grid;
-  gap: 1.5rem;
-  grid-template-columns: 1fr;
+  width: min(100%, 44rem);
+  margin-inline: auto;
   opacity: 0;
 }
 
@@ -178,76 +178,11 @@ body {
   }
 }
 
-@media (min-width: 64rem) {
-  .atlas-explorer {
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-    align-items: start;
-  }
-}
-
 .atlas-panel {
   border: 1px solid color-mix(in srgb, var(--color-text) 0.14);
   border-radius: var(--radius-panel);
   padding: 1.25rem;
   background: color-mix(in srgb, var(--color-text) 0.02);
-}
-
-.atlas-figure {
-  width: 100%;
-  text-align: left;
-  padding: 0.55rem 0.75rem;
-  border: 1px solid transparent;
-  border-radius: var(--radius-panel);
-  /*
-   * `color` used to be set here as a per-element patch: buttons default to the
-   * browser's dark control colour, which fails WCAG AA on this background
-   * (measured 2.11:1). The class-level fix is `color-scheme: dark` on `:root`
-   * (spec.md DS-002), which also reaches scrollbars and native selects that no
-   * per-element rule could. The explicit colour is kept because it is the
-   * intended value, not a workaround — and the child spans still dim it with
-   * their own opacity.
-   */
-  color: var(--color-text);
-  font: inherit;
-  transition:
-    background var(--motion-duration-short) var(--motion-ease),
-    border-color var(--motion-duration-short) var(--motion-ease);
-}
-
-.atlas-figure:hover,
-.atlas-figure-active {
-  background: color-mix(in srgb, var(--color-accent) 0.12);
-  border-color: color-mix(in srgb, var(--color-accent) 0.45);
-}
-
-.atlas-figure:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-.atlas-tooltip {
-  position: absolute;
-  top: 0.75rem;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  text-align: center;
-  background: color-mix(in srgb, var(--color-bg) 0.82);
-  border: 1px solid color-mix(in srgb, var(--color-accent) 0.5);
-  border-radius: var(--radius-panel);
-  padding: 0.5rem 0.9rem;
-  margin: 0 auto;
-  width: fit-content;
-  max-width: calc(100% - 1.5rem);
-  /*
-   * Informational only: it names the hovered figure and duplicates panel
-   * content, so it must never capture the pointer. Under the cursor it fires
-   * mouseleave on the canvas, which clears the hover that showed it — a
-   * flicker loop for any visitor hovering lines near the top of the disc, and
-   * a race for any test reading its text.
-   */
-  pointer-events: none;
 }
 
 .atlas-btn {
@@ -572,7 +507,7 @@ select.atlas-form-input option {
     opacity: 1;
   }
 
-  .atlas-figure {
+  :is(.atlas-export-trigger, .atlas-export-button) {
     transition: none;
   }
 }

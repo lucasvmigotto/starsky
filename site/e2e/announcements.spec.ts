@@ -23,22 +23,11 @@ test.describe("viewer announcements", () => {
     await expect(viewerStatus(page)).toHaveText(/poster ready/i);
   });
 
-  test("announces the figure when one is selected, by name", async ({ page }) => {
-    await page.goto(viewerUrl(fragmentFor()));
-    await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
-    const first = page.locator(".atlas-figure").first();
-    const name = (await first.innerText()).split("\n")[0] ?? "";
-    await first.click();
-    // The announcement must carry the figure's actual name, not a bare
-    // "something selected".
-    await expect(viewerStatus(page)).toHaveText(new RegExp(name, "i"));
-  });
-
   test("announces returning to the whole sky", async ({ page }) => {
     await page.goto(viewerUrl(fragmentFor()));
     await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
-    await page.locator(".atlas-figure").first().click();
-    await page.getByRole("button", { name: /reset view/i }).click();
+    await page.getByRole("button", { name: "Zoom in" }).click();
+    await page.getByRole("button", { name: "Show the whole sky" }).click();
     await expect(viewerStatus(page)).toHaveText(/whole sky/i);
   });
 
@@ -50,10 +39,4 @@ test.describe("viewer announcements", () => {
     await expect(page.getByText(/40\.7580°N/)).toBeAttached();
   });
 
-  test("still names the keyboard path for the canvas", async ({ page }) => {
-    await page.goto(viewerUrl(fragmentFor()));
-    await expect(
-      page.getByText(/list of figures beside the sky/i),
-    ).toBeAttached();
-  });
 });

@@ -3,8 +3,11 @@
  *
  * The poster is composed **once** into an offscreen canvas and blitted to the
  * visible one; zoom/pan is a transform on that blit, so the rAF tween never
- * recomposes the sky. Hover draws a focus overlay on top (veil + the focused
- * figure), which needs no recomposition either.
+ * recomposes the sky.
+ *
+ * The page shows the sky image only (BCR-0013): the blit crops the composition
+ * to its square sky region, so the caption band the exports carry is never on
+ * the page. Figures are the Explorer's job; there is no hover or selection.
  *
  * The preview renderer that used to live here was deleted with the default flip
  * (BCR-0005/ADR-0003 made the poster the only renderer).
@@ -12,7 +15,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { t } from "../i18n/index.ts";
 import { formatDetailLine } from "../lib/caption.ts";
-import { drawFocusOverlay, renderPoster } from "../lib/render/poster.ts";
+import { renderPoster } from "../lib/render/poster.ts";
 import type { SharePayload } from "../lib/share.ts";
 import {
   CANVAS_H,
@@ -24,7 +27,6 @@ import {
   type SkyModel,
 } from "../lib/skymodel.ts";
 import {
-  DRAG_SLOP,
   HOME_VIEW,
   panBy,
   type View,
@@ -55,11 +57,7 @@ interface Props {
   payload: SharePayload;
   model: SkyModel;
   view: View;
-  hovered: number | null;
-  selected: number | null;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
-  onHoverFigure: (index: number | null, clientX: number, clientY: number) => void;
-  onSelectFigure: (index: number) => void;
   /** A manual pan, zoom or pinch. Direct: the pointer is the easing curve. */
   onViewGesture: (next: View) => void;
   /** Return to the whole poster, as `Escape` and the controls both do. */
@@ -72,17 +70,13 @@ export default function SkyCanvas({
   payload,
   model,
   view,
-  hovered,
-  selected,
   canvasRef,
-  onHoverFigure,
-  onSelectFigure,
   onViewGesture,
   onResetView,
   fontsReady,
 }: Props) {
-  const activeRef = useRef({ view, hovered, selected });
-  activeRef.current = { view, hovered, selected };
+  const activeRef = useRef({ view });
+  activeRef.current = { view };
 
   /**
    * Device pixels per CSS pixel, capped like the composition.
@@ -133,10 +127,6 @@ export default function SkyCanvas({
     payload.tz,
   );
 
-  /** The focused figure's name, so "showing Orion" is announced and readable. */
-  const focusedName =
-    selected !== null ? (model.figures[selected]?.name ?? null) : null;
-
   // Compose the poster once per (payload, model, dpr). Recomposing 400+ stars
   // per hover or per zoom frame would blow the render budget; the composition
   // is the expensive part, the blit is not.
@@ -160,38 +150,28 @@ export default function SkyCanvas({
     if (!canvas || !poster) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const { view: v, hovered: hov, selected: sel } = activeRef.current;
+    const { view: v } = activeRef.current;
 
-    if (canvas.width !== poster.width || canvas.height !== poster.height) {
+    // The visible canvas is the sky region only: the composition's top
+    // `SKY_H` of `CANVAS_H` rows, in device pixels.
+    const skyRows = Math.round((poster.height * SKY_H) / CANVAS_H);
+    if (canvas.width !== poster.width || canvas.height !== skyRows) {
       canvas.width = poster.width;
-      canvas.height = poster.height;
+      canvas.height = skyRows;
     }
-    const geometry = {
-      sizePx: CANVAS_W,
-      skyPx: CANVAS_W,
-      bandPx: CANVAS_W * 0.22,
-      canvasHeight: CANVAS_H,
-      dpr,
-    };
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    ctx.clearRect(0, 0, CANVAS_W, SKY_H);
 
     /*
-     * One transform, blit and focus overlay.
+     * One transform for the blit. The canvas clips to its own bounds, so
+     * nothing needs clipping here when zoomed in.
      *
-     * The overlay belongs inside it: the veil is a disc and the redrawn figure
-     * a set of segments, both positioned in poster coordinates. Drawn outside
-     * the transform they stay put while the poster moves under them, so a
-     * zoomed view shows the veil covering only part of the frame and the
-     * focused figure's name drawn twice, slightly offset. The canvas clips to
-     * its own bounds, so nothing needs clipping here when zoomed in.
-     *
-     * The source rect is the *whole offscreen in device pixels*. It used to
-     * read `0, 0, CANVAS_W, CANVAS_H` — logical pixels — which is the full
-     * image only at dpr 1. Anywhere else it cropped the top-left 1/dpr of the
-     * poster and stretched it over the frame. The destination stays logical:
-     * the `setTransform(dpr, …)` above maps it back to device pixels.
+     * The source rect is the sky region of the offscreen *in device pixels*.
+     * It used to read logical pixels, which is the full image only at dpr 1;
+     * anywhere else it cropped the top-left 1/dpr of the poster and stretched
+     * it over the frame. The destination stays logical: the
+     * `setTransform(dpr, …)` above maps it back to device pixels.
      */
     ctx.save();
     ctx.translate(DISK_CX, DISK_CY);
@@ -202,47 +182,18 @@ export default function SkyCanvas({
       0,
       0,
       poster.width,
-      poster.height,
+      skyRows,
       0,
       0,
       CANVAS_W,
-      CANVAS_H,
+      SKY_H,
     );
-
-    const focus = sel ?? hov;
-    if (focus !== null && focus >= 0 && focus < model.figures.length) {
-      drawFocusOverlay(ctx, model, geometry, PREVIEW, focus, payload.options);
-    }
     ctx.restore();
   };
 
   useEffect(() => {
     drawRef.current();
-  }, [canvasRef, poster, view, hovered, selected, fontsReady]);
-
-  // Hit-testing: nearest segment within tolerance (logical preview pixels).
-  const pickFigure = (lx: number, ly: number): number | null => {
-    const tol = 12 / view.scale;
-    let best: number | null = null;
-    let bestD = tol;
-    for (const seg of model.segments) {
-      const a = model.stars[seg.a];
-      const b = model.stars[seg.b];
-      const dx = b.px - a.px;
-      const dy = b.py - a.py;
-      const len2 = dx * dx + dy * dy;
-      let t = len2 === 0 ? 0 : ((lx - a.px) * dx + (ly - a.py) * dy) / len2;
-      t = Math.max(0, Math.min(1, t));
-      const cx = a.px + t * dx;
-      const cy = a.py + t * dy;
-      const d = Math.hypot(lx - cx, ly - cy);
-      if (d < bestD) {
-        bestD = d;
-        best = seg.figure;
-      }
-    }
-    return best;
-  };
+  }, [canvasRef, poster, view, fontsReady]);
 
   /**
    * Viewport pixels to poster-screen pixels — the 800x1000 space the transform
@@ -257,23 +208,10 @@ export default function SkyCanvas({
       if (rect.width === 0 || rect.height === 0) return [0, 0];
       return [
         ((clientX - rect.left) / rect.width) * CANVAS_W,
-        ((clientY - rect.top) / rect.height) * CANVAS_H,
+        ((clientY - rect.top) / rect.height) * SKY_H,
       ];
     },
     [canvasRef],
-  );
-
-  const screenToLogical = useCallback(
-    (clientX: number, clientY: number): [number, number] => {
-      const [sx, sy] = clientToCanvas(clientX, clientY);
-      // Invert zoom: screen = C + (logical - f) * scale
-      const { view: v } = activeRef.current;
-      return [
-        v.fx + (sx - DISK_CX) / v.scale,
-        v.fy + (sy - DISK_CY) / v.scale,
-      ];
-    },
-    [clientToCanvas],
   );
 
   /*
@@ -291,14 +229,12 @@ export default function SkyCanvas({
     startView: View;
     startCanvas: [number, number];
     startSpread: number;
-    moved: boolean;
   }>({
     pointers: new Map(),
     mode: "idle",
     startView: HOME_VIEW,
     startCanvas: [0, 0],
     startSpread: 0,
-    moved: false,
   });
   const [dragging, setDragging] = useState(false);
 
@@ -315,7 +251,6 @@ export default function SkyCanvas({
       // buys us moves that continue past its edge.
     }
     g.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    g.moved = false;
 
     if (g.pointers.size === 1) {
       g.mode = "pan";
@@ -331,10 +266,6 @@ export default function SkyCanvas({
       g.startCanvas = clientToCanvas((a.x + b.x) / 2, (a.y + b.y) / 2);
       setDragging(true);
     }
-
-    // A tooltip trailing the pointer while it drags reads as a glitch, and the
-    // figure it names is about to move out from under it anyway.
-    onHoverFigure(null, 0, 0);
   };
 
   const endGesture = (event: React.PointerEvent<HTMLCanvasElement>): void => {
@@ -380,7 +311,6 @@ export default function SkyCanvas({
       onViewGesture(
         zoomAt(panned, mx, my, g.startSpread > 0 ? spread / g.startSpread : 1),
       );
-      g.moved = true;
       return;
     }
 
@@ -388,7 +318,6 @@ export default function SkyCanvas({
     const [cx, cy] = clientToCanvas(event.clientX, event.clientY);
     const dx = cx - g.startCanvas[0];
     const dy = cy - g.startCanvas[1];
-    if (Math.abs(dx) > DRAG_SLOP || Math.abs(dy) > DRAG_SLOP) g.moved = true;
     onViewGesture(panBy(g.startView, dx, dy));
   };
 
@@ -421,28 +350,6 @@ export default function SkyCanvas({
     };
   }, [canvasRef, clientToCanvas, onViewGesture]);
 
-  const trackHover = useCallback(
-    (clientX: number, clientY: number): void => {
-      const [lx, ly] = screenToLogical(clientX, clientY);
-      const inSky =
-        payload.options.shape === "circle"
-          ? Math.hypot(lx - DISK_CX, ly - DISK_CY) <= DISK_R + 8
-          : lx >= DISK_CX - DISK_R - 8 &&
-            lx <= DISK_CX + DISK_R + 8 &&
-            ly >= DISK_CY - DISK_R - 8 &&
-            ly <= DISK_CY + DISK_R + 8 &&
-            ly <= SKY_H;
-      if (!inSky || ly > SKY_H) {
-        onHoverFigure(null, clientX, clientY);
-        return;
-      }
-      onHoverFigure(pickFigure(lx, ly), clientX, clientY);
-    },
-    // `pickFigure` closes over `view.scale` through the render, so this tracks
-    // the current render rather than a stale one.
-    [screenToLogical, payload.options.shape, model.segments, model.stars, view.scale, onHoverFigure],
-  );
-
   return (
     <div className="relative">
       <canvas
@@ -450,7 +357,7 @@ export default function SkyCanvas({
         style={{
           width: "100%",
           height: "auto",
-          aspectRatio: `${CANVAS_W.toString()} / ${CANVAS_H.toString()}`,
+          aspectRatio: `${CANVAS_W.toString()} / ${SKY_H.toString()}`,
           /*
            * `touch-action: none` hands every gesture to us. Without it the
            * browser claims one-finger vertical drags to scroll the page, and
@@ -464,8 +371,7 @@ export default function SkyCanvas({
         className="block rounded-sm"
         role="img"
         /*
-          The caption and the focused figure are exposed as *text* below, not
-          only in this label (000-design-system T036, DS-A11Y-006). An
+          The caption is exposed as *text* below, not only in this label (000-design-system T036, DS-A11Y-006). An
           `aria-label` replaces the element's content, so a caption rendered
           inside the figure would be invisible to a screen reader; keeping it as
           sibling text is what makes the map's own words reachable.
@@ -477,28 +383,17 @@ export default function SkyCanvas({
         }
         aria-describedby="sky-gesture-hint"
         /*
-          Focusable so the map is operable without a pointer. The figure list
-          beside it is the richer keyboard path — it names what it holds —
-          but "drag with the mouse" that only works with a mouse is not an
-          equivalent, so the poster itself answers to the keyboard too.
+          Focusable so the image is operable without a pointer: "drag with the
+          mouse" that only works with a mouse is not an equivalent, so the
+          poster itself answers to the keyboard too.
         */
         tabIndex={0}
         onPointerDown={beginGesture}
         onPointerMove={(e) => {
-          if (gestureRef.current.pointers.has(e.pointerId)) {
-            drag(e);
-            return;
-          }
-          trackHover(e.clientX, e.clientY);
+          if (gestureRef.current.pointers.has(e.pointerId)) drag(e);
         }}
         onPointerUp={endGesture}
         onPointerCancel={endGesture}
-        onPointerLeave={() => {
-          // Pointer capture keeps delivering moves outside the element during
-          // a drag; clearing the hover then would flash the tooltip off.
-          if (gestureRef.current.mode !== "idle") return;
-          onHoverFigure(null, 0, 0);
-        }}
         onKeyDown={(e) => {
           const { view: v } = activeRef.current;
           const step = e.shiftKey ? KEY_PAN_STEP_COARSE : KEY_PAN_STEP;
@@ -533,23 +428,10 @@ export default function SkyCanvas({
           // would mean arrowing the map scrolls the map out of view.
           e.preventDefault();
         }}
-        onClick={(e) => {
-          // Every drag ends in a click. Without this, letting go over a
-          // constellation selects it — so panning the map would keep opening
-          // figures you were only moving past.
-          if (gestureRef.current.moved) {
-            gestureRef.current.moved = false;
-            return;
-          }
-          const [lx, ly] = screenToLogical(e.clientX, e.clientY);
-          const fig = pickFigure(lx, ly);
-          if (fig !== null) onSelectFigure(fig);
-        }}
       />
       <span className="sr-only" id="sky-gesture-hint">
         {t("viewer.canvasHint")}
       </span>
-      <span className="sr-only">{t("figures.hint")}</span>
       {/*
         The caption as text (T036). Visually hidden because the poster already
         draws it, but a screen reader gets the coordinates, the place and the
@@ -557,11 +439,6 @@ export default function SkyCanvas({
         to anyone who cannot see it.
       */}
       <span className="sr-only">{caption}</span>
-      {focusedName !== null && (
-        <span className="sr-only">
-          {t("viewer.announced.figureSelected", { name: focusedName })}
-        </span>
-      )}
     </div>
   );
 }

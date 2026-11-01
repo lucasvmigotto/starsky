@@ -12,7 +12,7 @@
  * "the map moved a bit" are indistinguishable by eye once the render is a blur
  * of constellations, and only the numbers tell them apart.
  */
-import { CANVAS_H, CANVAS_W, DISK_CX, DISK_CY } from "./skymodel.ts";
+import { CANVAS_W, DISK_CX, DISK_CY, SKY_H } from "./skymodel.ts";
 
 export interface View {
   scale: number;
@@ -21,7 +21,7 @@ export interface View {
   fy: number;
 }
 
-/** The whole poster, undistorted: scale 1 is the 800x1000 frame exactly. */
+/** The whole poster, undistorted: scale 1 is the 800x800 sky frame exactly. */
 export const HOME_VIEW: View = { scale: 1, fx: DISK_CX, fy: DISK_CY };
 
 /**
@@ -32,9 +32,6 @@ export const HOME_VIEW: View = { scale: 1, fx: DISK_CX, fy: DISK_CY };
  */
 export const MIN_SCALE = 1;
 export const MAX_SCALE = 6;
-
-/** Pointer travel below this is a click, not a drag, so it must not select. */
-export const DRAG_SLOP = 5;
 
 export function clampScale(scale: number): number {
   // NaN is the only value with no meaningful clamp: it has no side, so it falls
@@ -63,14 +60,14 @@ export function clampView(view: View): View {
   return {
     scale,
     fx: Math.min(CANVAS_W, Math.max(0, view.fx)),
-    fy: Math.min(CANVAS_H, Math.max(0, view.fy)),
+    fy: Math.min(SKY_H, Math.max(0, view.fy)),
   };
 }
 
 /**
  * Drag the view by a pointer movement, so the poster tracks the pointer.
  *
- * `dx`/`dy` are in poster-screen pixels — the same 800x1000 space `drawImage`
+ * `dx`/`dy` are in poster-screen pixels — the same 800x800 sky space `drawImage`
  * covers — not viewport pixels, so the result does not depend on how wide the
  * canvas happens to be laid out.
  */
