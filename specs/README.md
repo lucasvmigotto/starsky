@@ -25,6 +25,7 @@ deploy and budgets underway; versioned prefixes, smoke test and drills open).
 | 013 | location-first | P1 | 015 | Implemented | N/A | Map-first landing: search, lazy Leaflet map, coordinates, moment, opens the Explorer, `#c=` link; Studio on one screen (ADR-0008) |
 | 016 | square-fill | P1 | 013 | Implemented | N/A | Square poster fills the square, inscribed in the horizon (BCR-0014) |
 | 017 | hardening | P1 | 009–016 | Implemented | N/A | Accessibility, failure, performance, stability, strict indexing, docs (#55) |
+| 018 | pt-br | P1 | 017 | Planned | N/A | Brazilian Portuguese interface; poster language chosen by the creator and stored in the link (#71, BCR-0015) |
 
 ## Removed features
 
