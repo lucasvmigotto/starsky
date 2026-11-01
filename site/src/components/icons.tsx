@@ -74,6 +74,8 @@ const PATHS = {
     </>
   ),
   check: <path d="M20 6 9 17l-5-5" />,
+  expand: <path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" />,
+  collapse: <path d="M20 10h-6V4M4 14h6v6M14 10l7-7M3 21l7-7" />,
   "chevron-left": <path d="m15 18-6-6 6-6" />,
   "chevron-right": <path d="m9 18 6-6-6-6" />,
 } as const;

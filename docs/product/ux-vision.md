@@ -757,6 +757,23 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.render.glow` | Glow intensity |
 | `landing.browse` | Just browsing? |
 | `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
+| `landing.selected.label` | Exploring from |
+| `landing.selected.pin` | Dropped pin |
+| `landing.selected.typed` | Typed coordinates |
+| `landing.map.label` | Map for choosing a place |
+| `landing.map.show` | Show map |
+| `landing.map.hide` | Hide map |
+| `landing.map.expand` | Expand map |
+| `landing.map.collapse` | Shrink map |
+| `landing.map.loading` | Loading the map… |
+| `landing.map.skip` | Skip the map |
+| `landing.map.hint` | Click the map or drag the marker to set the place. |
+| `landing.map.marker` | Observing place |
+| `landing.map.attribution` | © {osm} contributors · {report} |
+| `landing.map.osm` | OpenStreetMap |
+| `landing.map.report` | Report a problem |
+| `landing.map.tilesFailed` | The map tiles could not be loaded. Search and coordinates still work. |
+| `landing.map.chunkFailed` | The map could not be loaded. Search and coordinates still work. |
 | `landing.search.label` | Search for a place |
 | `landing.search.placeholder` | City, address or landmark |
 | `landing.search.credit` | Place search by Nominatim, {attribution}. |

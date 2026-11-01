@@ -125,9 +125,10 @@ export function landingReducer(state: LandingState, action: LandingAction): Land
     case "mag-changed":
       return { ...state, mag: action.mag };
     case "map-toggled":
+      // Each opening is a fresh try, so a failed load or tile fetch is not remembered.
       return state.mapOpen
-        ? { ...state, mapOpen: false, mapExpanded: false }
-        : { ...state, mapOpen: true };
+        ? { ...state, mapOpen: false, mapExpanded: false, mapProblem: null }
+        : { ...state, mapOpen: true, mapProblem: null };
     case "map-expand-toggled":
       return state.mapOpen ? { ...state, mapExpanded: !state.mapExpanded } : state;
     case "map-escape":

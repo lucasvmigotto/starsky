@@ -1543,3 +1543,97 @@ select.atlas-form-input option {
   min-height: 1.1rem;
   color: var(--color-text-muted);
 }
+
+/* Landing map (013): collapsed to a button, 280 px open (220 on phones), larger when expanded. */
+.landing-map {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.landing-map-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.landing-map-frame {
+  position: relative;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.landing-map-canvas {
+  height: 220px;
+  width: 100%;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+  /* Tiles are a light map; keep it from glowing against the dark page. */
+  background: var(--color-surface);
+}
+
+@media (min-width: 40rem) {
+  .landing-map-canvas {
+    height: 280px;
+  }
+}
+
+.landing-map-frame[data-expanded="true"] .landing-map-canvas {
+  height: min(32rem, 70vh);
+}
+
+/* Leaflet sets its own stacking; the page's popovers stay above it. */
+.landing-map-canvas.leaflet-container {
+  z-index: 0;
+  font: inherit;
+}
+
+/* Leaflet draws its controls on a light ground over the tiles: dark text on it. */
+.landing-map-canvas .leaflet-control-attribution,
+.landing-map-canvas .leaflet-control-attribution a {
+  color: var(--color-bg);
+}
+
+.landing-map-canvas .leaflet-control-attribution a {
+  text-decoration: underline;
+}
+
+.landing-map-notice {
+  color: var(--color-text);
+}
+
+/* Visible only when focused, so the keyboard can pass the map without it adding noise. */
+.landing-map-skip {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 2;
+  transform: translateY(-300%);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.landing-map-skip:focus-visible {
+  transform: none;
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.landing-selected {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.landing-selected-name {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}

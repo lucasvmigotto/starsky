@@ -98,6 +98,15 @@ describe("the map", () => {
     expect(landingReducer(s, { type: "map-escape" })).toBe(s);
   });
 
+  it("forgets a map problem when it is closed or opened again", () => {
+    let s = landingReducer(start(), { type: "map-toggled" });
+    s = landingReducer(s, { type: "map-problem", problem: "chunk" });
+    s = landingReducer(s, { type: "map-toggled" });
+    expect(s.mapProblem).toBeNull();
+    s = landingReducer(landingReducer(s, { type: "map-toggled" }), { type: "map-problem", problem: "tiles" });
+    expect(landingReducer(landingReducer(s, { type: "map-toggled" }), { type: "map-toggled" }).mapProblem).toBeNull();
+  });
+
   it("records a map problem without touching the form", () => {
     const s = landingReducer(start(), { type: "map-problem", problem: "tiles" });
     expect(s.mapProblem).toBe("tiles");
