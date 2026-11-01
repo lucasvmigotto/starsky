@@ -124,6 +124,11 @@ describe("form layout (FR-009)", () => {
     expect(block).toMatch(/gap: var\(--space-\d\) var\(--space-\d\)/);
   });
 
+  it("keeps a toggle and its slider on one row until they do not fit, and flattens a disclosure inside a panel", () => {
+    expect(rule(".atlas-form-pair-flow")).toContain("flex-wrap: wrap");
+    expect(rule(".atlas-panel .atlas-form-details")).toContain("padding-inline: 0");
+  });
+
   it("draws the Shape switch as segments over real radios", () => {
     expect(rule(".atlas-segmented")).toContain("display: inline-flex");
     expect(css).toContain(".atlas-segment input:checked + span");

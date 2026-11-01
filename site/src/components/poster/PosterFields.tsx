@@ -182,7 +182,7 @@ export default function PosterFields({
             }}
           />
         </div>
-        <div className="atlas-form-pair">
+        <div className="atlas-form-pair atlas-form-pair-flow">
           <label className="atlas-form-check">
             <input
               type="checkbox"

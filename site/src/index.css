@@ -447,7 +447,7 @@ select.atlas-form-input option {
 .atlas-form-check-row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1) var(--space-6);
+  gap: var(--space-1) var(--space-4);
 }
 
 /* Related controls share a row on wide screens and stack on small ones. */
@@ -463,6 +463,19 @@ select.atlas-form-input option {
     /* A label that wraps grows upward, so the controls in a row stay level. */
     align-items: end;
   }
+}
+
+/* A toggle with its slider: one row while both fit, wrapping only when they do not. */
+.atlas-form-pair-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-4);
+}
+
+.atlas-form-pair-flow > .atlas-form-field {
+  flex: 1 1 9rem;
+  min-width: 0;
 }
 
 /* Two options as one segmented switch; the radios stay real and cover their segment. */
@@ -544,7 +557,7 @@ select.atlas-form-input option {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  gap: var(--space-3);
+  gap: var(--space-2);
   font-size: 0.875rem;
   color: var(--color-text-muted);
   cursor: pointer;
@@ -582,6 +595,17 @@ select.atlas-form-input option {
   min-height: 44px;
   cursor: pointer;
   color: var(--color-text-muted);
+}
+
+/*
+ * Inside a panel the disclosure is a section of that panel, not a second box:
+ * no frame, one soft rule, and all of the panel's width for its controls.
+ */
+.atlas-panel .atlas-form-details {
+  padding-inline: 0;
+  background: transparent;
+  border-width: 1px 0 0;
+  border-radius: 0;
 }
 
 /* Open: the content sits under the summary with room around it. */

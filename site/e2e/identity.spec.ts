@@ -345,6 +345,20 @@ test.describe("the shared form layout (FR-009)", () => {
     await expect(shape.getByRole("radio", { name: "circle" })).not.toBeChecked();
   });
 
+  test("the Studio's Advanced checkboxes and the glow row stay inline at 390 px", async ({ page }) => {
+    test.skip((page.viewportSize()?.width ?? 0) > 400, "the 390 px phone");
+    await page.goto(studioUrl(fragmentFor()));
+    await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
+    await page.getByText("Advanced", { exact: true }).click();
+    const lines = page.getByLabel("Constellation lines");
+    const labels = page.getByLabel("Constellation labels");
+    await expect(labels).toBeVisible();
+    expect(await top(lines)).toBe(await top(labels));
+    const glowToggle = page.getByLabel("Glow", { exact: true });
+    const glow = page.getByLabel("Glow intensity");
+    expect(Math.abs((await top(glow)) - (await top(glowToggle)))).toBeLessThanOrEqual(48);
+  });
+
   test("the Studio uses the same layout, with Advanced collapsed", async ({ page }) => {
     await page.goto(studioUrl(fragmentFor()));
     await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
