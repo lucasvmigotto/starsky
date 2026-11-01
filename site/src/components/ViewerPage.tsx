@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { formatLocalTime } from "../lib/caption.ts";
-import { displayHeadingTitle } from "../lib/heading.ts";
 import {
   stripUnsupported,
   titleAdjustedMessage,
@@ -27,6 +25,9 @@ import ViewControls from "./ViewControls.tsx";
 import { EmptyState, InvalidState, LegacyState } from "./States.tsx";
 import { t } from "../i18n/index.ts";
 import SiteFooter from "./SiteFooter.tsx";
+import SiteHeader from "./SiteHeader.tsx";
+import PosterHeading from "./PosterHeading.tsx";
+import { Icon } from "./icons.tsx";
 
 type LinkState =
   | { kind: "empty" }
@@ -347,14 +348,7 @@ export default function ViewerPage() {
 
   return (
     <div className="atlas-page">
-      <header className="atlas-header">
-        <div>
-          <p className="font-display text-2xl leading-none">Starsky</p>
-          <p className="mt-1 text-xs tracking-wide text-cream/55">
-            {t("viewer.subtitle")}
-          </p>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="atlas-main">
         {link.kind === "empty" && <EmptyState />}
@@ -363,18 +357,7 @@ export default function ViewerPage() {
 
         {link.kind === "ready" && payload && (
           <>
-            <div className="atlas-moment">
-              <p className="font-display text-3xl leading-tight sm:text-4xl">
-                {displayHeadingTitle(payload, t)}
-              </p>
-              <p className="mt-2 text-sm text-cream/65">
-                {formatLocalTime(payload.when_utc, payload.tz)} ·{" "}
-                {payload.options.projection === "fisheye"
-                  ? "fisheye"
-                  : "stereographic"}{" "}
-                projection
-              </p>
-            </div>
+            <PosterHeading payload={payload} />
 
             {dataError && (
               <p role="alert" className="atlas-alert">
@@ -431,30 +414,34 @@ export default function ViewerPage() {
               )
             )}
 
-            {model && <ShareDialog payload={payload} />}
-
-            {model && <ExportControls payload={payload} model={model} />}
-
-            <div className="atlas-viewer-actions">
-              <button
-                type="button"
-                className="atlas-btn-ghost"
-                onClick={() => {
-                  void goTo("explore");
-                }}
-              >
-                {t("viewer.exploreSky")}
-              </button>
-              <button
-                type="button"
-                className="atlas-btn-ghost"
-                onClick={() => {
-                  void goTo("studio");
-                }}
-              >
-                {t("viewer.makeYourOwn")}
-              </button>
-            </div>
+            {model && (
+              <div className="atlas-panel atlas-actions">
+                <ShareDialog payload={payload} />
+                <ExportControls payload={payload} model={model} />
+                <div className="atlas-action-row">
+                  <button
+                    type="button"
+                    className="atlas-btn-ghost"
+                    onClick={() => {
+                      void goTo("explore");
+                    }}
+                  >
+                    <Icon name="explore" />
+                    {t("viewer.exploreSky")}
+                  </button>
+                  <button
+                    type="button"
+                    className="atlas-btn-ghost"
+                    onClick={() => {
+                      void goTo("studio");
+                    }}
+                  >
+                    <Icon name="poster" />
+                    {t("viewer.makeYourOwn")}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/*
               Async outcomes (000-design-system T035). `sr-only` keeps it out of

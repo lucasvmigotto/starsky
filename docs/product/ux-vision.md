@@ -754,7 +754,7 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 
 | Key | Copy |
 |---|---|
-| `viewer.subtitle` | A night-sky atlas moment, recomputed in your browser |
+| `site.name` | Starsky *(the header's one item, a link to the start; the same on the Explorer, Studio and Viewer)* |
 | `viewer.loading` | Charting the stars… |
 
 **Viewer · announcements** (`role="status"`, `aria-live="polite"`, `sr-only`)

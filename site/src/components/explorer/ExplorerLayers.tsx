@@ -37,12 +37,12 @@ export default function ExplorerLayers({ controller, onClose }: Props): JSX.Elem
     <div className="explorer-layers" role="group" aria-label={t("explorer.layers.title")} onKeyDown={onKeyDown}>
       <div className="explorer-panel-head">
         <h2 className="explorer-panel-title">{t("explorer.layers.title")}</h2>
-        <button type="button" className="explorer-close" onClick={onClose}>
+        <button type="button" className="atlas-btn-ghost" onClick={onClose}>
           {t("explorer.layers.close")}
         </button>
       </div>
       {FLAGS.map((key) => (
-        <label key={key} className="explorer-switch">
+        <label key={key} className="atlas-form-check">
           <input
             type="checkbox"
             checked={layers[key]}
@@ -59,7 +59,7 @@ export default function ExplorerLayers({ controller, onClose }: Props): JSX.Elem
           {t("explorer.layers.below")}
         </p>
         {BELOW.map((mode) => (
-          <label key={mode} className="explorer-switch">
+          <label key={mode} className="atlas-form-check">
             <input
               type="radio"
               name="explorer-below"

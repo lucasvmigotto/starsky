@@ -20,6 +20,7 @@ import {
 import type { PosterFormat } from "../lib/render/format.ts";
 import { storyGeometry } from "../lib/render/format.ts";
 import { renderPosterToCanvas } from "../lib/render/poster.ts";
+import { Icon } from "./icons.tsx";
 
 /** Export size in CSS px (the poster's sky width, matching the CLI's default). */
 export const EXPORT_SIZE_PX = 1600;
@@ -136,13 +137,14 @@ export default function ExportControls({ payload, model }: Props) {
       <button
         type="button"
         id={triggerId}
-        className="atlas-export-trigger"
+        className="atlas-btn-ghost"
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => {
           setOpen((value) => !value);
         }}
       >
+        <Icon name="download" />
         {open ? t("viewer.export.close") : t("viewer.export.open")}
       </button>
 
@@ -177,7 +179,7 @@ export default function ExportControls({ payload, model }: Props) {
           <button
             key={format}
             type="button"
-            className="atlas-export-button"
+            className="atlas-btn-ghost"
             onClick={() => {
               void handleExport(format);
             }}

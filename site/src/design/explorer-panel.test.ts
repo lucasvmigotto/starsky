@@ -27,7 +27,7 @@ describe("the side panel slides", () => {
   });
 
   it("has no motion under prefers-reduced-motion", () => {
-    const reduced = css.slice(css.lastIndexOf("@media (prefers-reduced-motion: reduce)", css.indexOf(".atlas-viewer-actions")));
+    const reduced = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce) {\n  .explorer-toolbar"));
     expect(reduced).toContain(".explorer-inspector");
     expect(reduced).toContain(".explorer-tab");
     expect(reduced).toMatch(/transition:\s*none/);
@@ -46,7 +46,7 @@ describe("the panel tab and the resting borders", () => {
 
   it("never rests an Explorer control on the accent or focus colour", () => {
     for (const selector of [
-      '.explorer-pin[aria-pressed="true"]',
+      '.atlas-btn-icon[aria-pressed="true"]',
       '.explorer-list-item[aria-current="true"]',
     ]) {
       expect(rule(selector)).not.toMatch(/border[^;]*--color-(accent|focus)/);

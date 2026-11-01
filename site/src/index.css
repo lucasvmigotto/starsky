@@ -118,13 +118,30 @@ body {
   flex-direction: column;
 }
 
+/* One header on every surface: the site name, nothing else. */
 .atlas-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.25rem clamp(1rem, 4vw, 2.5rem);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 0.12);
+  align-items: center;
+  min-height: 3rem;
+  padding: 0 clamp(var(--space-4), 4vw, 2.5rem);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.atlas-site-name {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.atlas-site-name:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .atlas-main {
@@ -137,9 +154,9 @@ body {
 
 .atlas-footer {
   padding: 1.25rem clamp(1rem, 4vw, 2.5rem) 2rem;
-  border-top: 1px solid color-mix(in srgb, var(--color-text) 0.12);
+  border-top: 1px solid var(--color-border-soft);
   font-size: 0.8rem;
-  color: color-mix(in srgb, var(--color-text) 0.55);
+  color: var(--color-text-faint);
 }
 
 /* Version + source, then the legal attribution. Two quiet lines, no eyebrow. */
@@ -178,65 +195,99 @@ body {
   }
 }
 
+/* The one panel style: Explorer's surface, soft edge and panel radius. */
 .atlas-panel {
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.14);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-panel);
-  padding: 1.25rem;
-  background: color-mix(in srgb, var(--color-text) 0.02);
+}
+
+/*
+ * Buttons: primary, ghost and icon share one base (height, radius, type,
+ * motion). Primary is the near-white fill; ghost and icon are bordered with the
+ * control border colour, never the accent or the focus colour.
+ */
+.atlas-btn,
+.atlas-btn-ghost,
+.atlas-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  font: inherit;
+  font-size: 0.875rem;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition:
+    background var(--motion-duration-short) var(--motion-ease),
+    border-color var(--motion-duration-short) var(--motion-ease);
 }
 
 .atlas-btn {
-  display: inline-block;
   background: var(--color-text);
   color: var(--color-bg);
   font-weight: 500;
-  font-size: 0.875rem;
-  /* Comfortably over the 44px target height (spec.md DS-A11Y-003). */
-  min-height: 44px;
-  padding: 0.55rem 1.1rem;
-  border-radius: var(--radius-panel);
 }
 
 .atlas-btn:hover {
   background: var(--color-text-bright);
 }
 
+.atlas-btn-ghost,
+.atlas-btn-icon {
+  color: var(--color-text);
+  background: transparent;
+  border-color: var(--color-border);
+}
+
+.atlas-btn-ghost:hover:not(:disabled),
+.atlas-btn-icon:hover:not(:disabled) {
+  background: var(--color-raised);
+}
+
+/* A square 44 px button holding one icon. */
+.atlas-btn-icon {
+  width: 44px;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.atlas-btn-icon[aria-pressed="true"],
+.atlas-btn-icon[aria-expanded="true"] {
+  background: var(--color-raised);
+  border-color: var(--color-text-muted);
+}
+
+/* A fieldset used as a panel: its legend is the first line inside, not on the edge. */
+fieldset.atlas-panel {
+  min-width: 0;
+}
+
+fieldset.atlas-panel > legend {
+  float: left;
+  width: 100%;
+  margin-bottom: var(--space-3);
+}
+
+fieldset.atlas-panel > legend ~ * {
+  clear: both;
+}
+
+fieldset.atlas-panel > p + p {
+  margin-top: var(--space-2);
+}
+
 .atlas-btn:focus-visible,
 .atlas-btn-ghost:focus-visible,
-.atlas-btn-subtle:focus-visible,
+.atlas-btn-icon:focus-visible,
 .atlas-link:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
-}
-
-.atlas-btn-ghost {
-  display: inline-block;
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.35);
-  color: var(--color-text);
-  font-size: 0.875rem;
-  min-height: 44px;
-  padding: 0.55rem 1.1rem;
-  border-radius: var(--radius-panel);
-}
-
-.atlas-btn-ghost:hover {
-  border-color: color-mix(in srgb, var(--color-text) 0.7);
-}
-
-.atlas-btn-subtle {
-  display: inline-block;
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.2);
-  color: color-mix(in srgb, var(--color-text) 0.55);
-  font-size: 0.75rem;
-  padding: 0.3rem 0.7rem;
-  border-radius: var(--radius-panel);
-  background: transparent;
-  cursor: pointer;
-}
-
-.atlas-btn-subtle:hover:not(:disabled) {
-  color: color-mix(in srgb, var(--color-text) 0.85);
-  border-color: color-mix(in srgb, var(--color-text) 0.4);
 }
 
 /*
@@ -244,36 +295,37 @@ body {
  * at the whole poster. Not `cursor: progress`: nothing is pending, and a
  * spinner-cursor on a control that will never become available reads as a bug.
  */
-.atlas-btn-subtle:disabled {
+.atlas-btn:disabled,
+.atlas-btn-ghost:disabled,
+.atlas-btn-icon:disabled {
   opacity: 0.45;
   cursor: default;
 }
 
 /*
- * The view controls sit under the poster, centred, inside the poster's own grid
- * item. Direct manipulation is the primary way to move the map; these three
- * are the affordance that says it can be moved at all, so they belong with the
- * poster rather than down in the export row.
+ * The view controls sit under the sky image, centred. Direct manipulation is
+ * the primary way to move it; these three are the affordance that says it can
+ * be moved at all, so they belong with the image rather than the actions.
  */
 .atlas-viewcontrols {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.5rem;
-  margin-top: 0.85rem;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .atlas-link {
   color: var(--color-text);
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--color-accent) 0.8);
+  text-decoration-color: var(--color-accent);
   text-underline-offset: 3px;
 }
 
 .atlas-code {
   font-family: ui-monospace, monospace;
   font-size: 0.85em;
-  background: color-mix(in srgb, var(--color-text) 0.08);
+  background: var(--color-raised);
   padding: 0.1em 0.35em;
   border-radius: var(--radius-control);
 }
@@ -281,15 +333,15 @@ body {
 .atlas-empty {
   text-align: center;
   padding: 4rem 1rem;
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.14);
+  border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-panel);
   background:
-    radial-gradient(ellipse 60% 50% at 50% 30%, color-mix(in srgb, var(--color-accent) 0.08), transparent),
-    color-mix(in srgb, var(--color-text) 0.02);
+    radial-gradient(ellipse 60% 50% at 50% 30%, color-mix(in srgb, var(--color-accent) 8%, transparent), transparent),
+    var(--color-surface);
 }
 
 .atlas-alert {
-  border: 1px solid color-mix(in srgb, var(--color-accent) 0.6);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
   padding: 0.9rem 1.1rem;
   margin-bottom: 1.25rem;
@@ -299,7 +351,7 @@ body {
 .atlas-loading {
   text-align: center;
   padding: 4rem 0;
-  color: color-mix(in srgb, var(--color-text) 0.6);
+  color: var(--color-text-muted);
 }
 
 /* Landing form: single scrollable column reusing the atlas tokens. */
@@ -338,28 +390,29 @@ body {
 
 .atlas-form-field > label,
 .atlas-form-label {
-  color: color-mix(in srgb, var(--color-text) 0.75);
+  color: var(--color-text-muted);
 }
 
 .atlas-form-input {
   width: 100%;
-  background: color-mix(in srgb, var(--color-text) 0.04);
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.25);
-  border-radius: var(--radius-panel);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
   color: var(--color-text);
+  font: inherit;
   font-size: 0.9rem;
-  padding: 0.55rem 0.75rem;
   color-scheme: dark;
 }
 
 .atlas-form-input:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
-  border-color: color-mix(in srgb, var(--color-text) 0.6);
 }
 
 .atlas-form-input::placeholder {
-  color: color-mix(in srgb, var(--color-text) 0.35);
+  color: var(--color-text-faint);
 }
 
 select.atlas-form-input option {
@@ -399,15 +452,24 @@ select.atlas-form-input option {
 .atlas-form-radio {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  min-height: 44px;
+  gap: var(--space-2);
   font-size: 0.875rem;
-  color: color-mix(in srgb, var(--color-text) 0.8);
+  color: var(--color-text-muted);
   cursor: pointer;
 }
 
 .atlas-form-radio input,
 .atlas-form-check input {
+  width: 1.25rem;
+  height: 1.25rem;
   accent-color: var(--color-accent);
+}
+
+.atlas-form-radio input:focus-visible,
+.atlas-form-check input:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .atlas-form-check-row {
@@ -416,18 +478,19 @@ select.atlas-form-input option {
 }
 
 .atlas-form-check {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.45rem;
+  min-height: 44px;
+  gap: var(--space-3);
   font-size: 0.875rem;
-  color: color-mix(in srgb, var(--color-text) 0.8);
+  color: var(--color-text-muted);
   cursor: pointer;
 }
 
 .atlas-form-value {
   margin-left: auto;
   font-variant-numeric: tabular-nums;
-  color: color-mix(in srgb, var(--color-text) 0.65);
+  color: var(--color-text-muted);
   font-size: 0.8rem;
 }
 
@@ -438,14 +501,14 @@ select.atlas-form-input option {
 
 .atlas-form-hint {
   font-size: 0.78rem;
-  color: color-mix(in srgb, var(--color-text) 0.55);
+  color: var(--color-text-faint);
 }
 
 .atlas-form-details {
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.14);
+  border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-panel);
   padding: 0.8rem 1rem;
-  background: color-mix(in srgb, var(--color-text) 0.02);
+  background: var(--color-surface);
   display: grid;
   gap: 0.9rem;
   font-size: 0.875rem;
@@ -453,7 +516,7 @@ select.atlas-form-input option {
 
 .atlas-form-details > summary {
   cursor: pointer;
-  color: color-mix(in srgb, var(--color-text) 0.8);
+  color: var(--color-text-muted);
 }
 
 .atlas-form-details > summary:focus-visible {
@@ -462,7 +525,7 @@ select.atlas-form-input option {
 }
 
 .atlas-form-error {
-  border: 1px solid color-mix(in srgb, var(--color-accent) 0.6);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
   padding: 0.7rem 0.9rem;
   font-size: 0.875rem;
@@ -482,7 +545,7 @@ select.atlas-form-input option {
   margin-top: 1.25rem;
   text-align: center;
   font-size: 0.85rem;
-  color: color-mix(in srgb, var(--color-text) 0.6);
+  color: var(--color-text-muted);
 }
 
 .atlas-form-linkbtn {
@@ -507,52 +570,34 @@ select.atlas-form-input option {
     opacity: 1;
   }
 
-  :is(.atlas-export-trigger, .atlas-export-button) {
+  .atlas-btn,
+  .atlas-btn-ghost,
+  .atlas-btn-icon {
     transition: none;
   }
 }
 
-/* Poster export controls: quiet chrome, one clear action row. */
-.atlas-export {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid color-mix(in srgb, var(--color-text) 0.12);
-}
-
 /*
- * Export: one disclosure trigger, formats revealed on demand.
- *
- * Three permanently-visible buttons made this row the loudest thing on the
- * page after the poster, inverting vision principle 2. Ghosting them fixed the
- * volume but made them read as plain labels — a control that looks like text
- * gets read, not clicked. A single trigger in the accent restores the
- * affordance while removing the competition.
+ * The actions panel (Viewer and Studio): share, export and the hand-offs in one
+ * panel, each section a disclosure or a row of buttons. Triggers and format
+ * buttons are plain ghost buttons; there is no accent-coloured control.
  */
-.atlas-export-trigger {
-  font: inherit;
-  font-size: 0.875rem;
-  min-height: 44px;
-  padding: 0.5rem 1.1rem;
-  color: var(--color-accent);
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--color-accent) 0.5);
-  border-radius: var(--radius-control);
-  cursor: pointer;
-  transition:
-    background var(--motion-duration-short) var(--motion-ease),
-    border-color var(--motion-duration-short) var(--motion-ease);
+.atlas-actions {
+  display: grid;
+  gap: var(--space-4);
 }
 
-.atlas-export-trigger:hover {
-  background: color-mix(in srgb, var(--color-accent) 0.1);
-  border-color: color-mix(in srgb, var(--color-accent) 0.85);
+.atlas-actions > .atlas-export + .atlas-export,
+.atlas-actions > .atlas-export + .atlas-action-row {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border-soft);
 }
 
 .atlas-export-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
 }
 
 /* The layout choice sits above the format buttons, on its own row. */
@@ -565,62 +610,45 @@ select.atlas-form-input option {
   display: none;
 }
 
-.atlas-export-button {
-  font: inherit;
-  font-size: 0.875rem;
-  /* Comfortably over the 44px target height (spec.md DS-A11Y-003). */
-  min-height: 44px;
-  padding: 0.5rem 1.25rem;
-  /*
-   * Quiet, not a cream fill. Three identical high-contrast buttons made the
-   * export row the loudest thing on the page after the poster itself, which
-   * inverts vision principle 2 ("the interface never outshines the poster") and
-   * contradicts the wireframe in `specs/007-renderer-export/ui.md`, which draws
-   * these as secondary controls beside one primary "Copy link".
-   */
-  color: var(--color-text);
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--color-text) 0.35);
-  border-radius: var(--radius-control);
-  cursor: pointer;
-  transition:
-    background var(--motion-duration-short) var(--motion-ease),
-    border-color var(--motion-duration-short) var(--motion-ease);
+/* Secondary hand-offs: one row of ghost buttons. */
+.atlas-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
 }
 
-.atlas-export-button:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-text) 0.08);
-  border-color: color-mix(in srgb, var(--color-text) 0.7);
-}
-
-.atlas-export-button:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-.atlas-export-button:disabled {
-  opacity: 0.55;
-  cursor: progress;
+.atlas-export-status:empty {
+  min-height: 0;
+  margin: 0;
 }
 
 .atlas-export-status {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
   min-height: 1.25rem;
   font-size: 0.8rem;
-  color: color-mix(in srgb, var(--color-text) 0.65);
+  color: var(--color-text-muted);
 }
 
-/* Sky Explorer (#e=): one full-viewport canvas, no chrome. */
-.explorer-stage {
+/* Sky Explorer (#e=): the shared header, then one canvas filling the rest. */
+.explorer-shell {
   position: fixed;
   inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+
+.explorer-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
   background: var(--color-bg);
 }
 
 .explorer-canvas {
   display: block;
   width: 100%;
-  height: 100dvh;
+  height: 100%;
   /* The page must not scroll or zoom during a gesture. */
   touch-action: none;
   overscroll-behavior: none;
@@ -778,77 +806,34 @@ select.atlas-form-input option {
   opacity: 1;
 }
 
-.explorer-pin,
-.explorer-close,
-.explorer-tool,
-.explorer-link,
-.explorer-action {
-  min-height: 44px;
-  padding: 0 var(--space-3);
-  color: var(--color-text);
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  font: inherit;
-  font-size: 0.8125rem;
-  cursor: pointer;
-  transition:
-    background var(--motion-duration-short) var(--motion-ease),
-    border-color var(--motion-duration-short) var(--motion-ease);
-}
-
-.explorer-pin {
-  white-space: nowrap;
-}
-
-.explorer-pin:hover,
-.explorer-close:hover,
-.explorer-tool:hover,
-.explorer-action:hover,
 .explorer-list-item:hover {
   background: var(--color-raised);
 }
 
-.explorer-pin[aria-pressed="true"],
-.explorer-tool[aria-expanded="true"] {
-  background: var(--color-raised);
-  border-color: var(--color-text-muted);
-}
-
-.explorer-pin:focus-visible,
-.explorer-close:focus-visible,
-.explorer-tool:focus-visible,
-.explorer-link:focus-visible,
-.explorer-action:focus-visible,
 .explorer-list-item:focus-visible,
 .explorer-sheet-handle:focus-visible,
 .explorer-search-input:focus-visible,
-.explorer-switch input:focus-visible,
 .explorer-result[aria-selected="true"] {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
-.explorer-icon-button,
-.explorer-tool {
-  display: inline-grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 44px;
-  padding: 0;
-}
-
-.explorer-tool:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
 .explorer-link {
-  border: 0;
+  min-height: 44px;
   padding: 0;
+  font: inherit;
+  font-size: 0.8125rem;
   text-align: left;
   color: var(--color-accent);
+  background: none;
+  border: 0;
   text-decoration: underline;
+  cursor: pointer;
+}
+
+.explorer-link:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 /* A failed copy: text under the strip, out of its flow so the strip keeps its shape. */
@@ -925,31 +910,9 @@ select.atlas-form-input option {
   overflow-wrap: anywhere;
 }
 
-.explorer-switch {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: 44px;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.explorer-switch input {
-  width: 1.25rem;
-  height: 1.25rem;
-  accent-color: var(--color-accent);
-}
-
 .explorer-search-input {
   flex: 1 1 auto;
   min-width: 0;
-  min-height: 44px;
-  padding: 0 var(--space-3);
-  color: var(--color-text);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  font: inherit;
 }
 
 .explorer-results {
@@ -1244,12 +1207,6 @@ select.atlas-form-input option {
     z-index: 2;
   }
 
-  .explorer-toolbar .explorer-tool {
-    min-width: 44px;
-    padding-inline: var(--space-1);
-    white-space: nowrap;
-  }
-
   .explorer-stage-inner:has(.explorer-inspector[data-open="true"]) .explorer-dock {
     bottom: calc(38dvh + var(--space-2));
     max-height: calc(100% - 38dvh - 2 * var(--space-2));
@@ -1341,21 +1298,9 @@ select.atlas-form-input option {
   .explorer-dock,
   .explorer-moment > button,
   .explorer-moment-full,
-  .explorer-moment-line,
-  .explorer-pin,
-  .explorer-close,
-  .explorer-tool,
-  .explorer-action {
+  .explorer-moment-line {
     transition: none;
   }
-}
-
-/* Secondary hand-offs under the Viewer's share and export rows. */
-.atlas-viewer-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
 }
 
 /*
@@ -1365,7 +1310,7 @@ select.atlas-form-input option {
  */
 .atlas-studio {
   display: grid;
-  gap: 1.5rem;
+  gap: var(--space-6);
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -1374,6 +1319,7 @@ select.atlas-form-input option {
   min-width: 0;
 }
 
+/* The sky image, centred in its column like the Viewer's. */
 .atlas-studio-canvas {
   display: block;
   border-radius: var(--radius-artifact);
@@ -1383,18 +1329,8 @@ select.atlas-form-input option {
 
 .atlas-studio-side {
   display: grid;
-  gap: 1.25rem;
+  gap: var(--space-5);
   align-content: start;
-}
-
-.atlas-studio-side .atlas-export {
-  margin-top: 0;
-}
-
-.atlas-studio-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
 }
 
 @media (min-width: 64rem) {
@@ -1405,6 +1341,6 @@ select.atlas-form-input option {
 
   .atlas-studio-preview {
     position: sticky;
-    top: 1rem;
+    top: var(--space-4);
   }
 }

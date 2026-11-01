@@ -12,6 +12,7 @@
  */
 import { useState } from "react";
 import { t } from "../i18n/index.ts";
+import { Icon } from "./icons.tsx";
 import { formatLocalTime, formatCoords } from "../lib/caption.ts";
 import type { SharePayload } from "../lib/share.ts";
 
@@ -51,13 +52,14 @@ export default function ShareDialog({ payload, getLink }: Props) {
       <button
         type="button"
         id={triggerId}
-        className="atlas-export-trigger"
+        className="atlas-btn-ghost"
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => {
           setOpen((value) => !value);
         }}
       >
+        <Icon name="share" />
         {open ? t("viewer.share.close") : t("viewer.share.open")}
       </button>
 
@@ -71,11 +73,12 @@ export default function ShareDialog({ payload, getLink }: Props) {
         <p className="atlas-form-hint">{sceneSummary(payload)}</p>
         <button
           type="button"
-          className="atlas-export-button"
+          className="atlas-btn-ghost"
           onClick={() => {
             void copyLink();
           }}
         >
+          <Icon name="link" />
           {t("viewer.copyLink")}
         </button>
       </div>

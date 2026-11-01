@@ -48,7 +48,7 @@ export default function ExplorerCopyLink({ getLink, resetMs = COPIED_ICON_MS }: 
     <>
       <button
         type="button"
-        className="explorer-pin explorer-icon-button explorer-copy-button"
+        className="atlas-btn-icon explorer-copy-button"
         aria-label={label}
         title={label}
         data-icon={outcome === "copied" ? "check" : "link"}

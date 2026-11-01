@@ -73,7 +73,7 @@ function ExplorerToolbar({
       <button
         ref={zoomInRef}
         type="button"
-        className="explorer-tool"
+        className="atlas-btn-icon"
         aria-label={zoomInLabel}
         title={tip(zoomInLabel, "+")}
         disabled={atMin}
@@ -86,7 +86,7 @@ function ExplorerToolbar({
       <button
         ref={zoomOutRef}
         type="button"
-        className="explorer-tool"
+        className="atlas-btn-icon"
         aria-label={zoomOutLabel}
         title={tip(zoomOutLabel, "-")}
         disabled={atMax}
@@ -98,7 +98,7 @@ function ExplorerToolbar({
       </button>
       <button
         type="button"
-        className="explorer-tool"
+        className="atlas-btn-icon"
         aria-label={resetLabel}
         title={tip(resetLabel, "0")}
         onClick={() => {
@@ -111,7 +111,7 @@ function ExplorerToolbar({
       <button
         ref={layersRef}
         type="button"
-        className="explorer-tool"
+        className="atlas-btn-icon"
         aria-label={t("explorer.toolbar.layers")}
         title={t("explorer.toolbar.layers")}
         aria-expanded={layersOpen}
@@ -123,7 +123,7 @@ function ExplorerToolbar({
       <button
         ref={searchRef}
         type="button"
-        className="explorer-tool"
+        className="atlas-btn-icon"
         aria-label={t("explorer.toolbar.search")}
         title={t("explorer.toolbar.search")}
         aria-expanded={searchOpen}
@@ -135,7 +135,7 @@ function ExplorerToolbar({
       {onCreatePoster && (
         <button
           type="button"
-          className="explorer-tool"
+          className="atlas-btn-icon"
           aria-label={t("explorer.toolbar.poster")}
           title={t("explorer.toolbar.poster")}
           onClick={onCreatePoster}

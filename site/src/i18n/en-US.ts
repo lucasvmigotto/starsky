@@ -57,9 +57,9 @@ export const enUS = {
   "studio.returnToExplorer": "Return to Explorer",
   "studio.back": "Back to the start",
 
+  "site.name": "Starsky",
   "viewer.heading.default": "This night sky",
   "viewer.heading.abovePlace": "Night sky above {place}",
-  "viewer.subtitle": "A night-sky atlas moment, recomputed in your browser",
   "viewer.loading": "Charting the stars…",
   "viewer.announced.ready": "Night sky poster ready.",
   "viewer.announced.viewReset": "Showing the whole sky again.",

@@ -26,7 +26,7 @@ function State({
   return (
     <div className="atlas-empty">
       <p className="font-display text-3xl">{title}</p>
-      <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-cream/70">
+      <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-text-muted">
         {body}
       </p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">

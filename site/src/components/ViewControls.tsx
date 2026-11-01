@@ -7,6 +7,7 @@
  * the same navigation reachable without a pointer.
  */
 import { t } from "../i18n/index.ts";
+import { Icon } from "./icons.tsx";
 import { isHomeView, MAX_SCALE, MIN_SCALE, type View } from "../lib/view.ts";
 
 interface Props {
@@ -31,27 +32,33 @@ export default function ViewControls({
     >
       <button
         type="button"
-        className="atlas-btn-subtle"
+        className="atlas-btn-icon"
+        aria-label={t("viewer.zoomOut")}
+        title={t("viewer.zoomOut")}
         onClick={onZoomOut}
         disabled={view.scale <= MIN_SCALE}
       >
-        {t("viewer.zoomOut")}
+        <Icon name="zoom-out" />
       </button>
       <button
         type="button"
-        className="atlas-btn-subtle"
+        className="atlas-btn-icon"
+        aria-label={t("viewer.zoomIn")}
+        title={t("viewer.zoomIn")}
         onClick={onZoomIn}
         disabled={view.scale >= MAX_SCALE}
       >
-        {t("viewer.zoomIn")}
+        <Icon name="zoom-in" />
       </button>
       <button
         type="button"
-        className="atlas-btn-subtle"
+        className="atlas-btn-icon"
+        aria-label={t("viewer.resetView")}
+        title={t("viewer.resetView")}
         onClick={onReset}
         disabled={home}
       >
-        {t("viewer.resetView")}
+        <Icon name="reset" />
       </button>
     </div>
   );

@@ -75,7 +75,7 @@ export default function ExplorerMetadata({ moment, machine: provided, children }
       </div>
       <button
         type="button"
-        className="explorer-pin explorer-icon-button"
+        className="atlas-btn-icon"
         aria-label={t("explorer.moment.pin")}
         aria-pressed={pinned}
         title={t("explorer.moment.pin")}

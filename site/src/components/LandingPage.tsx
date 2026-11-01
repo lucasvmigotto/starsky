@@ -181,7 +181,7 @@ export default function LandingPage() {
         <p className="font-display text-3xl leading-tight sm:text-4xl">
           {t("landing.title")}
         </p>
-        <p className="mt-2 text-sm text-cream/65">
+        <p className="mt-2 text-sm text-text-muted">
           {t("landing.subtitle")}
         </p>
       </div>

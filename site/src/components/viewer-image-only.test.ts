@@ -29,7 +29,7 @@ describe("the Viewer page (BCR-0013)", () => {
       return i;
     };
     const order = [
-      at("displayHeadingTitle(payload"),
+      at("<PosterHeading"),
       at("<SkyCanvas"),
       at("<ShareDialog"),
       at("<ExportControls"),

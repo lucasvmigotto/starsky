@@ -4,7 +4,7 @@
  * that cannot be read, or star data that did not load.
  */
 import { useEffect, useState } from "react";
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 import { t } from "../../i18n/index.ts";
 import {
   ExplorerDecodeError,
@@ -14,6 +14,7 @@ import {
 } from "../../lib/sky/payload.ts";
 import { type SkyScene, prepareScene } from "../../lib/sky/scene.ts";
 import type { SegmentRow } from "../../lib/skymodel.ts";
+import SiteHeader from "../SiteHeader.tsx";
 import ExplorerStage from "./ExplorerStage.tsx";
 
 const DATA_BASE = `${import.meta.env.BASE_URL}data/`;
@@ -103,48 +104,55 @@ export default function ExplorerPage(): JSX.Element {
 
   if (link.kind === "invalid") {
     return (
-      <main className="explorer-state">
-        <div className="atlas-empty">
-          <h1 className="font-display text-3xl">{t("invalid.title")}</h1>
-          <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-cream/70" role="alert">
-            {t("invalid.body", { detail: link.detail })}
-          </p>
-          <div className="mt-6 flex justify-center">
-            <BackLink />
-          </div>
-        </div>
-      </main>
+      <StateFrame title={t("invalid.title")}>
+        {t("invalid.body", { detail: link.detail })}
+      </StateFrame>
     );
   }
 
   if (dataError !== null) {
     return (
+      <StateFrame title={t("dataError.title")}>
+        {t("dataError.bodyPrefix", { detail: dataError })}
+        <code className="atlas-code">{t("dataError.command")}</code>
+        {t("dataError.bodySuffix")}
+      </StateFrame>
+    );
+  }
+
+  return (
+    <div className="explorer-shell">
+      <SiteHeader />
+      <main className="explorer-stage">
+        <h1 className="sr-only">{t("explorer.heading")}</h1>
+        {scene ? (
+          <ExplorerStage scene={scene} payload={link.payload} />
+        ) : (
+          <p className="atlas-loading" role="status">
+            {t("explorer.loading")}
+          </p>
+        )}
+      </main>
+    </div>
+  );
+}
+
+/** A state that replaces the map: the shared header, a message and the way back. */
+function StateFrame({ title, children }: { title: string; children: ReactNode }): JSX.Element {
+  return (
+    <>
+      <SiteHeader />
       <main className="explorer-state">
         <div className="atlas-empty">
-          <h1 className="font-display text-3xl">{t("dataError.title")}</h1>
-          <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-cream/70" role="alert">
-            {t("dataError.bodyPrefix", { detail: dataError })}
-            <code className="atlas-code">{t("dataError.command")}</code>
-            {t("dataError.bodySuffix")}
+          <h1 className="font-display text-3xl">{title}</h1>
+          <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-text-muted" role="alert">
+            {children}
           </p>
           <div className="mt-6 flex justify-center">
             <BackLink />
           </div>
         </div>
       </main>
-    );
-  }
-
-  return (
-    <main className="explorer-stage">
-      <h1 className="sr-only">{t("explorer.heading")}</h1>
-      {scene ? (
-        <ExplorerStage scene={scene} payload={link.payload} />
-      ) : (
-        <p className="atlas-loading" role="status">
-          {t("explorer.loading")}
-        </p>
-      )}
-    </main>
+    </>
   );
 }

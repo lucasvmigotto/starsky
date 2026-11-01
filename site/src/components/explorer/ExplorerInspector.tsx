@@ -229,7 +229,7 @@ function ExplorerInspector({
           </div>
           <button
             type="button"
-            className="explorer-close explorer-icon-button"
+            className="atlas-btn-icon"
             aria-label={t("explorer.inspector.close")}
             title={t("explorer.inspector.close")}
             onClick={onClose}
@@ -247,10 +247,10 @@ function ExplorerInspector({
               <ConstellationFacts con={detail} />
             )}
             <div className="explorer-actions">
-              <button type="button" className="atlas-btn-ghost explorer-action" onClick={onCenter}>
+              <button type="button" className="atlas-btn-ghost" onClick={onCenter}>
                 {t("explorer.inspector.center")}
               </button>
-              <button type="button" className="atlas-btn-ghost explorer-action" onClick={onClear}>
+              <button type="button" className="atlas-btn-ghost" onClick={onClear}>
                 {t("explorer.inspector.clear")}
               </button>
             </div>
