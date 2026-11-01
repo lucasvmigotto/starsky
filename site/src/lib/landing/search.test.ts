@@ -57,6 +57,38 @@ function last<T>(items: T[]): T | undefined {
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
 
 describe("search controller", () => {
+  it("resubmitting the same query while it is fetched sends nothing and keeps the request", () => {
+    const { controller, calls } = setup();
+    controller.submit("paris");
+    controller.submit("Paris ");
+    controller.submit("PARIS");
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.signal.aborted).toBe(false);
+  });
+
+  it("resubmitting the same query while it waits its turn sets no second timer", async () => {
+    const { controller, timers, calls, clock } = setup();
+    controller.submit("london");
+    calls[0]?.resolve([PARIS]);
+    await tick();
+    clock.t += 200;
+    controller.submit("paris");
+    controller.submit("paris");
+    expect(timers.count()).toBe(1);
+    timers.fire();
+    expect(calls).toHaveLength(2);
+  });
+
+  it("the same query can be searched again after a failure", async () => {
+    const { controller, calls, clock } = setup();
+    controller.submit("paris");
+    calls[0]?.reject(new Error("down"));
+    await tick();
+    clock.t += 2_000;
+    controller.submit("paris");
+    expect(calls).toHaveLength(2);
+  });
+
   it("typing sends nothing, sets no timer, and goes idle", () => {
     const { controller, timers, calls, states } = setup();
     controller.input();

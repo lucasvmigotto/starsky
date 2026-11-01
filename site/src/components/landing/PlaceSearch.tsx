@@ -166,6 +166,7 @@ export default function PlaceSearch({
         <button
           type="button"
           className="atlas-btn-icon landing-search-submit"
+          aria-busy={state.status === "loading"}
           aria-label={t("landing.search.submit")}
           title={t("landing.search.submit")}
           ref={buttonRef}

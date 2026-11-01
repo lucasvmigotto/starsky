@@ -67,6 +67,8 @@ export function createSearchController({
   let inflight: AbortController | null = null;
   let lastStart = Number.NEGATIVE_INFINITY;
   let disposed = false;
+  /** The query being fetched or waiting its turn; resubmitting it is a no-op. */
+  let pendingKey: string | null = null;
   const cache = new Map<string, ResolvedPlace[]>();
 
   const emit = (state: SearchState): void => {
@@ -82,6 +84,7 @@ export function createSearchController({
     timer = null;
     inflight?.abort();
     inflight = null;
+    pendingKey = null;
   };
 
   const run = (query: string, key: string): void => {
@@ -91,11 +94,15 @@ export function createSearchController({
     search(query, controller.signal).then(
       (results) => {
         if (controller.signal.aborted) return;
+        inflight = null;
+        pendingKey = null;
         cache.set(key, results);
         report(query, results);
       },
       () => {
         if (controller.signal.aborted) return;
+        inflight = null;
+        pendingKey = null;
         emit({ status: "error", query });
       },
     );
@@ -111,14 +118,20 @@ export function createSearchController({
       if (disposed) return;
       const query = text.trim();
       if (query === "") return;
-      stop();
       const key = query.toLowerCase();
+      // Pressing Enter or the button again for the same text while it is
+      // fetched or waiting sends nothing more: an aborted request has already
+      // reached Nominatim, and repeating one query is what its policy treats
+      // as a faulty client.
+      if (key === pendingKey) return;
+      stop();
       const cached = cache.get(key);
       if (cached) {
         report(query, cached);
         return;
       }
       emit({ status: "loading", query });
+      pendingKey = key;
       const wait = lastStart + SEARCH_MIN_INTERVAL_MS - now();
       if (wait > 0) {
         timer = timers.set(() => {
