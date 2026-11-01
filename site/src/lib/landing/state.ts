@@ -4,6 +4,7 @@
  * timers and the requests in flight.
  */
 import { DEFAULTS } from "../scene/defaults.ts";
+import type { LinkLang } from "../share.ts";
 import type { Creation } from "./creation.ts";
 import {
   type CoordinateCheck,
@@ -38,6 +39,8 @@ export interface LandingState {
   /** Why the map is not usable; the form works either way. */
   mapProblem: "chunk" | "tiles" | null;
   error: FormError | null;
+  /** The poster language a `#c=` link arrived with, carried on to `#e=` (018). */
+  lang?: LinkLang;
 }
 
 export type LandingAction =
@@ -89,6 +92,7 @@ export function createInitialState({
     title: creation.title ?? DEFAULTS.title,
     mapProblem: null,
     error: null,
+    ...(creation.lang === undefined ? {} : { lang: creation.lang }),
   };
 }
 
@@ -103,6 +107,7 @@ export function creationOf(state: LandingState): Creation {
   if (state.tz.trim() !== "") out.tz = state.tz.trim();
   if (state.title !== "") out.title = state.title;
   out.magnitude_limit = state.mag;
+  if (state.lang !== undefined) out.lang = state.lang;
   return out;
 }
 
@@ -185,6 +190,7 @@ export function toLandingInput(
       tz: state.tz,
       mag: state.mag,
       title: state.title,
+      ...(state.lang === undefined ? {} : { lang: state.lang }),
     },
   };
 }

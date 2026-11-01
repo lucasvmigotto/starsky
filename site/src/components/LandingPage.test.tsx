@@ -58,7 +58,7 @@ describe("LandingPage structure (013)", () => {
   it("the switch replaces the search with latitude and longitude, and back", () => {
     render(<LandingPage />);
     fireEvent.click(screen.getByRole("switch", { name: "Coordinates" }));
-    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Search for a place" })).toBeNull();
     expect(screen.getByLabelText("Latitude")).toBeDefined();
     expect(screen.getByRole("region", { name: "Map for choosing a place" })).toBeDefined();
     fireEvent.click(screen.getByRole("switch", { name: "Coordinates" }));

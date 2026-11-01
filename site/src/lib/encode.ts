@@ -50,7 +50,11 @@ export function canonicalJson(value: unknown, path = ""): string {
   }
   if (typeof value === "object") {
     const record = value as Record<string, unknown>;
-    const keys = Object.keys(record).sort();
+    // An `undefined` member is absent, as in `JSON.stringify`: an optional
+    // field such as `lang` is never written as a key with no value.
+    const keys = Object.keys(record)
+      .filter((key) => record[key] !== undefined)
+      .sort();
     const parts = keys.map(
       (key) => `${JSON.stringify(key)}:${canonicalJson(record[key], `${path}/${key}`)}`,
     );

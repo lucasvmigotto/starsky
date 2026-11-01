@@ -14,6 +14,7 @@ import {
   exportStatus,
   explorerUrl,
   fragmentFor,
+  placeOptions,
   pngSize,
   readDownload,
   stubSearch,
@@ -52,9 +53,9 @@ test.describe("keyboard only: landing to Explorer", () => {
     await expect(page.getByRole("combobox", { name: "Search for a place" })).toBeFocused();
     await page.keyboard.type("eiffel");
     await page.keyboard.press("Enter");
-    await expect(page.getByRole("option")).toHaveCount(1);
+    await expect(placeOptions(page)).toHaveCount(1);
     await page.keyboard.press("ArrowDown");
-    await expect(page.getByRole("option").first()).toHaveAttribute("aria-selected", "true");
+    await expect(placeOptions(page).first()).toHaveAttribute("aria-selected", "true");
     await page.keyboard.press("Enter");
     await expect(page.locator(".landing-selected")).toContainText("Eiffel Tower");
 

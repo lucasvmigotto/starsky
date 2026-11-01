@@ -118,6 +118,8 @@ Later: WebGL renderer, only if Canvas 2D limits are hit (ADR-0007). A keyed geoc
 - Limiting magnitude — faintest star drawn; 1–7 for posters and creation links, wider in `#e=`. Interface label "Limiting magnitude". [site/src/lib/share.ts]
 - Below the horizon — altitude ≤ 0; such objects are never presented as observable. [site/src/lib/sky/observer.ts]
 - Story format — 1080 × 1920 export layout chosen at export time, never stored in a link (BCR-0012). [site/src/lib/render/format.ts]
+- Interface language — `en-US` or `pt-BR` for everything around the poster: the stored choice from the footer switcher, else the browser language (`pt*` gives pt-BR), else en-US. Remembered on this browser only; never in a link. [site/src/i18n/locale.ts]
+- Poster language — the language of the poster's caption date, chosen in the Studio and defaulting to the interface language. Stored in the link as an optional `lang: "pt-BR"`; absent means en-US, so every older link draws the same poster. The visitor's browser never changes it (BCR-0015). Not: interface language. [site/src/lib/share.ts; site/src/lib/caption.ts]
 - Retired: Observation, Gradio app, Python renderer, HF Space (BCR-0001/0003/0005) — must not reappear in UI, API, or docs copy.
 
 ## Open items

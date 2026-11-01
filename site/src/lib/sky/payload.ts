@@ -5,7 +5,7 @@
 
 import { inflate, deflate } from "pako";
 import { bytesToBase64Url, canonicalJson } from "../encode.ts";
-import { base64UrlToBytes } from "../share.ts";
+import { type LinkLang, base64UrlToBytes, isValidLinkLang } from "../share.ts";
 import { FOV_MAX_DEG, FOV_MIN_DEG } from "./camera.ts";
 import { type Quat, normalize } from "./quat.ts";
 
@@ -30,6 +30,11 @@ export interface ExplorerPayload {
   layers: ExplorerLayers;
   /** `HIP:<n>` or `CON:<abbr>` */
   sel: string | null;
+  /**
+   * The poster language to carry forward to the Studio (018-pt-br). Absent
+   * means none was chosen; `en-US` is never written.
+   */
+  lang?: LinkLang;
 }
 
 export class ExplorerDecodeError extends Error {
@@ -120,6 +125,7 @@ function validate(data: unknown): ExplorerPayload {
   if (sel !== null && (typeof sel !== "string" || !SEL_RE.test(sel))) {
     return fail("sel must be HIP:<n>, CON:<abbr> or null");
   }
+  if (!isValidLinkLang(data)) return fail('lang must be "pt-BR" or absent');
   return {
     v: 1,
     lat: num(data, "lat", -90, 90),
@@ -133,6 +139,7 @@ function validate(data: unknown): ExplorerPayload {
     fov: num(data, "fov", FOV_MIN_DEG, FOV_MAX_DEG),
     layers: parseLayers(data["layers"]),
     sel,
+    ...(data["lang"] === "pt-BR" ? { lang: "pt-BR" as const } : {}),
   };
 }
 

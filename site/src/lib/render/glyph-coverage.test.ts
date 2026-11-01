@@ -40,8 +40,13 @@
  *
  * See `specs/007-renderer-export/finding-unsupported-glyphs.md`.
  */
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "bun:test";
 import { GlobalFonts, createCanvas } from "@napi-rs/canvas";
+import { formatLocalTime } from "../caption.ts";
+import { enUS } from "../../i18n/en-US.ts";
+import { ptBR } from "../../i18n/pt-BR.ts";
+import { posterFontHasGlyph } from "./glyph-coverage.generated.ts";
 
 const POSTER_FONT = new URL(
   "../../../../assets/fonts/CormorantGaramond.ttf",
@@ -132,6 +137,123 @@ describe("poster face glyph coverage (T040 charter C1)", () => {
     expect(isMissing("é")).toBe(false);
   });
 });
+
+/**
+ * Every character a pt-BR poster draws or a pt-BR interface shows (018 FR-007).
+ *
+ * The caption's date, formatted by `Intl` for every month (the month
+ * abbreviations "jan." to "dez." and the "de" between them), and the accented
+ * letters Portuguese titles and places carry. Code points, so an astral
+ * character could not split into surrogates.
+ */
+const PT_BR_LETTERS: readonly string[] = [
+  "ç", "ã", "õ", "á", "é", "í", "ó", "ú", "â", "ê", "ô", "à", "ü",
+  "Ç", "Ã", "Õ", "Á", "É", "Í", "Ó", "Ú", "Â", "Ê", "Ô", "À",
+];
+
+function ptBrCaptionCharacters(): string[] {
+  const dates = Array.from({ length: 12 }, (_, month) =>
+    formatLocalTime(new Date(Date.UTC(2025, month, 28, 21, 45)).toISOString(), "America/Sao_Paulo", "pt-BR"),
+  );
+  return [...new Set([...Array.from(dates.join("")), ...PT_BR_LETTERS])].filter((c) => c !== " ");
+}
+
+/** Code points in a `unicode-range` list (`U+0000-00FF, U+0131, ...`). */
+function inUnicodeRange(range: string, code: number): boolean {
+  return range.split(",").some((part) => {
+    const [start = "", end = start] = part.trim().replace(/^U\+/i, "").split("-");
+    return code >= parseInt(start, 16) && code <= parseInt(end, 16);
+  });
+}
+
+describe("pt-BR glyph coverage (018 FR-007)", () => {
+  it("reads the month abbreviations the caption formatter actually produces", () => {
+    const chars = ptBrCaptionCharacters().join("");
+    for (const letter of ["j", "f", "v", "z", "."]) expect(chars).toContain(letter);
+  });
+
+  it("the poster face draws every character of a pt-BR caption and title", () => {
+    const characters = ptBrCaptionCharacters();
+    expect(characters.filter(isMissing), "measured on the registered face").toEqual([]);
+    expect(
+      characters.filter((c) => !posterFontHasGlyph(c.codePointAt(0) ?? 0)),
+      "per the generated cmap table the browser checks titles against",
+    ).toEqual([]);
+  });
+
+  it("the PDF subset embeds every character of a pt-BR caption and title", () => {
+    // jsPDF embeds this subset, not the face: a glyph missing here is a blank
+    // in the exported PDF even though the PNG and SVG draw it.
+    const subset = readFileSync(new URL("../../../public/fonts/CormorantGaramond-subset.ttf", import.meta.url));
+    const covered = new Set(cmapCodePoints(subset));
+    expect(ptBrCaptionCharacters().filter((c) => !covered.has(c.codePointAt(0) ?? 0))).toEqual([]);
+  });
+
+  it("Inter, the interface face, covers every character of both catalogues", () => {
+    // `index.css` bundles Inter's latin subset only; a character outside its
+    // `unicode-range` would fall back to another face mid-sentence.
+    const css = readFileSync(new URL("../../index.css", import.meta.url), "utf-8");
+    const block = /font-family: "Inter Variable";[\s\S]*?unicode-range:([^;]+);/.exec(css);
+    const range = block?.[1] ?? "";
+    expect(range).not.toBe("");
+    const text = [...Object.values(enUS), ...Object.values(ptBR)].join("");
+    const outside = [...new Set(text)].filter((c) => !inUnicodeRange(range, c.codePointAt(0) ?? 0));
+    expect(outside).toEqual([]);
+  });
+});
+
+/**
+ * The code points a TrueType `cmap` maps (formats 4 and 12), read directly so
+ * the test needs no font library. Mirrors `scripts/generate_glyph_coverage.py`.
+ */
+function cmapCodePoints(font: Buffer): number[] {
+  const tables = font.readUInt16BE(4);
+  let cmap = -1;
+  for (let i = 0; i < tables; i += 1) {
+    const record = 12 + i * 16;
+    if (font.toString("latin1", record, record + 4) === "cmap") cmap = font.readUInt32BE(record + 8);
+  }
+  if (cmap < 0) throw new Error("the subset has no cmap");
+  const points: number[] = [];
+  const subtables = font.readUInt16BE(cmap + 2);
+  for (let i = 0; i < subtables; i += 1) {
+    const offset = cmap + font.readUInt32BE(cmap + 4 + i * 8 + 4);
+    const format = font.readUInt16BE(offset);
+    if (format === 4) {
+      const segments = font.readUInt16BE(offset + 6) / 2;
+      const ends = offset + 14;
+      const starts = ends + segments * 2 + 2;
+      const deltas = starts + segments * 2;
+      const ranges = deltas + segments * 2;
+      for (let s = 0; s < segments; s += 1) {
+        const end = font.readUInt16BE(ends + s * 2);
+        const start = font.readUInt16BE(starts + s * 2);
+        const delta = font.readUInt16BE(deltas + s * 2);
+        const rangeOffset = font.readUInt16BE(ranges + s * 2);
+        for (let code = start; code <= end && code !== 0xffff; code += 1) {
+          let glyph: number;
+          if (rangeOffset === 0) glyph = (code + delta) & 0xffff;
+          else {
+            const at = ranges + s * 2 + rangeOffset + (code - start) * 2;
+            const raw = font.readUInt16BE(at);
+            glyph = raw === 0 ? 0 : (raw + delta) & 0xffff;
+          }
+          if (glyph !== 0) points.push(code);
+        }
+      }
+    } else if (format === 12) {
+      const groups = font.readUInt32BE(offset + 12);
+      for (let g = 0; g < groups; g += 1) {
+        const group = offset + 16 + g * 12;
+        const start = font.readUInt32BE(group);
+        const end = font.readUInt32BE(group + 4);
+        const firstGlyph = font.readUInt32BE(group + 8);
+        for (let code = start; code <= end; code += 1) if (firstGlyph + (code - start) !== 0) points.push(code);
+      }
+    }
+  }
+  return points;
+}
 
 /**
  * Every printable ASCII character the UI can emit, one code point per entry.

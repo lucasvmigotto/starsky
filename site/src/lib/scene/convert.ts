@@ -62,6 +62,7 @@ export function explorerToPoster(explorer: ExplorerPayload): SharePayload {
       shape: DEFAULTS.shape,
       title: explorer.title === null || explorer.title === "" ? null : explorer.title,
     },
+    ...(explorer.lang === undefined ? {} : { lang: explorer.lang }),
   };
 }
 
@@ -86,5 +87,7 @@ export function posterToExplorer(share: SharePayload, camera?: ExplorerCamera): 
     fov: view.fovDeg,
     layers: layersToPayload(DEFAULT_LAYERS),
     sel: null,
+    // The poster's language rides along, so a poster made later starts in it.
+    ...(share.lang === undefined ? {} : { lang: share.lang }),
   };
 }

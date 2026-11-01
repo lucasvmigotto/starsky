@@ -7,7 +7,8 @@
  * Studio asks for Appearance open where the landing keeps it collapsed.
  */
 import type { ReactNode } from "react";
-import { t } from "../../i18n/index.ts";
+import { formatDecimal } from "../../i18n/format.ts";
+import { LANGUAGE_NAME_KEYS, LOCALES, type Locale, isLocale, t } from "../../i18n/index.ts";
 import type { Projection, Shape } from "../../lib/share.ts";
 
 export interface PosterFieldValues {
@@ -21,6 +22,8 @@ export interface PosterFieldValues {
   constellationLabels: boolean;
   shape: Shape;
   title: string;
+  /** The poster's language (018-pt-br): the caption date is written in it. */
+  posterLocale: Locale;
 }
 
 interface Props {
@@ -36,6 +39,11 @@ interface Props {
   value: PosterFieldValues;
   onChange: (patch: Partial<PosterFieldValues>) => void;
 }
+
+const SHAPE_KEYS = {
+  square: "landing.render.shape.square",
+  circle: "landing.render.shape.circle",
+} as const satisfies Record<Shape, string>;
 
 function Slider({
   id,
@@ -61,7 +69,7 @@ function Slider({
       <div className="atlas-form-row">
         <label htmlFor={id}>{label}</label>
         <output htmlFor={id} className="atlas-form-value">
-          {value.toFixed(decimals)}
+          {formatDecimal(value, decimals)}
         </output>
       </div>
       <input
@@ -121,7 +129,7 @@ export default function PosterFields({
       <Section legend={legends.appearance} collapsible={collapsible}>
         <div className="atlas-form-pair">
           <div className="atlas-form-field">
-            <label htmlFor={`${idPrefix}-projection`}>Projection</label>
+            <label htmlFor={`${idPrefix}-projection`}>{t("landing.render.projection")}</label>
             <select
               id={`${idPrefix}-projection`}
               className="atlas-form-input"
@@ -136,7 +144,7 @@ export default function PosterFields({
           </div>
           <div className="atlas-form-field">
             <span className="atlas-form-label" id={`${idPrefix}-shape-label`}>
-              Shape
+              {t("landing.render.shape")}
             </span>
             <div className="atlas-segmented" role="radiogroup" aria-labelledby={`${idPrefix}-shape-label`}>
               {(["square", "circle"] as const).map((s) => (
@@ -150,7 +158,7 @@ export default function PosterFields({
                       onChange({ shape: s });
                     }}
                   />
-                  <span>{s}</span>
+                  <span>{t(SHAPE_KEYS[s])}</span>
                 </label>
               ))}
             </div>
@@ -191,7 +199,7 @@ export default function PosterFields({
                 onChange({ glow: e.target.checked });
               }}
             />
-            Glow
+            {t("landing.render.glowToggle")}
           </label>
           <Slider
             id={`${idPrefix}-glow`}
@@ -206,26 +214,50 @@ export default function PosterFields({
             }}
           />
         </div>
-        <div className="atlas-form-field">
-          <label htmlFor={`${idPrefix}-title`}>{titleLabel}</label>
-          <input
-            id={`${idPrefix}-title`}
-            type="text"
-            className="atlas-form-input"
-            value={value.title}
-            placeholder={titlePlaceholder}
-            aria-invalid={titleError === null ? undefined : true}
-            aria-describedby={titleError === null ? undefined : titleErrorId}
-            onChange={(e) => {
-              onChange({ title: e.target.value });
-            }}
-            autoComplete="off"
-          />
-          {titleError !== null && (
-            <p id={titleErrorId} role="alert" className="atlas-form-error">
-              {titleError}
-            </p>
-          )}
+        <div className="atlas-form-pair">
+          <div className="atlas-form-field">
+            <label htmlFor={`${idPrefix}-title`}>{titleLabel}</label>
+            <input
+              id={`${idPrefix}-title`}
+              type="text"
+              className="atlas-form-input"
+              value={value.title}
+              placeholder={titlePlaceholder}
+              aria-invalid={titleError === null ? undefined : true}
+              aria-describedby={titleError === null ? undefined : titleErrorId}
+              onChange={(e) => {
+                onChange({ title: e.target.value });
+              }}
+              autoComplete="off"
+            />
+            {titleError !== null && (
+              <p id={titleErrorId} role="alert" className="atlas-form-error">
+                {titleError}
+              </p>
+            )}
+          </div>
+          <div className="atlas-form-field">
+            <label htmlFor={`${idPrefix}-lang`}>{t("studio.lang.label")}</label>
+            <select
+              id={`${idPrefix}-lang`}
+              className="atlas-form-input"
+              value={value.posterLocale}
+              aria-describedby={`${idPrefix}-lang-hint`}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (isLocale(next)) onChange({ posterLocale: next });
+              }}
+            >
+              {LOCALES.map((locale) => (
+                <option key={locale} value={locale} lang={locale}>
+                  {t(LANGUAGE_NAME_KEYS[locale])}
+                </option>
+              ))}
+            </select>
+            <span id={`${idPrefix}-lang-hint`} className="sr-only">
+              {t("studio.lang.hint")}
+            </span>
+          </div>
         </div>
       </Section>
 

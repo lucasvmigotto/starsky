@@ -64,8 +64,10 @@ cd docs/site && bun run test:e2e   # run as `bun run test:e2e`, not `bun test`
 - **Four URL fragments**, each versioned (`v: 1`), ≤ 4096 chars, same
   codec: `#c=` landing form (tolerant per field), `#e=` Explorer,
   `#studio=` Studio draft, `#s=` poster. `#s=` must stay byte-compatible
-  with every link issued since v1: never change its codec, field set or
-  canonical-JSON order; reject out-of-range values, never clamp.
+  with every link issued since v1: never change its codec, existing
+  fields or canonical-JSON order; a new field is optional, absent means
+  the old behaviour, and needs a BCR (`lang`, BCR-0015); reject
+  out-of-range values, never clamp.
 - **OpenStreetMap rules** (Nominatim + tiles; being blocked is the top
   risk): no search-as-you-type (submit, search button or leaving the field
   only), ≥ 1 s between Nominatim requests, session cache, tiles for the
@@ -79,9 +81,12 @@ cd docs/site && bun run test:e2e   # run as `bun run test:e2e`, not `bun test`
   pages (fixed once in `fb9cfcb`, relearned in docs).
 - Product `site/`: no raw hex/rgb or inline user-visible copy in
   components (custom ESLint rules) — tokens in
-  `site/src/design/tokens.ts`, copy in `site/src/i18n/en-US.ts`, which
-  must agree with `docs/product/ux-vision.md` both ways
-  (`site/scripts/check_i18n_keys.py`).
+  `site/src/design/tokens.ts`, copy in `site/src/i18n/en-US.ts` and
+  `pt-BR.ts` (same keys, same placeholders), which must agree with the
+  en-US and pt-BR copy tables in `docs/product/ux-vision.md` both ways
+  (`site/scripts/check_i18n_keys.py`). Interface `Intl` calls pass the
+  active locale explicitly; the poster caption uses the link's `lang`
+  (absent = en-US), never the visitor's browser.
 - Docs `docs/site/`: content in `src/content/{en,pt}.ts` (same shape both
   locales — a missing translation is a type error); new pages go in
   `src/content/pages.ts` registry; maturity badges on pages, maturity

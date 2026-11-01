@@ -11,6 +11,7 @@ const { decodeExplorer, explorerFragmentFromHash } = await import("../sky/payloa
 const { loadReturnCamera } = await import("./returnCamera.ts");
 
 import type { SharePayload } from "../share.ts";
+import type { ExplorerCamera } from "../sky/camera.ts";
 import type { ExplorerPayload } from "../sky/payload.ts";
 
 const EXPLORER: ExplorerPayload = {
@@ -58,7 +59,7 @@ beforeEach(() => {
 
 describe("Explorer -> Studio", () => {
   it("opens a #studio= draft with the scene, title and a clamped magnitude", () => {
-    const hash = createPosterHash(EXPLORER, { orientation: [0, 0, 0, 1], fovDeg: 44 });
+    const hash = createPosterHash(EXPLORER, { orientation: [0, 0, 0, 1], fovDeg: 44 }, "en-US");
     const draft = decodeDraft(studioFragmentFromHash(hash) ?? "");
     expect(draft.place).toBe("Giza");
     expect(draft.options.title).toBe("A night");
@@ -67,7 +68,7 @@ describe("Explorer -> Studio", () => {
   });
 
   it("remembers the camera it left, for this scene only", () => {
-    createPosterHash(EXPLORER, { orientation: [0, 0, 0, 1], fovDeg: 44 });
+    createPosterHash(EXPLORER, { orientation: [0, 0, 0, 1], fovDeg: 44 }, "en-US");
     expect(loadReturnCamera(EXPLORER)?.fovDeg).toBe(44);
     expect(loadReturnCamera({ ...EXPLORER, lat: 31 })).toBeNull();
   });
@@ -79,13 +80,13 @@ describe("Explorer -> Studio", () => {
         throw new Error("blocked");
       },
     });
-    expect(createPosterHash(EXPLORER, { orientation: [0, 0, 0, 1], fovDeg: 44 })).toStartWith("#studio=");
+    expect(createPosterHash(EXPLORER, { orientation: [0, 0, 0, 1], fovDeg: 44 }, "en-US")).toStartWith("#studio=");
   });
 });
 
 describe("Studio -> Explorer", () => {
   it("restores the saved camera when the scene matches", () => {
-    createPosterHash(EXPLORER, { orientation: [0, 0, 0, 1], fovDeg: 44 });
+    createPosterHash(EXPLORER, { orientation: [0, 0, 0, 1], fovDeg: 44 }, "en-US");
     const poster = { ...POSTER, options: { ...POSTER.options, magnitude_limit: 5 } };
     const explorer = decodeExplorer(explorerFragmentFromHash(returnToExplorerHash(poster)) ?? "");
     expect(explorer.fov).toBe(44);
@@ -110,5 +111,35 @@ describe("Viewer actions", () => {
 
   it("make your own: a #studio= draft that is the shared poster itself", () => {
     expect(decodeDraft(studioFragmentFromHash(seedStudioHash(POSTER)) ?? "")).toEqual(POSTER);
+  });
+});
+
+describe("poster language across the hand-offs (018 US2, US4)", () => {
+  const camera: ExplorerCamera = { orientation: [0, 0, 0, 1], fovDeg: 44 };
+  const draftOf = (hash: string): SharePayload => decodeDraft(studioFragmentFromHash(hash) ?? "");
+  const explorerOf = (hash: string): ExplorerPayload => decodeExplorer(explorerFragmentFromHash(hash) ?? "");
+
+  it("Explorer -> Studio: an en-US visitor with no #e= language gets a draft with no lang", () => {
+    const draft = draftOf(createPosterHash(EXPLORER, camera, "en-US"));
+    expect("lang" in draft).toBe(false);
+  });
+
+  it("Explorer -> Studio: a pt-BR visitor's draft starts in pt-BR", () => {
+    expect(draftOf(createPosterHash(EXPLORER, camera, "pt-BR")).lang).toBe("pt-BR");
+  });
+
+  it("Explorer -> Studio: the #e= language wins over the interface", () => {
+    const draft = draftOf(createPosterHash({ ...EXPLORER, lang: "pt-BR" }, camera, "en-US"));
+    expect(draft.lang).toBe("pt-BR");
+  });
+
+  it("Studio and Viewer -> Explorer carry the poster's language, and only pt-BR is written", () => {
+    expect(explorerOf(returnToExplorerHash({ ...POSTER, lang: "pt-BR" })).lang).toBe("pt-BR");
+    expect(explorerOf(exploreHash({ ...POSTER, lang: "pt-BR" })).lang).toBe("pt-BR");
+    expect("lang" in explorerOf(exploreHash(POSTER))).toBe(false);
+  });
+
+  it("Viewer -> Studio: the draft is the shared poster, language included", () => {
+    expect(draftOf(seedStudioHash({ ...POSTER, lang: "pt-BR" })).lang).toBe("pt-BR");
   });
 });

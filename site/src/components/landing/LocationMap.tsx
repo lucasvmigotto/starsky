@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 import { t } from "../../i18n/index.ts";
+import { useLocale } from "../../i18n/useLocale.ts";
 import { OSM_COPYRIGHT_URL, OSM_FIXTHEMAP_URL } from "../../lib/landing/map-config.ts";
 import type { MapFocus, MapHandle, MapLabels, MapModule } from "./mapTypes.ts";
 
@@ -92,6 +93,15 @@ export default function LocationMap({
   useEffect(() => {
     if (ready) handle.current?.setLocation(lat, lon, focus);
   }, [ready, lat, lon, focus]);
+
+  // Leaflet keeps the strings it was built with; a language switch passes the new ones on.
+  const locale = useLocale();
+  const builtIn = useRef(locale);
+  useEffect(() => {
+    if (!ready || builtIn.current === locale) return;
+    builtIn.current = locale;
+    handle.current?.setLabels(labels());
+  }, [ready, locale]);
 
   // The page may give the map more or less room as the window changes; Leaflet only
   // redraws its tiles when told, so a resize of the container is passed on (debounced).

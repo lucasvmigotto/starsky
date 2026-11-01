@@ -31,6 +31,13 @@ export const overviewPt: PageContent = {
         "Privacidade: o starsky não guarda nada e não tem contas. Os links carregam o conteúdo no fragmento da URL, que o navegador nunca envia ao servidor. A exceção a conhecer é o OpenStreetMap: a busca de lugares (Nominatim) e os blocos do mapa da página inicial são pedidos pelo seu navegador, então o OpenStreetMap vê o seu endereço IP.",
       ],
     },
+    {
+      heading: "Idiomas",
+      paragraphs: [
+        "A interface fala inglês (en-US) e português do Brasil (pt-BR). A primeira visita segue o idioma do seu navegador; o seletor no rodapé troca o idioma, e a escolha fica guardada só neste navegador. A troca redesenha a página no lugar, sem perder o que você digitou.",
+        "O pôster tem um idioma próprio, o idioma do pôster, escolhido no Estúdio de pôster e guardado no link. O navegador de quem abre o link nunca o muda, então todos veem o mesmo pôster. Nomes de constelações e estrelas, coordenadas, a versão e os créditos dos dados nunca são traduzidos.",
+      ],
+    },
   ],
 };
 
@@ -145,6 +152,7 @@ export const viewerPt: PageContent = {
       paragraphs: [
         "Um link compartilhado termina em #s= seguido do conteúdo. Abri-lo renderiza o pôster exato: a imagem e o seu título, nada mais. Não há mapa para mover nem formulário pela frente; o pôster é a página. O id de rota desta página continua viewer, para que links existentes sigam funcionando.",
         "Fragmento corrompido, conteúdo ausente ou versão não suportada rendem cada um seu estado nomeado com um próximo passo, nunca uma página em branco.",
+        "A legenda do pôster está no idioma do pôster que o link traz (inglês quando não traz nenhum). A página em volta, incluindo a data sob o título, segue o idioma da sua interface.",
       ],
     },
     {
@@ -337,11 +345,11 @@ export const roadmapPt: PageContent = {
           ["explorer-polish, visual-identity (014, 015)", "Implementado", "Recolhimento por inatividade, lista por horizonte, dicas, fonte de interface empacotada, página do pôster só com imagem."],
           ["location-first (013)", "Implementado", "Página inicial com mapa, link #c=."],
           ["square-fill (016)", "Implementado", "O pôster quadrado preenche o quadrado."],
+          ["pt-br (018)", "Implementado", "Interface em en-US e pt-BR com seletor no rodapé; idioma do pôster escolhido no Estúdio e guardado no link (BCR-0015)."],
           ["site-delivery (008)", "Parcial", "Deploy, orçamentos e portões ligados; prefixos versionados, smoke test e simulações em aberto."],
           ["hardening (017)", "Parcial", "Em andamento: passes de acessibilidade, falhas, desempenho e estabilidade, indexação estrita, docs."],
           ["Promoção de dev para main", "Planejado — ainda não implementado.", "Aguardando o aval do dono."],
           ["Prefixos versionados no R2, manifesto, simulação de rollback", "Planejado — ainda não implementado.", "008 T003, T018, T021."],
-          ["Locale pt-BR do produto", "Planejado — ainda não implementado.", "Entrega como fatia própria após o catálogo existir."],
           ["Renderizador WebGL", "Planejado — ainda não implementado.", "Depois, e só se os limites do Canvas 2D forem atingidos (ADR-0007)."],
           ["App Gradio / renderizador Python / HF Space", "Aposentado.", "Removidos por BCR-0001/0003/0005; não voltam."],
         ],
@@ -423,10 +431,10 @@ export const linksPt: PageContent = {
       table: {
         head: ["Fragmento", "Guarda", "Abre", "Regra de leitura"],
         rows: [
-          ["#c=", "Um formulário inicial preenchido: lugar, coordenadas, data e hora local, fuso, título, magnitude limite.", "A página inicial", "Tolerante por campo"],
-          ["#e=", "Uma cena (lugar, momento, título, magnitude limite) mais uma vista durável: câmera, campo de visão, camadas, seleção.", "O Explorador", "Estrito, no conteúdo todo"],
+          ["#c=", "Um formulário inicial preenchido: lugar, coordenadas, data e hora local, fuso, título, magnitude limite, idioma do pôster.", "A página inicial", "Tolerante por campo"],
+          ["#e=", "Uma cena (lugar, momento, título, magnitude limite, idioma do pôster) mais uma vista durável: câmera, campo de visão, camadas, seleção.", "O Explorador", "Estrito, no conteúdo todo"],
           ["#studio=", "Um pôster em composição: o mesmo conteúdo de #s=.", "O Estúdio de pôster", "Estrito"],
-          ["#s=", "O pôster pronto: coordenadas, momento, fuso, opções de aparência.", "A página do pôster", "Estrito, com migração de versão"],
+          ["#s=", "O pôster pronto: coordenadas, momento, fuso, opções de aparência, idioma do pôster.", "A página do pôster", "Estrito, com migração de versão"],
         ],
       },
     },
@@ -443,6 +451,13 @@ export const linksPt: PageContent = {
       paragraphs: [
         "O #s= é o artefato canônico: o céu que alguém lhe enviou. O Estúdio usa um fragmento próprio para que um rascunho ajustado nunca o substitua. Copiar o link no Estúdio gera um link #s=, não um #studio=, então o que você compartilha é o pôster pronto, não uma sessão de edição.",
         "O #s= permanece compatível byte a byte com todo link emitido desde a versão 1. O layout de exportação (padrão ou story) nunca é guardado em nenhum link.",
+      ],
+    },
+    {
+      heading: "O idioma do pôster: lang",
+      paragraphs: [
+        "Todo fragmento pode levar um campo opcional de primeiro nível, lang, com um único valor possível: \"pt-BR\". É o idioma do pôster, e a ausência significa inglês (en-US). O inglês nunca é escrito, então todo link feito antes do campo existir mantém os mesmos bytes e desenha o mesmo pôster.",
+        "#s=, #studio= e #e= rejeitam qualquer outro valor, inclusive \"en-US\", como rejeitam qualquer campo fora de faixa. O #c= descarta um lang desconhecido e preenche o resto. O idioma da interface nunca vai para um link: ele é de quem lê, o idioma do pôster é do pôster.",
       ],
     },
   ],
@@ -464,6 +479,13 @@ export const studioPt: PageContent = {
       paragraphs: [
         "A pré-visualização acompanha as mudanças após uma breve pausa, e o fragmento acompanha a pré-visualização. Os controles são projeção (estereográfica ou olho de peixe), formato (quadrado ou círculo), intensidade do olho de peixe, separação mínima entre estrelas, brilho e o título.",
         "Um título que a tipografia do pôster não desenha é recusado no Estúdio. Um que chega por um link perde os caracteres que não dá para desenhar, e o Estúdio avisa.",
+      ],
+    },
+    {
+      heading: "Idioma do pôster",
+      paragraphs: [
+        "Idioma do pôster define o idioma da data na legenda: inglês (Jun 24, 2025, 8:30 PM) ou português (24 de jun. de 2025, 20:30). Um pôster novo começa no idioma da interface, ou no idioma que o link do Explorador já traz; um link de rascunho ou de pôster mantém o idioma que guarda. A escolha fica no #studio= e no link #s= que você copia, então todo destinatário vê a mesma legenda, seja qual for o idioma do navegador dele.",
+        "Só a data muda: o título é texto seu, e nomes de constelações e estrelas são nomes próprios. O inglês não escreve nada no link, então um pôster em inglês tem exatamente o link que sempre teve.",
       ],
     },
     {

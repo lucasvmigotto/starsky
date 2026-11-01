@@ -3,7 +3,8 @@
  * is a plain `#...` string for the caller to navigate to; none of them rewrites
  * the link the visitor came from.
  */
-import type { SharePayload } from "../share.ts";
+import type { Locale } from "../../i18n/locale.ts";
+import { type SharePayload, withPosterLocale } from "../share.ts";
 import type { ExplorerCamera } from "../sky/camera.ts";
 import { type ExplorerPayload, encodeExplorer } from "../sky/payload.ts";
 import { draftHash } from "../studio/draft.ts";
@@ -13,10 +14,18 @@ import { loadReturnCamera, saveReturnCamera } from "./returnCamera.ts";
 /**
  * Explorer -> Studio. Remembers where the camera was, for this tab and this
  * scene only, so "Return to Explorer" can put the visitor back.
+ *
+ * The draft's poster language is the one the `#e=` link carries, else the
+ * visitor's interface language (018 US2): a pt-BR visitor's poster starts in
+ * pt-BR, and the Studio can still change it.
  */
-export function createPosterHash(explorer: ExplorerPayload, camera: ExplorerCamera): string {
+export function createPosterHash(
+  explorer: ExplorerPayload,
+  camera: ExplorerCamera,
+  interfaceLocale: Locale,
+): string {
   saveReturnCamera(explorer, camera);
-  return draftHash(explorerToPoster(explorer));
+  return draftHash(withPosterLocale(explorerToPoster(explorer), explorer.lang ?? interfaceLocale));
 }
 
 /** Studio -> Explorer: the same scene, at the camera left behind if this tab has it. */

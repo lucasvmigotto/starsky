@@ -8,6 +8,7 @@ import { layersToPayload } from "../explorer/link.ts";
 import { DEFAULTS } from "../scene/defaults.ts";
 import { unsupportedInPosterFont } from "../render/glyphs.ts";
 import { initialCamera } from "../sky/observer.ts";
+import type { LinkLang } from "../share.ts";
 import { type ExplorerPayload, encodeExplorer } from "../sky/payload.ts";
 import { toWhenUtcIso, zonedTimeToUtc } from "../time.ts";
 
@@ -26,6 +27,8 @@ export interface LandingInput {
   mag: number;
   /** Optional title, as typed. */
   title: string;
+  /** The poster language to carry to the Explorer (018); absent means none chosen. */
+  lang?: LinkLang;
 }
 
 export type LandingError =
@@ -93,6 +96,7 @@ export function buildExplorerPayload(input: LandingInput): Built<ExplorerPayload
       fov: camera.fovDeg,
       layers: layersToPayload(DEFAULT_LAYERS),
       sel: null,
+      ...(input.lang === undefined ? {} : { lang: input.lang }),
     },
   };
 }

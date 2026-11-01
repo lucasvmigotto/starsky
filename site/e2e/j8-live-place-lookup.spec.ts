@@ -47,7 +47,7 @@ test.describe("J8 live place lookup", () => {
     await page.getByRole("button", { name: "Search", exact: true }).click();
 
     // A real result list appears only if the lookup succeeded.
-    const first = page.getByRole("option").first();
+    const first = page.getByRole("listbox", { name: "Matching places" }).getByRole("option").first();
     await expect(first).toBeVisible({ timeout: 20_000 });
     await first.click();
     await page.getByRole("button", { name: "Explore this sky" }).click();

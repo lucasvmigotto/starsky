@@ -28,6 +28,17 @@ The flow is **landing → Explorer → export**.
 4. **Poster page** (`#s=`). A shared link renders the exact poster, with share,
    export, "Explore this sky" and "Make your own".
 
+## Languages
+
+The interface speaks **English (en-US)** and **Brazilian Portuguese (pt-BR)**.
+The first visit follows the browser language; the switcher in the footer changes
+it, and the choice is remembered on that browser only. The **poster language** is
+the creator's choice in the Studio (defaulting to the interface language) and
+travels in the link, so a recipient sees the same poster whatever their browser
+speaks. A link without a language is an English poster, as every link before it
+was. Constellation and star names, coordinates and the data credits are never
+translated.
+
 ## Links
 
 State lives in the URL fragment, so the same link shows the same sky to everyone.
@@ -35,10 +46,10 @@ There are four versioned fragments:
 
 | Fragment | Opens | Holds |
 | --- | --- | --- |
-| `#c=` | the landing, pre-filled | place, coordinates, moment, title, limiting magnitude (tolerant per field) |
-| `#e=` | the Explorer | the scene plus camera, field of view, layers, selection |
-| `#studio=` | the Poster Studio | a poster draft (same codec as `#s=`) |
-| `#s=` | the poster page | the finished poster; byte-compatible with every link since v1 |
+| `#c=` | the landing, pre-filled | place, coordinates, moment, title, limiting magnitude, poster language (tolerant per field) |
+| `#e=` | the Explorer | the scene plus camera, field of view, layers, selection, poster language |
+| `#studio=` | the Poster Studio | a poster draft (same codec as `#s=`), with its poster language |
+| `#s=` | the poster page | the finished poster with its poster language; byte-compatible with every link since v1 |
 
 ## OpenStreetMap and privacy
 
