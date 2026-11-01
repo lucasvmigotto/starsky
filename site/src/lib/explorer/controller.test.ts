@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { at } from "../testing.ts";
 import {
   type ExplorerCamera,
   FOV_MAX_DEG,
@@ -429,7 +430,7 @@ describe("animated reset (FR-012)", () => {
       draw: () => undefined,
       setTimer: (callback) => timers.push({ callback, cleared: false }) - 1,
       clearTimer: (handle) => {
-        timers[handle].cleared = true;
+        at(timers, handle).cleared = true;
       },
       now: () => clock.t,
       reducedMotion: () => reduced,

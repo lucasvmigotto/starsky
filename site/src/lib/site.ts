@@ -25,8 +25,7 @@ export function randomSampleFragment(exclude: string | null = null): string {
       ? SAMPLE_FRAGMENTS.filter((f) => f !== exclude)
       : SAMPLE_FRAGMENTS;
   const list = pool.length > 0 ? pool : SAMPLE_FRAGMENTS;
-  if (list.length === 0) return "";
-  return list[Math.floor(Math.random() * list.length)];
+  return list[Math.floor(Math.random() * list.length)] ?? "";
 }
 
 /**

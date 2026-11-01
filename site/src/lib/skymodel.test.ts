@@ -8,6 +8,7 @@ import {
   type SegmentRow,
   type StarRow,
 } from "./skymodel.ts";
+import { at } from "./testing.ts";
 
 function payload(): SharePayload {
   return {
@@ -54,10 +55,12 @@ describe("buildSkyModel", () => {
       );
     }
     expect(model.figures).toHaveLength(1);
-    const fig = model.figures[0];
+    const fig = at(model.figures, 0);
     expect(fig.name).toBe("Orion");
     expect(fig.brightestMag).toBeCloseTo(2.0, 9);
-    const [a, b] = model.stars.filter((s) => s.hip === 1 || s.hip === 5);
+    const pair = model.stars.filter((s) => s.hip === 1 || s.hip === 5);
+    const a = at(pair, 0);
+    const b = at(pair, 1);
     expect(fig.centroidX).toBeCloseTo((a.px + b.px) / 2, 9);
     expect(fig.centroidY).toBeCloseTo((a.py + b.py) / 2, 9);
   });

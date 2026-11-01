@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { at } from "../../lib/testing.ts";
 
 if ((globalThis as unknown as Record<string, unknown>)["document"] === undefined) {
   GlobalRegistrator.register({ url: "http://localhost/" });
@@ -86,7 +87,7 @@ describe("LocationMapPanel", () => {
     await waitFor(() => {
       expect(fake.created).toHaveLength(1);
     });
-    const options = fake.created[0];
+    const options = at(fake.created, 0);
     expect([options.lat, options.lon]).toEqual([10, 20]);
     expect(options.labels.zoomIn).toBe("Zoom in");
     expect(options.labels.marker).toBe("Observing place");
@@ -98,7 +99,7 @@ describe("LocationMapPanel", () => {
     await waitFor(() => {
       expect(fake.created).toHaveLength(1);
     });
-    const html = fake.created[0].labels.attributionHtml;
+    const html = at(fake.created, 0).labels.attributionHtml;
     expect(html).toContain("© <a");
     expect(html).toContain('href="https://www.openstreetmap.org/copyright"');
     expect(html).toContain(">OpenStreetMap</a> contributors");
@@ -121,9 +122,9 @@ describe("LocationMapPanel", () => {
     await waitFor(() => {
       expect(fake.created).toHaveLength(1);
     });
-    fake.created[0].onPick(1.5, 2.5);
-    fake.created[0].onTilesFailed(true);
-    fake.created[0].onTilesFailed(false);
+    at(fake.created, 0).onPick(1.5, 2.5);
+    at(fake.created, 0).onTilesFailed(true);
+    at(fake.created, 0).onTilesFailed(false);
     expect(calls.picks).toEqual([[1.5, 2.5]]);
     expect(calls.problems).toEqual(["tiles", null]);
   });

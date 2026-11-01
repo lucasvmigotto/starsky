@@ -94,12 +94,11 @@ export function buildSkyModel(
   // Declutter: brightest-first, reject stars closer than min_separation
   // (unit-disk Euclidean distance).
   const order = projected
-    .map((_, i) => i)
-    .sort((a, b) => projected[a].mag - projected[b].mag);
+    .map((star, i) => ({ star, i }))
+    .sort((a, b) => a.star.mag - b.star.mag);
   const kept: VisibleStar[] = [];
   const sep = options.min_separation;
-  for (const i of order) {
-    const s = projected[i];
+  for (const { star: s } of order) {
     let clash = false;
     if (sep > 0) {
       for (const k of kept) {
@@ -132,6 +131,7 @@ export function buildSkyModel(
     if (pa === undefined || pb === undefined) continue;
     const a = projected[pa];
     const b = projected[pb];
+    if (a === undefined || b === undefined) continue;
     let fi = figureOrder.get(abbr);
     if (fi === undefined) {
       fi = figures.length;
@@ -154,6 +154,7 @@ export function buildSkyModel(
       segs.push({ a: ka, b: kb, figure: fi });
     }
     const fig = figures[fi];
+    if (fig === undefined) continue;
     for (const [st, vi] of [
       [a, pa],
       [b, pb],
@@ -169,8 +170,10 @@ export function buildSkyModel(
     let sx = 0;
     let sy = 0;
     for (const si of fig.starIndices) {
-      sx += projected[si].px;
-      sy += projected[si].py;
+      const st = projected[si];
+      if (st === undefined) continue;
+      sx += st.px;
+      sy += st.py;
     }
     fig.centroidX = sx / Math.max(1, fig.starIndices.length);
     fig.centroidY = sy / Math.max(1, fig.starIndices.length);

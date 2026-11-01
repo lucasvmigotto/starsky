@@ -5,6 +5,7 @@ import { angularDistanceDeg, normalizeVec } from "../sky/vec.ts";
 import { type ControllerChange, ExplorerController, SETTLE_MS } from "./controller.ts";
 import { CTX, dirAt, sceneOf } from "./fixture.ts";
 import type { FramePlan } from "./frame.ts";
+import { at } from "../testing.ts";
 
 const VIEWPORT = { width: 800, height: 600 };
 
@@ -55,7 +56,7 @@ function setup(options: { timers?: boolean; camera?: ExplorerCamera } = {}) {
             return timers.length - 1;
           },
           clearTimer: (handle: number) => {
-            timers[handle].cancelled = true;
+            at(timers, handle).cancelled = true;
           },
         }),
   });
@@ -68,7 +69,7 @@ function setup(options: { timers?: boolean; camera?: ExplorerCamera } = {}) {
   const live = (): FakeTimer[] => timers.filter((t) => !t.cancelled && !t.fired);
   const fire = (): void => {
     const pending = live();
-    const timer = pending[pending.length - 1];
+    const timer = at(pending, pending.length - 1);
     timer.fired = true;
     timer.callback();
   };

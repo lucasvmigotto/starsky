@@ -67,7 +67,7 @@ export function searchObjects(
 
   const addStar = (index: number, rank: number): void => {
     const star = scene.stars[index];
-    if (star.mag > magLimit) return;
+    if (!star || star.mag > magLimit) return;
     found.push({
       rank,
       group: 1,

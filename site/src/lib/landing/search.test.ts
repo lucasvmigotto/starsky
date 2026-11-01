@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import type { ResolvedPlace } from "../geocode.ts";
 import { SEARCH_MIN_INTERVAL_MS, type SearchState, createSearchController } from "./search.ts";
+import { at } from "../testing.ts";
 
 const PARIS: ResolvedPlace = { lat: 48.85, lon: 2.35, displayName: "Paris, France", short: "Paris, France" };
 
@@ -101,7 +102,7 @@ describe("search controller", () => {
   it("typing aborts the request in flight and returns to idle", async () => {
     const { controller, calls, states } = setup();
     controller.submit("paris");
-    const first = calls[0];
+    const first = at(calls, 0);
     expect(first.signal.aborted).toBe(false);
     controller.input();
     expect(first.signal.aborted).toBe(true);

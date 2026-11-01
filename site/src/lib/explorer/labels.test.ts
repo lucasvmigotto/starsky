@@ -3,6 +3,7 @@ import { type ExplorerCamera, lookAt } from "../sky/camera.ts";
 import { dirAt, sceneOf } from "./fixture.ts";
 import { type LabelMark, planFrame } from "./frame.ts";
 import { DEFAULT_LAYERS } from "./layers.ts";
+import { at } from "../testing.ts";
 
 function horizonCamera(fovDeg = 90): ExplorerCamera {
   return { orientation: lookAt(dirAt(0, 0), dirAt(90, 0)), fovDeg };
@@ -50,8 +51,8 @@ describe("constellation labels", () => {
     expect(labels.length).toBeGreaterThan(1);
     for (let i = 0; i < labels.length; i++) {
       for (let j = i + 1; j < labels.length; j++) {
-        const a = labels[i];
-        const b = labels[j];
+        const a = at(labels, i);
+        const b = at(labels, j);
         expect(overlap(a, b)).toBe(false);
       }
     }
@@ -120,7 +121,7 @@ describe("constellation labels", () => {
         ["Tst", "Test", 2, 3],
       ],
     );
-    const [label] = labelsFor(world, { width: 800, height: 600 }, { fov: 60 });
+    const label = at(labelsFor(world, { width: 800, height: 600 }, { fov: 60 }), 0);
     expect(label.text).toBe("Test");
     expect(label.x).toBeCloseTo(400, 3);
     expect(label.y).toBeCloseTo(300, 3);

@@ -7,6 +7,7 @@ import { dirAt, sceneOf } from "../fixture.ts";
 import { type FrameInput, type FramePlan, planFrame } from "../frame.ts";
 import { DEFAULT_LAYERS } from "../layers.ts";
 import { Canvas2dRenderer, MAX_BACKING_PIXELS } from "./canvas2d.ts";
+import { at } from "../../testing.ts";
 
 function camera(fovDeg = 60): ExplorerCamera {
   return { orientation: lookAt(dirAt(0, 0), dirAt(90, 0)), fovDeg };
@@ -41,7 +42,7 @@ function setup(width: number, height: number, dpr = 1) {
   };
   const pixel = (x: number, y: number): readonly [number, number, number] => {
     const data = canvas.getContext("2d").getImageData(x, y, 1, 1).data;
-    return [data[0], data[1], data[2]];
+    return [at(data, 0), at(data, 1), at(data, 2)];
   };
   return { canvas, renderer, draw, pixel };
 }
@@ -79,7 +80,7 @@ describe("Canvas2dRenderer", () => {
     const p = plan(400, 300, { selection: "HIP:3" });
     draw(p);
     expect(p.marks).toHaveLength(1);
-    const { x, y, radius } = p.marks[0];
+    const { x, y, radius } = at(p.marks, 0);
     const [tr, tg, tb] = parseHex(explorer.selection);
     // The ring is 2 px wide and the plan is fractional, so look across it.
     let nearest = Infinity;

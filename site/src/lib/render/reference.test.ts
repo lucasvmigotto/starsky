@@ -30,6 +30,7 @@ import { buildSkyModel, DISK_CX, DISK_CY, DISK_R, type SegmentRow, type StarRow 
 import type { SharePayload } from "../share.ts";
 import { renderPoster, renderStory } from "./poster.ts";
 import { storyGeometry } from "./format.ts";
+import { at } from "../testing.ts";
 
 // Register the bundled poster font with the canvas library, as the Python
 // renderer used to with `fontManager.addfont`.
@@ -101,7 +102,7 @@ function readMatrix(): Matrix {
     "utf-8",
   );
   const fenced = raw.match(/```json\n([\s\S]*?)\n```/);
-  return JSON.parse(fenced ? fenced[1] : raw) as Matrix;
+  return JSON.parse(fenced ? at(fenced, 1) : raw) as Matrix;
 }
 
 function readData(): { catalog: StarRow[]; segments: SegmentRow[] } {
@@ -109,7 +110,7 @@ function readData(): { catalog: StarRow[]; segments: SegmentRow[] } {
     JSON.parse(readFileSync(join(DATA_DIR, "catalog.json"), "utf-8")) as {
       stars: number[][];
     }
-  ).stars.map((r): StarRow => ({ hip: r[0], raDeg: r[1], decDeg: r[2], mag: r[3] }));
+  ).stars.map((r): StarRow => ({ hip: at(r, 0), raDeg: at(r, 1), decDeg: at(r, 2), mag: at(r, 3) }));
   const segments = (
     JSON.parse(readFileSync(join(DATA_DIR, "constellations.json"), "utf-8")) as {
       segments: SegmentRow[];
@@ -199,7 +200,7 @@ function channelDiff(
   const len = Math.min(a.length, b.length);
   for (let i = 0; i < len; i += 1) {
     if (i % 4 === 3) continue;
-    const d = Math.abs(a[i] - b[i]);
+    const d = Math.abs(at(a, i) - at(b, i));
     sum += d;
     if (d > max) max = d;
     // Any visible difference counts; the mean alone dilutes a change confined

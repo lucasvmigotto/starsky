@@ -12,6 +12,7 @@
 import { describe, expect, it } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { at } from "../lib/testing.ts";
 
 const SRC = join(import.meta.dirname, "..");
 const DOC = readFileSync(join(import.meta.dirname, "components.md"), "utf-8");
@@ -75,7 +76,7 @@ describe("component inventory (T019)", () => {
 
   it("quotes only copy keys that resolve", () => {
     const keys = new Set(
-      [...DOC.matchAll(/`([a-z][A-Za-z]*\.[A-Za-z.]+)`/g)].map((m) => m[1]),
+      [...DOC.matchAll(/`([a-z][A-Za-z]*\.[A-Za-z.]+)`/g)].map((m) => at(m, 1)),
     );
     // Keys defined in the catalogue rather than a file path or a lib symbol.
     const candidates = [...keys].filter(

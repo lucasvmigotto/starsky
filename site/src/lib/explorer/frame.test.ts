@@ -5,6 +5,7 @@ import { explorer } from "../../design/tokens.ts";
 import { CTX, dirAt, sceneOf } from "./fixture.ts";
 import { type FrameInput, type FramePlan, type StarBatch, planFrame } from "./frame.ts";
 import { DEFAULT_LAYERS } from "./layers.ts";
+import { at } from "../testing.ts";
 
 const VIEWPORT = { width: 800, height: 600 };
 
@@ -50,9 +51,9 @@ describe("planFrame stars", () => {
   it("draws a star in front at its projected position", () => {
     const plan = planOf([{ hip: 1, dir: dirAt(0, 0), mag: 1 }]);
     expect(starCount(plan)).toBe(1);
-    const b = plan.stars[0];
-    expect(b.xy[0]).toBeCloseTo(400, 6);
-    expect(b.xy[1]).toBeCloseTo(300, 6);
+    const b = at(plan.stars, 0);
+    expect(at(b.xy, 0)).toBeCloseTo(400, 6);
+    expect(at(b.xy, 1)).toBeCloseTo(300, 6);
   });
 
   it("culls stars behind the camera, outside the viewport and past the magnitude limit", () => {
@@ -82,7 +83,7 @@ describe("planFrame stars", () => {
 /** One star alone, drawn at the default field of view so the zoom factor is 1. */
 function batchOf(mag: number, alt = 5): StarBatch {
   const plan = planOf([{ hip: 1, dir: dirAt(alt, 0), mag }], { camera: horizonCamera(100) });
-  return plan.stars[0];
+  return at(plan.stars, 0);
 }
 
 const shown = (b: StarBatch): number => b.alpha * (b.dim ? explorer.alpha.dim : 1);

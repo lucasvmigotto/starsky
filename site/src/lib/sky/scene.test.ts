@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import type { SegmentRow, StarRow } from "../skymodel.ts";
 import { prepareScene } from "./scene.ts";
 import { raDecToVec } from "./vec.ts";
+import { at } from "../testing.ts";
 
 const STARS: StarRow[] = [
   { hip: 100, raDeg: 10, decDeg: 20, mag: 2.0 },
@@ -35,9 +36,9 @@ describe("prepareScene", () => {
       "HIP:400",
       "HIP:500",
     ]);
-    expect(scene.stars[1].name).toBe("Canopus-ish");
-    expect(scene.stars[0].name).toBeNull();
-    expect(scene.stars[1].decDeg).toBe(-80);
+    expect(at(scene.stars, 1).name).toBe("Canopus-ish");
+    expect(at(scene.stars, 0).name).toBeNull();
+    expect(at(scene.stars, 1).decDeg).toBe(-80);
   });
 
   it("stores unit vectors in a Float64Array indexed by star order", () => {
@@ -53,13 +54,13 @@ describe("prepareScene", () => {
 
   it("drops segments with missing stars and constellations left empty", () => {
     expect(scene.constellations.map((c) => c.id)).toEqual(["CON:Aaa", "CON:Bbb"]);
-    const bbb = scene.constellations[1];
+    const bbb = at(scene.constellations, 1);
     expect(bbb.segments).toEqual([[2, 4]]);
     expect(bbb.memberIndices).toEqual([2, 4]);
   });
 
   it("describes each constellation", () => {
-    const aaa = scene.constellations[0];
+    const aaa = at(scene.constellations, 0);
     expect(aaa.abbr).toBe("Aaa");
     expect(aaa.name).toBe("Alpha");
     expect(aaa.memberIndices).toEqual([0, 1, 2]);
@@ -71,9 +72,9 @@ describe("prepareScene", () => {
   });
 
   it("makes membership figure-based only", () => {
-    expect(scene.stars[3].constellationIds).toEqual([]);
-    expect(scene.stars[2].constellationIds).toEqual(["CON:Aaa", "CON:Bbb"]);
-    expect(scene.stars[0].constellationIds).toEqual(["CON:Aaa"]);
+    expect(at(scene.stars, 3).constellationIds).toEqual([]);
+    expect(at(scene.stars, 2).constellationIds).toEqual(["CON:Aaa", "CON:Bbb"]);
+    expect(at(scene.stars, 0).constellationIds).toEqual(["CON:Aaa"]);
   });
 
   it("offers id lookups", () => {

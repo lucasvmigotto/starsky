@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { at } from "../../lib/testing.ts";
 
 if ((globalThis as unknown as Record<string, unknown>)["document"] === undefined) {
   GlobalRegistrator.register({ url: "http://localhost/" });
@@ -73,8 +74,8 @@ describe("PosterFields", () => {
     expect(screen.getByRole("group", { name: "Appearance" })).toBeDefined();
     const advanced = document.querySelectorAll("details");
     expect(advanced).toHaveLength(1);
-    expect(advanced[0].hasAttribute("open")).toBe(false);
-    expect(advanced[0].querySelector("summary")?.textContent).toBe("Advanced");
+    expect(at(advanced, 0).hasAttribute("open")).toBe(false);
+    expect(at(advanced, 0).querySelector("summary")?.textContent).toBe("Advanced");
   });
 
   it("Advanced holds constellation lines, labels and the limiting magnitude, and nothing else", () => {

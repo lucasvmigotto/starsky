@@ -202,6 +202,7 @@ function drawSegments(
   for (const seg of model.segments) {
     const a = model.stars[seg.a];
     const b = model.stars[seg.b];
+    if (a === undefined || b === undefined) continue;
     const [ax, ay] = unitToCanvas(a.unitX, a.unitY, geometry);
     const [bx, by] = unitToCanvas(b.unitX, b.unitY, geometry);
     ctx.moveTo(ax, ay);
@@ -235,8 +236,8 @@ export function drawFocusOverlay(
 ): void {
   const [cx, cy] = unitToCanvas(0, 0, geometry);
   const radius = (1 / geometry.extent) * (geometry.sizePx / 2);
-  if (focused < 0 || focused >= model.figures.length) return;
-  const figure = model.figures[focused];
+  const figure = focused < 0 ? undefined : model.figures[focused];
+  if (!figure) return;
 
   ctx.save();
   // Veil: dim everything inside the disc.
@@ -263,6 +264,7 @@ export function drawFocusOverlay(
       if (model.figures[seg.figure] !== figure) continue;
       const a = model.stars[seg.a];
       const b = model.stars[seg.b];
+      if (a === undefined || b === undefined) continue;
       const [ax, ay] = unitToCanvas(a.unitX, a.unitY, geometry);
       const [bx, by] = unitToCanvas(b.unitX, b.unitY, geometry);
       ctx.moveTo(ax, ay);

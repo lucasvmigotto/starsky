@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { at } from "../lib/testing.ts";
 
 const domReady = (globalThis as unknown as Record<string, unknown>)["document"] !== undefined;
 if (!domReady) {
@@ -49,7 +50,7 @@ describe("the Explorer toolbar", () => {
     expect(buttons).toHaveLength(6);
     const names = ["Zoom in", "Zoom out", "Reset view", "Layers", "Search", "Create poster"];
     buttons.forEach((button, i) => {
-      expect(button.getAttribute("aria-label")).toBe(names[i]);
+      expect(button.getAttribute("aria-label")).toBe(at(names, i));
       expect(button.getAttribute("title") ?? "").toContain(names[i] ?? "?");
       expect(button.textContent).toBe("");
       expect(button.querySelector("svg")).not.toBeNull();

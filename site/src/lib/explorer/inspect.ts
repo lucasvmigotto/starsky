@@ -92,6 +92,7 @@ export function describeConstellation(
   const con = index === undefined ? undefined : scene.constellations[index];
   if (!con) return null;
   const star = scene.stars[con.brightestIndex];
+  if (!star) return null;
   let above = 0;
   for (const i of con.memberIndices) if (!isBelow(view.altitudesDeg[i] ?? 0)) above++;
   return {

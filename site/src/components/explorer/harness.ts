@@ -5,6 +5,7 @@
 import { type ExplorerCamera, lookAt } from "../../lib/sky/camera.ts";
 import { ExplorerController } from "../../lib/explorer/controller.ts";
 import { CTX, dirAt, sceneOf } from "../../lib/explorer/fixture.ts";
+import { at } from "../../lib/testing.ts";
 
 export function makeController(fovDeg = 60) {
   const { scene } = sceneOf(
@@ -27,13 +28,13 @@ export function makeController(fovDeg = 60) {
     draw: () => undefined,
     setTimer: (callback) => timers.push({ callback, cleared: false }) - 1,
     clearTimer: (handle) => {
-      timers[handle].cleared = true;
+      at(timers, handle).cleared = true;
     },
   });
   /** Let the controller settle, as if its quiet period had passed. */
   const settle = (): void => {
     const pending = timers.filter((t) => !t.cleared);
-    const last = pending[pending.length - 1];
+    const last = at(pending, pending.length - 1);
     last.cleared = true;
     last.callback();
   };

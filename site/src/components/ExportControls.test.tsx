@@ -11,6 +11,7 @@
  */
 import { afterEach, describe, expect, it } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { at } from "../lib/testing.ts";
 
 // ShareDialog.test.tsx registers the same globals when the whole suite runs
 // in one process; registering twice throws, so only the first wins.
@@ -297,7 +298,7 @@ describe("ExportControls", () => {
         expect(screen.getByRole("status").textContent).toBe(
           t("viewer.export.done", { filename: "export-night-story.svg" }),
         );
-        const svg = await (blobs[0]).text();
+        const svg = await (at(blobs, 0)).text();
         expect(svg).toContain('width="1080" height="1920"');
       } finally {
         URL.createObjectURL = original;

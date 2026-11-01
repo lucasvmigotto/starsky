@@ -98,6 +98,7 @@ export function buildPosterSvg(
     for (const seg of model.segments) {
       const a = model.stars[seg.a];
       const b = model.stars[seg.b];
+      if (a === undefined || b === undefined) continue;
       const [ax, ay] = unitToCanvas(a.unitX, a.unitY, geometry);
       const [bx, by] = unitToCanvas(b.unitX, b.unitY, geometry);
       parts.push(

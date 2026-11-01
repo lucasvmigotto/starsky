@@ -4,6 +4,7 @@ import { add, normalizeVec, scale } from "../sky/vec.ts";
 import { dirAt, sceneOf } from "./fixture.ts";
 import { type LabelMark, planFrame } from "./frame.ts";
 import { DEFAULT_LAYERS } from "./layers.ts";
+import { at } from "../testing.ts";
 
 const VIEWPORT = { width: 1000, height: 800 };
 
@@ -38,7 +39,7 @@ function label(w: ReturnType<typeof world>): LabelMark {
     selection: null,
     hover: null,
   });
-  return plan.labels[0];
+  return at(plan.labels, 0);
 }
 
 function covers(mark: LabelMark, x: number, y: number): boolean {
