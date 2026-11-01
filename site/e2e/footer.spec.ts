@@ -47,7 +47,7 @@ test.describe("footer", () => {
       await page.goto(viewerUrl(fragmentFor()));
       const credits = page.locator("footer .atlas-footer-info .atlas-footer-meta");
       await expect(credits).toHaveText(
-        "Stars: Hipparcos, JPL · Lines: Stellarium (CC BY-SA 4.0) · Places: © OpenStreetMap contributors",
+        "Stars: Hipparcos · Lines and names: Stellarium (CC BY-SA 4.0) · Map and places: © OpenStreetMap contributors",
       );
       const box = await credits.boundingBox();
       const lineHeight = await credits.evaluate((el) => parseFloat(getComputedStyle(el).lineHeight));

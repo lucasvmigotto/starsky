@@ -28,6 +28,7 @@ const TOKYO = {
 };
 
 const search = (page: Page) => page.getByRole("combobox", { name: "Search for a place" });
+const searchButton = (page: Page) => page.getByRole("button", { name: "Search", exact: true });
 const mapRegion = (page: Page) => page.getByRole("region", { name: "Map for choosing a place" });
 const canvas = (page: Page) => page.locator(".landing-map-canvas");
 
@@ -252,6 +253,7 @@ test.describe("search", () => {
     await openLanding(page);
     await chooseMoment(page);
     await search(page).fill("tower");
+    await searchButton(page).click();
     await expect(page.getByRole("option")).toHaveCount(2);
     await expect(page.getByRole("status").filter({ hasText: "2 places found" })).toBeVisible();
     expect(network.searchRequests).toHaveLength(1);
@@ -278,6 +280,7 @@ test.describe("search", () => {
     await openLanding(page);
     await mapReady(page);
     await search(page).fill("eiffel");
+    await search(page).press("Enter");
     await page.getByRole("option").first().click();
     await expect(page.locator(".landing-selected")).toContainText("Eiffel Tower");
     // The map pans and zooms to Paris: the tile that holds it at zoom 9 is asked for.
@@ -289,6 +292,7 @@ test.describe("search", () => {
     await openLanding(page);
     await mapReady(page);
     await search(page).fill("eiffel");
+    await search(page).press("Enter");
     await page.getByRole("option").first().click();
     await expect(search(page)).toHaveValue("Eiffel Tower, Paris, France");
     await canvas(page).click({ position: { x: 120, y: 70 } });
@@ -300,16 +304,72 @@ test.describe("search", () => {
     await stubSearch(page, [EIFFEL]);
     await openLanding(page);
     await search(page).fill("eiffel");
+    await search(page).press("Enter");
     await expect(page.getByRole("option")).toHaveCount(1);
     await search(page).press("Escape");
     await expect(page.getByRole("listbox")).toBeHidden();
     await expect(search(page)).toHaveValue("eiffel");
   });
 
-  test("waits for a pause: fast typing makes one request", async ({ page, network }) => {
+  test("typing sends no request at all, and the button does", async ({ page, network }) => {
     await stubSearch(page, [EIFFEL]);
     await openLanding(page);
-    await search(page).pressSequentially("eiffel", { delay: 40 });
+    await search(page).pressSequentially("eiffel tower", { delay: 30 });
+    // Past the old 400 ms pause: nothing was asked, nothing is listed.
+    await page.waitForTimeout(700);
+    expect(network.searchRequests).toHaveLength(0);
+    await expect(page.getByRole("option")).toHaveCount(0);
+    await searchButton(page).click();
+    await expect(page.getByRole("option")).toHaveCount(1);
+    expect(network.searchRequests).toHaveLength(1);
+  });
+
+  test("leaving the field with new text searches once", async ({ page, network }) => {
+    await stubSearch(page, [EIFFEL]);
+    await openLanding(page);
+    await search(page).fill("eiffel");
+    expect(network.searchRequests).toHaveLength(0);
+    await page.getByLabel("Date and time").focus();
+    await expect(page.getByRole("status").filter({ hasText: "1 place found" })).toBeVisible();
+    expect(network.searchRequests).toHaveLength(1);
+    await search(page).focus();
+    await page.getByLabel("Date and time").focus();
+    expect(network.searchRequests).toHaveLength(1);
+    // Tabbing from the field to its own search button does not search twice either.
+    await search(page).fill("eiffel tower");
+    await search(page).press("Tab");
+    await expect(searchButton(page)).toBeFocused();
+    expect(network.searchRequests).toHaveLength(1);
+  });
+
+  test("the privacy line is shown and links the OpenStreetMap policy", async ({ page }) => {
+    await openLanding(page);
+    await expect(page.getByText("which sees your IP address. starsky stores nothing.")).toBeVisible();
+    await expect(page.locator(".landing-privacy a")).toHaveAttribute(
+      "href",
+      "https://osmfoundation.org/wiki/Privacy_Policy",
+    );
+  });
+
+  test("typing after results closes the stale list without a request", async ({ page, network }) => {
+    await stubSearch(page, [EIFFEL]);
+    await openLanding(page);
+    await search(page).fill("eiffel");
+    await search(page).press("Enter");
+    await expect(page.getByRole("option")).toHaveCount(1);
+    await search(page).pressSequentially(" tower");
+    await expect(page.getByRole("listbox")).toBeHidden();
+    expect(network.searchRequests).toHaveLength(1);
+  });
+
+  test("repeating the same search sends no second request", async ({ page, network }) => {
+    await stubSearch(page, [EIFFEL]);
+    await openLanding(page);
+    await search(page).fill("Eiffel");
+    await search(page).press("Enter");
+    await expect(page.getByRole("option")).toHaveCount(1);
+    await search(page).fill("  eiffel ");
+    await searchButton(page).click();
     await expect(page.getByRole("option")).toHaveCount(1);
     expect(network.searchRequests).toHaveLength(1);
   });
@@ -318,6 +378,7 @@ test.describe("search", () => {
     await stubSearch(page, []);
     await openLanding(page);
     await search(page).fill("zzzzzz");
+    await search(page).press("Enter");
     await expect(page.getByRole("status").filter({ hasText: "No place found for “zzzzzz”" })).toBeVisible();
   });
 
@@ -326,6 +387,7 @@ test.describe("search", () => {
     await openLanding(page);
     await chooseMoment(page);
     await search(page).fill("paris");
+    await searchButton(page).click();
     const status = page.getByRole("status").filter({ hasText: "Place search is unavailable right now." });
     await expect(status).toBeVisible();
     await expect(status).toHaveAttribute("aria-live", "polite");
@@ -338,7 +400,7 @@ test.describe("search", () => {
     expect(hashPayload(page)).toMatchObject({ lat: 48.85, lon: 2.35 });
   });
 
-  test("Enter searches at once, without the pause", async ({ page, network }) => {
+  test("Enter searches, with no pause", async ({ page, network }) => {
     await stubSearch(page, [EIFFEL]);
     await openLanding(page);
     await search(page).fill("Rio");
@@ -451,6 +513,7 @@ test.describe("the moment and the actions", () => {
     await chooseMoment(page);
     await search(page).focus();
     await page.keyboard.type("eiffel");
+    await page.keyboard.press("Enter");
     await expect(page.getByRole("option")).toHaveCount(1);
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Enter");
@@ -614,6 +677,7 @@ test.describe("layout and accessibility", () => {
       await page.getByText("Advanced", { exact: true }).click();
       await page.getByLabel("Title").fill("A fairly long title for a narrow phone screen to hold");
       await search(page).fill("tower");
+      await searchButton(page).click();
       await expect(page.getByRole("option")).toHaveCount(2);
       const overflow = await page.evaluate(() => {
         const w = window.innerWidth;
@@ -646,6 +710,7 @@ test.describe("layout and accessibility", () => {
     await mapReady(page);
     await page.getByText("Advanced", { exact: true }).click();
     await search(page).fill("tower");
+    await searchButton(page).click();
     await expect(page.getByRole("option")).toHaveCount(2);
     expect(await blocking()).toBe("");
     await search(page).press("Escape");
