@@ -64,8 +64,10 @@ cd docs/site && bun run test:e2e   # run as `bun run test:e2e`, not `bun test`
 - **Four URL fragments**, each versioned (`v: 1`), ≤ 4096 chars, same
   codec: `#c=` landing form (tolerant per field), `#e=` Explorer,
   `#studio=` Studio draft, `#s=` poster. `#s=` must stay byte-compatible
-  with every link issued since v1: never change its codec, field set or
-  canonical-JSON order; reject out-of-range values, never clamp.
+  with every link issued since v1: never change its codec, existing
+  fields or canonical-JSON order; a new field is optional, absent means
+  the old behaviour, and needs a BCR (`lang`, BCR-0015); reject
+  out-of-range values, never clamp.
 - **OpenStreetMap rules** (Nominatim + tiles; being blocked is the top
   risk): no search-as-you-type (submit, search button or leaving the field
   only), ≥ 1 s between Nominatim requests, session cache, tiles for the
