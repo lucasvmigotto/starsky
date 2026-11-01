@@ -12,7 +12,6 @@
  * this replacement would hide genuine regressions.
  */
 import { SIRIUS, expect, explorerUrl, fragmentFor, studioUrl, test, viewerUrl, wakeChrome } from "./fixtures.ts";
-import { at } from "../src/lib/testing.ts";
 
 /** WCAG 2.x relative luminance. */
 function luminance([r, g, b]: [number, number, number]): number {
@@ -66,11 +65,10 @@ async function sample(
       ctx.fillRect(0, 0, 1, 1);
       ctx.fillStyle = css;
       ctx.fillRect(0, 0, 1, 1);
-      const data = ctx.getImageData(0, 0, 1, 1).data;
-      return {
-        rgb: [at(data, 0), at(data, 1), at(data, 2)],
-        alpha: at(data, 3) / 255,
-      };
+      // Runs in the browser: Node-side helpers (`at` from testing.ts) do
+      // not exist here, so destructure with defaults instead.
+      const [r = 0, g = 0, b = 0, a = 0] = ctx.getImageData(0, 0, 1, 1).data;
+      return { rgb: [r, g, b], alpha: a / 255 };
     };
 
     const results: Sample[] = [];

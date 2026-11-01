@@ -50,18 +50,32 @@ async function pauseClock(page: Page): Promise<void> {
   await page.clock.pauseAt(new Date(Date.now() + 1000));
 }
 
+const GOAL_Q = GOAL.orientation.join(",");
+
+/**
+ * The glide has landed: the orientation is exactly the goal. `data-fov` alone
+ * is not enough, because it is printed to three decimals and reads "100.000"
+ * a frame before the last one; stopping there with the clock paused left the
+ * camera a hair short of the goal for good (the stability run caught it).
+ */
+const landed = (fovs: number[], q: string): boolean => fovs[fovs.length - 1] === 100 && q === GOAL_Q;
+
 /**
  * Advance the paused clock one frame at a time until `done` holds, recording
  * the fov after each step. Fails if it never does, so a glide that stalls is an
  * error and not a hang.
  */
-async function stepFrames(page: Page, canvas: Locator, done: (fovs: number[]) => boolean): Promise<number[]> {
+async function stepFrames(
+  page: Page,
+  canvas: Locator,
+  done: (fovs: number[], q: string) => boolean,
+): Promise<number[]> {
   const fovs: number[] = [];
   for (let step = 0; step < MAX_STEPS; step += 1) {
     await page.clock.runFor(FRAME_MS);
     const fov = Number(await attr(canvas, "data-fov"));
     if (fovs[fovs.length - 1] !== fov) fovs.push(fov);
-    if (done(fovs)) return fovs;
+    if (done(fovs, await attr(canvas, "data-q"))) return fovs;
   }
   throw new Error(`the glide did not finish in ${String(MAX_STEPS)} frames: ${fovs.join(", ")}`);
 }
@@ -75,7 +89,7 @@ test.describe("animated reset", () => {
     const startFrames = Number(await attr(canvas, "data-frames"));
     await pauseClock(page);
     await page.keyboard.press("0");
-    const fovs = await stepFrames(page, canvas, (seen) => seen[seen.length - 1] === 100);
+    const fovs = await stepFrames(page, canvas, landed);
     const frames = Number(await attr(canvas, "data-frames")) - startFrames;
     expect(frames).toBeGreaterThanOrEqual(8);
     const middle = fovs.filter((f) => f > startFov + 0.5 && f < 99.5);
@@ -84,7 +98,7 @@ test.describe("animated reset", () => {
     for (let i = 1; i < fovs.length; i += 1) expect(fovs[i] ?? 0).toBeGreaterThanOrEqual((fovs[i - 1] ?? 0) - 1e-6);
 
     await expect(canvas).toHaveAttribute("data-fov", "100.000");
-    await expect(canvas).toHaveAttribute("data-q", GOAL.orientation.join(","));
+    await expect(canvas).toHaveAttribute("data-q", GOAL_Q);
   });
 
   test("the toolbar button glides too", async ({ page }) => {
@@ -97,9 +111,9 @@ test.describe("animated reset", () => {
     await expect(page.locator(".explorer-stage-inner")).toHaveAttribute("data-chrome", "visible");
     await pauseClock(page);
     await page.getByRole("button", { name: "Reset view" }).click();
-    await stepFrames(page, canvas, (seen) => seen[seen.length - 1] === 100);
+    await stepFrames(page, canvas, landed);
     await expect(canvas).toHaveAttribute("data-fov", "100.000");
-    await expect(canvas).toHaveAttribute("data-q", GOAL.orientation.join(","));
+    await expect(canvas).toHaveAttribute("data-q", GOAL_Q);
     expect(Number(await attr(canvas, "data-frames")) - frames).toBeGreaterThanOrEqual(8);
   });
 
@@ -115,7 +129,7 @@ test.describe("animated reset", () => {
     // than the longest glide pass on the page's clock, then look.
     await page.clock.runFor(1000);
     expect(await attr(canvas, "data-fov")).not.toBe("100.000");
-    expect(await attr(canvas, "data-q")).not.toBe(GOAL.orientation.join(","));
+    expect(await attr(canvas, "data-q")).not.toBe(GOAL_Q);
   });
 
   test("with reduced motion it jumps in at most a frame or two", async ({ page }) => {
@@ -125,7 +139,7 @@ test.describe("animated reset", () => {
     const frames = Number(await attr(canvas, "data-frames"));
     await page.keyboard.press("0");
     await expect(canvas).toHaveAttribute("data-fov", "100.000");
-    await expect(canvas).toHaveAttribute("data-q", GOAL.orientation.join(","));
+    await expect(canvas).toHaveAttribute("data-q", GOAL_Q);
     expect(Number(await attr(canvas, "data-frames")) - frames).toBeLessThanOrEqual(3);
   });
 });
