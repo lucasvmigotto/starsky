@@ -10,7 +10,7 @@ The Viewer shows the poster sky, the caption band under it, and a "Figures in th
 
 ## Proposed behavior
 
-The page shows the heading text and the sky image, then share, export and the actions. The caption band preview and the figures panel are removed from the page. Exploring figures is the Explorer's job.
+The page shows the heading text and the sky image, then share, export and the actions. The caption band preview and the figures panel are removed from the page. Figure hover and selection on the image itself (the highlight, the tooltip and click-to-zoom) are removed too, because exploring figures now lives in the Explorer, which "Explore this sky" opens for the same sky.
 
 ## Why
 
