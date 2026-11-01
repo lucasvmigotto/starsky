@@ -1637,3 +1637,12 @@ select.atlas-form-input option {
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
+
+.landing-coords {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.landing-coords-toggle {
+  justify-self: start;
+}

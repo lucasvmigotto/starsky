@@ -117,6 +117,7 @@ describe("copy", () => {
     // 178 → 177 for the footer (FR-011): `footer.source` retires; the version is the link.
     // 177 → 186 for the landing's place search (013-location-first).
     // 186 → 203 for the location map and the selected-place line (013-location-first).
-    expect(copyKeys().length).toBe(203);
+    // 203 → 208 for the coordinates toggle and its errors (013-location-first).
+    expect(copyKeys().length).toBe(208);
   });
 });

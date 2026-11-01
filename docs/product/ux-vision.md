@@ -757,6 +757,11 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.render.glow` | Glow intensity |
 | `landing.browse` | Just browsing? |
 | `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
+| `landing.coords.toggle` | Coordinates |
+| `landing.coords.lat` | Latitude |
+| `landing.coords.lon` | Longitude |
+| `landing.error.lat` | Latitude must be a number between -90 and 90. |
+| `landing.error.lon` | Longitude must be a number between -180 and 180. |
 | `landing.selected.label` | Exploring from |
 | `landing.selected.pin` | Dropped pin |
 | `landing.selected.typed` | Typed coordinates |
