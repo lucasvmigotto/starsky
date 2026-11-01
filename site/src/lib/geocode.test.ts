@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
-import { geocodePlace, searchPlaces, shortPlaceName } from "./geocode.ts";
+import { searchPlaces, shortPlaceName } from "./geocode.ts";
 
 describe("shortPlaceName", () => {
   it("prefers name + city + state", () => {
@@ -35,51 +35,6 @@ describe("shortPlaceName", () => {
   it("truncates display_name when no address parts exist", () => {
     const display_name = `${"x".repeat(100)} end`;
     expect(shortPlaceName({ display_name })).toBe(display_name.slice(0, 80));
-  });
-});
-
-describe("geocodePlace", () => {
-  afterEach(() => {
-    mock.restore();
-  });
-
-  it("resolves the first result with labels", async () => {
-    const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve([
-          {
-            lat: "40.7580",
-            lon: "-73.9855",
-            display_name: "Times Square, Manhattan, ...",
-            name: "Times Square",
-            address: {
-              city: "New York",
-              state: "New York",
-              country: "United States",
-            },
-          },
-        ]),
-    } as unknown as Response);
-    const resolved = await geocodePlace("Times Square, New York, NY");
-    expect(resolved.lat).toBeCloseTo(40.758, 6);
-    expect(resolved.lon).toBeCloseTo(-73.9855, 6);
-    expect(resolved.short).toBe("Times Square, New York, United States");
-    const firstArg: unknown = fetchMock.mock.calls[0]?.[0];
-    const url = typeof firstArg === "string" ? firstArg : String(firstArg);
-    expect(url).toContain("format=jsonv2");
-    expect(url).toContain("limit=1");
-    expect(url).toContain("addressdetails=1");
-  });
-
-  it("rejects empty queries and empty results", async () => {
-    await rejectionOf(geocodePlace("   "));
-    spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve([]),
-    } as unknown as Response);
-    const message = await rejectionOf(geocodePlace("nowhere-at-all"));
-    expect(message).toMatch(/No place found/);
   });
 });
 

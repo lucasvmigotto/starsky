@@ -104,23 +104,6 @@ function toResolved(item: NominatimItem & { lat?: unknown; lon?: unknown }): Res
   };
 }
 
-/** Resolve `place` -> coordinates + labels. Throws on empty/no-result/HTTP. */
-export async function geocodePlace(place: string): Promise<ResolvedPlace> {
-  const query = place.trim();
-  if (!query) {
-    throw new Error("Enter a place name or switch to coordinates mode.");
-  }
-  const items = await fetchItems(query, 1, undefined);
-  if (items.length === 0) {
-    throw new Error(`No place found for ${JSON.stringify(query)}.`);
-  }
-  const resolved = toResolved(items[0] ?? {});
-  if (!resolved) {
-    throw new Error(`Geocoder returned bad coordinates for ${JSON.stringify(query)}.`);
-  }
-  return resolved;
-}
-
 /**
  * Up to `limit` matches for the landing's search list. An empty list means
  * nothing matched; a rejection means the service failed, and an abort through

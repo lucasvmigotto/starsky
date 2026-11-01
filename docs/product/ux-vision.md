@@ -741,13 +741,11 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 
 | Key | Copy |
 |---|---|
-| `landing.title` | The night sky over any place and moment |
+| `landing.title` | Where do you want to explore the sky from? |
 | `landing.subtitle` | Drawn from 8 000+ stars, in your browser |
 | `landing.locale.label` | Language |
 | `landing.randomSky` | Load a random sky → renders `viewer.randomSky` |
-| `landing.mode.label` | Input mode |
 | `landing.moment.legend` | Date and time |
-| `landing.appearance.legend` | Appearance |
 | `landing.advanced.legend` | Advanced |
 | `landing.render.fisheye` | Fisheye strength |
 | `landing.render.separation` | Minimum separation |
@@ -757,6 +755,8 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.render.glow` | Glow intensity |
 | `landing.browse` | Just browsing? |
 | `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
+| `landing.tz.label` | Timezone |
+| `landing.tz.detect` | Detect |
 | `landing.coords.toggle` | Coordinates |
 | `landing.coords.lat` | Latitude |
 | `landing.coords.lon` | Longitude |

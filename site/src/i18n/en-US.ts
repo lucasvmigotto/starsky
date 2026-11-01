@@ -9,11 +9,9 @@
  * component — that is what the `no-literal-copy` lint rule enforces.
  */
 export const enUS = {
-  "landing.title": "The night sky over any place and moment",
+  "landing.title": "Where do you want to explore the sky from?",
   "landing.subtitle": "Drawn from 8 000+ stars, in your browser",
-  "landing.mode.label": "Input mode",
   "landing.moment.legend": "Date and time",
-  "landing.appearance.legend": "Appearance",
   "landing.advanced.legend": "Advanced",
   "landing.render.fisheye": "Fisheye strength",
   "landing.render.separation": "Minimum separation",
@@ -23,6 +21,8 @@ export const enUS = {
   "landing.render.glow": "Glow intensity",
   "landing.browse": "Just browsing?",
   "landing.browse.action": "Load a random sky",
+  "landing.tz.label": "Timezone",
+  "landing.tz.detect": "Detect",
   "landing.coords.toggle": "Coordinates",
   "landing.coords.lat": "Latitude",
   "landing.coords.lon": "Longitude",
