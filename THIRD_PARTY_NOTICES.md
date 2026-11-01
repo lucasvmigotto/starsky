@@ -14,13 +14,6 @@ compatibility. `starsky` itself is GPL-3.0-only (`LICENSE`).
   distributed freely for scientific use; no additional restrictions).
 - GPL-3.0 compatibility: yes (public domain, no conditions).
 
-## Ephemeris — JPL DE421 (`de421.bsp`)
-
-- Source: downloaded on first run by Skyfield's `Loader` into the
-  ephemeris cache dir.
-- License: public domain (U.S. Government work, NASA/JPL).
-- GPL-3.0 compatibility: yes.
-
 ## Constellation lines — Stellarium `modern_iau` skyculture
 
 - Source: `skycultures/modern_iau/index.json` from
@@ -30,7 +23,7 @@ compatibility. `starsky` itself is GPL-3.0-only (`LICENSE`).
 - Authors: Stellarium team. License: **CC BY-SA 4.0**.
 - GPL-3.0 compatibility: yes — CC BY-SA 4.0 §2(a)(5)(B) permits
   adaptation under GPL-3.0 (one-way compatibility). Attribution is given
-  here, in the README, and in the Gradio footer.
+  here, in the README, and in the site footer.
 - Deviation note: the brief named the legacy `western/constellationship.fab`
   file, which no longer exists upstream (skycultures migrated to
   `index.json`); `modern_iau` carries the same IAU line figures.
@@ -55,12 +48,33 @@ compatibility. `starsky` itself is GPL-3.0-only (`LICENSE`).
 - GPL-3.0 compatibility: yes (OFL fonts used as unmodified assets alongside
   GPL software; no copyleft conflict for document output).
 
-## Geocoding — OpenStreetMap Nominatim
+## Font — Inter (SIL Open Font License 1.1)
 
-- Runtime API (not bundled). Usage policy: descriptive `User-Agent`
-  (required, fail-fast), 1 req/s throttle, local cache. Attribution
-  "© OpenStreetMap contributors" shown in UI footer and README.
+- Source: npm `@fontsource-variable/inter` 5.3.0, bundled into the site build
+  as woff2 (interface text only; posters use Cormorant Garamond).
+- License: SIL OFL 1.1. GPL-3.0 compatibility: yes, as for Cormorant Garamond.
 
-## Timezone lookup — `timezonefinder` (MIT), `zoneinfo` (stdlib/PSF)
+## Map library — Leaflet 1.9.4 (BSD-2-Clause)
 
-- No bundled tz-boundary data beyond the package's own wheels.
+- Source: npm `leaflet`, bundled as a lazy chunk loaded only by the landing
+  map, with its CSS and marker images served locally.
+- License: BSD-2-Clause. GPL-3.0 compatibility: yes (permissive).
+
+## Map tiles and place search — OpenStreetMap (ODbL 1.0)
+
+- Runtime services, not bundled: `tile.openstreetmap.org` (landing map,
+  visible view only) and Nominatim search (on explicit submit or leaving the
+  field, never as you type; per-session cache; at least 1 s between
+  requests). Browsers cannot set `User-Agent`, so requests identify the app by
+  the automatic `Referer`. See the usage policies at
+  https://operations.osmfoundation.org/policies/tiles/ and
+  https://operations.osmfoundation.org/policies/nominatim/.
+- Data © OpenStreetMap contributors, ODbL 1.0. Attribution is always visible on
+  the map, in the site footer and in the README. The landing tells visitors
+  that OpenStreetMap sees their IP address.
+
+## Retired
+
+- JPL DE421 ephemeris and Skyfield: removed with the Python renderer
+  (BCR-0005). Nothing downloads or bundles them.
+- `timezonefinder`: removed. The browser uses the platform's IANA zones.

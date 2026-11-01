@@ -1,4 +1,5 @@
 Reconstructed by project:architecture (review → to-be) on 2026-09-29 from 51287a7 (branch `refactor/static-first-client`)
+Updated 2026-11-01 at the owner's request: map tiles row (ADR-0008 amendment), OpenStreetMap block as the top risk, third-party fitness function and evolution trigger.
 
 # starsky — architecture
 
@@ -126,7 +127,7 @@ No database. Stores are files, all build artifacts or browser-local:
 | Share payload | URL fragment | ephemeral | v1 codec, backward compatible |
 | Creation link `#c=` | URL fragment | ephemeral | pre-filled landing form (013): same encoding (canonical JSON, zlib 9, base64url), `{v:1}` with optional `place`, `lat`, `lon`, `when_local`, `tz`, `title`, `magnitude_limit`; each field validated and dropped alone if invalid; `site/src/lib/landing/creation.ts` |
 
-No personal data is stored or transmitted (place text goes only to Nominatim, from the browser — `site/src/lib/geocode.ts:15,80`).
+starsky stores no personal data and its host receives none (fragments never leave the browser). Two third parties see the visitor's IP address: Nominatim when they search (with the typed place text) and the OSM tile server when the landing map shows. The landing says so in one line (#65). `site/src/lib/geocode.ts`, `site/src/lib/landing/map-config.ts`.
 
 ## Decisions
 
@@ -136,7 +137,7 @@ No personal data is stored or transmitted (place text goes only to Nominatim, fr
 | Hosting | **Cloudflare R2 + CDN; free tier** | Driver 3 (free) + driver 4 (CDN SLA, originless). PaaS/containers rejected: a server for a static artifact. HF Space rejected: an origin with cold starts (BCR-0003) | 0001, 0003 |
 | API style | **No API** (static fetch + URL fragment) | One client, no partners, no cache headers to negotiate. REST/gRPC/GraphQL all N/A | — |
 | Data | **Build-artifact JSON on CDN** | Read-only, immutable, tiny; no transactions. A DB would be a component without a driver | — |
-| Integration | **Browser → OpenStreetMap only (Nominatim, plus map tiles on demand, ADR-0008); everything else build-time** | Matches the existing client behaviour; no broker/queue needed | — |
+| Integration | **Browser → OpenStreetMap only (Nominatim search on explicit submit or leaving the field, never as you type; map tiles on the landing, ADR-0008); everything else build-time** | Matches the existing client behaviour; no broker/queue needed | — |
 | Identity & access | **None** | Public, read-only, no accounts (user: local-only) | — |
 | Multi-tenancy | **N/A** | Single public site | — |
 | Resilience & DR | **CDN redundancy; rebuildable from git** | RPO/RTO = restore the last CI build; assets are reproducible; no data to lose. Rebuild trigger documented | 0004 |
@@ -145,7 +146,7 @@ No personal data is stored or transmitted (place text goes only to Nominatim, fr
 | Cost | **Free tier** | R2 free tier + Actions minutes; egress free | 0002, 0003 |
 | Explorer camera | **Quaternion camera, gnomonic projection, equatorial frame** | No gimbal lock, straight great circles; angles and stereographic rejected | 0006 |
 | Explorer renderer | **Canvas 2D behind a renderer boundary, apart from the poster** | Protects poster output; extending `SkyCanvas` and WebGL-first rejected | 0007 |
-| Map tiles | **OpenStreetMap, only after the location map opens** | Free and keyless; self-hosted and keyed providers rejected | 0008 |
+| Map tiles | **OpenStreetMap, on the landing page only, visible view only** (amended 2026-11-01: the landing map is always shown) | Free and keyless; self-hosted and keyed providers rejected | 0008 |
 | Stack | **Bun + React (latest) + TypeScript 7 + Vite + Tailwind; `bun:test`**; Python 3.14 + `uv` + `ruff` + `ty` + `pytest` for the data CLI — dependencies: click, httpx, polars, pydantic(-settings) only | One client toolchain (ADR-0005); the Python tree shrank to its data job (BCR-0005) | 0003, 0005 |
 
 ## Cost estimate
@@ -157,7 +158,8 @@ No personal data is stored or transmitted (place text goes only to Nominatim, fr
 
 ## Risks
 
-- **Visual regression** (biggest): the poster is the product and the renderer is the only implementation — mitigated by the reference-image suite (`refactor.md` T024) and the `render-spec.json` conformance test.
+- **Being blocked by OpenStreetMap** (top risk, owner 2026-11-01: "block is a Bigger no for us"): Nominatim bans auto-complete search and anything above 1 request/s; the tile server bans prefetch, offline use and hidden attribution. A block would break place search or the landing map for every visitor. Mitigations: search only on explicit submit or leaving the field, per-session cache, at least 1 s between requests (#65); tiles for the visible view only, Referer kept, attribution always visible (ADR-0008); e2e never reaches either host and asserts request counts (`network-guard.spec.ts`); coordinates always work without either service. Fallback if blocked: a keyed geocoder or self-hosted tiles (evolution path).
+- **Visual regression**: the poster is the product and the renderer is the only implementation — mitigated by the reference-image suite (`refactor.md` T024) and the `render-spec.json` conformance test.
 - **Browser performance/battery** for the 1600 px poster on low-end phones — a render budget and device-class profiling in `qa:load`.
 - **Free-tier request ceilings** at extreme virality — immutable assets + long cache keep origin fetches minimal; alarm on R2 operation counts.
 - **TypeScript 7 migration** — isolated, reversible slice; the compiler ships as a dev pre-release while 7.0 stabilises.
@@ -172,6 +174,7 @@ No personal data is stored or transmitted (place text goes only to Nominatim, fr
 4. **Bundle budget**: `dist/` ≤ 500 KB brotli (excluding font) and `data/` ≤ 400 KB brotli; CI fails over.
 5. **No secrets in the bundle**: a CI scan fails on any `*_TOKEN`/key-like string in `dist/`.
 6. **Offline render**: a test renders and exports with network disabled (font bundled).
+7. **Third-party discipline**: e2e fails on any unstubbed request to OpenStreetMap hosts; typing in the place field sends zero Nominatim requests; a map view requests fewer than 40 tiles (`site/e2e/network-guard.spec.ts`, `landing.spec.ts`).
 
 ## Evolution path (with triggers)
 
@@ -181,6 +184,7 @@ No personal data is stored or transmitted (place text goes only to Nominatim, fr
 | `data/` exceeds the bundle budget (> 400 KB brotli, e.g. mag limit raised) | Move data to an R2 prefix fetched on demand with `Cache-Control: immutable` (already same-origin) |
 | R2 free-tier operations exceeded for a sustained week | Raise mag-limit trimming / gzip-brotli precompress / move data to a cheaper CDN pattern |
 | A hosted/shared feature is requested (accounts, saved posters) | Reopen architecture: add an API + identity per that brief (`project:refactor` BCR) |
+| Nominatim or the OSM tile server blocks or rate-limits the site, or OSMF asks us to stop | Switch the one configured URL to a keyed geocoder/tile provider (usage agreement) or self-host tiles on R2; coordinates keep working meanwhile |
 | Poster render p95 on mid-range phones > 4 s | Precompute common skies, or move heavy paths to an OffscreenCanvas worker |
 
 ## Open questions
