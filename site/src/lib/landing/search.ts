@@ -17,6 +17,9 @@ import type { ResolvedPlace } from "../geocode.ts";
 /** The policy's "maximum of 1 request per second": gap between request starts. */
 export const SEARCH_MIN_INTERVAL_MS = 1000;
 
+/** A request that has not answered by now is given up on and reported as a failure. */
+export const SEARCH_TIMEOUT_MS = 10_000;
+
 export type SearchState =
   | { status: "idle" }
   | { status: "loading"; query: string }
@@ -35,6 +38,8 @@ interface Options {
   search: SearchFn;
   onState: (state: SearchState) => void;
   timers?: Timers;
+  /** Timers for the request deadline, apart from the rate wait so each can be driven alone. */
+  deadlineTimers?: Timers;
   /** Milliseconds, monotonic enough for spacing requests. */
   now?: () => number;
 }
@@ -61,9 +66,11 @@ export function createSearchController({
   search,
   onState,
   timers = BROWSER_TIMERS,
+  deadlineTimers = BROWSER_TIMERS,
   now = () => performance.now(),
 }: Options): SearchController {
   let timer: number | null = null;
+  let deadline: number | null = null;
   let inflight: AbortController | null = null;
   let lastStart = Number.NEGATIVE_INFINITY;
   let disposed = false;
@@ -82,6 +89,8 @@ export function createSearchController({
   const stop = (): void => {
     if (timer !== null) timers.clear(timer);
     timer = null;
+    if (deadline !== null) deadlineTimers.clear(deadline);
+    deadline = null;
     inflight?.abort();
     inflight = null;
     pendingKey = null;
@@ -91,9 +100,20 @@ export function createSearchController({
     const controller = new AbortController();
     inflight = controller;
     lastStart = now();
+    // A hung request would leave the list "searching" for good; give up and say so.
+    deadline = deadlineTimers.set(() => {
+      deadline = null;
+      if (controller.signal.aborted) return;
+      controller.abort();
+      inflight = null;
+      pendingKey = null;
+      emit({ status: "error", query });
+    }, SEARCH_TIMEOUT_MS);
     search(query, controller.signal).then(
       (results) => {
         if (controller.signal.aborted) return;
+        if (deadline !== null) deadlineTimers.clear(deadline);
+        deadline = null;
         inflight = null;
         pendingKey = null;
         cache.set(key, results);
@@ -101,6 +121,8 @@ export function createSearchController({
       },
       () => {
         if (controller.signal.aborted) return;
+        if (deadline !== null) deadlineTimers.clear(deadline);
+        deadline = null;
         inflight = null;
         pendingKey = null;
         emit({ status: "error", query });

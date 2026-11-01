@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { ResolvedPlace } from "../geocode.ts";
-import { SEARCH_MIN_INTERVAL_MS, type SearchState, createSearchController } from "./search.ts";
+import { SEARCH_MIN_INTERVAL_MS, SEARCH_TIMEOUT_MS, type SearchState, createSearchController } from "./search.ts";
 import { at } from "../testing.ts";
 
 const PARIS: ResolvedPlace = { lat: 48.85, lon: 2.35, displayName: "Paris, France", short: "Paris, France" };
@@ -36,6 +36,7 @@ interface Call {
 
 function setup() {
   const timers = fakeTimers();
+  const deadline = fakeTimers();
   const calls: Call[] = [];
   const states: SearchState[] = [];
   const clock = { t: 10_000 };
@@ -46,9 +47,10 @@ function setup() {
       }),
     onState: (s) => states.push(s),
     timers: { set: timers.set, clear: timers.clear },
+    deadlineTimers: { set: deadline.set, clear: deadline.clear },
     now: () => clock.t,
   });
-  return { controller, timers, calls, states, clock };
+  return { controller, timers, deadline, calls, states, clock };
 }
 
 function last<T>(items: T[]): T | undefined {
@@ -262,5 +264,41 @@ describe("search controller", () => {
     controller.submit("again");
     expect(calls).toHaveLength(1);
     expect(states).toHaveLength(seen);
+  });
+
+  it("gives up on a request that never answers: aborts it and reports an error", async () => {
+    const { controller, deadline, calls, states } = setup();
+    controller.submit("paris");
+    await tick();
+    expect(at(calls, 0).signal.aborted).toBe(false);
+    expect(deadline.count()).toBe(1);
+    expect(deadline.lastDelay()).toBe(SEARCH_TIMEOUT_MS);
+    deadline.fire();
+    expect(at(calls, 0).signal.aborted).toBe(true);
+    expect(last(states)).toEqual({ status: "error", query: "paris" });
+    // A late answer from the abandoned request changes nothing.
+    at(calls, 0).resolve([PARIS]);
+    await tick();
+    expect(last(states)).toEqual({ status: "error", query: "paris" });
+  });
+
+  it("clears the deadline when the request answers in time", async () => {
+    const { controller, deadline, calls, states } = setup();
+    controller.submit("paris");
+    await tick();
+    at(calls, 0).resolve([PARIS]);
+    await tick();
+    expect(deadline.count()).toBe(0);
+    expect(last(states)?.status).toBe("results");
+  });
+
+  it("allows the same query again after a timeout", async () => {
+    const { controller, deadline, states } = setup();
+    controller.submit("paris");
+    await tick();
+    deadline.fire();
+    expect(last(states)?.status).toBe("error");
+    controller.submit("paris");
+    expect(last(states)).toEqual({ status: "loading", query: "paris" });
   });
 });
