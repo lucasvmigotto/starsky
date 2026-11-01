@@ -83,6 +83,15 @@ Later: reference-image regeneration inside the tools image (deferred by finding-
 - Landing — the choice surface (open a shared sky | map a moment); owns no sky state itself. [OBSERVED: site/src/components/LandingPage.tsx; site/src/App.tsx:18-30]
 - Figure — one constellation drawing (stars + segments + name); selectable via the figure list or canvas hover. [OBSERVED: site/src/lib/skymodel.ts]
 - Caption — the poster text block: `[Title]` + `coords — place · local tz`, drawn from the same formatter the UI speaks. [OBSERVED: site/src/lib/caption.ts]
+- Explorer — the primary surface (BCR-0011): a navigable sky for a place and moment, opened from `#e=`. Not: planetarium app. [added by backend:domain 2026-11-01; site/src/lib/explorer]
+- Explorer link — `#e=` fragment: scene (place, moment, title, limiting magnitude) plus durable view (camera, FOV, layers, selection). [site/src/lib/sky/payload.ts]
+- Creation link — `#c=` fragment: a pre-filled landing form; tolerant per field. [site/src/lib/landing/creation.ts]
+- Studio draft — `#studio=` fragment: the poster being composed; same codec as `#s=`, never overwrites it. The Studio is built (012). [site/src/lib/studio/draft.ts]
+- Scene — the place, moment and title shared between Explorer and poster; composition and camera are not shared. [site/src/lib/scene/convert.ts]
+- Camera — quaternion camera→world plus field of view (5–120°, default 100) in the equatorial frame (ADR-0006). [site/src/lib/sky/camera.ts]
+- Limiting magnitude — faintest star drawn; 1–7 for posters and creation links, wider in `#e=`. Interface label "Limiting magnitude". [site/src/lib/share.ts]
+- Below the horizon — altitude ≤ 0; such objects are never presented as observable. [site/src/lib/sky/observer.ts]
+- Story format — 1080 × 1920 export layout chosen at export time, never stored in a link (BCR-0012). [site/src/lib/render/format.ts]
 - Retired: Observation, Gradio app, Python renderer, HF Space (BCR-0001/0003/0005) — must not reappear in UI, API, or docs copy.
 
 ## Open items
