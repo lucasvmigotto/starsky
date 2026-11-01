@@ -50,7 +50,7 @@ export default function ExplorerSearch({ scene, magLimit, onChoose, onClose, inp
         if (results.length > 0) setActive((current - 1 + results.length) % results.length);
         break;
       case "Enter": {
-        const result = results[current] as SearchResult | undefined;
+        const result = results[current];
         if (result) {
           event.preventDefault();
           onChoose(result.id);

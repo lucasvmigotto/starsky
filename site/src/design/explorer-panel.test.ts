@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
+import { at } from "../lib/testing.ts";
 
 const css = readFileSync(new URL("../index.css", import.meta.url), "utf8");
 
@@ -9,7 +10,7 @@ function rule(selector: string, from = 0): string {
   re.lastIndex = from;
   const m = re.exec(css);
   if (!m) throw new Error(`no rule for ${selector}`);
-  return m[3];
+  return at(m, 3);
 }
 
 describe("the side panel slides", () => {

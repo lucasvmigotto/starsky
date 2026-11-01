@@ -127,6 +127,7 @@ describe("copy", () => {
     // 206 → 207 for the unreadable `#c=` link notice (013-location-first); 207 → 208 for the Studio:
     // the subtitle retires and the summary note splits around its link to the start page;
     // 208 → 210 for the capitalised Projection options (`landing.render.projection.*`).
-    expect(copyKeys().length).toBe(213);
+    // 213 → 217 for the error boundary's page (`site.error.*`, 017 hardening).
+    expect(copyKeys().length).toBe(217);
   });
 });

@@ -59,7 +59,7 @@ export function pickAt(
   let bestMag = Infinity;
   for (let i = 0; i < scene.stars.length; i++) {
     const star = scene.stars[i];
-    if (star.mag > magLimit) continue;
+    if (!star || star.mag > magLimit) continue;
     const sv: Vec3 = [v[i * 3] ?? 0, v[i * 3 + 1] ?? 0, v[i * 3 + 2] ?? 0];
     if (dot(ray, sv) < cosTol) continue;
     if (!starShown(below, view.altitudesDeg[i] ?? 0)) continue;
@@ -70,8 +70,9 @@ export function pickAt(
       bestMag = star.mag;
     }
   }
-  if (best >= 0) {
-    return { kind: "star", id: scene.stars[best].id, index: best };
+  const bestStar = best >= 0 ? scene.stars[best] : undefined;
+  if (bestStar) {
+    return { kind: "star", id: bestStar.id, index: best };
   }
 
   if (!lines) return null;

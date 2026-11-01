@@ -90,6 +90,10 @@ export const enUS = {
   "studio.back": "Back to the start",
 
   "site.name": "Starsky",
+  "site.error.title": "This page could not be loaded",
+  "site.error.body": "Part of the page did not load, or something went wrong. Check your connection and reload.",
+  "site.error.reload": "Reload",
+  "site.error.start": "Back to the start",
   "viewer.heading.default": "This night sky",
   "viewer.heading.abovePlace": "Night sky above {place}",
   "viewer.loading": "Charting the stars…",

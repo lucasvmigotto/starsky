@@ -850,6 +850,10 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | Key | Copy |
 |---|---|
 | `site.name` | Starsky *(the header's one item, a link to the start; on the Studio and Viewer, not on the full-bleed Explorer)* |
+| `site.error.title` | This page could not be loaded |
+| `site.error.body` | Part of the page did not load, or something went wrong. Check your connection and reload. |
+| `site.error.reload` | Reload |
+| `site.error.start` | Back to the start |
 | `viewer.loading` | Charting the stars… |
 
 **Viewer · announcements** (`role="status"`, `aria-live="polite"`, `sr-only`)

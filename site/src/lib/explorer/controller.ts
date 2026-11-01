@@ -575,6 +575,7 @@ export class ExplorerController {
   /** A pinch lost a finger: the other carries on as a drag, never a click. */
   private continueAsDrag(): void {
     const [rest] = [...this.pointers.values()];
+    if (!rest) return;
     this.last = { x: rest.x, y: rest.y };
     this.dragging = true;
   }
@@ -585,8 +586,10 @@ export class ExplorerController {
     this.pinchDistance = 0;
   }
 
-  private pinchPoints(): { distance: number; centre: Point } {
+  /** The two fingers' distance and midpoint; null unless exactly two are down. */
+  private pinchPoints(): { distance: number; centre: Point } | null {
     const [a, b] = [...this.pointers.values()];
+    if (!a || !b) return null;
     return {
       distance: Math.hypot(b.x - a.x, b.y - a.y),
       centre: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
@@ -594,13 +597,17 @@ export class ExplorerController {
   }
 
   private beginPinch(): void {
-    const { distance, centre } = this.pinchPoints();
+    const points = this.pinchPoints();
+    if (!points) return;
+    const { distance, centre } = points;
     this.pinchDistance = distance;
     this.pinchCentre = centre;
   }
 
   private pinchStep(): void {
-    const { distance, centre } = this.pinchPoints();
+    const points = this.pinchPoints();
+    if (!points) return;
+    const { distance, centre } = points;
     if (this.pinchDistance > 0 && distance > 0) {
       const { width, height } = this.viewport;
       let camera = this.camera;

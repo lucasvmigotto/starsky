@@ -23,6 +23,7 @@ export function describeSelection(
   const starIndex = scene.starIndexById.get(id);
   if (starIndex !== undefined) {
     const star = scene.stars[starIndex];
+    if (!star) return null;
     const v = scene.vectors;
     return {
       kind: "star",
@@ -32,7 +33,8 @@ export function describeSelection(
   }
   const conIndex = scene.constellationIndexById.get(id);
   if (conIndex !== undefined) {
-    return { kind: "constellation", name: scene.constellations[conIndex].name, horizon: null };
+    const con = scene.constellations[conIndex];
+    if (con) return { kind: "constellation", name: con.name, horizon: null };
   }
   return null;
 }

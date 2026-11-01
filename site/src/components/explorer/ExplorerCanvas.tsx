@@ -139,8 +139,8 @@ export default function ExplorerCanvas({
     canvas.addEventListener("keydown", onKeyDown);
 
     const observer = new ResizeObserver((entries) => {
-      const box = entries[0].contentRect;
-      controller.setViewport(box.width, box.height);
+      const box = entries[0]?.contentRect;
+      if (box) controller.setViewport(box.width, box.height);
     });
     observer.observe(canvas);
 

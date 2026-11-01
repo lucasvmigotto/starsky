@@ -53,3 +53,22 @@ test.describe("J2 shared link", () => {
     ).toBeVisible();
   });
 });
+
+test.describe("J2 shared link in a pt-BR browser", () => {
+  // Artifact determinism (spec 017): the link, not the visitor's browser,
+  // decides the poster's words. Before the pin, this context drew
+  // "25 de dez. de 2024" in the moment line and in the exported caption.
+  test.use({ locale: "pt-BR" });
+
+  test("the moment line stays in the poster's en-US format", async ({ page }) => {
+    await page.goto(
+      viewerUrl(fragmentFor({ when_utc: "2024-12-25T10:00:00Z", tz: "Australia/Sydney" })),
+    );
+    const moment = "Dec 25, 2024, 9:00 PM Australia/Sydney";
+    // The visible moment line under the title…
+    await expect(page.getByText(moment, { exact: true })).toBeVisible();
+    // …and the canvas's text alternative, built from the same detail line the
+    // exported caption draws.
+    await expect(page.getByText(`40.7580°N, 73.9855°W — Times Square · ${moment}`).first()).toBeAttached();
+  });
+});

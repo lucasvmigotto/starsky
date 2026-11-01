@@ -5,6 +5,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { at } from "../../lib/testing.ts";
 
 const domReady = (globalThis as unknown as Record<string, unknown>)["document"] !== undefined;
 if (!domReady) {
@@ -80,14 +81,14 @@ describe("loadScene", () => {
     stubFetch((url) => (url.endsWith("catalog.json") ? CATALOG : url.endsWith("constellations.json") ? SEGMENTS : null));
     const scene = await loadScene();
     expect(scene.stars).toHaveLength(2);
-    expect(scene.stars[0].name).toBeNull();
+    expect(at(scene.stars, 0).name).toBeNull();
   });
 
   it("names stars when the file is there", async () => {
     stubFetch((url) =>
       url.endsWith("catalog.json") ? CATALOG : url.endsWith("constellations.json") ? SEGMENTS : { names: [[32349, "Sirius"]] },
     );
-    expect((await loadScene()).stars[0].name).toBe("Sirius");
+    expect(at((await loadScene()).stars, 0).name).toBe("Sirius");
   });
 
   it("fails when the catalog is missing, and tries again next time", async () => {

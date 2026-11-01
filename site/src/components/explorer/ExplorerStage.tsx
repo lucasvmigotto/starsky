@@ -250,6 +250,15 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
           </>
         )}
       </div>
+      {/* Before the panel in the DOM so Tab from it enters the panel it opened; it is absolutely placed, so the order does not move it. */}
+      {controller && (
+        <ExplorerPanelTab
+          open={panels.inspector}
+          controls={INSPECTOR_BODY_ID}
+          onToggle={toggleInspector}
+          buttonRef={tabButton}
+        />
+      )}
       {controller && (
         <ExplorerInspector
           scene={scene}
@@ -262,14 +271,6 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
           onClear={clear}
           onToggle={toggleInspector}
           onClose={closeInspector}
-        />
-      )}
-      {controller && (
-        <ExplorerPanelTab
-          open={panels.inspector}
-          controls={INSPECTOR_BODY_ID}
-          onToggle={toggleInspector}
-          buttonRef={tabButton}
         />
       )}
     </div>

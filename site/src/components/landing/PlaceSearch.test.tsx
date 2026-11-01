@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { at } from "../../lib/testing.ts";
 
 if ((globalThis as unknown as Record<string, unknown>)["document"] === undefined) {
   GlobalRegistrator.register({ url: "http://localhost/" });
@@ -107,7 +108,7 @@ describe("PlaceSearch", () => {
     await waitFor(() => {
       expect(screen.getAllByRole("option")).toHaveLength(1);
     });
-    fireEvent.click(screen.getAllByRole("option")[0]);
+    fireEvent.click(at(screen.getAllByRole("option"), 0));
     fireEvent.blur(input());
     type("rome");
     fireEvent.blur(input(), { relatedTarget: searchButton() });
@@ -151,10 +152,10 @@ describe("PlaceSearch", () => {
     await waitFor(() => {
       expect(screen.getAllByRole("option")).toHaveLength(2);
     });
-    const first = screen.getAllByRole("option")[0];
+    const first = at(screen.getAllByRole("option"), 0);
     expect(input().getAttribute("aria-activedescendant")).toBe(first.id);
     fireEvent.keyDown(input(), { key: "ArrowDown" });
-    const second = screen.getAllByRole("option")[1];
+    const second = at(screen.getAllByRole("option"), 1);
     expect(second.getAttribute("aria-selected")).toBe("true");
     expect(input().getAttribute("aria-activedescendant")).toBe(second.id);
     fireEvent.keyDown(input(), { key: "Enter" });
@@ -179,7 +180,7 @@ describe("PlaceSearch", () => {
     await waitFor(() => {
       expect(screen.getAllByRole("option")).toHaveLength(2);
     });
-    fireEvent.click(screen.getAllByRole("option")[0]);
+    fireEvent.click(at(screen.getAllByRole("option"), 0));
     expect(h.chosen).toEqual([PARIS]);
   });
 

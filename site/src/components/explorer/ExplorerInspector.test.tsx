@@ -4,6 +4,7 @@
  */
 import { afterEach, describe, expect, it } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { at } from "../../lib/testing.ts";
 
 const domReady = (globalThis as unknown as Record<string, unknown>)["document"] !== undefined;
 if (!domReady) {
@@ -116,7 +117,7 @@ describe("ExplorerInspector, a star", () => {
     const calls = mount("HIP:2");
     const buttons = screen.getAllByRole("button", { name: /Part of the figure of/ });
     expect(buttons.map((b) => b.textContent)).toEqual(["Part of the figure of Orion"]);
-    fireEvent.click(buttons[0]);
+    fireEvent.click(at(buttons, 0));
     expect(calls.chosen).toEqual(["CON:Ori"]);
   });
 

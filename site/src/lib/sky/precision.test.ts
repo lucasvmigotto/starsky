@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { julianDate } from "../astro.ts";
 import { angularDistanceDeg, raDecToVec, vecToRaDec } from "./vec.ts";
+import { present } from "../testing.ts";
 
 /**
  * Precision of the app's uncorrected positions (ADR-0006 "Precision").
@@ -161,7 +162,7 @@ const BOUNDS: Record<string, Errors> = {
 describe("measured error of the uncorrected position", () => {
   for (const [label, when] of DATES) {
     it(`stays within the pinned bounds for ${label}`, () => {
-      const bound = BOUNDS[label];
+      const bound = present(BOUNDS[label], `a pinned bound for ${label}`);
       for (const star of STARS) {
         const e = measure(star, when);
         expect(e.precession).toBeLessThan(bound.precession);

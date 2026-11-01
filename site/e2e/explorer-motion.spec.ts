@@ -2,6 +2,13 @@
  * Reset view animates (FR-012): the camera glides back to the initial view,
  * the frame counter runs while it does, it ends exactly there, any input takes
  * over, and reduced motion jumps.
+ *
+ * The glide lasts a fixed time (300 to 800 ms), so how many frames a machine
+ * draws inside it depends on how fast that machine is: a starved container drew
+ * 3 or 4. The tests that count frames therefore drive the page's own clock
+ * (Playwright's `page.clock`), one 16 ms step per frame, instead of racing a
+ * real-time observer against the animation. The frame count is then the same on
+ * every machine, and nothing here sleeps.
  */
 import type { Locator, Page } from "@playwright/test";
 import { initialCamera } from "../src/lib/sky/observer.ts";
@@ -16,7 +23,12 @@ const GOAL = initialCamera({
   when: new Date(BASE_EXPLORER.when_utc),
 });
 
+/** One display frame at 60 Hz. */
+const FRAME_MS = 16;
+const MAX_STEPS = 120;
+
 async function open(page: Page): Promise<Locator> {
+  await page.clock.install();
   await page.goto(explorerUrl(SIRIUS));
   const canvas = canvasOf(page);
   await expect(canvas).toHaveAttribute("data-frames", /^[1-9]\d*$/);
@@ -33,6 +45,41 @@ async function wander(page: Page, canvas: Locator): Promise<void> {
   await expect.poll(() => attr(canvas, "data-fov")).not.toBe("100.000");
 }
 
+/** Stop the page's clock, so it moves only when `stepFrames` moves it. */
+async function pauseClock(page: Page): Promise<void> {
+  await page.clock.pauseAt(new Date(Date.now() + 1000));
+}
+
+const GOAL_Q = GOAL.orientation.join(",");
+
+/**
+ * The glide has landed: the orientation is exactly the goal. `data-fov` alone
+ * is not enough, because it is printed to three decimals and reads "100.000"
+ * a frame before the last one; stopping there with the clock paused left the
+ * camera a hair short of the goal for good (the stability run caught it).
+ */
+const landed = (fovs: number[], q: string): boolean => fovs[fovs.length - 1] === 100 && q === GOAL_Q;
+
+/**
+ * Advance the paused clock one frame at a time until `done` holds, recording
+ * the fov after each step. Fails if it never does, so a glide that stalls is an
+ * error and not a hang.
+ */
+async function stepFrames(
+  page: Page,
+  canvas: Locator,
+  done: (fovs: number[], q: string) => boolean,
+): Promise<number[]> {
+  const fovs: number[] = [];
+  for (let step = 0; step < MAX_STEPS; step += 1) {
+    await page.clock.runFor(FRAME_MS);
+    const fov = Number(await attr(canvas, "data-fov"));
+    if (fovs[fovs.length - 1] !== fov) fovs.push(fov);
+    if (done(fovs, await attr(canvas, "data-q"))) return fovs;
+  }
+  throw new Error(`the glide did not finish in ${String(MAX_STEPS)} frames: ${fovs.join(", ")}`);
+}
+
 test.describe("animated reset", () => {
   test("the frame counter runs during the glide and the camera ends exactly at the initial view", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
@@ -40,32 +87,18 @@ test.describe("animated reset", () => {
     await wander(page, canvas);
     const startFov = Number(await attr(canvas, "data-fov"));
     const startFrames = Number(await attr(canvas, "data-frames"));
+    await pauseClock(page);
     await page.keyboard.press("0");
-
-    // Record what the page shows while it glides.
-    const seen = await page.evaluate(async () => {
-      const el = document.querySelector("canvas");
-      if (!el) return { fovs: [] as number[], frames: 0 };
-      const fovs: number[] = [];
-      const deadline = performance.now() + 1500;
-      let last = "";
-      while (performance.now() < deadline) {
-        const fov = el.dataset["fov"] ?? "";
-        if (fov !== last) fovs.push(Number(fov));
-        last = fov;
-        if (fov === "100.000" && fovs.length > 3) break;
-        await new Promise((r) => requestAnimationFrame(r));
-      }
-      return { fovs, frames: Number(el.dataset["frames"] ?? "0") };
-    });
-    expect(seen.frames - startFrames).toBeGreaterThanOrEqual(8);
-    const middle = seen.fovs.filter((f) => f > startFov + 0.5 && f < 99.5);
+    const fovs = await stepFrames(page, canvas, landed);
+    const frames = Number(await attr(canvas, "data-frames")) - startFrames;
+    expect(frames).toBeGreaterThanOrEqual(8);
+    const middle = fovs.filter((f) => f > startFov + 0.5 && f < 99.5);
     expect(middle.length, "no in-between frames: the reset jumped").toBeGreaterThanOrEqual(3);
     // Monotone toward the goal, never overshooting.
-    for (let i = 1; i < seen.fovs.length; i += 1) expect(seen.fovs[i] ?? 0).toBeGreaterThanOrEqual((seen.fovs[i - 1] ?? 0) - 1e-6);
+    for (let i = 1; i < fovs.length; i += 1) expect(fovs[i] ?? 0).toBeGreaterThanOrEqual((fovs[i - 1] ?? 0) - 1e-6);
 
     await expect(canvas).toHaveAttribute("data-fov", "100.000");
-    await expect(canvas).toHaveAttribute("data-q", GOAL.orientation.join(","));
+    await expect(canvas).toHaveAttribute("data-q", GOAL_Q);
   });
 
   test("the toolbar button glides too", async ({ page }) => {
@@ -75,9 +108,12 @@ test.describe("animated reset", () => {
     const frames = Number(await attr(canvas, "data-frames"));
     await page.mouse.move(40, 200);
     await page.mouse.move(60, 220);
+    await expect(page.locator(".explorer-stage-inner")).toHaveAttribute("data-chrome", "visible");
+    await pauseClock(page);
     await page.getByRole("button", { name: "Reset view" }).click();
+    await stepFrames(page, canvas, landed);
     await expect(canvas).toHaveAttribute("data-fov", "100.000");
-    await expect(canvas).toHaveAttribute("data-q", GOAL.orientation.join(","));
+    await expect(canvas).toHaveAttribute("data-q", GOAL_Q);
     expect(Number(await attr(canvas, "data-frames")) - frames).toBeGreaterThanOrEqual(8);
   });
 
@@ -85,13 +121,15 @@ test.describe("animated reset", () => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     const canvas = await open(page);
     await wander(page, canvas);
+    await pauseClock(page);
     await page.keyboard.press("0");
-    await expect.poll(async () => Number(await attr(canvas, "data-fov"))).toBeGreaterThan(Number("20"));
+    await stepFrames(page, canvas, (seen) => (seen[seen.length - 1] ?? 0) > 20);
     await page.keyboard.press("+");
-    // Zoomed in from the pose it was in, not carried on to the goal.
-    await page.waitForTimeout(1000);
+    // Zoomed in from the pose it was in, not carried on to the goal: let more
+    // than the longest glide pass on the page's clock, then look.
+    await page.clock.runFor(1000);
     expect(await attr(canvas, "data-fov")).not.toBe("100.000");
-    expect(await attr(canvas, "data-q")).not.toBe(GOAL.orientation.join(","));
+    expect(await attr(canvas, "data-q")).not.toBe(GOAL_Q);
   });
 
   test("with reduced motion it jumps in at most a frame or two", async ({ page }) => {
@@ -101,7 +139,7 @@ test.describe("animated reset", () => {
     const frames = Number(await attr(canvas, "data-frames"));
     await page.keyboard.press("0");
     await expect(canvas).toHaveAttribute("data-fov", "100.000");
-    await expect(canvas).toHaveAttribute("data-q", GOAL.orientation.join(","));
+    await expect(canvas).toHaveAttribute("data-q", GOAL_Q);
     expect(Number(await attr(canvas, "data-frames")) - frames).toBeLessThanOrEqual(3);
   });
 });

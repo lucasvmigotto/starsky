@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { HashRouter, Route, Routes } from "react-router-dom";
+import ErrorBoundary from "./components/ErrorBoundary.tsx";
 import LandingPage from "./components/LandingPage.tsx";
 import ViewerPage from "./components/ViewerPage.tsx";
 import { t } from "./i18n/index.ts";
@@ -96,6 +97,25 @@ function Root() {
   return <LandingPage key={creation ?? "blank"} />;
 }
 
+/** Keeps a failed page from blanking the site; trying again when the address changes. */
+function Guarded() {
+  const [hash, setHash] = useState(() => window.location.hash);
+  useEffect(() => {
+    const onHash = () => {
+      setHash(window.location.hash);
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => {
+      window.removeEventListener("hashchange", onHash);
+    };
+  }, []);
+  return (
+    <ErrorBoundary resetKey={hash}>
+      <Root />
+    </ErrorBoundary>
+  );
+}
+
 export default function App() {
   return (
     // The docs-hub prefix lives in the URL pathname via Vite's `base`; the
@@ -103,7 +123,7 @@ export default function App() {
     // look for the prefix inside the hash and render a blank page.
     <HashRouter>
       <Routes>
-        <Route path="*" element={<Root />} />
+        <Route path="*" element={<Guarded />} />
       </Routes>
     </HashRouter>
   );

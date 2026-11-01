@@ -174,6 +174,7 @@ function polylines(
   for (let i = 0; i < count; i++) {
     const a = points[i];
     const b = points[(i + 1) % points.length];
+    if (!a || !b) continue;
     const seg = projectSegment(camera, a, b, viewport.width, viewport.height);
     if (!seg) {
       current = null;
@@ -236,7 +237,7 @@ function planStars(input: FrameInput): StarBatch[] {
   const stars = scene.stars;
   for (let i = 0; i < stars.length; i++) {
     const star = stars[i];
-    if (star.mag > magLimit) continue;
+    if (!star || star.mag > magLimit) continue;
     const x = v[i * 3] ?? 0;
     const y = v[i * 3 + 1] ?? 0;
     const z = v[i * 3 + 2] ?? 0;

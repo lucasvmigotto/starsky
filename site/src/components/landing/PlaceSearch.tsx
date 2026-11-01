@@ -119,7 +119,7 @@ export default function PlaceSearch({
       }
       case "Enter": {
         event.preventDefault();
-        const place = open ? (results[current] as ResolvedPlace | undefined) : undefined;
+        const place = open ? results[current] : undefined;
         if (place) choose(place);
         else submit();
         break;

@@ -1,17 +1,18 @@
 import { describe, expect, it } from "bun:test";
 import { HOVER_DELAY_MS, HoverMachine, placeTooltip } from "./tooltip.ts";
+import { at } from "../testing.ts";
 
 function make() {
   const timers: { callback: () => void; ms: number; cleared: boolean }[] = [];
   const machine = new HoverMachine({
     setTimer: (callback, ms) => timers.push({ callback, ms, cleared: false }) - 1,
     clearTimer: (handle) => {
-      timers[handle].cleared = true;
+      at(timers, handle).cleared = true;
     },
   });
   const fire = (): void => {
     const pending = timers.filter((t) => !t.cleared);
-    const last = pending[pending.length - 1];
+    const last = at(pending, pending.length - 1);
     last.cleared = true;
     last.callback();
   };
@@ -24,7 +25,7 @@ describe("HoverMachine", () => {
     const { machine, timers, fire } = make();
     expect(HOVER_DELAY_MS).toBe(1500);
     machine.over("HIP:1");
-    expect(timers[0].ms).toBe(1500);
+    expect(at(timers, 0).ms).toBe(1500);
     expect(machine.open).toBeNull();
     fire();
     expect(machine.open).toBe("HIP:1");
