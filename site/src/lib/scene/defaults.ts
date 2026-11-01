@@ -38,7 +38,15 @@ export function resolveDefaultLocation(env: Readonly<Record<string, unknown>>): 
   return valid ? { lat: lat.trim(), lon: lon.trim(), place: place.trim() } : FALLBACK_LOCATION;
 }
 
-const LOCATION = resolveDefaultLocation(import.meta.env);
+/**
+ * Vite fills `import.meta.env` in the app and in tests; the Playwright specs
+ * import app modules under plain Node, where it does not exist. Typed
+ * `unknown` so that case falls back instead of throwing at module load.
+ */
+const buildEnv: unknown = import.meta.env;
+const LOCATION = resolveDefaultLocation(
+  typeof buildEnv === "object" && buildEnv !== null ? (buildEnv as Readonly<Record<string, unknown>>) : {},
+);
 
 export const DEFAULTS = {
   mode: "place",
