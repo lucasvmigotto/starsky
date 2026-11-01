@@ -65,6 +65,8 @@ export default function ExplorerCanvas({
       magLimit: payload.mag,
       viewport: { width: rect.width, height: rect.height },
       cardinalText: cardinalText(),
+      now: () => performance.now(),
+      reducedMotion: () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       requestFrame: (callback) => window.requestAnimationFrame(callback),
       cancelFrame: (handle) => {
         window.cancelAnimationFrame(handle);
@@ -78,6 +80,7 @@ export default function ExplorerCanvas({
         // Read by the e2e idle and pole checks, not by product code.
         canvas.dataset["frames"] = String(state.frames);
         canvas.dataset["fov"] = state.camera.fovDeg.toFixed(3);
+        canvas.dataset["q"] = state.camera.orientation.join(",");
       },
     });
 

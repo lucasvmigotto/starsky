@@ -7,6 +7,7 @@ import {
   multiply,
   normalize,
   rotate,
+  slerp,
   type Quat,
 } from "./quat.ts";
 import { angularDistanceDeg, raDecToVec, type Vec3 } from "./vec.ts";
@@ -107,3 +108,60 @@ describe("normalization drift", () => {
     expect(angularDistanceDeg(v, v)).toBe(0);
   });
 });
+
+describe("slerp", () => {
+  const a = fromAxisAngle([0, 0, 1], 20);
+  const b = fromAxisAngle([0, 0, 1], 100);
+
+  function same(p: Quat, q: Quat, digits = 12): void {
+    for (let i = 0; i < 4; i += 1) expect(p[i] ?? NaN).toBeCloseTo(q[i] ?? NaN, digits);
+  }
+
+  it("returns its endpoints at t = 0 and t = 1", () => {
+    same(slerp(a, b, 0), a);
+    same(slerp(a, b, 1), b);
+  });
+
+  it("turns half the angle at t = 0.5, staying a unit quaternion", () => {
+    const mid = slerp(a, b, 0.5);
+    same(mid, fromAxisAngle([0, 0, 1], 60));
+    expect(Math.hypot(...mid)).toBeCloseTo(1, 12);
+  });
+
+  it("turns at a constant rate", () => {
+    const q = slerp(a, b, 0.25);
+    same(q, fromAxisAngle([0, 0, 1], 40));
+  });
+
+  it("takes the shortest path when the dot product is negative", () => {
+    // -b is the same rotation as b; going to it must not sweep the long way round.
+    const flipped: Quat = [-b[0], -b[1], -b[2], -b[3]];
+    const mid = slerp(a, flipped, 0.5);
+    // The same midpoint as to b, up to sign.
+    const sign = mid[3] * fromAxisAngle([0, 0, 1], 60)[3] >= 0 ? 1 : -1;
+    same([mid[0] * sign, mid[1] * sign, mid[2] * sign, mid[3] * sign], fromAxisAngle([0, 0, 1], 60));
+    // And the end is the flipped quaternion's rotation, not a 260 degree detour.
+    const end = slerp(a, flipped, 1);
+    close3(rotate(end, [1, 0, 0]), rotate(b, [1, 0, 0]));
+  });
+
+  it("is stable for near-identical quaternions", () => {
+    const c: Quat = normalize([1e-9, 0, 0, 1]);
+    const r = slerp(IDENTITY, c, 0.5);
+    expect(r.every((v) => Number.isFinite(v))).toBe(true);
+    expect(Math.hypot(...r)).toBeCloseTo(1, 12);
+    same(slerp(IDENTITY, IDENTITY, 0.3), IDENTITY);
+  });
+
+  it("does not modify its inputs", () => {
+    const x: Quat = [...a];
+    const y: Quat = [...b];
+    slerp(x, y, 0.4);
+    expect(x).toEqual(a);
+    expect(y).toEqual(b);
+  });
+});
+
+function close3(p: Vec3, q: Vec3): void {
+  for (let i = 0; i < 3; i += 1) expect(p[i] ?? NaN).toBeCloseTo(q[i] ?? NaN, 10);
+}

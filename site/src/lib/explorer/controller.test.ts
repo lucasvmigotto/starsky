@@ -8,7 +8,7 @@ import {
   screenRay,
 } from "../sky/camera.ts";
 import { initialCamera } from "../sky/observer.ts";
-import { rotate } from "../sky/quat.ts";
+import { fromAxisAngle, multiply, normalize, rotate } from "../sky/quat.ts";
 import { type Vec3, angularDistanceDeg, vecToRaDec } from "../sky/vec.ts";
 import { ExplorerController, type ControllerChange } from "./controller.ts";
 import { CTX, dirAt, sceneOf } from "./fixture.ts";
@@ -399,5 +399,198 @@ describe("starAt (hover tooltip)", () => {
     expect(queue).toHaveLength(0);
     expect(changes).toEqual([]);
     expect(controller.frames).toBe(1);
+  });
+});
+
+
+describe("animated reset (FR-012)", () => {
+  function animated(reduced = false, camera: ExplorerCamera = horizonCamera(30)) {
+    const clock = { t: 0 };
+    const queue: (() => void)[] = [];
+    const changes: ControllerChange[] = [];
+    const timers: { callback: () => void; cleared: boolean }[] = [];
+    const { scene } = sceneOf(
+      [
+        { hip: 1, dir: dirAt(0, 0), mag: 1 },
+        { hip: 2, dir: dirAt(10, 20), mag: 2 },
+      ],
+      [["Tst", "Test", 1, 2]],
+    );
+    const controller = new ExplorerController({
+      scene,
+      ctx: CTX,
+      camera,
+      magLimit: 6.5,
+      viewport: VIEWPORT,
+      requestFrame: (cb) => {
+        queue.push(cb);
+        return queue.length;
+      },
+      draw: () => undefined,
+      setTimer: (callback) => timers.push({ callback, cleared: false }) - 1,
+      clearTimer: (handle) => {
+        timers[handle].cleared = true;
+      },
+      now: () => clock.t,
+      reducedMotion: () => reduced,
+    });
+    controller.subscribe((c) => changes.push(c));
+    /** Advance the clock by `ms`, then run the one pending frame. */
+    const step = (ms: number): void => {
+      clock.t += ms;
+      queue.splice(0).forEach((cb) => {
+        cb();
+      });
+    };
+    /** Fire the quiet-period timer that is still pending, as the page's timer would. */
+    const fireTimers = (): void => {
+      for (const timer of timers.filter((x) => !x.cleared)) {
+        timer.cleared = true;
+        timer.callback();
+      }
+    };
+    step(0);
+    return { controller, clock, queue, changes, step, fireTimers };
+  }
+
+  const target = (): ExplorerCamera => initialCamera(CTX);
+
+  it("does not jump: the first frames are between the pose and the initial view", () => {
+    const { controller, step, queue } = animated();
+    const from = controller.getCamera();
+    controller.reset();
+    expect(controller.getCamera()).toEqual(from);
+    expect(queue).toHaveLength(1);
+    step(100);
+    const mid = controller.getCamera();
+    expect(mid.fovDeg).toBeGreaterThan(30);
+    expect(mid.fovDeg).toBeLessThan(target().fovDeg);
+    expect(angularDistanceDeg(forward(mid), forward(from))).toBeGreaterThan(0);
+    expect(angularDistanceDeg(forward(mid), forward(target()))).toBeGreaterThan(0);
+  });
+
+  it("interpolates the field of view in log space", () => {
+    const { controller, step } = animated();
+    controller.reset();
+    step(1);
+    // Halfway through the easing the log of the FOV is halfway between the two.
+    const goal = target().fovDeg;
+    controller.reset();
+    step(600);
+    const half = controller.getCamera().fovDeg;
+    expect(half).toBeGreaterThan(30);
+    expect(half).toBeLessThan(goal);
+    const logFraction = (Math.log(half) - Math.log(30)) / (Math.log(goal) - Math.log(30));
+    expect(logFraction).toBeGreaterThan(0);
+    expect(logFraction).toBeLessThan(1);
+  });
+
+  it("ends exactly at the initial view and keeps asking for frames until then", () => {
+    const { controller, step, queue } = animated();
+    controller.reset();
+    let guard = 0;
+    while (queue.length > 0 && guard++ < 200) step(16);
+    expect(controller.getCamera()).toEqual(target());
+    expect(guard).toBeGreaterThan(10);
+    expect(queue).toHaveLength(0);
+  });
+
+  it("lasts between 300 and 800 ms, longer for a longer way round", () => {
+    const lasts = (camera: ExplorerCamera): number => {
+      const { controller, step, queue } = animated(false, camera);
+      controller.reset();
+      let t = 0;
+      while (queue.length > 0 && t < 2000) {
+        step(10);
+        t += 10;
+      }
+      return t;
+    };
+    const goal = target();
+    // A short turn: the initial view nudged by 8 degrees and left at its zoom.
+    const near = lasts({ orientation: normalize(multiply(fromAxisAngle([0, 1, 0], 8), goal.orientation)), fovDeg: goal.fovDeg });
+    const far = lasts({ orientation: normalize(multiply(fromAxisAngle([0, 1, 0], 170), goal.orientation)), fovDeg: goal.fovDeg });
+    expect(near).toBeGreaterThanOrEqual(300);
+    expect(near).toBeLessThanOrEqual(400);
+    expect(far).toBeGreaterThan(near);
+    expect(far).toBeLessThanOrEqual(810);
+  });
+
+  it("settles once, at the end, and not while it runs", () => {
+    const { controller, step, queue, changes, fireTimers } = animated();
+    controller.reset();
+    step(50);
+    fireTimers();
+    expect(changes.filter((c) => c.kind === "settled")).toHaveLength(0);
+    while (queue.length > 0) step(16);
+    fireTimers();
+    expect(changes.filter((c) => c.kind === "settled")).toHaveLength(1);
+    expect(controller.getCamera()).toEqual(target());
+  });
+
+  it("is cancelled by a drag, a wheel turn, a key or a pinch, and takes over from the current pose", () => {
+    const inputs: [string, (c: ExplorerController) => void][] = [
+      ["drag", (c) => { c.pointerDown(1, 100, 100); c.pointerMove(1, 140, 100); }],
+      ["wheel", (c) => { c.wheel(-100, 400, 300); }],
+      ["key", (c) => { c.key("ArrowLeft"); }],
+      ["zoom key", (c) => { c.key("+"); }],
+      ["pinch", (c) => { c.pointerDown(1, 300, 300); c.pointerDown(2, 400, 300); }],
+      ["zoom button", (c) => { c.zoomBy(1); }],
+    ];
+    for (const [name, input] of inputs) {
+      const { controller, step, queue, changes, fireTimers } = animated();
+      controller.reset();
+      step(120);
+      const pose = controller.getCamera();
+      input(controller);
+      // No further interpolation fights the input.
+      step(16);
+      step(16);
+      const after = controller.getCamera();
+      expect(angularDistanceDeg(forward(after), forward(pose)), name).toBeLessThan(40);
+      expect(after.fovDeg, name).not.toBe(target().fovDeg);
+      while (queue.length > 0) step(16);
+      expect(controller.getCamera(), name).not.toEqual(target());
+      fireTimers();
+      expect(changes.filter((c) => c.kind === "settled").length, name).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("restarts from the current pose when reset is pressed again", () => {
+    const { controller, step, queue } = animated();
+    controller.reset();
+    step(200);
+    const pose = controller.getCamera();
+    controller.reset();
+    step(1);
+    expect(angularDistanceDeg(forward(controller.getCamera()), forward(pose))).toBeLessThan(5);
+    while (queue.length > 0) step(16);
+    expect(controller.getCamera()).toEqual(target());
+  });
+
+  it("jumps under reduced motion, as before", () => {
+    const { controller, queue } = animated(true);
+    controller.reset();
+    expect(controller.getCamera()).toEqual(target());
+    expect(queue.length).toBeLessThanOrEqual(1);
+  });
+
+  it("animates Center on map the same way, keeping the zoom", () => {
+    const { controller, step, queue } = animated();
+    const fov = controller.getCamera().fovDeg;
+    const before = forward(controller.getCamera());
+    expect(controller.centerOn("HIP:2")).toBe(true);
+    expect(controller.getCamera().fovDeg).toBe(fov);
+    expect(angularDistanceDeg(forward(controller.getCamera()), before)).toBeCloseTo(0, 9);
+    while (queue.length > 0) step(16);
+    expect(controller.getCamera().fovDeg).toBe(fov);
+    expect(angularDistanceDeg(forward(controller.getCamera()), dirAt(10, 20))).toBeLessThan(0.01);
+  });
+
+  it("still jumps when no clock is given (the pure tests)", () => {
+    const { controller, flush } = setup();
+    flush();
+    controller.reset();
+    expect(controller.getCamera()).toEqual(initialCamera(CTX));
   });
 });
