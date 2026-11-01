@@ -1,5 +1,5 @@
 /**
- * The poster's title and moment as text, above its sky image. The Viewer and
+ * The poster's title and moment (date, time and timezone) as text, above its sky image. The Viewer and
  * the Studio show the same two lines, so the page never repeats the exported
  * caption band (BCR-0013).
  */
@@ -13,10 +13,7 @@ export default function PosterHeading({ payload }: { payload: SharePayload }): J
   return (
     <div className="atlas-moment">
       <p className="font-display text-3xl leading-tight sm:text-4xl">{displayHeadingTitle(payload, t)}</p>
-      <p className="mt-2 text-sm text-text-muted">
-        {formatLocalTime(payload.when_utc, payload.tz)} · {payload.options.projection === "fisheye" ? "fisheye" : "stereographic"}{" "}
-        projection
-      </p>
+      <p className="mt-2 text-sm text-text-muted">{formatLocalTime(payload.when_utc, payload.tz)}</p>
     </div>
   );
 }

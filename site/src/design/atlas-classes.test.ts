@@ -58,10 +58,9 @@ const REQUIRED: ReadonlyArray<readonly [string, readonly string[]]> = [
       "atlas-export",
       // The disclosure trigger and the format buttons are ghost buttons (015):
       // one button family, no export-only styles.
-      "atlas-export-actions",
+      "atlas-popover",
       "atlas-export-status",
       "atlas-actions",
-      "atlas-action-row",
     ],
   ],
   ["inline code in prose", ["atlas-code"]],
@@ -151,10 +150,10 @@ describe("atlas-* class vocabulary (DS-003)", () => {
     expect(ghost?.[1]).toContain("background: transparent");
   });
 
-  it("keeps `hidden` winning over the actions' flex display", () => {
+  it("keeps `hidden` winning over the popover's flex display", () => {
     // Without this the collapsed formats stay on screen: `display: flex` beats
     // the `hidden` attribute's UA `display: none`.
-    expect(CSS).toMatch(/\.atlas-export-actions\[hidden\]\s*\{\s*display:\s*none/);
+    expect(CSS).toMatch(/\.atlas-popover\[hidden\]\s*\{\s*display:\s*none/);
   });
 
   it("gives every button at least the 44px target height (DS-A11Y-003)", () => {

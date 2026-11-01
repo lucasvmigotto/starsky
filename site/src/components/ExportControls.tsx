@@ -21,6 +21,7 @@ import type { PosterFormat } from "../lib/render/format.ts";
 import { storyGeometry } from "../lib/render/format.ts";
 import { renderPosterToCanvas } from "../lib/render/poster.ts";
 import { Icon } from "./icons.tsx";
+import { usePopoverStyle } from "./popover.ts";
 
 /** Export size in CSS px (the poster's sky width, matching the CLI's default). */
 export const EXPORT_SIZE_PX = 1600;
@@ -38,6 +39,9 @@ const LAYOUT_KEYS: Record<PosterFormat, string> = {
 interface Props {
   payload: SharePayload;
   model: SkyModel;
+  /** Controlled by the action area, so only one disclosure is open at a time. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 type Format = "png" | "svg" | "pdf";
@@ -69,7 +73,7 @@ function safeFilename(payload: SharePayload, layout: PosterFormat): string {
   return layout === "story" ? `${name}-story` : name;
 }
 
-export default function ExportControls({ payload, model }: Props) {
+export default function ExportControls({ payload, model, open: controlled, onOpenChange }: Props) {
   const [busy, setBusy] = useState<Format | null>(null);
   const [status, setStatus] = useState<string>("");
   /**
@@ -81,7 +85,12 @@ export default function ExportControls({ payload, model }: Props) {
    * **Never persisted.** The hash is the share payload, so writing "expanded"
    * into it would change what a shared link means. It reverts on reload.
    */
-  const [open, setOpen] = useState(false);
+  const [own, setOwn] = useState(false);
+  const open = controlled ?? own;
+  const setOpen = (next: boolean): void => {
+    setOwn(next);
+    onOpenChange?.(next);
+  };
   /** Never persisted, like `open`: the layout is chosen at export time (BCR-0012). */
   const [layout, setLayout] = useState<PosterFormat>("standard");
   const panelId = "export-formats";
@@ -127,6 +136,9 @@ export default function ExportControls({ payload, model }: Props) {
     }
   };
 
+  const popover = usePopoverStyle(open, triggerId);
+  const label = open ? t("viewer.export.close") : t("viewer.export.open");
+
   return (
     <div className="atlas-export">
       {/*
@@ -137,22 +149,24 @@ export default function ExportControls({ payload, model }: Props) {
       <button
         type="button"
         id={triggerId}
-        className="atlas-btn-ghost"
+        className="atlas-btn-icon"
+        aria-label={label}
+        title={label}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => {
-          setOpen((value) => !value);
+          setOpen(!open);
         }}
       >
         <Icon name="download" />
-        {open ? t("viewer.export.close") : t("viewer.export.open")}
       </button>
 
       <div
         id={panelId}
-        className="atlas-export-actions"
+        className="atlas-popover"
         role="group"
         aria-label={t("viewer.export.formats")}
+        style={popover}
         hidden={!open}
       >
         <div
@@ -191,10 +205,10 @@ export default function ExportControls({ payload, model }: Props) {
               : labelOf(format)}
           </button>
         ))}
+        <p className="atlas-export-status" role="status" aria-live="polite">
+          {status}
+        </p>
       </div>
-      <p className="atlas-export-status" role="status" aria-live="polite">
-        {status}
-      </p>
     </div>
   );
 }

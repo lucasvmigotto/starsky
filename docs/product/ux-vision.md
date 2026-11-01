@@ -387,7 +387,7 @@ mobile                             desktop
 │ Starsky      v1.0.0  │          │ Starsky                       v1.0.0    │
 │                      │          │                                        │
 │ Our first flat       │          │             Our first flat              │
-│ 12 Jun 2024, 21:40   │          │   12 Jun 2024, 21:40 · stereographic    │
+│ 12 Jun 2024, 21:40   │          │          12 Jun 2024, 21:40 UTC         │
 │                      │          │                                        │
 │  ┌────────────────┐  │          │        ┌────────────────────────┐      │
 │  │                │  │          │        │                        │      │
@@ -404,7 +404,8 @@ The page is the heading and the sky image, centred, then share, export and the
 two actions (BCR-0013). The caption band under the image and the "Figures in
 this sky" panel are gone from the page; exploring figures is the Explorer's job.
 The exported PNG, SVG and PDF keep their caption band, byte for byte. The image
-is still draggable and zoomable, with three view controls under it.
+is static: no drag, wheel, pinch, keys or zoom buttons; zooming and exploring
+live in the Explorer, reached from "Explore this sky".
 
 ### 3. Studio — build and tune
 
@@ -760,15 +761,9 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | Key | Copy |
 |---|---|
 | `viewer.announced.ready` | Night sky poster ready. |
-| `viewer.announced.viewReset` | Showing the whole sky again. |
 | `viewer.announcementRegion` | Sky viewer status *(the region's `aria-label`, so it is distinguishable from the export row's)* |
 | `viewer.canvasLabel` | Night sky poster titled {title} |
 | `viewer.canvasLabel.untitled` | Night sky poster |
-| `viewer.canvasHint` | Night sky map. Drag to move it, scroll to zoom. With the map focused, use the arrow keys to move, plus and minus to zoom, and 0 to show the whole sky. *(screen-reader only, the canvas's `aria-describedby`)* |
-| `viewer.viewControls` | View controls *(the button group's `aria-label`)* |
-| `viewer.zoomIn` | Zoom in |
-| `viewer.zoomOut` | Zoom out |
-| `viewer.resetView` | Show the whole sky |
 | `dataError.title` | Star data could not be loaded |
 | `dataError.body` | Regenerate it with `starsky catalog` and reload. |
 | `fontError.title` | The poster font could not be loaded |
@@ -924,8 +919,7 @@ parts read as one sentence, asserted by `i18n.test.ts`.
 
 | Key | Copy |
 |---|---|
-| `footer.version` | starsky v{version} |
-| `footer.source` | source |
+| `footer.version` | starsky@v{version} |
 | `footer.attribution` | Star data from Hipparcos and JPL. Constellation lines from Stellarium (CC BY-SA 4.0). Place lookup by OpenStreetMap contributors. |
 
 **Explorer** (`#e=`; the map is 010-explorer-canvas, the interface around it is 011-explorer-ui)

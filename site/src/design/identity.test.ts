@@ -59,7 +59,6 @@ describe("buttons", () => {
     const files = [
       "index.css",
       "components/ViewerPage.tsx",
-      "components/ViewControls.tsx",
       "components/ShareDialog.tsx",
       "components/ExportControls.tsx",
       "components/studio/StudioPage.tsx",
@@ -77,17 +76,50 @@ describe("buttons", () => {
   });
 });
 
+describe("the footer actions (FR-011)", () => {
+  it("are one right-aligned row of icon buttons with no panel around them", () => {
+    const actions = rule(".atlas-actions");
+    expect(actions).toContain("display: flex");
+    expect(actions).toContain("justify-content: flex-end");
+    expect(read("components/PosterActions.tsx")).not.toContain("atlas-panel");
+    expect(css).not.toContain(".atlas-viewcontrols");
+  });
+
+  it("put the actions row first on a phone and on the right from 48rem", () => {
+    expect(rule(".atlas-footer-actions")).toContain("order: -1");
+    expect(css).toMatch(/@media \(min-width: 48rem\) \{\s*\.atlas-footer-actions \{\s*order: 0/);
+  });
+
+  it("open Share and Export as fixed popovers above their button", () => {
+    expect(rule(".atlas-popover")).toContain("position: fixed");
+    expect(read("components/popover.ts")).toContain("vh - rect.top");
+  });
+
+  it("are rendered by the footer in the Viewer and the Studio", () => {
+    for (const name of ["viewer", "studio"] as const) {
+      expect(PAGES[name], name).toMatch(/<SiteFooter>[\s\S]*<PosterActions/);
+    }
+  });
+
+  it("let the Viewer fit a wide screen without scrolling", () => {
+    expect(PAGES.viewer).toContain("atlas-viewer-fit");
+    expect(css).toMatch(/@media \(min-width: 64rem\) and \(min-height: 36rem\) \{\s*\.atlas-viewer-fit \{\s*height: 100dvh/);
+    expect(css).toContain(".atlas-viewer-fit .atlas-sky-canvas");
+  });
+});
+
+describe("the poster heading", () => {
+  it("shows the date, time and timezone, and no projection", () => {
+    expect(read("components/PosterHeading.tsx")).not.toMatch(/projection/i);
+  });
+});
+
 describe("panels and form controls", () => {
   it("uses the Explorer's surface, soft edge and panel radius for every panel", () => {
     const panel = rule(".atlas-panel");
     expect(panel).toContain("var(--color-surface)");
     expect(panel).toContain("1px solid var(--color-border-soft)");
     expect(panel).toContain("var(--radius-panel)");
-  });
-
-  it("puts the Studio's controls and the Viewer's actions in that panel", () => {
-    expect(PAGES.viewer).toContain("atlas-panel atlas-actions");
-    expect(PAGES.studio).toContain("atlas-panel atlas-actions");
   });
 
   it("styles the Explorer search box with the shared input", () => {

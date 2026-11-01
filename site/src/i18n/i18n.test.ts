@@ -18,7 +18,7 @@ describe("copy", () => {
     expect(t("studio.place.resolved", { place: "Times Square" })).toBe(
       "Showing Times Square",
     );
-    expect(t("footer.version", { version: "1.0.0" })).toBe("starsky v1.0.0");
+    expect(t("footer.version", { version: "1.0.0" })).toBe("starsky@v1.0.0");
     expect(
       t("viewer.export.done", { filename: "starsky-sky.png" }),
     ).toBe("Saved starsky-sky.png");
@@ -111,6 +111,10 @@ describe("copy", () => {
     // 187 → 184 for the form regroup (015): the two Advanced legends in;
     // the Sky and Observation legends (landing and Studio) and `landing.explain`
     // out.
-    expect(copyKeys().length).toBe(184);
+    // 184 → 178 for the static Viewer image (FR-010): `viewer.announced.viewReset`,
+    // `viewer.canvasHint`, `viewer.viewControls`, `viewer.zoomIn`, `viewer.zoomOut` and
+    // `viewer.resetView` retire.
+    // 178 → 177 for the footer (FR-011): `footer.source` retires; the version is the link.
+    expect(copyKeys().length).toBe(177);
   });
 });

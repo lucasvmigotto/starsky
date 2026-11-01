@@ -41,8 +41,7 @@ import {
   draftHash,
   studioFragmentFromHash,
 } from "../../lib/studio/draft.ts";
-import ExportControls from "../ExportControls.tsx";
-import ShareDialog from "../ShareDialog.tsx";
+import PosterActions from "../PosterActions.tsx";
 import PosterFields, { type PosterFieldValues } from "../poster/PosterFields.tsx";
 import PosterHeading from "../PosterHeading.tsx";
 import SiteFooter from "../SiteFooter.tsx";
@@ -383,26 +382,6 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
                 }}
               />
             </div>
-
-            <div className="atlas-panel atlas-actions">
-              {model && (
-                <>
-                  <ShareDialog
-                    payload={applied}
-                    getLink={() => absoluteLink(`#s=${encodePayload(applied)}`, window.location)}
-                  />
-                  <ExportControls payload={applied} model={model} />
-                </>
-              )}
-              {returnHref !== null && (
-                <div className="atlas-action-row">
-                  <a className="atlas-btn-ghost" href={returnHref}>
-                    <Icon name="explore" />
-                    {t("studio.returnToExplorer")}
-                  </a>
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
@@ -411,7 +390,26 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
         </p>
       </main>
 
-      <SiteFooter />
+      <SiteFooter>
+        {model && (
+          <PosterActions
+            payload={applied}
+            model={model}
+            getLink={() => absoluteLink(`#s=${encodePayload(applied)}`, window.location)}
+          >
+            {returnHref !== null && (
+              <a
+                className="atlas-btn-icon"
+                href={returnHref}
+                aria-label={t("studio.returnToExplorer")}
+                title={t("studio.returnToExplorer")}
+              >
+                <Icon name="explore" />
+              </a>
+            )}
+          </PosterActions>
+        )}
+      </SiteFooter>
     </div>
   );
 }

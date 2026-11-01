@@ -153,10 +153,34 @@ body {
 }
 
 .atlas-footer {
-  padding: 1.25rem clamp(1rem, 4vw, 2.5rem) 2rem;
+  padding: var(--space-4) clamp(var(--space-4), 4vw, 2.5rem) var(--space-5);
   border-top: 1px solid var(--color-border-soft);
   font-size: 0.8rem;
-  color: var(--color-text-faint);
+  color: var(--color-text-muted);
+}
+
+/* The version and attribution on the left, the page's actions on the right. */
+.atlas-footer-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+/* A phone: the actions row first, then the version and attribution. */
+.atlas-footer-actions {
+  order: -1;
+  display: flex;
+  flex: 1 0 100%;
+  justify-content: flex-end;
+}
+
+@media (min-width: 48rem) {
+  .atlas-footer-actions {
+    order: 0;
+    flex: 0 0 auto;
+  }
 }
 
 /* Version + source, then the legal attribution. Two quiet lines, no eyebrow. */
@@ -168,6 +192,63 @@ body {
   margin-top: 0.35rem;
 }
 
+/* The sky image: the square sky region, never wider than its column. */
+.atlas-sky {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+}
+
+.atlas-sky-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+}
+
+/*
+ * Wide, tall screens: the Viewer fits the viewport with no vertical scroll
+ * (FR-011). The page is exactly one viewport tall; the image takes whatever
+ * height the header, heading and footer leave, and is as large as that and the
+ * width allow. Phones keep the natural flow and may scroll.
+ */
+@media (min-width: 64rem) and (min-height: 36rem) {
+  .atlas-viewer-fit {
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  .atlas-viewer-fit .atlas-main {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding-block: var(--space-4);
+  }
+
+  .atlas-viewer-fit .atlas-moment {
+    margin-bottom: var(--space-3);
+  }
+
+  .atlas-viewer-fit .atlas-explorer {
+    flex: 1 1 0;
+    min-height: 0;
+    width: 100%;
+  }
+
+  .atlas-viewer-fit .atlas-sky {
+    height: 100%;
+  }
+
+  .atlas-viewer-fit .atlas-sky-canvas {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+  }
+}
+
 .atlas-moment {
   text-align: center;
   margin-bottom: 1.75rem;
@@ -175,6 +256,8 @@ body {
 
 /* The sky image: one centred column, never wider than the image is useful at. */
 .atlas-explorer {
+  display: flex;
+  justify-content: center;
   width: min(100%, 44rem);
   margin-inline: auto;
   opacity: 0;
@@ -300,19 +383,6 @@ fieldset.atlas-panel > p + p {
 .atlas-btn-icon:disabled {
   opacity: 0.45;
   cursor: default;
-}
-
-/*
- * The view controls sit under the sky image, centred. Direct manipulation is
- * the primary way to move it; these three are the affordance that says it can
- * be moved at all, so they belong with the image rather than the actions.
- */
-.atlas-viewcontrols {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-2);
-  margin-top: var(--space-3);
 }
 
 .atlas-link {
@@ -673,43 +743,54 @@ select.atlas-form-input option {
 }
 
 /*
- * The actions panel (Viewer and Studio): share, export and the hand-offs in one
- * panel, each section a disclosure or a row of buttons. Triggers and format
- * buttons are plain ghost buttons; there is no accent-coloured control.
+ * The page actions, in the footer (FR-011): icon-only buttons of one size in one
+ * row. Share and Export keep their trigger, popover and status in a wrapper that
+ * takes no box of its own.
  */
 .atlas-actions {
-  display: grid;
-  gap: var(--space-4);
-}
-
-.atlas-actions > .atlas-export + .atlas-export,
-.atlas-actions > .atlas-export + .atlas-action-row {
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border-soft);
-}
-
-.atlas-export-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
   gap: var(--space-3);
-  margin-top: var(--space-3);
+}
+
+.atlas-export {
+  display: contents;
+}
+
+/* Above the trigger, inside the viewport: its position is set from the trigger. */
+.atlas-popover {
+  position: fixed;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  overflow-y: auto;
+  padding: var(--space-4);
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel);
+}
+
+/* `hidden` must win over the flex display above. */
+.atlas-popover[hidden] {
+  display: none;
+}
+
+.atlas-popover > .atlas-form-hint {
+  flex: 0 0 100%;
+  text-align: center;
 }
 
 /* The layout choice sits above the format buttons, on its own row. */
 .atlas-export-layout {
   flex-basis: 100%;
-}
-
-/* `hidden` must win over the flex display above. */
-.atlas-export-actions[hidden] {
-  display: none;
-}
-
-/* Secondary hand-offs: one row of ghost buttons. */
-.atlas-action-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
+  justify-content: center;
 }
 
 .atlas-export-status:empty {
@@ -718,7 +799,8 @@ select.atlas-form-input option {
 }
 
 .atlas-export-status {
-  margin-top: var(--space-3);
+  flex: 0 0 100%;
+  text-align: center;
   min-height: 1.25rem;
   font-size: 0.8rem;
   color: var(--color-text-muted);

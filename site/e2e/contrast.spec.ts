@@ -109,8 +109,7 @@ async function sample(
 const VIEWER_TEXT = [
   ".atlas-moment p:first-child",
   ".atlas-moment p + p",
-  ".atlas-export-trigger",
-  ".atlas-btn-ghost",
+  ".atlas-footer-meta",
   ".atlas-footer",
 ];
 
@@ -192,9 +191,18 @@ test.describe("contrast (WCAG 2.2 AA)", () => {
     await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
     await expectReadable(
       page,
-      [".atlas-site-name", ".atlas-panel .atlas-btn-ghost", ".atlas-footer", ".atlas-footer a"],
+      [".atlas-site-name", ".atlas-footer-meta", ".atlas-footer", ".atlas-footer a"],
       3,
     );
+  });
+
+  test("the footer popovers' text meets 4.5:1", async ({ page }) => {
+    await page.goto(viewerUrl(fragmentFor()));
+    await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
+    await page.locator("#share-trigger").click();
+    await expectReadable(page, ["#share-details .atlas-form-hint", "#share-details .atlas-btn-ghost"], 2);
+    await page.locator("#export-trigger").click();
+    await expectReadable(page, ["#export-formats .atlas-form-radio", "#export-formats .atlas-btn-ghost"], 2);
   });
 
   test("the shared header, buttons, panel, hints and legends meet 4.5:1 in the Studio", async ({ page }) => {
@@ -204,7 +212,6 @@ test.describe("contrast (WCAG 2.2 AA)", () => {
       page,
       [
         ".atlas-site-name",
-        ".atlas-actions .atlas-btn-ghost",
         "fieldset.atlas-panel > legend",
         "fieldset.atlas-panel .atlas-form-hint",
         ".atlas-form-label",

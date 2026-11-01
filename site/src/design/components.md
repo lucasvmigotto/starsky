@@ -89,14 +89,14 @@ The poster itself, drawn with the browser as the only renderer (ADR-0003).
 
 - **States**: loading (`viewer.loading`) · ready · error (`dataError.*`) ·
   font-withheld (`fontError.*`, **assertive**, poster not drawn)
-- **Interaction**: drag, wheel, pinch and keys move the image; `Escape` and `0`
-  return to the whole sky. No hover, no selection (BCR-0013)
+- **Interaction**: none. The image is static: no hover, selection, drag, wheel,
+  pinch or keys, and no zoom buttons (BCR-0013, FR-010). Zooming and exploring
+  live in the Explorer, reached from "Explore this sky"
 - **Image only**: the blit crops the composition to its square sky region, so
   the caption band the exports carry is never on the page
-- **Zoom is a blit of a cached composition**, not a re-render (BCR-0002)
-- **A11y**: `role="img"` with a title-aware `aria-label`, `viewer.canvasHint`
-  as its description, and the caption as `sr-only` text. The canvas takes focus
-  and answers to the arrow keys, plus, minus and 0
+- **A blit of a cached composition**, not a re-render (BCR-0002)
+- **A11y**: `role="img"` with a title-aware `aria-label` and the caption as
+  `sr-only` text. It is not focusable: there is nothing to operate
 - **Never**: take a colour from a UI token. Everything inside the canvas comes
   from `render-spec.json` (vision D19)
 
@@ -116,10 +116,12 @@ One disclosure trigger, three formats.
 
 ### `SiteFooter` — built
 
-- **Content**: `footer.version` (with `__APP_VERSION__`) · `footer.source` ·
-  `footer.attribution`
-- **No interactive state.** It used to hold a "Save image" button; that was the
-  zoom-dependent duplicate and is gone
+- **Content**: `footer.version` (with `__APP_VERSION__`), printed as the
+  footer's one link `starsky@v<version>` to the source · `footer.attribution`
+- **Actions on the right** (Viewer and Studio, FR-011): icon-only buttons for
+  Share, Export and the page's hand-off, as `PosterActions`. Share and Export
+  open a popover above their button, one at a time. On a phone the actions row
+  comes first, then the version and attribution
 - **Rule**: links the repository **root**, never `tree/<version>` — a tag may not
   exist for that version and the link would 404
 - **Attribution is legal text** and is never translated or abbreviated

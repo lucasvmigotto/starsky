@@ -23,14 +23,6 @@ test.describe("viewer announcements", () => {
     await expect(viewerStatus(page)).toHaveText(/poster ready/i);
   });
 
-  test("announces returning to the whole sky", async ({ page }) => {
-    await page.goto(viewerUrl(fragmentFor()));
-    await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
-    await page.getByRole("button", { name: "Zoom in" }).click();
-    await page.getByRole("button", { name: "Show the whole sky" }).click();
-    await expect(viewerStatus(page)).toHaveText(/whole sky/i);
-  });
-
   test("exposes the caption as text, not only in the canvas label", async ({ page }) => {
     await page.goto(viewerUrl(fragmentFor()));
     await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();

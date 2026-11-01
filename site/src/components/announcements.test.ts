@@ -24,10 +24,6 @@ describe("async announcements (T035)", () => {
   it("announces the poster when it is ready", () => {
     expect(viewer).toContain('t("viewer.announced.ready")');
   });
-
-  it("announces returning to the whole sky", () => {
-    expect(viewer).toContain('t("viewer.announced.viewReset")');
-  });
 });
 
 describe("alert vs. status (T034)", () => {

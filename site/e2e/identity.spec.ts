@@ -209,6 +209,108 @@ test.describe("the Viewer is the image", () => {
   });
 });
 
+test.describe("the Viewer fits a wide screen (FR-011)", () => {
+  for (const [width, height] of [
+    [1280, 720],
+    [1440, 900],
+    [1920, 1080],
+  ] as const) {
+    test(`${width.toString()}x${height.toString()}: no vertical scroll, the image sized from the space left`, async ({ page }) => {
+      test.skip(["mobile-chromium"].includes(test.info().project.name), "a desktop layout");
+      await page.setViewportSize({ width, height });
+      await page.goto(viewerUrl(fragmentFor()));
+      const canvas = page.getByRole("img", { name: /night sky poster/i });
+      await expect(canvas).toBeVisible();
+      await expect(page.locator("footer")).toBeVisible();
+      const fit = await page.evaluate(() => ({ scroll: document.documentElement.scrollHeight, inner: window.innerHeight }));
+      expect(fit.scroll).toBeLessThanOrEqual(fit.inner);
+      const box = await canvas.boundingBox();
+      if (!box) throw new Error("no canvas box");
+      expect(box.height).toBeGreaterThan(height * 0.35);
+      expect(box.width).toBeCloseTo(box.height, 0);
+      const foot = await page.locator("footer").boundingBox();
+      if (!foot) throw new Error("no footer box");
+      expect(box.y + box.height).toBeLessThanOrEqual(foot.y);
+      expect(foot.y + foot.height).toBeLessThanOrEqual(height + 1);
+    });
+  }
+});
+
+test.describe("the footer actions (FR-011)", () => {
+  const surfaces: [string, () => string, string][] = [
+    ["viewer", () => viewerUrl(fragmentFor()), "Explore this sky"],
+    ["studio", () => studioUrl(fragmentFor()), "Return to Explorer"],
+  ];
+  for (const [name, url, third] of surfaces) {
+    test(`${name}: icon buttons of one size on the right of the footer, popovers above, one at a time`, async ({ page }) => {
+      await page.goto(url());
+      await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
+      const footer = page.locator("footer");
+      const actions = footer.locator(".atlas-actions");
+      await expect(actions).toBeVisible();
+      const share = actions.locator("#share-trigger");
+      const exp = actions.locator("#export-trigger");
+      const other = actions.getByRole(name === "viewer" ? "button" : "link", { name: third });
+      const must = async (l: Locator): Promise<{ x: number; y: number; width: number; height: number }> => {
+        const box = await l.boundingBox();
+        if (!box) throw new Error("no box");
+        return box;
+      };
+      const boxes = [await must(share), await must(exp), await must(other)];
+      for (const b of boxes) {
+        expect(b.width).toBeCloseTo(44, 0);
+        expect(b.height).toBeCloseTo(44, 0);
+      }
+      for (const l of [share, exp, other]) {
+        await expect(l).toHaveAttribute("title", /.+/);
+        await expect(l.locator("svg")).toHaveCount(1);
+        expect((await l.innerText()).trim()).toBe("");
+      }
+      const vp = page.viewportSize();
+      if (!vp) throw new Error("no viewport");
+      const foot = await must(footer);
+      // One row, vertically aligned, and on the right.
+      expect(new Set(boxes.map((b) => Math.round(b.y))).size).toBe(1);
+      const actionsBox = await must(actions);
+      const right = actionsBox.x + actionsBox.width;
+      expect(right).toBeGreaterThan(vp.width - 80);
+      expect(boxes[0]?.y ?? 0).toBeGreaterThanOrEqual(foot.y);
+      // On a phone the actions come before the version and attribution; on desktop they share a row.
+      const info = await must(footer.locator(".atlas-footer-info"));
+      if (vp.width < 768) expect(info.y).toBeGreaterThan((boxes[0]?.y ?? 0) + 40);
+      else expect(Math.abs(info.y + info.height / 2 - ((boxes[0]?.y ?? 0) + 22))).toBeLessThan(60);
+
+      // Share opens a popover above its button, inside the viewport.
+      await expect(share).toHaveAttribute("aria-expanded", "false");
+      await share.click();
+      await expect(share).toHaveAttribute("aria-expanded", "true");
+      await expect(share).toHaveAttribute("aria-controls", "share-details");
+      const shareBox = await must(page.locator("#share-details"));
+      expect(shareBox.y + shareBox.height).toBeLessThanOrEqual(boxes[0]?.y ?? 0);
+      expect(shareBox.x).toBeGreaterThanOrEqual(0);
+      expect(shareBox.x + shareBox.width).toBeLessThanOrEqual(vp.width);
+      expect(shareBox.y).toBeGreaterThanOrEqual(0);
+      // Opening Export closes Share.
+      await exp.click();
+      await expect(exp).toHaveAttribute("aria-expanded", "true");
+      await expect(share).toHaveAttribute("aria-expanded", "false");
+      await expect(page.locator("#share-details")).toBeHidden();
+      const formats = await must(page.locator("#export-formats"));
+      expect(formats.x).toBeGreaterThanOrEqual(0);
+      expect(formats.x + formats.width).toBeLessThanOrEqual(vp.width);
+      expect(formats.y).toBeGreaterThanOrEqual(0);
+      expect(formats.y + formats.height).toBeLessThanOrEqual(boxes[1]?.y ?? 0);
+      // Escape closes it and returns focus to its button.
+      await page.getByRole("button", { name: "PNG", exact: true }).focus();
+      await page.keyboard.press("Escape");
+      await expect(page.locator("#export-formats")).toBeHidden();
+      await expect(exp).toBeFocused();
+      // Both live regions stay in the page.
+      await expect(actions.locator('[role="status"]')).toHaveCount(2);
+    });
+  }
+});
+
 test.describe("the Studio preview is the image", () => {
   test("shows the sky only, with the title and moment as text above it", async ({ page }) => {
     await page.goto(studioUrl(fragmentFor()));
@@ -219,12 +321,13 @@ test.describe("the Studio preview is the image", () => {
     expect(box.height / box.width).toBeCloseTo(1, 1);
     const heading = page.locator(".atlas-studio-preview .atlas-moment");
     await expect(heading).toContainText("E2E Night");
-    await expect(heading).toContainText("stereographic projection");
+    await expect(heading).toContainText("Jan 1, 2026");
+    await expect(heading).not.toContainText(/projection/i);
     const head = await heading.boundingBox();
     if (!head) throw new Error("no heading box");
     expect(head.y + head.height).toBeLessThanOrEqual(box.y);
     // It has the same panel and header as the Viewer.
-    await expect(page.locator(".atlas-panel.atlas-actions")).toBeVisible();
+    await expect(page.locator("footer .atlas-actions")).toBeVisible();
     await expect(page.locator(".atlas-site-name")).toHaveText("Starsky");
   });
 });
