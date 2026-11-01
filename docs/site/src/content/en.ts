@@ -28,7 +28,7 @@ export const overviewEn: PageContent = {
       heading: "Four surfaces",
       paragraphs: [
         "The flow is landing, then Explorer, then export. The landing asks one question, where do you want to explore the sky from, and its one action, Explore this sky, opens the Explorer. The Explorer (#e=) is the primary surface. The Poster Studio (#studio=) composes and exports a poster. The poster page (#s=) shows a shared poster exactly as it was made. Each has its own page in these docs.",
-        "Privacy: starsky stores nothing and has no accounts. Links carry their payload in the URL fragment, which the browser never sends to the host. The one exception to be aware of is OpenStreetMap: place search (Nominatim) and the landing map tiles run from your browser, so OpenStreetMap sees your IP address.",
+        "Privacy: starsky keeps no record of you and has no accounts. Links carry their payload in the URL fragment, which the browser never sends to the host. The one exception to be aware of is OpenStreetMap: place search (Nominatim) and the landing map tiles run from your browser, so OpenStreetMap sees your IP address.",
       ],
     },
     {
@@ -419,7 +419,7 @@ export const linksEn: PageContent = {
     {
       heading: "Privacy",
       paragraphs: [
-        "starsky stores nothing and has no accounts. A link carries its payload in the URL fragment, which the browser never sends to the host. Place search (Nominatim) and the landing map (OpenStreetMap tiles) run from your browser, so OpenStreetMap sees your IP address; the landing says so in one line. starsky has no credentials for either service.",
+        "starsky keeps no record of you and has no accounts. A link carries its payload in the URL fragment, which the browser never sends to the host. Place search (Nominatim) and the landing map (OpenStreetMap tiles) run from your browser, so OpenStreetMap sees your IP address. The product's Privacy page (`#privacy`, linked from the landing map hint) says so, and lists the two small things the browser keeps: the language choice and, per tab, the Explorer view to return to. starsky has no credentials for either service.",
       ],
     },
     {

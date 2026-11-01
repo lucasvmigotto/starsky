@@ -44,6 +44,16 @@ test.describe("accessibility", () => {
     ).toBe("");
   });
 
+  test("the privacy page has no serious or critical violations", async ({ page }) => {
+    await page.goto("/#privacy");
+    await expect(page.getByRole("heading", { level: 1, name: "Privacy" })).toBeVisible();
+    const results = await analyze(page);
+    const blocking = results.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(blocking.map((v) => `${v.id}: ${v.help}`).join("\n")).toBe("");
+  });
+
   test("the viewer has no serious or critical violations", async ({ page }) => {
     await page.goto(viewerUrl(fragmentFor()));
     await expect(

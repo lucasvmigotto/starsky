@@ -141,6 +141,6 @@ Later: WebGL renderer, only if Canvas 2D limits are hit (ADR-0007). A keyed geoc
   - Story export.
   - Four link fragments.
   - OpenStreetMap policy compliance is the top risk.
-  - The privacy line was added at the owner's request.
+  - The privacy line was added at the owner's request, then moved to its own page (`#privacy`, linked from the landing map hint) on the owner's request the same day, so it no longer takes a line of the landing.
 
   The glossary updates Viewer, Studio, Landing, Place, Shape and Figure in place. The domain-model terms were appended the same day.
