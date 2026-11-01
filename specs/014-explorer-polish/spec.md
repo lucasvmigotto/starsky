@@ -1,6 +1,6 @@
 # Feature: Explorer polish
 
-Feature: `014-explorer-polish` | Status: In progress | Depends: 012 | Issue: #57
+Feature: `014-explorer-polish` | Status: Implemented | Depends: 012 | Issue: #57
 
 Owner feedback after using the Explorer. It lands before 013 (#54), though numbered after it, because 013 keeps its reserved number.
 

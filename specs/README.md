@@ -21,7 +21,7 @@ budgets underway). `003` is retired. Nothing is Verified.
 | 010 | explorer-canvas | P1 | 009 | Implemented | N/A | Canvas 2D renderer, navigation, selection behind `#e=` (ADR-0007) |
 | 011 | explorer-ui | P1 | 010 | Implemented | N/A | Inspector, search, adaptive metadata, toolbar, layers, responsive layout, live link |
 | 012 | poster-studio | P1 | 011 | Implemented | N/A | Studio surface, Explorer and Viewer links, 9:16 export (BCR-0011, BCR-0012) |
-| 014 | explorer-polish | P1 | 012 | In progress | N/A | Idle collapse, horizon list, copy icon, star tooltip, brighter stars, controls, panel tab, rounder corners (lands before 013) |
+| 014 | explorer-polish | P1 | 012 | Implemented | N/A | Idle collapse, horizon list, copy icon, star tooltip, brighter stars, controls, panel tab, rounder corners (lands before 013) |
 
 ## Removed features
 
