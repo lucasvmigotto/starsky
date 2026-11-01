@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
   type LandingState,
+  creationOf,
   coordinateCheck,
   createInitialState,
   landingReducer,
@@ -129,5 +130,43 @@ describe("errors", () => {
     expect(s.error).toEqual({ kind: "when" });
     s = landingReducer(s, { type: "when-changed", when: "2026-06-01T22:00" });
     expect(s.error).toBeNull();
+  });
+});
+
+describe("creation prefill", () => {
+  it("fills what the creation holds and leaves the rest at the defaults", () => {
+    const s = createInitialState({
+      now: NOW,
+      zone: "UTC",
+      creation: { lat: 48.8584, lon: 2.2945, place: "Eiffel Tower", when_local: "2026-06-01T22:00", tz: "Europe/Paris", title: "Hi", magnitude_limit: 4.5 },
+    });
+    expect(s.location).toEqual({ lat: 48.8584, lon: 2.2945, place: "Eiffel Tower", source: "search" });
+    expect([s.latText, s.lonText]).toEqual(["48.8584", "2.2945"]);
+    expect(s).toMatchObject({ when: "2026-06-01T22:00", tz: "Europe/Paris", title: "Hi", mag: 4.5 });
+  });
+
+  it("treats coordinates without a place as typed, so only they are shown", () => {
+    const s = createInitialState({ now: NOW, zone: "UTC", creation: { lat: 1, lon: 2 } });
+    expect(s.location).toEqual({ lat: 1, lon: 2, place: null, source: "typed" });
+  });
+
+  it("an empty creation is the default form", () => {
+    expect(createInitialState({ now: NOW, zone: "UTC", creation: {} })).toEqual(start());
+  });
+
+  it("a zone without a moment shows now in that zone", () => {
+    const s = createInitialState({ now: NOW, zone: "UTC", creation: { tz: "Asia/Tokyo" } });
+    expect(s.when).toBe("2026-03-01T21:30");
+  });
+
+  it("creationOf writes the form back, leaving an empty title out", () => {
+    const s = start();
+    expect(creationOf(s)).toEqual({ place: "Times Square, New York, NY", lat: 40.758, lon: -73.9855, when_local: "2026-03-01T12:30", tz: "UTC", magnitude_limit: 5.8 });
+    expect(creationOf({ ...s, title: "A" }).title).toBe("A");
+  });
+
+  it("a creation survives the trip through the form", () => {
+    const c = { place: null, lat: -12.5, lon: 130.25, when_local: "2026-06-01T22:00", tz: "Asia/Tokyo", title: "T", magnitude_limit: 3 };
+    expect(creationOf(createInitialState({ now: NOW, zone: "UTC", creation: c }))).toEqual(c);
   });
 });

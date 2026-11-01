@@ -4,6 +4,7 @@
  * timers and the requests in flight.
  */
 import { DEFAULTS } from "../scene/defaults.ts";
+import type { Creation } from "./creation.ts";
 import {
   type CoordinateCheck,
   type LandingError,
@@ -61,21 +62,48 @@ function round(value: number): number {
   return Number(value.toFixed(DECIMALS));
 }
 
-export function createInitialState({ now, zone }: { now: Date; zone: string }): LandingState {
-  const lat = Number(DEFAULTS.lat);
-  const lon = Number(DEFAULTS.lon);
+export function createInitialState({
+  now,
+  zone,
+  creation = {},
+}: {
+  now: Date;
+  zone: string;
+  /** A validated `#c=` link's fields; whatever it leaves out stays at the default. */
+  creation?: Creation;
+}): LandingState {
+  const lat = creation.lat ?? Number(DEFAULTS.lat);
+  const lon = creation.lon ?? Number(DEFAULTS.lon);
+  const pinned = creation.lat !== undefined;
+  const tz = creation.tz ?? zone;
   return {
-    location: { lat, lon, place: DEFAULTS.place, source: "default" },
+    location: pinned
+      ? { lat, lon, place: creation.place ?? null, source: creation.place == null ? "typed" : "search" }
+      : { lat, lon, place: DEFAULTS.place, source: "default" },
     latText: coordText(lat),
     lonText: coordText(lon),
     coordsOpen: false,
-    when: formatLocalNow(now, zone),
-    tz: zone,
-    mag: DEFAULTS.magnitudeLimit,
-    title: DEFAULTS.title,
+    when: creation.when_local ?? formatLocalNow(now, tz),
+    tz,
+    mag: creation.magnitude_limit ?? DEFAULTS.magnitudeLimit,
+    title: creation.title ?? DEFAULTS.title,
     mapProblem: null,
     error: null,
   };
+}
+
+/** The form as a `#c=` creation: what a visitor would need to rebuild it. */
+export function creationOf(state: LandingState): Creation {
+  const out: Creation = {
+    place: state.location.place,
+    lat: state.location.lat,
+    lon: state.location.lon,
+  };
+  if (state.when !== "") out.when_local = state.when;
+  if (state.tz.trim() !== "") out.tz = state.tz.trim();
+  if (state.title !== "") out.title = state.title;
+  out.magnitude_limit = state.mag;
+  return out;
 }
 
 function withLocation(state: LandingState, location: LandingLocation): LandingState {

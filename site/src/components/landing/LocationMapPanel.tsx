@@ -33,7 +33,7 @@ export default function LocationMapPanel({
 }: Props): JSX.Element {
   return (
     <div className="landing-map">
-      <div role="region" aria-label={t("landing.map.label")}>
+      <div role="region" aria-label={t("landing.map.label")} className="landing-map-region">
         <LocationMap
           lat={lat}
           lon={lon}

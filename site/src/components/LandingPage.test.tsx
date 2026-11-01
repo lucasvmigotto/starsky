@@ -7,7 +7,8 @@ if ((globalThis as unknown as Record<string, unknown>)["document"] === undefined
 
 (globalThis as unknown as Record<string, unknown>)["__APP_VERSION__"] = "9.8.7";
 
-const { cleanup, fireEvent, render, screen } = await import("@testing-library/react");
+const { cleanup, fireEvent, render, screen, waitFor } = await import("@testing-library/react");
+const { encodeCreation, decodeCreation } = await import("../lib/landing/creation.ts");
 const { default: LandingPage } = await import("./LandingPage.tsx");
 const { decodeExplorer } = await import("../lib/sky/payload.ts");
 
@@ -42,7 +43,7 @@ describe("LandingPage structure (013)", () => {
 
   it("shows the search credit and the map hint, then the summary, in that order below the row", () => {
     render(<LandingPage />);
-    const text = document.querySelector(".landing-place")?.textContent ?? "";
+    const text = document.querySelector(".landing-card")?.textContent ?? "";
     const order = ["Search for a place", "Place search by Nominatim", "Click the map or drag the marker", "Exploring from"].map((m) => text.indexOf(m));
     expect(order.every((i) => i >= 0)).toBe(true);
     expect([...order].sort((x, y) => x - y)).toEqual(order);
@@ -86,7 +87,7 @@ describe("LandingPage structure (013)", () => {
     render(<LandingPage />);
     const pair = document.getElementById("landing-when")?.closest(".atlas-form-pair");
     expect(pair?.querySelector("#landing-tz")).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Detect" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Detect my timezone" })).toBeDefined();
   });
 
   it("starts at the current moment in the detected zone", () => {
@@ -180,8 +181,9 @@ describe("LandingPage actions (013)", () => {
   it("Explore this sky is the only action: no poster button", () => {
     render(<LandingPage />);
     expect(screen.queryByRole("button", { name: /poster/i })).toBeNull();
-    const actions = document.querySelector(".landing-actions");
-    expect(actions?.querySelectorAll("button")).toHaveLength(1);
+    // The copy-link icon is not a second call to action.
+    expect(document.querySelectorAll(".landing-actions .atlas-btn")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Copy link" }).className).toContain("atlas-btn-icon");
   });
 
   it("names an unknown timezone and stays on the page", () => {
@@ -227,5 +229,85 @@ describe("LandingPage identity (013, 015)", () => {
     expect(screen.getByRole("link", { name: "Starsky" }).getAttribute("href")).toBe("#/");
     expect(screen.getByRole("link", { name: "starsky@v9.8.7" })).toBeDefined();
     expect(document.querySelector("main")).not.toBeNull();
+  });
+});
+
+describe("LandingPage #c= creation link (013)", () => {
+  it("prefills the fields and the place from the link, with no geocoder call", () => {
+    const calls: string[] = [];
+    const real = globalThis.fetch;
+    globalThis.fetch = ((input: unknown) => {
+      calls.push(String(input));
+      return Promise.reject(new Error("no network in tests"));
+    }) as typeof fetch;
+    try {
+      window.location.hash = `#c=${encodeCreation({ place: "Eiffel Tower, Paris", lat: 48.8584, lon: 2.2945, when_local: "2026-06-01T22:00", tz: "Europe/Paris", title: "Our first flat", magnitude_limit: 4.5 })}`;
+      render(<LandingPage />);
+      expect(screen.getByLabelText<HTMLInputElement>("Search for a place").value).toBe("Eiffel Tower, Paris");
+      expect(screen.getByLabelText<HTMLInputElement>("Title").value).toBe("Our first flat");
+      expect(screen.getByLabelText<HTMLInputElement>("Date and time").value).toBe("2026-06-01T22:00");
+      expect(screen.getByLabelText<HTMLInputElement>("Timezone").value).toBe("Europe/Paris");
+      expect(document.body.textContent).toContain("48.8584°N, 2.2945°E");
+      expect(calls).toEqual([]);
+    } finally {
+      globalThis.fetch = real;
+    }
+  });
+
+  it("shows coordinates alone when the link has none of a place", () => {
+    window.location.hash = `#c=${encodeCreation({ lat: -12.5, lon: 130.25 })}`;
+    render(<LandingPage />);
+    expect(document.querySelector(".landing-selected-name")).toBeNull();
+    expect(document.querySelector(".landing-selected-coords")?.textContent).toBe("12.5000°S, 130.2500°E");
+  });
+
+  it("keeps what is valid when one field is not", () => {
+    window.location.hash = `#c=${encodeCreation({ title: "Kept", tz: "Mars/Olympus" })}`;
+    render(<LandingPage />);
+    expect(screen.getByLabelText<HTMLInputElement>("Title").value).toBe("Kept");
+    expect(screen.getByLabelText<HTMLInputElement>("Timezone").value).not.toBe("Mars/Olympus");
+    expect(screen.queryByText("That link could not be read, so the form is blank.")).toBeNull();
+  });
+
+  it("an unreadable link leaves a blank form and says so, politely", () => {
+    window.location.hash = "#c=not-a-payload";
+    render(<LandingPage />);
+    const notice = screen.getByText("That link could not be read, so the form is blank.");
+    expect(notice.getAttribute("role")).toBe("status");
+    expect(screen.getByLabelText<HTMLInputElement>("Title").value).toBe("");
+    expect(screen.getByRole("button", { name: "Explore this sky" })).toBeDefined();
+  });
+
+  it("writes the form to #c= once it rests, with replaceState and no new history entry", async () => {
+    window.location.hash = "";
+    const calls: string[] = [];
+    const real = window.history.replaceState.bind(window.history);
+    const length = window.history.length;
+    window.history.replaceState = (state: unknown, unused: string, url?: string | URL | null) => {
+      calls.push(String(url));
+      real(state, unused, url);
+    };
+    try {
+      render(<LandingPage />);
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      expect(calls).toEqual([]);
+      fireEvent.change(screen.getByLabelText("Title"), { target: { value: "A" } });
+      fireEvent.change(screen.getByLabelText("Title"), { target: { value: "AB" } });
+      expect(calls).toEqual([]);
+      await waitFor(() => {
+        expect(calls).toHaveLength(1);
+      });
+      expect(calls[0]?.startsWith("#c=")).toBe(true);
+      const decoded = decodeCreation((calls[0] ?? "").slice(3));
+      expect(decoded.status === "ok" && decoded.creation.title).toBe("AB");
+      expect(window.history.length).toBe(length);
+    } finally {
+      window.history.replaceState = real;
+    }
+  });
+
+  it("offers a copy-link icon for the pre-filled form", () => {
+    render(<LandingPage />);
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeDefined();
   });
 });

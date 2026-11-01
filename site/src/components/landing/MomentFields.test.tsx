@@ -21,7 +21,7 @@ describe("MomentFields", () => {
     expect(pair?.querySelector("#landing-tz")).not.toBeNull();
     expect(pair?.querySelector("label[for='landing-when']")?.textContent).toBe("Date and time");
     expect(pair?.querySelector("label[for='landing-tz']")?.textContent).toBe("Timezone");
-    expect(screen.getByRole("button", { name: "Detect" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Detect my timezone" })).toBeDefined();
   });
 
   it("puts an optional Title first, above the date row, and reports it", () => {
@@ -42,6 +42,15 @@ describe("MomentFields", () => {
     expect(title.getAttribute("aria-describedby")).toBe(screen.getByRole("alert").id);
   });
 
+  it("Detect is an icon button, named and titled, with no visible text", () => {
+    render(<MomentFields title="" titleError={null} onTitle={() => undefined} when="2026-01-01T00:00" tz="UTC" onWhen={() => undefined} onTz={() => undefined} onDetect={() => undefined} />);
+    const button = screen.getByRole("button", { name: "Detect my timezone" });
+    expect(button.getAttribute("title")).toBe("Detect my timezone");
+    expect(button.className).toContain("atlas-btn-icon");
+    expect(button.querySelector("svg[data-icon=locate]")).not.toBeNull();
+    expect(button.textContent).toBe("");
+  });
+
   it("reports edits and Detect", () => {
     const seen: string[] = [];
     render(
@@ -58,7 +67,7 @@ describe("MomentFields", () => {
     );
     fireEvent.change(screen.getByLabelText("Date and time"), { target: { value: "2026-02-03T04:05" } });
     fireEvent.change(screen.getByLabelText("Timezone"), { target: { value: "Asia/Tokyo" } });
-    fireEvent.click(screen.getByRole("button", { name: "Detect" }));
+    fireEvent.click(screen.getByRole("button", { name: "Detect my timezone" }));
     expect(seen).toEqual(["when:2026-02-03T04:05", "tz:Asia/Tokyo", "detect"]);
   });
 });

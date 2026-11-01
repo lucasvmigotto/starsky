@@ -285,12 +285,20 @@ link — P1 — never sees the landing at all.
 │ Exploring from                                             │
 │ Newark • 40.7357°N, 74.1724°W                              │
 │ Title (optional)                                           │
-│ [ Date and time          ] [ Timezone          ] [Detect]  │
+│ [ Date and time          ] [ Timezone          ] [◎]     │
 │ > Advanced   (limiting magnitude only)                     │
 │                    [ Explore this sky ]                    │
 └────────────────────────────────────────────────────────────┘
 Just browsing? Load a random sky.
 ```
+
+From 1024 px the card is two columns, so the landing fits one screen: the search
+row, the map and its two hints on the left; the summary, Title, moment, Advanced
+and the action on the right. Detect is a locate icon button beside the timezone.
+`#c=<fragment>` opens the landing pre-filled (a creation link, see
+`docs/product/architecture.md`); the page keeps it in step with the form, and a
+copy-link icon beside the action shares it. A link it cannot read leaves a blank
+form with a short notice.
 
 With the Coordinates switch on, Latitude and Longitude replace the search field
 in place; the map stays and follows them. The summary reads
@@ -783,11 +791,12 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.render.glow` | Glow intensity |
 | `landing.browse` | Just browsing? |
 | `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
+| `landing.creation.invalid` | That link could not be read, so the form is blank. |
 | `landing.explore` | Explore this sky |
 | `landing.error.when` | Pick a date and time for the sky. |
 | `landing.error.timezone` | Unknown timezone {zone}. Use an IANA name like "America/New_York". |
 | `landing.tz.label` | Timezone |
-| `landing.tz.detect` | Detect |
+| `landing.tz.detect` | Detect my timezone |
 | `landing.coords.toggle` | Coordinates |
 | `landing.coords.lat` | Latitude |
 | `landing.coords.lon` | Longitude |

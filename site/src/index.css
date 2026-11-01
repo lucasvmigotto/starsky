@@ -1712,3 +1712,65 @@ select.atlas-form-input option {
   align-items: center;
   gap: var(--space-3);
 }
+
+/* Landing page (013): a tighter frame, and a two-column card on large screens so it fits one screen. */
+.landing-main {
+  padding-block: var(--space-4) var(--space-5);
+}
+
+.landing-page .atlas-moment {
+  margin-bottom: var(--space-4);
+}
+
+.landing-page .atlas-footer {
+  padding-block: var(--space-3);
+}
+
+.landing-card-notice {
+  grid-column: 1 / -1;
+}
+
+.landing-side {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+}
+
+/* The action and its copy-link icon share a line. */
+.landing-actions {
+  flex-direction: row;
+  justify-content: center;
+}
+
+@media (min-width: 64rem) {
+  .landing-page .atlas-form-wrap {
+    max-width: 62rem;
+    margin-top: 0;
+  }
+
+  .landing-card {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: stretch;
+  }
+
+  /* The search row on top; the map and its hints take the rest of the column's height. */
+  .landing-place {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .landing-map {
+    grid-template-rows: minmax(0, 1fr) auto auto auto;
+    height: 100%;
+  }
+
+  .landing-map-region {
+    height: 100%;
+    min-height: 320px;
+  }
+
+  .landing-map-box {
+    height: 100%;
+    min-height: 320px;
+  }
+}

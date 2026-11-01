@@ -5,6 +5,7 @@
  */
 import type { JSX } from "react";
 import { t } from "../../i18n/index.ts";
+import { Icon } from "../icons.tsx";
 import { MAX_TEXT_CHARS } from "../../lib/landing/payload.ts";
 
 interface Props {
@@ -72,8 +73,14 @@ export default function MomentFields({ title, titleError, onTitle, when, tz, onW
               onTz(event.target.value);
             }}
           />
-          <button type="button" className="atlas-btn-ghost" onClick={onDetect}>
-            {t("landing.tz.detect")}
+          <button
+            type="button"
+            className="atlas-btn-icon"
+            aria-label={t("landing.tz.detect")}
+            title={t("landing.tz.detect")}
+            onClick={onDetect}
+          >
+            <Icon name="locate" />
           </button>
         </div>
       </div>

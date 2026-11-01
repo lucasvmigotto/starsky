@@ -2,15 +2,19 @@
  * The first page (013-location-first): one question, "where do you want to
  * explore the sky from?", answered by search, the map or coordinates. The form
  * state is one reducer in `lib/landing`; this component only wires it to the
- * controls. Poster choices live in the Studio.
+ * controls. Poster choices live in the Studio. The form is kept in `#c=` (replaceState,
+ * debounced) so a filled-in landing can be shared; the link is read once, on arrival.
  */
-import { useReducer } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { JSX } from "react";
 import { t } from "../i18n/index.ts";
+import { absoluteLink } from "../lib/explorer/link.ts";
+import { creationFragmentFromHash, decodeCreation, encodeCreation } from "../lib/landing/creation.ts";
 import { defaultTimezone, exploreHash, undrawableTitleCharacter } from "../lib/landing/payload.ts";
 import {
   type FormError,
   createInitialState,
+  creationOf,
   landingReducer,
   toLandingInput,
 } from "../lib/landing/state.ts";
@@ -19,6 +23,7 @@ import { fragmentFromHash } from "../lib/share.ts";
 import { randomSampleFragment } from "../lib/site.ts";
 import SiteFooter from "./SiteFooter.tsx";
 import SiteHeader from "./SiteHeader.tsx";
+import ExplorerCopyLink from "./explorer/ExplorerCopyLink.tsx";
 import AdvancedFields from "./landing/AdvancedFields.tsx";
 import CoordinateFields from "./landing/CoordinateFields.tsx";
 import CoordinateSwitch from "./landing/CoordinateSwitch.tsx";
@@ -46,13 +51,40 @@ function goToSample() {
   window.location.hash = `#s=${randomSampleFragment(fragmentFromHash(window.location.hash))}`;
 }
 
+/** How long the form rests before `#c=` follows it. */
+export const CREATION_SYNC_MS = 300;
+
 export default function LandingPage(): JSX.Element {
+  const [arrival] = useState(() => {
+    const fragment = creationFragmentFromHash(window.location.hash);
+    return fragment === null ? null : decodeCreation(fragment);
+  });
   const [state, dispatch] = useReducer(landingReducer, undefined, () =>
-    createInitialState({ now: new Date(), zone: defaultTimezone() }),
+    createInitialState({
+      now: new Date(),
+      zone: defaultTimezone(),
+      ...(arrival?.status === "ok" ? { creation: arrival.creation } : {}),
+    }),
   );
   const { location } = state;
   const titleCharacter = undrawableTitleCharacter(state.title);
   const message = state.error === null ? null : errorText(state.error);
+
+  const fragment = useMemo(() => encodeCreation(creationOf(state)), [state]);
+  const baseline = useRef<string | null>(null);
+  useEffect(() => {
+    // What the page opened with is already in the address (or is the plain landing).
+    baseline.current ??= fragment;
+    if (fragment === baseline.current) return;
+    const timer = window.setTimeout(() => {
+      window.history.replaceState(window.history.state, "", `#c=${fragment}`);
+    }, CREATION_SYNC_MS);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [fragment]);
+  const latestFragment = useRef(fragment);
+  latestFragment.current = fragment;
 
   const explore = (): void => {
     const input = toLandingInput(state);
@@ -69,16 +101,21 @@ export default function LandingPage(): JSX.Element {
   };
 
   return (
-    <div className="atlas-page">
+    <div className="atlas-page landing-page">
       <SiteHeader />
-      <main className="atlas-main">
+      <main className="atlas-main landing-main">
         <div className="atlas-form-wrap">
           <div className="atlas-moment">
             <h1 className="font-display text-3xl leading-tight sm:text-4xl">{t("landing.title")}</h1>
             <p className="mt-2 text-sm text-text-muted">{t("landing.subtitle")}</p>
           </div>
 
-          <div className="atlas-panel atlas-form">
+          <div className="atlas-panel atlas-form landing-card">
+            {arrival?.status === "invalid" && (
+              <p role="status" className="atlas-form-hint landing-card-notice">
+                {t("landing.creation.invalid")}
+              </p>
+            )}
             <div className="landing-place">
               <div className="landing-place-row">
                 <div className="landing-place-field">
@@ -118,49 +155,54 @@ export default function LandingPage(): JSX.Element {
                   dispatch({ type: "map-problem", problem });
                 }}
               />
-              <LocationSummary location={location} />
             </div>
-            <MomentFields
-              title={state.title}
-              titleError={titleCharacter === null ? null : unsupportedCharacterMessage(titleCharacter)}
-              onTitle={(title) => {
-                dispatch({ type: "title-changed", title });
-              }}
-              when={state.when}
-              tz={state.tz}
-              onWhen={(when) => {
-                dispatch({ type: "when-changed", when });
-              }}
-              onTz={(tz) => {
-                dispatch({ type: "tz-changed", tz });
-              }}
-              onDetect={() => {
-                dispatch({ type: "tz-changed", tz: defaultTimezone() });
-              }}
-            />
-            <AdvancedFields
-              mag={state.mag}
-              onMag={(mag) => {
-                dispatch({ type: "mag-changed", mag });
-              }}
-            />
-
-            {message !== null && (
-              <p role="alert" className="atlas-form-error">
-                {message}
-              </p>
-            )}
-
-            <div className="landing-actions">
-              <button
-                type="button"
-                className="atlas-btn"
-                onClick={() => {
-                  explore();
+            <div className="landing-side">
+              <LocationSummary location={location} />
+              <MomentFields
+                title={state.title}
+                titleError={titleCharacter === null ? null : unsupportedCharacterMessage(titleCharacter)}
+                onTitle={(title) => {
+                  dispatch({ type: "title-changed", title });
                 }}
-              >
-                {t("landing.explore")}
-              </button>
+                when={state.when}
+                tz={state.tz}
+                onWhen={(when) => {
+                  dispatch({ type: "when-changed", when });
+                }}
+                onTz={(tz) => {
+                  dispatch({ type: "tz-changed", tz });
+                }}
+                onDetect={() => {
+                  dispatch({ type: "tz-changed", tz: defaultTimezone() });
+                }}
+              />
+              <AdvancedFields
+                mag={state.mag}
+                onMag={(mag) => {
+                  dispatch({ type: "mag-changed", mag });
+                }}
+              />
+
+              {message !== null && (
+                <p role="alert" className="atlas-form-error">
+                  {message}
+                </p>
+              )}
+
+              <div className="landing-actions">
+                <button
+                  type="button"
+                  className="atlas-btn"
+                  onClick={() => {
+                    explore();
+                  }}
+                >
+                  {t("landing.explore")}
+                </button>
+                <ExplorerCopyLink
+                  getLink={() => absoluteLink(`#c=${latestFragment.current}`, window.location)}
+                />
+              </div>
             </div>
           </div>
 

@@ -124,6 +124,7 @@ describe("copy", () => {
     // 212 → 207 for the always-visible map and the Coordinates switch: `landing.map.show`,
     // `.hide`, `.expand`, `.collapse` and `.skip` retire, and 212 → 206 with `landing.poster`
     // ("Make a poster instead": Explore this sky is the only action) (013-location-first).
-    expect(copyKeys().length).toBe(206);
+    // 206 → 207 for the unreadable `#c=` link notice (013-location-first).
+    expect(copyKeys().length).toBe(207);
   });
 });
