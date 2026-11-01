@@ -120,22 +120,42 @@ bad deploy is reverted by re-pointing the R2 prefix (see `docs/product/adr/0002`
 3. **Data**: `starsky catalog` is deterministic for a given source snapshot;
    re-run it at the older commit.
 
-### Place lookup sends no credentials, and needs none
+### Place lookup and map tiles send no credentials, and need none
 
-Nominatim's policy asks for identification. The **browser cannot send a
-`User-Agent`** — it is a forbidden header — so `site/src/lib/geocode.ts` relies
-on the automatic `Referer` instead, which is the documented browser-side
-compromise. The request fires at most once per form submit, in place mode only,
-which keeps it inside the service's ~1 req/s expectation.
+Both come from OpenStreetMap and are bound by its usage policies
+(https://operations.osmfoundation.org/policies/nominatim/ and
+https://operations.osmfoundation.org/policies/tiles/, read 2026-11-01). Being
+blocked is the product's top risk (`architecture.md`, Risks).
 
-Consequently **no CI secret or variable exists for it.** The
-`STARSKY_USER_AGENT_CONTACT` setting was retired along with the Python geocoder
-(BCR-0005): nothing reads it, and nothing could. Live coverage is restored
-where the integration now lives — `site/e2e/j8-live-place-lookup.spec.ts`, an
-opt-in journey that runs on `main` (see `site_e2e.yml`'s `live-smoke` job)
-against the real service.
+- **Identification.** The browser cannot send a `User-Agent` (a forbidden
+  header), so requests carry the automatic `Referer`. No `Referrer-Policy` may
+  strip it, so none is set.
+- **Nominatim.** A request goes out only when the visitor presses Enter, clicks
+  the search button or leaves the search field with new text. Typing alone
+  never sends one, since the policy bans auto-complete. Results are cached per
+  query for the page session, and requests are at least 1 s apart (#65).
+- **Tiles.** Requested only on the landing page, only for the visible view,
+  with no prefetch or offline storage. The attribution stays visible on the
+  map, with a "Report a problem" link to `openstreetmap.org/fixthemap`
+  (ADR-0008).
+- **Privacy.** The landing tells visitors in one line that OpenStreetMap sees
+  their IP address and that starsky stores nothing.
+
+Consequently **no CI secret or variable exists for either.** The
+`STARSKY_USER_AGENT_CONTACT` setting was retired with the Python geocoder
+(BCR-0005). Automated tests never reach either host: the e2e fixtures stub
+both and fail on anything unstubbed (`site/e2e/network-guard.spec.ts`). The
+one exception is `site/e2e/j8-live-place-lookup.spec.ts`, an opt-in single
+search that runs on pushes to `main` and manual dispatch (`site_e2e.yml`'s
+`live-smoke` job). That is one request per release, far inside the policy.
 
 ## Known gaps
+
+- If OpenStreetMap blocks or rate-limits the site, place search and the
+  landing map stop working until the configured URL is switched to a keyed
+  provider or self-hosted tiles (`architecture.md`, Evolution path). Coordinates
+  keep working meanwhile. No alert exists for this today; the `live-smoke` job
+  on `main` is the only early signal.
 
 - R2 auth is being re-scoped: the token needs ListObjects on both buckets,
   and the per-site bucket variables (`..._BUCKET_STARSKY`,

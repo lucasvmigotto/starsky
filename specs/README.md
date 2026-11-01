@@ -39,6 +39,14 @@ budgets underway). `003` is retired. Nothing is Verified.
 - **Implemented** — the code path exists and runs (evidence in the feature).
 - **Verified** — e2e tests pass in CI. Nothing is Verified yet.
 
-`contracts/openapi.yaml` remains **N/A** — the architecture has no API
-(ADR-0001). The seams are `render-spec.json`, the `#s=` share payload, and the
-exported JSON shapes documented in `002-catalog-cli/contracts/seam.md`.
+`contracts/openapi.yaml` remains **N/A**, re-verified 2026-11-01: the
+architecture has no API (ADR-0001), the repo has no server route, and the only
+outbound calls are to third-party OpenStreetMap services (Nominatim, tiles;
+ADR-0008), which we consume and don't define. `asyncapi.yaml` is N/A too, since
+no events leave the browser. The seams are:
+
+- `render-spec.json`, the poster render contract.
+- The four versioned URL fragments, `#s=`, `#studio=`, `#e=` and `#c=`, whose
+  invariants are in `docs/product/domain-model.md` (Links context).
+- The exported JSON shapes (`catalog.json`, `constellations.json`,
+  `names.json`) documented in `002-catalog-cli/contracts/seam.md`.
