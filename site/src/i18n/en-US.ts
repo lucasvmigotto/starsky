@@ -213,7 +213,7 @@ export const enUS = {
   "explorer.list.title": "Constellations",
   "explorer.list.above": "Above the horizon ({count})",
   "explorer.list.below": "Below the horizon ({count})",
-  "explorer.list.partly": "partly",
+  "explorer.list.partly": "partly above the horizon",
   "explorer.search.input": "Search constellations and stars",
   "explorer.search.placeholder": "Name, abbreviation or HIP number",
   "explorer.search.results": "Search results",

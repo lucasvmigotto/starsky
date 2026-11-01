@@ -171,8 +171,7 @@ function ConstellationGroup({ titleId, heading, items, open, selection, onToggle
               }}
             >
               <span>{item.name}</span>
-              {item.partly && <span className="explorer-list-partly">{t("explorer.list.partly")}</span>}
-              <span className="explorer-list-abbr">{item.abbr}</span>
+              {item.partly && <span className="sr-only"> {t("explorer.list.partly")}</span>}
             </button>
           </li>
         ))}

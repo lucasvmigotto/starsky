@@ -167,8 +167,12 @@ describe("ExplorerInspector, nothing selected", () => {
     const list = screen.getByRole("list", { name: /Above the horizon/ });
     const names = within(list)
       .getAllByRole("button")
-      .map((b) => b.textContent);
-    expect(names).toEqual(["CruxpartlyCru", "OrionpartlyOri"]);
+      .map((b) => b.querySelector("span:not(.sr-only)")?.textContent);
+    expect(names).toEqual(["Crux", "Orion"]);
+    // The visible text is the name and nothing else; no abbreviation, no "partly".
+    for (const button of within(list).getAllByRole("button")) {
+      expect(button.querySelectorAll("span:not(.sr-only)")).toHaveLength(1);
+    }
     fireEvent.click(within(list).getByRole("button", { name: /Orion/ }));
     expect(calls.chosen).toEqual(["CON:Ori"]);
   });
@@ -201,12 +205,15 @@ describe("ExplorerInspector, constellations by the horizon", () => {
     expect(group(/^Below the horizon/).open).toBe(false);
   });
 
-  it("says partly in words, only for a constellation that is partly below", () => {
+  it("says partly above the horizon to screen readers only, and only for a partly-below constellation", () => {
     mount(null);
     const above = screen.getByRole("list", { name: /Above the horizon/ });
-    expect(within(above).getAllByText("partly")).toHaveLength(2);
+    const hidden = within(above).getAllByText("partly above the horizon");
+    expect(hidden).toHaveLength(2);
+    for (const el of hidden) expect(el.className).toContain("sr-only");
+    expect(within(above).getByRole("button", { name: "Orion partly above the horizon" })).toBeTruthy();
     const below = group(/^Below the horizon/);
-    expect(within(below).queryByText("partly")).toBeNull();
+    expect(within(below).queryByText("partly above the horizon")).toBeNull();
   });
 
   it("lets a constellation below the horizon be chosen", () => {

@@ -313,10 +313,13 @@ test.describe("constellation list by the horizon", () => {
     await below.locator("summary").click();
     await expect(below.locator(".explorer-list-item")).toHaveCount(nBelow);
     expect(nAbove + nBelow).toBe(88);
-    // "partly" is text, in the top group only.
-    expect(await above.locator(".explorer-list-partly").count()).toBeGreaterThan(0);
-    await expect(above.locator(".explorer-list-partly").first()).toHaveText("partly");
-    await expect(below.locator(".explorer-list-partly")).toHaveCount(0);
+    // Names only on screen; "partly above the horizon" is hidden text, in the top group only.
+    const partly = above.locator(".explorer-list-item .sr-only");
+    expect(await partly.count()).toBeGreaterThan(0);
+    await expect(partly.first()).toHaveText("partly above the horizon");
+    await expect(partly.first()).not.toBeVisible();
+    await expect(below.locator(".explorer-list-item .sr-only")).toHaveCount(0);
+    await expect(above.locator(".explorer-list-item").first().locator("span:not(.sr-only)")).toHaveCount(1);
   });
 
   test("the order is by name inside each group", async ({ page }) => {

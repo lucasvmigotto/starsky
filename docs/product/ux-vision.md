@@ -1005,7 +1005,7 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 | `explorer.list.title` | Constellations |
 | `explorer.list.above` | Above the horizon ({count}) |
 | `explorer.list.below` | Below the horizon ({count}) |
-| `explorer.list.partly` | partly |
+| `explorer.list.partly` | partly above the horizon *(visually hidden, read by screen readers)* |
 | `explorer.search.input` | Search constellations and stars |
 | `explorer.search.placeholder` | Name, abbreviation or HIP number |
 | `explorer.search.results` | Search results |

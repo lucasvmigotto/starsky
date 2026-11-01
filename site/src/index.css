@@ -1204,7 +1204,7 @@ select.atlas-form-input option {
 
 .explorer-list-item {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   width: 100%;
   align-items: center;
   min-height: 36px;
@@ -1221,16 +1221,6 @@ select.atlas-form-input option {
 .explorer-list-item[aria-current="true"] {
   background: var(--color-raised);
   border-color: var(--color-accent);
-}
-
-.explorer-list-abbr {
-  color: var(--color-text-muted);
-}
-
-.explorer-list-partly {
-  margin-inline: auto var(--space-2);
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
 }
 
 .explorer-group {
