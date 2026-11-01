@@ -405,7 +405,7 @@ test.describe("the shared form layout (FR-009)", () => {
     const zone = page.getByLabel("Timezone", { exact: true });
     await expect(when).toBeVisible();
     await expect(zone).toBeVisible();
-    await expect(page.getByRole("button", { name: "Detect" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Detect my timezone" })).toBeVisible();
     if (wide(page)) expect(await top(when)).toBe(await top(zone));
     else expect(await top(zone)).toBeGreaterThan(await top(when));
   });

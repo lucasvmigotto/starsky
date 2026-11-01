@@ -1,6 +1,6 @@
 # Feature: Location-first creation
 
-Feature: `013-location-first` | Status: In progress | Depends: 015 | Issue: #54 | Direction: BCR-0011, ADR-0008
+Feature: `013-location-first` | Status: Implemented | Depends: 015 | Issue: #54 | Direction: BCR-0011, ADR-0008
 
 ## Why
 
@@ -46,6 +46,9 @@ Revised after the owner tried the page (see "Owner direction" at the end): the m
 - **FR-005 Network in tests:** e2e stubs tile and geocoder requests (`page.route`); the real-Nominatim job keeps working. No test reaches tile.openstreetmap.org.
 - **FR-006 Accessibility:** the map has a label and is skippable; every map action has a keyboard equivalent (search, the Coordinates switch); the map container is not a tab stop; the marker is not the only way to set a place. axe clean, keyboard journey, 360/390 px without horizontal overflow.
 - **FR-009 Layout:** nothing positioned absolutely may cover the summary; the map box keeps its size while loading, failed or clicked.
+- **FR-010 One screen:** from 1024 px wide the card has two columns (search row, map and hints on the left; summary, Title, moment, Advanced and the action on the right) and the landing, with Advanced closed, needs no page scroll at 1440x900 or 1920x1080. Phones and tablets keep one column and may scroll.
+- **FR-011 Detect** is an icon button (locate), named and titled "Detect my timezone", with the same behaviour as before.
+- **FR-012 `#c=` creation link:** `#c=<fragment>` opens the landing pre-filled. Same encoding as `#s=`/`#e=`, `{v:1}` with optional `place`, `lat`, `lon`, `when_local` (wall time in `tz`), `tz`, `title`, `magnitude_limit` (`site/src/lib/landing/creation.ts`, no React). Decoding is per field: an invalid field (range, IANA zone, date, title length or glyphs, magnitude) is dropped and the rest fills the form; latitude and longitude, and a place, stand or fall together. A wrong version or an unreadable payload leaves a blank form and a polite notice. Prefill makes no geocoder call. The page keeps `#c=` in step with the form by `history.replaceState`, debounced about 300 ms, only once the form differs from what it opened with, adding no history entries. A copy-link icon beside "Explore this sky" copies it. `#c=` collides with neither `#s=`, `#e=` nor `#studio=`, and the HashRouter takes no basename.
 - **FR-007 Budget:** main chunk does not grow by Leaflet; report the lazy chunk size; the bundle budget passes.
 - **FR-008 Docs:** vision (landing flow, copy tables), README quickstart line if it mentions the form, ADR-0008 cross-reference.
 

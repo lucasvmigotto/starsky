@@ -14,7 +14,7 @@ const SEARCH = "Search for a place";
 async function startLanding(page: import("@playwright/test").Page): Promise<void> {
   await page.goto("/");
   await page.getByLabel("Date and time").fill("2026-01-01T00:00");
-  await page.getByLabel("Timezone").fill("UTC");
+  await page.getByLabel("Timezone", { exact: true }).fill("UTC");
 }
 
 test.describe("J4 place lookup", () => {
@@ -43,13 +43,13 @@ test.describe("J4 place lookup", () => {
     await stubSearch(page, { status: 500 });
 
     await startLanding(page);
-    const urlBefore = page.url();
     await page.getByRole("combobox", { name: SEARCH }).fill("Nowhere At All");
 
     await expect(
       page.getByRole("status").filter({ hasText: "Place search is unavailable right now." }),
     ).toBeVisible();
-    expect(page.url()).toBe(urlBefore);
+    // Still on the landing: only the form's own #c= may be in the address.
+    expect(new URL(page.url()).hash).not.toMatch(/^#(e|s|studio)=/);
     await expect(page.getByRole("combobox", { name: SEARCH })).toBeEnabled();
     await expect(page.getByRole("button", { name: "Explore this sky" })).toBeEnabled();
   });

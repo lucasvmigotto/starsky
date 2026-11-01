@@ -40,7 +40,7 @@ test.describe("J8 live place lookup", () => {
     await page.goto("/");
 
     await page.getByLabel("Date and time").fill("2026-01-01T00:00");
-    await page.getByLabel("Timezone").fill("UTC");
+    await page.getByLabel("Timezone", { exact: true }).fill("UTC");
     await page
       .getByRole("combobox", { name: "Search for a place" })
       .fill("Times Square, New York, NY");

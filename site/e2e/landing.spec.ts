@@ -6,6 +6,7 @@
  */
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
+import { creationFragmentFromHash, decodeCreation, encodeCreation } from "../src/lib/landing/creation.ts";
 import { decodeExplorer } from "../src/lib/sky/payload.ts";
 import { decodeDraft } from "../src/lib/studio/draft.ts";
 import { TILE_HOST, expect, stubSearch, test, wakeChrome } from "./fixtures.ts";
@@ -46,7 +47,7 @@ const coordinatesSwitch = (page: Page) => page.getByRole("switch", { name: "Coor
 /** A fixed moment, so the link does not depend on the clock. */
 async function chooseMoment(page: Page): Promise<void> {
   await page.getByLabel("Date and time").fill("2026-01-01T00:00");
-  await page.getByLabel("Timezone").fill("UTC");
+  await page.getByLabel("Timezone", { exact: true }).fill("UTC");
 }
 
 function hashPayload(page: Page): ReturnType<typeof decodeExplorer> {
@@ -60,6 +61,8 @@ async function expectExplorer(page: Page): Promise<void> {
 
 test.describe("the question", () => {
   test("asks where to explore from: search with the Coordinates switch, the map right under, the moment, one button", async ({ page, network }) => {
+    // One column: the order down the page is the order in the markup.
+    await page.setViewportSize({ width: 800, height: 1000 });
     await openLanding(page);
     await expect(search(page)).toBeVisible();
     await expect(coordinatesSwitch(page)).toHaveAttribute("aria-checked", "false");
@@ -125,7 +128,7 @@ test.describe("the question", () => {
     await expect(alert).toContainText("🌌");
     await expect(page.getByLabel("Title")).toHaveAttribute("aria-invalid", "true");
     await page.getByRole("button", { name: "Explore this sky" }).click();
-    expect(new URL(page.url()).hash).toBe("");
+    expect(new URL(page.url()).hash).not.toMatch(/^#(e|s|studio)=/);
     await page.getByLabel("Title").fill("Céu Austral");
     await expect(page.getByRole("alert")).toHaveCount(0);
     await page.getByRole("button", { name: "Explore this sky" }).click();
@@ -283,6 +286,18 @@ test.describe("search", () => {
     await expect.poll(() => network.tileRequests.some((url) => url.endsWith("/9/259/176.png"))).toBe(true);
   });
 
+  test("a pin dropped after a search clears the search text, so the field never contradicts the summary", async ({ page }) => {
+    await stubSearch(page, [EIFFEL]);
+    await openLanding(page);
+    await mapReady(page);
+    await search(page).fill("eiffel");
+    await page.getByRole("option").first().click();
+    await expect(search(page)).toHaveValue("Eiffel Tower, Paris, France");
+    await canvas(page).click({ position: { x: 90, y: 150 } });
+    await expect(page.locator(".landing-selected")).toContainText("Dropped pin");
+    await expect(search(page)).toHaveValue("");
+  });
+
   test("Escape closes the list and keeps the text", async ({ page }) => {
     await stubSearch(page, [EIFFEL]);
     await openLanding(page);
@@ -356,7 +371,7 @@ test.describe("coordinates", () => {
     await page.getByLabel("Latitude").fill("95");
     await expect(page.getByRole("alert")).toHaveText("Latitude must be a number between -90 and 90.");
     await page.getByRole("button", { name: "Explore this sky" }).click();
-    expect(new URL(page.url()).hash).toBe("");
+    expect(new URL(page.url()).hash).not.toMatch(/^#(e|s|studio)=/);
     await page.getByLabel("Latitude").fill("-33.8688");
     await page.getByLabel("Longitude").fill("181");
     await expect(page.getByRole("alert")).toHaveText("Longitude must be a number between -180 and 180.");
@@ -392,23 +407,27 @@ test.describe("coordinates", () => {
 test.describe("the moment and the actions", () => {
   test("names an unknown timezone and an empty moment, and stays", async ({ page }) => {
     await openLanding(page);
-    await page.getByLabel("Timezone").fill("Mars/Olympus");
+    await page.getByLabel("Timezone", { exact: true }).fill("Mars/Olympus");
     await page.getByRole("button", { name: "Explore this sky" }).click();
     await expect(page.getByRole("alert")).toContainText('Unknown timezone "Mars/Olympus"');
-    await page.getByLabel("Timezone").fill("UTC");
+    await page.getByLabel("Timezone", { exact: true }).fill("UTC");
     await expect(page.getByRole("alert")).toHaveCount(0);
     await page.getByLabel("Date and time").fill("");
     await page.getByRole("button", { name: "Explore this sky" }).click();
     await expect(page.getByRole("alert")).toHaveText("Pick a date and time for the sky.");
-    expect(new URL(page.url()).hash).toBe("");
+    expect(new URL(page.url()).hash).not.toMatch(/^#(e|s|studio)=/);
   });
 
-  test("Detect sets the browser's timezone", async ({ page }) => {
+  test("Detect is a locate icon button and sets the browser's timezone", async ({ page }) => {
     await openLanding(page);
-    await page.getByLabel("Timezone").fill("Nowhere");
-    await page.getByRole("button", { name: "Detect" }).click();
+    const detect = page.getByRole("button", { name: "Detect my timezone" });
+    await expect(detect).toHaveAttribute("title", "Detect my timezone");
+    await expect(detect.locator("svg[data-icon=locate]")).toHaveCount(1);
+    expect((await detect.innerText()).trim()).toBe("");
+    await page.getByLabel("Timezone", { exact: true }).fill("Nowhere");
+    await page.getByRole("button", { name: "Detect my timezone" }).click();
     const zone = await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
-    await expect(page.getByLabel("Timezone")).toHaveValue(zone);
+    await expect(page.getByLabel("Timezone", { exact: true })).toHaveValue(zone);
   });
 
   test("the limiting magnitude from Advanced reaches the link", async ({ page }) => {
@@ -441,6 +460,140 @@ test.describe("the moment and the actions", () => {
     await page.getByRole("button", { name: "Explore this sky" }).focus();
     await page.keyboard.press("Enter");
     await expectExplorer(page);
+  });
+});
+
+test.describe("one screen on a large display (FR-010)", () => {
+  for (const [width, height] of [
+    [1440, 900],
+    [1920, 1080],
+  ] as const) {
+    test(`needs no page scroll at ${width.toString()}x${height.toString()}, Advanced closed`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await openLanding(page);
+      await mapReady(page);
+      await expect(page.locator("details")).toHaveJSProperty("open", false);
+      const sizes = await page.evaluate(() => ({
+        page: document.documentElement.scrollHeight,
+        viewport: window.innerHeight,
+      }));
+      expect(sizes.page).toBeLessThanOrEqual(sizes.viewport);
+      // Two columns: the moment sits beside the place, not under it.
+      const map = await page.locator(".landing-map-box").boundingBox();
+      const title = await page.getByLabel("Title").boundingBox();
+      expect((title?.x ?? 0) > (map?.x ?? 0) + (map?.width ?? 0) - 1).toBe(true);
+      expect(map?.height ?? 0).toBeGreaterThanOrEqual(320);
+    });
+  }
+
+  test("a tablet keeps one column", async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 1000 });
+    await openLanding(page);
+    const map = await page.locator(".landing-map-box").boundingBox();
+    const title = await page.getByLabel("Title").boundingBox();
+    expect((title?.y ?? 0) > (map?.y ?? 0) + (map?.height ?? 0)).toBe(true);
+  });
+});
+
+test.describe("#c= creation link (FR-012)", () => {
+  const CREATION = {
+    place: null,
+    lat: -12.5,
+    lon: 130.25,
+    when_local: "2026-06-01T22:00",
+    tz: "Asia/Tokyo",
+    title: "Our first flat",
+    magnitude_limit: 4.5,
+  };
+
+  test("opens the landing pre-filled with the pin placed, and Explore carries the values", async ({ page, network }) => {
+    await page.goto(`/#c=${encodeCreation(CREATION)}`);
+    await expect(page.getByRole("heading", { level: 1, name: "Where do you want to explore the sky from?" })).toBeVisible();
+    await expect(page.getByLabel("Title")).toHaveValue("Our first flat");
+    await expect(page.getByLabel("Date and time")).toHaveValue("2026-06-01T22:00");
+    await expect(page.getByLabel("Timezone", { exact: true })).toHaveValue("Asia/Tokyo");
+    await expect(page.locator(".landing-selected")).toContainText("12.5000°S, 130.2500°E");
+    await page.getByText("Advanced", { exact: true }).click();
+    await expect(page.getByLabel("Limiting magnitude")).toHaveValue("4.5");
+    // The pin is there: the map drew the tiles around it (zoom 9, Darwin's column).
+    await mapReady(page);
+    await expect.poll(() => network.tileRequests.some((url) => url.includes("/9/"))).toBe(true);
+    expect(network.searchRequests).toEqual([]);
+    await page.getByRole("button", { name: "Explore this sky" }).click();
+    await expectExplorer(page);
+    expect(hashPayload(page)).toMatchObject({
+      lat: -12.5,
+      lon: 130.25,
+      place: null,
+      tz: "Asia/Tokyo",
+      when_utc: "2026-06-01T13:00:00Z",
+      title: "Our first flat",
+      mag: 4.5,
+    });
+  });
+
+  test("a place in the link shows in the search field with no geocoder call", async ({ page, network }) => {
+    await page.goto(`/#c=${encodeCreation({ ...CREATION, place: "Darwin, Australia" })}`);
+    await expect(search(page)).toHaveValue("Darwin, Australia");
+    await page.waitForLoadState("networkidle");
+    expect(network.searchRequests).toEqual([]);
+  });
+
+  test("keeps the good fields when one is bad", async ({ page }) => {
+    await page.goto(`/#c=${encodeCreation({ title: "Kept", tz: "Mars/Olympus" })}`);
+    await expect(page.getByLabel("Title")).toHaveValue("Kept");
+    await expect(page.getByLabel("Timezone", { exact: true })).not.toHaveValue("Mars/Olympus");
+    await expect(page.getByText("That link could not be read")).toHaveCount(0);
+  });
+
+  test("an unreadable link leaves a blank form, says so politely and does not blank the page", async ({ page }) => {
+    await page.goto("/#c=not-a-payload");
+    const notice = page.getByRole("status").filter({ hasText: "That link could not be read, so the form is blank." });
+    await expect(notice).toBeVisible();
+    await expect(page.getByLabel("Title")).toHaveValue("");
+    await expect(page.getByRole("button", { name: "Explore this sky" })).toBeVisible();
+  });
+
+  test("typing follows into #c= without adding history entries, and the link reopens the form", async ({ page }) => {
+    await openLanding(page);
+    expect(new URL(page.url()).hash).toBe("");
+    const before = await page.evaluate(() => history.length);
+    await page.getByLabel("Title").fill("Typed here");
+    await page.getByLabel("Timezone", { exact: true }).fill("Europe/Lisbon");
+    await expect.poll(() => new URL(page.url()).hash.startsWith("#c=")).toBe(true);
+    await expect.poll(() => {
+      const fragment = creationFragmentFromHash(new URL(page.url()).hash) ?? "";
+      const decoded = decodeCreation(fragment);
+      return decoded.status === "ok" ? [decoded.creation.title, decoded.creation.tz] : null;
+    }).toEqual(["Typed here", "Europe/Lisbon"]);
+    expect(await page.evaluate(() => history.length)).toBe(before);
+    const link = page.url();
+    await page.goto("about:blank");
+    await page.goto(link);
+    await expect(page.getByLabel("Title")).toHaveValue("Typed here");
+    await expect(page.getByLabel("Timezone", { exact: true })).toHaveValue("Europe/Lisbon");
+  });
+
+  test("a pasted #c= link on the landing refills the form", async ({ page }) => {
+    await openLanding(page);
+    await page.evaluate((hash) => {
+      window.location.hash = hash;
+    }, `#c=${encodeCreation({ title: "Pasted" })}`);
+    await expect(page.getByLabel("Title")).toHaveValue("Pasted");
+  });
+
+  test("the copy-link icon copies the pre-filled form's #c= link", async ({ page, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => undefined);
+    await page.goto(`/#c=${encodeCreation(CREATION)}`);
+    await page.getByRole("button", { name: "Copy link" }).click();
+    await expect(page.getByRole("button", { name: "Copy link" })).toHaveAttribute("data-icon", "check");
+  });
+
+  test("#c= does not disturb the other links", async ({ page }) => {
+    await page.goto("/#studio=not-a-draft");
+    await expect(page.getByRole("link", { name: "Back to the start" })).toBeVisible();
+    await page.goto("/#e=not-a-payload");
+    await expect(page.getByRole("link", { name: "Back to the start" })).toBeVisible();
   });
 });
 
