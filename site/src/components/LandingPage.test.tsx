@@ -52,7 +52,7 @@ describe("LandingPage structure (013)", () => {
   it("names the chosen place and its coordinates from the start", () => {
     render(<LandingPage />);
     expect(screen.getByText("Exploring from")).toBeDefined();
-    expect(document.body.textContent).toContain("40.7580°N, 73.9855°W");
+    expect(document.body.textContent).toContain("23.6914°S, 46.5647°W");
   });
 
   it("the switch replaces the search with latitude and longitude, and back", () => {
@@ -124,9 +124,9 @@ describe("LandingPage actions (013)", () => {
     expect(window.location.hash.startsWith("#e=")).toBe(true);
     const payload = decodeExplorer(window.location.hash.slice(3));
     expect(payload).toMatchObject({
-      lat: 40.758,
-      lon: -73.9855,
-      place: "Times Square, New York, NY",
+      lat: -23.6914,
+      lon: -46.5647,
+      place: "São Bernardo do Campo, SP, Brazil",
       tz: "America/New_York",
       when_utc: "2026-01-01T05:00:00Z",
       mag: 5.8,

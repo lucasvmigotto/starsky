@@ -109,12 +109,13 @@ describe("LocationMapPanel", () => {
     expect(html).not.toMatch(/noreferrer|referrerpolicy/i);
   });
 
-  it("shows the map hint and the search credit as one line under the map", () => {
+  it("shows the map hint, the search credit and the privacy link as one line under the map", () => {
     mount(fakeMap());
     const line = screen.getByText(/Click or drag the pin to set the place/);
     expect(line.textContent).toBe(
-      "Click or drag the pin to set the place · Search by Nominatim",
+      "Click or drag the pin to set the place · Search by Nominatim · Privacy",
     );
+    expect(screen.getByRole("link", { name: "Privacy" }).getAttribute("href")).toBe("#privacy");
   });
 
   it("reports a pick and a tile failure upward", async () => {

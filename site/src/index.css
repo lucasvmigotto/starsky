@@ -2097,14 +2097,20 @@ select.atlas-form-input option {
   gap: var(--space-2);
 }
 
-/* The privacy line: one small muted line under the hint, tight so the landing keeps one screen at 1440x900. */
-.landing-privacy {
-  margin-top: calc(-1 * var(--space-1));
-  font-size: 0.75rem;
-  line-height: 1.2;
+/* The privacy link closes the map hint line; the notice itself is its own page. */
+.landing-privacy-link {
+  color: inherit;
+  text-decoration: underline;
 }
 
-.landing-privacy a {
-  color: inherit;
+/* The privacy page: one readable column. */
+.privacy-card {
+  max-width: 40rem;
+  margin-inline: auto;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.privacy-card a {
   text-decoration: underline;
 }

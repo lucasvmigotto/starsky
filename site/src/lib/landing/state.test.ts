@@ -17,15 +17,15 @@ function start(): LandingState {
 describe("initial state", () => {
   it("starts at the default place, now, the given zone, with the coordinates switch off", () => {
     const s = start();
-    expect(s.location).toMatchObject({ lat: 40.758, lon: -73.9855, source: "default" });
+    expect(s.location).toMatchObject({ lat: -23.6914, lon: -46.5647, place: "São Bernardo do Campo, SP, Brazil", source: "default" });
     expect(s.when).toBe("2026-03-01T12:30");
     expect(s.tz).toBe("UTC");
     expect(s.mag).toBe(5.8);
     expect(s.mapProblem).toBeNull();
     expect(s.coordsOpen).toBe(false);
     expect(s.error).toBeNull();
-    expect(s.latText).toBe("40.7580");
-    expect(s.lonText).toBe("-73.9855");
+    expect(s.latText).toBe("-23.6914");
+    expect(s.lonText).toBe("-46.5647");
   });
 });
 
@@ -74,7 +74,7 @@ describe("typing coordinates", () => {
     s = landingReducer(s, { type: "coordinates-edited", latText: "95", lonText: "x" });
     s = landingReducer(s, { type: "coordinates-toggled" });
     expect(s.coordsOpen).toBe(false);
-    expect([s.latText, s.lonText]).toEqual(["40.7580", "-73.9855"]);
+    expect([s.latText, s.lonText]).toEqual(["-23.6914", "-46.5647"]);
   });
 
   it("toggles open and closed", () => {
@@ -114,7 +114,7 @@ describe("toLandingInput", () => {
     const r = toLandingInput(start());
     expect(r).toEqual({
       ok: true,
-      value: { lat: 40.758, lon: -73.9855, place: "Times Square, New York, NY", when: "2026-03-01T12:30", tz: "UTC", mag: 5.8, title: "" },
+      value: { lat: -23.6914, lon: -46.5647, place: "São Bernardo do Campo, SP, Brazil", when: "2026-03-01T12:30", tz: "UTC", mag: 5.8, title: "" },
     });
   });
 
@@ -161,7 +161,7 @@ describe("creation prefill", () => {
 
   it("creationOf writes the form back, leaving an empty title out", () => {
     const s = start();
-    expect(creationOf(s)).toEqual({ place: "Times Square, New York, NY", lat: 40.758, lon: -73.9855, when_local: "2026-03-01T12:30", tz: "UTC", magnitude_limit: 5.8 });
+    expect(creationOf(s)).toEqual({ place: "São Bernardo do Campo, SP, Brazil", lat: -23.6914, lon: -46.5647, when_local: "2026-03-01T12:30", tz: "UTC", magnitude_limit: 5.8 });
     expect(creationOf({ ...s, title: "A" }).title).toBe("A");
   });
 

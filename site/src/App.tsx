@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { HashRouter, Route, Routes } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
 import LandingPage from "./components/LandingPage.tsx";
+import PrivacyPage, { PRIVACY_HASH } from "./components/PrivacyPage.tsx";
 import ViewerPage from "./components/ViewerPage.tsx";
 import { t } from "./i18n/index.ts";
 import { useLocale } from "./i18n/useLocale.ts";
@@ -34,6 +35,11 @@ function creationHash(): string | null {
   return hash.startsWith("#c=") && hash.length > 3 ? hash : null;
 }
 
+/** `#privacy`: the privacy notice, a page of its own. */
+function isPrivacyHash(): boolean {
+  return window.location.hash === PRIVACY_HASH;
+}
+
 function hasShareFragment(): boolean {
   return fragmentFromHash(window.location.hash) !== null;
 }
@@ -50,12 +56,14 @@ function Root() {
   const [explorer, setExplorer] = useState(explorerHash);
   const [studio, setStudio] = useState(studioHash);
   const [creation, setCreation] = useState(creationHash);
+  const [privacy, setPrivacy] = useState(isPrivacyHash);
   useEffect(() => {
     const onHash = () => {
       setReady(hasShareFragment());
       setExplorer(explorerHash());
       setStudio(studioHash());
       setCreation(creationHash());
+      setPrivacy(isPrivacyHash());
     };
     window.addEventListener("hashchange", onHash);
     return () => {
@@ -63,6 +71,7 @@ function Root() {
     };
   }, []);
   if (ready) return <ViewerPage />;
+  if (privacy) return <PrivacyPage />;
   if (explorer !== null) {
     // Keyed by the fragment so a pasted `#e=` link replaces the camera and data.
     return (

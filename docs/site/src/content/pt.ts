@@ -28,7 +28,7 @@ export const overviewPt: PageContent = {
       heading: "Quatro superfícies",
       paragraphs: [
         "O fluxo é página inicial, depois Explorador, depois exportação. A página inicial faz uma pergunta, de onde você quer explorar o céu, e sua única ação, Explorar este céu, abre o Explorador. O Explorador (#e=) é a superfície principal. O Estúdio de pôster (#studio=) compõe e exporta um pôster. A página do pôster (#s=) mostra um pôster compartilhado exatamente como foi feito. Cada uma tem sua própria página nesta documentação.",
-        "Privacidade: o starsky não guarda nada e não tem contas. Os links carregam o conteúdo no fragmento da URL, que o navegador nunca envia ao servidor. A exceção a conhecer é o OpenStreetMap: a busca de lugares (Nominatim) e os blocos do mapa da página inicial são pedidos pelo seu navegador, então o OpenStreetMap vê o seu endereço IP.",
+        "Privacidade: o starsky não guarda nenhum registro sobre você e não tem contas. Os links carregam o conteúdo no fragmento da URL, que o navegador nunca envia ao servidor. A exceção a conhecer é o OpenStreetMap: a busca de lugares (Nominatim) e os blocos do mapa da página inicial são pedidos pelo seu navegador, então o OpenStreetMap vê o seu endereço IP.",
       ],
     },
     {
@@ -423,7 +423,7 @@ export const linksPt: PageContent = {
     {
       heading: "Privacidade",
       paragraphs: [
-        "O starsky não guarda nada e não tem contas. Um link leva o conteúdo no fragmento da URL, que o navegador nunca envia ao servidor. A busca de lugares (Nominatim) e o mapa da página inicial (blocos do OpenStreetMap) rodam a partir do seu navegador, então o OpenStreetMap vê o seu endereço IP; a página inicial avisa isso em uma linha. O starsky não tem credenciais de nenhum dos dois serviços.",
+        "O starsky não guarda nenhum registro sobre você e não tem contas. Um link leva o conteúdo no fragmento da URL, que o navegador nunca envia ao servidor. A busca de lugares (Nominatim) e o mapa da página inicial (blocos do OpenStreetMap) rodam a partir do seu navegador, então o OpenStreetMap vê o seu endereço IP. A página de Privacidade do produto (`#privacy`, com link na dica do mapa da página inicial) explica isso e lista as duas pequenas informações que o navegador guarda: o idioma escolhido e, por aba, a vista do Explorador para onde voltar. O starsky não tem credenciais de nenhum dos dois serviços.",
       ],
     },
     {

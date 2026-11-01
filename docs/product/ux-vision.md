@@ -851,8 +851,16 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.map.chunkFailed` | The map could not be loaded. Search still works, or turn on Coordinates to type a place. |
 | `landing.search.label` | Search for a place |
 | `landing.search.placeholder` | City, address or landmark |
-| `landing.privacy` | Place search and the map come from {osm}, which sees your IP address. starsky stores nothing. |
-| `landing.privacy.osm` | OpenStreetMap |
+| `landing.privacy.link` | Privacy |
+| `site.privacy.title` | Privacy |
+| `site.privacy.browser` | starsky runs entirely in your browser. It has no accounts and no analytics, sets no cookies, and keeps no record of you or of the skies you make. |
+| `site.privacy.links` | A sky lives in its link, after the #. Browsers never send that part to the site, but anyone you share the link with can read the place and time in it. |
+| `site.privacy.osm` | Place search and the map on the start page come from {osm}. When you search or the map loads, your browser contacts OpenStreetMap, which sees your IP address. Its {policy} applies. |
+| `site.privacy.osm.name` | OpenStreetMap |
+| `site.privacy.osm.policy` | privacy policy |
+| `site.privacy.device` | This browser keeps two small things on this device: your language choice and, until you close the tab, the Explorer view to return to. |
+| `site.privacy.host` | Like any website, the host that serves starsky's files receives your IP address with each request. |
+| `site.privacy.back` | Back to the start |
 | `landing.search.submit` | Search |
 | `landing.search.credit` | Search by Nominatim |
 | `landing.search.listLabel` | Matching places |
@@ -1205,8 +1213,16 @@ set.
 | `landing.map.chunkFailed` | Não foi possível carregar o mapa. A busca continua funcionando, ou ative Coordenadas para digitar um lugar. |
 | `landing.search.label` | Buscar um lugar |
 | `landing.search.placeholder` | Cidade, endereço ou ponto de referência |
-| `landing.privacy` | A busca de lugares e o mapa vêm do {osm}, que vê o seu endereço IP. O starsky não guarda nada. |
-| `landing.privacy.osm` | OpenStreetMap |
+| `landing.privacy.link` | Privacidade |
+| `site.privacy.title` | Privacidade |
+| `site.privacy.browser` | O starsky roda inteiramente no seu navegador. Não tem contas nem ferramentas de análise, não grava cookies e não guarda nenhum registro sobre você nem sobre os céus que você cria. |
+| `site.privacy.links` | Um céu vive no próprio link, depois do #. Os navegadores nunca enviam essa parte ao site, mas qualquer pessoa com quem você compartilhar o link pode ler o lugar e a data nele. |
+| `site.privacy.osm` | A busca de lugares e o mapa da página inicial vêm do {osm}. Quando você busca ou o mapa carrega, seu navegador se conecta ao OpenStreetMap, que vê o seu endereço IP. Vale a {policy} dele. |
+| `site.privacy.osm.name` | OpenStreetMap |
+| `site.privacy.osm.policy` | política de privacidade |
+| `site.privacy.device` | Este navegador guarda duas pequenas informações neste dispositivo: o idioma escolhido e, até você fechar a aba, a vista do Explorador para onde voltar. |
+| `site.privacy.host` | Como qualquer site, o servidor que entrega os arquivos do starsky recebe o seu endereço IP a cada acesso. |
+| `site.privacy.back` | Voltar ao início |
 | `landing.search.submit` | Buscar |
 | `landing.search.credit` | Busca pelo Nominatim |
 | `landing.search.listLabel` | Lugares encontrados |
