@@ -5,6 +5,7 @@
  * this module only keeps time.
  */
 
+import type { Locale } from "../../i18n/locale.ts";
 import { formatCoords } from "../caption.ts";
 
 export type MetadataMode = "expanded" | "compact" | "pinned";
@@ -114,18 +115,19 @@ const DATE_PARTS: Intl.DateTimeFormatOptions = {
   timeZoneName: "short",
 };
 
-function localTime(whenUtc: string, tz: string): string {
+/** Interface text, so the active locale is passed in explicitly (018 FR-004). */
+function localTime(whenUtc: string, tz: string, locale: Locale): string {
   const when = new Date(whenUtc);
   try {
-    return new Intl.DateTimeFormat("en-US", { ...DATE_PARTS, timeZone: tz }).format(when);
+    return new Intl.DateTimeFormat(locale, { ...DATE_PARTS, timeZone: tz }).format(when);
   } catch {
-    return new Intl.DateTimeFormat("en-US", { ...DATE_PARTS, timeZone: "UTC" }).format(when);
+    return new Intl.DateTimeFormat(locale, { ...DATE_PARTS, timeZone: "UTC" }).format(when);
   }
 }
 
-export function formatMoment(input: MomentInput): Moment {
+export function formatMoment(input: MomentInput, locale: Locale): Moment {
   const coords = formatCoords(input.lat, input.lon);
-  const local = localTime(input.when_utc, input.tz);
+  const local = localTime(input.when_utc, input.tz, locale);
   const title = input.title === "" ? null : input.title;
   const place = input.place === "" ? null : input.place;
   const compact = [title, place ?? coords, local].filter((part) => part !== null).join(" · ");

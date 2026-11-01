@@ -131,33 +131,33 @@ describe("formatMoment", () => {
   };
 
   it("shows the local date, time and zone derived from when_utc and tz", () => {
-    const m = formatMoment(base);
+    const m = formatMoment(base, "en-US");
     expect(m.local).toBe("Nov 17, 1998, 11:17 AM GMT+9");
   });
 
   it("joins title, place and time on one line for the compact form", () => {
-    expect(formatMoment(base).compact).toBe("First night · Tokyo · Nov 17, 1998, 11:17 AM GMT+9");
+    expect(formatMoment(base, "en-US").compact).toBe("First night · Tokyo · Nov 17, 1998, 11:17 AM GMT+9");
   });
 
   it("omits the title when it is null", () => {
-    const m = formatMoment({ ...base, title: null });
+    const m = formatMoment({ ...base, title: null }, "en-US");
     expect(m.title).toBeNull();
     expect(m.compact).toBe("Tokyo · Nov 17, 1998, 11:17 AM GMT+9");
   });
 
   it("falls back to coordinates, in the poster's format, when there is no place", () => {
-    const m = formatMoment({ ...base, place: null, title: null });
+    const m = formatMoment({ ...base, place: null, title: null }, "en-US");
     expect(m.place).toBeNull();
     expect(m.compact).toBe("35.6895°N, 139.6917°E · Nov 17, 1998, 11:17 AM GMT+9");
     expect(m.coords).toBe("35.6895°N, 139.6917°E");
   });
 
   it("names UTC when the zone is not one it knows", () => {
-    expect(formatMoment({ ...base, tz: "Not/AZone" }).local).toBe("Nov 17, 1998, 2:17 AM UTC");
+    expect(formatMoment({ ...base, tz: "Not/AZone" }, "en-US").local).toBe("Nov 17, 1998, 2:17 AM UTC");
   });
 
   it("gives the full text a screen reader reads, the same for every mode", () => {
-    expect(formatMoment(base).full).toBe(
+    expect(formatMoment(base, "en-US").full).toBe(
       "First night, Tokyo, Nov 17, 1998, 11:17 AM GMT+9, 35.6895°N, 139.6917°E",
     );
   });

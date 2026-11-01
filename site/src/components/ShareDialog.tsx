@@ -11,11 +11,13 @@
  * shares the *scene* — the link that reproduces it exactly.
  */
 import { useState } from "react";
-import { t } from "../i18n/index.ts";
+import { formatDecimal } from "../i18n/format.ts";
+import { type Locale, t } from "../i18n/index.ts";
+import { useLocale } from "../i18n/useLocale.ts";
 import { Icon } from "./icons.tsx";
 import { usePopoverStyle } from "./popover.ts";
 import { formatLocalTime, formatCoords } from "../lib/caption.ts";
-import type { SharePayload } from "../lib/share.ts";
+import type { Projection, SharePayload } from "../lib/share.ts";
 
 interface Props {
   payload: SharePayload;
@@ -29,14 +31,26 @@ interface Props {
   onOpenChange?: (open: boolean) => void;
 }
 
-/** What the recipient gets: place, moment, and the settings that change the sky. */
-function sceneSummary(payload: SharePayload): string {
-  const where = payload.place ?? formatCoords(payload.lat, payload.lon);
-  const when = formatLocalTime(payload.when_utc, payload.tz);
-  return `${where} · ${when} · ${payload.options.projection} projection · mag ${payload.options.magnitude_limit.toFixed(1)}`;
+const PROJECTION_KEYS = {
+  stereographic: "viewer.share.projection.stereographic",
+  fisheye: "viewer.share.projection.fisheye",
+} as const satisfies Record<Projection, string>;
+
+/**
+ * What the recipient gets: place, moment, and the settings that change the sky.
+ * Interface text, so it reads in the active locale (the poster keeps its own).
+ */
+export function sceneSummary(payload: SharePayload, locale: Locale): string {
+  return t("viewer.share.summary", {
+    where: payload.place ?? formatCoords(payload.lat, payload.lon),
+    when: formatLocalTime(payload.when_utc, payload.tz, locale),
+    projection: t(PROJECTION_KEYS[payload.options.projection]),
+    mag: formatDecimal(payload.options.magnitude_limit, 1, locale),
+  });
 }
 
 export default function ShareDialog({ payload, getLink, open: controlled, onOpenChange }: Props) {
+  const locale = useLocale();
   const [own, setOwn] = useState(false);
   const open = controlled ?? own;
   const setOpen = (next: boolean): void => {
@@ -84,7 +98,7 @@ export default function ShareDialog({ payload, getLink, open: controlled, onOpen
         style={popover}
         hidden={!open}
       >
-        <p className="atlas-form-hint">{sceneSummary(payload)}</p>
+        <p className="atlas-form-hint">{sceneSummary(payload, locale)}</p>
         <button
           type="button"
           className="atlas-btn-ghost"

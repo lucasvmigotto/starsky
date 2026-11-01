@@ -10,6 +10,7 @@ import type { ExplorerController } from "../../lib/explorer/controller.ts";
 import { absoluteLink, bindLink, currentHash } from "../../lib/explorer/link.ts";
 import { MetadataMachine } from "../../lib/explorer/metadata.ts";
 import { createPosterHash } from "../../lib/scene/handoff.ts";
+import { getLocale } from "../../i18n/index.ts";
 import type { ExplorerPayload } from "../../lib/sky/payload.ts";
 import type { SkyScene } from "../../lib/sky/scene.ts";
 import ExplorerCanvas from "./ExplorerCanvas.tsx";
@@ -179,7 +180,7 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
   /** Leave for the Studio with this scene; the camera is remembered for the way back. */
   const createPoster = useCallback((): void => {
     if (!controller) return;
-    window.location.hash = createPosterHash(payload, controller.getCamera());
+    window.location.hash = createPosterHash(payload, controller.getCamera(), getLocale());
   }, [controller, payload]);
 
   const moment = {

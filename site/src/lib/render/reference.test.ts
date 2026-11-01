@@ -27,7 +27,7 @@ import { describe, expect, it } from "bun:test";
 import { GlobalFonts, createCanvas, loadImage } from "@napi-rs/canvas";
 import { formatDetailLine } from "../caption.ts";
 import { buildSkyModel, DISK_CX, DISK_CY, DISK_R, type SegmentRow, type StarRow } from "../skymodel.ts";
-import type { SharePayload } from "../share.ts";
+import { type LinkLang, type SharePayload, posterLocale } from "../share.ts";
 import { renderPoster, renderStory } from "./poster.ts";
 import { storyGeometry } from "./format.ts";
 import { at } from "../testing.ts";
@@ -77,6 +77,8 @@ interface MatrixCase {
   size_px: number;
   /** `story` is the 1080 x 1920 export format (BCR-0012); absent is standard. */
   format?: "story";
+  /** The poster language (018-pt-br); absent is en-US, as in a link. */
+  lang?: LinkLang;
   expected: CaseExpected;
 }
 interface Matrix {
@@ -140,6 +142,7 @@ function payloadFor(c: MatrixCase): SharePayload {
       title: null,
       ...c.options,
     },
+    ...(c.lang === undefined ? {} : { lang: c.lang }),
   };
 }
 
@@ -173,7 +176,7 @@ function renderCase(c: MatrixCase): RenderResult {
     stars: model.stars.length,
     segments: model.segments.length,
     figures: model.figures.length,
-    caption: formatDetailLine(c.lat, c.lon, c.place, c.when_utc, c.tz),
+    caption: formatDetailLine(c.lat, c.lon, c.place, c.when_utc, c.tz, posterLocale(payload)),
   };
 }
 

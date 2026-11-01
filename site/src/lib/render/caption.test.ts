@@ -60,7 +60,7 @@ function payload(over: Partial<SharePayload> = {}): SharePayload {
 }
 
 function detailFor(p: SharePayload): string {
-  return formatDetailLine(p.lat, p.lon, p.place, p.when_utc, p.tz);
+  return formatDetailLine(p.lat, p.lon, p.place, p.when_utc, p.tz, "en-US");
 }
 
 describe("caption fitting (BCR-0010)", () => {

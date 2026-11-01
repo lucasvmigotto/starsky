@@ -23,6 +23,7 @@ const VALUES: PosterFieldValues = {
   constellationLabels: DEFAULTS.constellationLabels,
   shape: DEFAULTS.shape,
   title: "",
+  posterLocale: "en-US",
 };
 
 const LEGENDS = { appearance: "Appearance", advanced: "Advanced" };
@@ -86,7 +87,7 @@ describe("PosterFields", () => {
     expect(advanced?.querySelector("#landing-title")).toBeNull();
   });
 
-  it("pairs related controls: projection with shape, fisheye with separation, glow with its intensity", () => {
+  it("pairs related controls: projection with shape, fisheye with separation, glow with its intensity, title with language", () => {
     setup([]);
     const pairs = [...document.querySelectorAll(".atlas-form-pair")];
     const ids = pairs.map((pair) => [...pair.querySelectorAll("select, input")].map((el) => el.id || el.getAttribute("name")));
@@ -94,9 +95,23 @@ describe("PosterFields", () => {
       ["landing-projection", "shape", "shape"],
       ["landing-fisheye", "landing-separation"],
       [null, "landing-glow"],
+      // The poster's words: its title, and the language its date is written in (018).
+      ["landing-title", "landing-lang"],
     ]);
-    // The title spans the full width, outside any pair.
-    expect(document.getElementById("landing-title")?.closest(".atlas-form-pair")).toBeNull();
+  });
+
+  it("offers the poster languages by their own names, and reports a choice", () => {
+    const patches: Partial<PosterFieldValues>[] = [];
+    setup(patches);
+    const select = document.getElementById("landing-lang") as HTMLSelectElement;
+    expect(screen.getByLabelText("Poster language")).toBe(select);
+    const options = [...select.options].map((o) => [o.value, o.textContent, o.lang]);
+    expect(options).toEqual([
+      ["en-US", "English", "en-US"],
+      ["pt-BR", "Português (Brasil)", "pt-BR"],
+    ]);
+    fireEvent.change(select, { target: { value: "pt-BR" } });
+    expect(patches).toEqual([{ posterLocale: "pt-BR" }]);
   });
 
   it("shows the projection options capitalised while their values stay lowercase", () => {

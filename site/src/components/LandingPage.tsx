@@ -7,7 +7,7 @@
  */
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { JSX } from "react";
-import { t } from "../i18n/index.ts";
+import { getLocale, t } from "../i18n/index.ts";
 import { creationFragmentFromHash, decodeCreation, encodeCreation } from "../lib/landing/creation.ts";
 import { defaultTimezone, exploreHash, undrawableTitleCharacter } from "../lib/landing/payload.ts";
 import {
@@ -18,7 +18,7 @@ import {
   toLandingInput,
 } from "../lib/landing/state.ts";
 import { unsupportedCharacterMessage } from "../lib/render/glyphs.ts";
-import { fragmentFromHash } from "../lib/share.ts";
+import { fragmentFromHash, linkLangOf } from "../lib/share.ts";
 import { randomSampleFragment } from "../lib/site.ts";
 import SiteFooter from "./SiteFooter.tsx";
 import SiteHeader from "./SiteHeader.tsx";
@@ -88,7 +88,9 @@ export default function LandingPage(): JSX.Element {
       dispatch({ type: "error", error: input.error });
       return;
     }
-    const hash = exploreHash(input.value);
+    // A `#c=` language wins; otherwise a pt-BR visitor's sky starts in pt-BR (018 US4).
+    const lang = input.value.lang ?? linkLangOf(getLocale()).lang;
+    const hash = exploreHash({ ...input.value, ...(lang === undefined ? {} : { lang }) });
     if (!hash.ok) {
       dispatch({ type: "error", error: hash.error });
       return;

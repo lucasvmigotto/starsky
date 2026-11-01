@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import { t } from "../../i18n/index.ts";
+import { useLocale } from "../../i18n/useLocale.ts";
 import { encodePayload } from "../../lib/encode.ts";
 import { formatLocalTime } from "../../lib/caption.ts";
 import { absoluteLink } from "../../lib/explorer/link.ts";
@@ -25,6 +26,9 @@ import {
   type SharePayload,
   ShareDecodeError,
   ShareVersionError,
+  linkLangOf,
+  posterLocale,
+  withPosterLocale,
 } from "../../lib/share.ts";
 import {
   CANVAS_W,
@@ -103,11 +107,13 @@ function fieldsOf(payload: SharePayload): PosterFieldValues {
     constellationLabels: o.constellation_labels,
     shape: o.shape,
     title: o.title ?? "",
+    // A draft without `lang` is en-US, so an old draft reopens unchanged.
+    posterLocale: posterLocale(payload),
   };
 }
 
 function payloadOf(scene: SharePayload, fields: PosterFieldValues, title: string | null): SharePayload {
-  return {
+  return withPosterLocale({
     ...scene,
     options: {
       projection: fields.projection,
@@ -121,7 +127,7 @@ function payloadOf(scene: SharePayload, fields: PosterFieldValues, title: string
       shape: fields.shape,
       title,
     },
-  };
+  }, fields.posterLocale);
 }
 
 function Preview({
@@ -213,6 +219,8 @@ export default function StudioPage(): JSX.Element {
 }
 
 function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string | null }): JSX.Element {
+  // The interface language, for the moment hint; the poster has its own (`posterLocale`).
+  const locale = useLocale();
   // The moment never changes here: it is the scene the draft arrived with.
   const [scene] = useState(initial);
   const [fields, setFields] = useState(() => fieldsOf(initial));
@@ -316,6 +324,7 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
         tz: applied.tz,
         ...(applied.options.title === null ? {} : { title: applied.options.title }),
         magnitude_limit: applied.options.magnitude_limit,
+        ...linkLangOf(posterLocale(applied)),
       })}`,
     [applied],
   );
@@ -383,7 +392,7 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
                   source: applied.place === null ? "typed" : "search",
                 }}
               />
-              <p className="atlas-form-hint">{formatLocalTime(applied.when_utc, applied.tz)}</p>
+              <p className="atlas-form-hint">{formatLocalTime(applied.when_utc, applied.tz, locale)}</p>
               <p className="atlas-form-hint">
                 {t("studio.summary.noteBefore")}
                 <a className="atlas-link" href={startHref}>

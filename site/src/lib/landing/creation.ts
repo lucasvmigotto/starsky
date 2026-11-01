@@ -8,7 +8,7 @@
  */
 import { deflate, inflate } from "pako";
 import { bytesToBase64Url, canonicalJson } from "../encode.ts";
-import { base64UrlToBytes } from "../share.ts";
+import { type LinkLang, base64UrlToBytes } from "../share.ts";
 import { MAX_TEXT_CHARS, parseLocalDateTime, undrawableTitleCharacter } from "./payload.ts";
 
 /** Every field optional; whatever is present has passed validation. */
@@ -22,6 +22,8 @@ export interface Creation {
   title?: string;
   /** The limiting magnitude, in the form's 1..7. */
   magnitude_limit?: number;
+  /** The poster language to carry forward (018-pt-br); `en-US` is never written. */
+  lang?: LinkLang;
 }
 
 export type CreationDecode = { status: "ok"; creation: Creation } | { status: "invalid" };
@@ -104,6 +106,8 @@ function validate(data: Record<string, unknown>): Creation {
   if (typeof mag === "number" && Number.isFinite(mag) && mag >= MAG_MIN && mag <= MAG_MAX) {
     out.magnitude_limit = mag;
   }
+  // Tolerant like every field here: anything but "pt-BR" is dropped, not refused.
+  if (data["lang"] === "pt-BR") out.lang = "pt-BR";
   return out;
 }
 

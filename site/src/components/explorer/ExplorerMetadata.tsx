@@ -6,7 +6,7 @@
  */
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { JSX, ReactNode } from "react";
-import { t } from "../../i18n/index.ts";
+import { getLocale, t } from "../../i18n/index.ts";
 import { Icon } from "../icons.tsx";
 import { MetadataMachine, type MomentInput, formatMoment } from "../../lib/explorer/metadata.ts";
 
@@ -56,7 +56,7 @@ export default function ExplorerMetadata({ moment, machine: provided, children }
     };
   }, [machine, mode]);
 
-  const text = formatMoment(moment);
+  const text = formatMoment(moment, getLocale());
   const pinned = mode === "pinned";
 
   return (

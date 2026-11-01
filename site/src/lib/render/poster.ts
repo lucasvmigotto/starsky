@@ -20,7 +20,7 @@
  * hard-coded here (constitution II).
  */
 import { formatDetailLine } from "../caption.ts";
-import type { Shape, SharePayload } from "../share.ts";
+import { type Shape, type SharePayload, posterLocale } from "../share.ts";
 import type { SkyModel, VisibleStar } from "../skymodel.ts";
 import { AXIS_EXTENT } from "../skymodel.ts";
 import { SPEC } from "../spec.ts";
@@ -406,12 +406,14 @@ export function captionLines(
   measure: (text: string, fontSizePx: number) => number,
 ): ReadonlyArray<{ text: string; fontSizePx: number; opacity: number }> {
   const maxWidth = captionMaxWidth(geometry.sizePx);
+  // The link's language (absent: en-US), never the visitor's (018 FR-006).
   const detail = formatDetailLine(
     payload.lat,
     payload.lon,
     payload.place,
     payload.when_utc,
     payload.tz,
+    posterLocale(payload),
   );
   if (payload.options.title) {
     return [

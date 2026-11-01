@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { t } from "../i18n/index.ts";
 import { formatDetailLine } from "../lib/caption.ts";
 import { renderPoster } from "../lib/render/poster.ts";
-import type { SharePayload } from "../lib/share.ts";
+import { type SharePayload, posterLocale } from "../lib/share.ts";
 import {
   CANVAS_H,
   CANVAS_W,
@@ -68,6 +68,7 @@ export default function SkyCanvas({ payload, model, canvasRef, fontsReady }: Pro
    * Built from the same `formatDetailLine` the poster renders with, so the
    * spoken caption and the drawn one cannot disagree — the UI and the artifact
    * showing different coordinates is exactly what vision principle 4 forbids.
+   * In the poster's language, like the drawn caption, never the interface's.
    */
   const caption = formatDetailLine(
     payload.lat,
@@ -75,6 +76,7 @@ export default function SkyCanvas({ payload, model, canvasRef, fontsReady }: Pro
     payload.place,
     payload.when_utc,
     payload.tz,
+    posterLocale(payload),
   );
 
   const poster = useMemo(() => {
