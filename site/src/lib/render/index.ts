@@ -9,6 +9,8 @@ export {
   AXIS_EXTENT,
   drawFocusOverlay,
   posterGeometry,
+  skyExtent,
+  insideSkySquare,
   renderPoster,
   renderPosterToCanvas,
   unitToCanvas,
