@@ -224,7 +224,7 @@ export async function exportPdf(
 
   // Embed the poster's own face (BCR-0006). Without this jsPDF falls back to the
   // 14 standard PDF fonts and the caption renders as Times on every reader,
-  // which the export contract forbids. The subset is ~108 KB of the 1.2 MB
+  // which the export contract forbids. The subset is ~224 KB of the 1.2 MB
   // variable TTF, covering every glyph the poster can draw.
   await registerPosterFontForPdf(doc);
 

@@ -4,8 +4,9 @@
 The exported PDF embeds the poster's own face rather than a standard PDF font.
 jsPDF parses only TrueType (not woff2), and the full variable TTF is 1.2 MB, so
 this subsets it to the glyphs the poster can actually render: the Latin
-alphabet, digits, and the punctuation the caption grammar uses. ~104 KB, which is
-about half the woff2 already shipped.
+alphabet with its Latin-1 accents, digits, and the punctuation the caption
+grammar uses. ~224 KB (~104 KB before 018 added the accents), fetched only when
+a PDF is exported.
 
 Deterministic: same input font + character set gives the same output bytes, so
 the asset can be regenerated in CI and diffed rather than trusted.
@@ -29,11 +30,20 @@ TARGET: Final[Path] = (
 # What the poster can draw: constellation labels are uppercased Latin; the title
 # and place are arbitrary Latin text; the caption detail uses the degree signs,
 # a middot separator, an em dash, and ordinary punctuation.
+#
+# 018-pt-br: the accented letters too. A pt-BR title or place ("Noite de São
+# João") is ordinary on a Brazilian poster, and before this the PDF had no
+# outline for ã, ç or é although the face has them. So the whole of Latin-1
+# Supplement, plus the typographic quotes and ellipsis a typed title may carry
+# (Latin Extended-A would more than triple the file for letters a pt-BR poster
+# does not use). `glyph-coverage.test.ts` checks this subset covers pt-BR.
 GLYPHS: Final[str] = (
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789"
     " .,;:!?'\"()[]{}&+-*/%#@=_—–·°"
+    + "".join(chr(c) for c in range(0xA1, 0x100) if c != 0xAD)
+    + "‘’“”…•"
 )
 
 
