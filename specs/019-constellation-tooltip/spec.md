@@ -1,6 +1,6 @@
 # 019 — Constellation tooltip and star list
 
-Feature: `019-constellation-tooltip` | Status: In progress | Depends: 014, 018 | Issue: #74
+Feature: `019-constellation-tooltip` | Status: Implemented | Depends: 014, 018 | Issue: #74
 
 ## Why
 

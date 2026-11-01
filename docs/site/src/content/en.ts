@@ -346,6 +346,7 @@ export const roadmapEn: PageContent = {
           ["location-first (013)", "Implemented", "Map-first landing, #c= link."],
           ["square-fill (016)", "Implemented", "Square poster fills the square."],
           ["pt-br (018)", "Implemented", "Interface in en-US and pt-BR with a footer switcher; poster language chosen in the Studio and stored in the link (BCR-0015)."],
+          ["constellation-tooltip (019)", "Implemented", "Constellation hover tooltip and the figure's star list in the inspector."],
           ["site-delivery (008)", "Partial", "Deploy, budgets and gates wired; versioned prefixes, smoke test and drills open."],
           ["hardening (017)", "Partial", "In progress: accessibility, failure, performance and stability passes, strict indexing, docs."],
           ["Promotion of dev to main", "Planned — not implemented yet.", "Pending the owner's go-ahead."],
@@ -387,6 +388,8 @@ export const explorerEn: PageContent = {
       heading: "Stars, tooltips and the inspector",
       paragraphs: [
         "Hovering a star for about a second and a half shows a tooltip. Selecting a star or a constellation opens the inspector: a right panel with a tab on large screens, a bottom sheet on phones. A one-line summary of the place and moment stays visible; it expands during activity.",
+        "Hovering a constellation's lines or name for the same time shows its name, how many stars form its figure, and up to three of its named stars, brightest first, for example \"Orion • 22 stars\" over \"Rigel, Betelgeuse, Bellatrix +19\". A star under the pointer keeps its own tooltip, and a figure that is not drawn cannot be hovered. Tooltips need a mouse or pen; on a touch screen, tap instead.",
+        "A selected constellation's inspector lists every star of its figure, brightest first, by name or HIP number with its magnitude, and says in words which are below the horizon. Choosing one selects that star. Names of stars and constellations are never translated.",
       ],
     },
     {

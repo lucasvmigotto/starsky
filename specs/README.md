@@ -4,7 +4,8 @@ Reconstructed by project:introspec on 2026-09-29; re-scoped by project:refactor 
 
 Status: `000`, `002`, `005`, `006`, `007` and `009`–`017` are **Implemented**
 (on `dev`; promotion to `main` is pending). `018` is **Implemented** on its
-branch (`feat/018-pt-br`, #71). `008` is **In progress** (T002 done,
+branch (`feat/018-pt-br`, #71), and `019` on `feat/019-constellation-tooltip`
+(#74). `008` is **In progress** (T002 done,
 deploy and budgets underway; versioned prefixes, smoke test and drills open).
 `003` is retired. Nothing is Verified.
 
@@ -27,7 +28,7 @@ deploy and budgets underway; versioned prefixes, smoke test and drills open).
 | 016 | square-fill | P1 | 013 | Implemented | N/A | Square poster fills the square, inscribed in the horizon (BCR-0014) |
 | 017 | hardening | P1 | 009–016 | Implemented | N/A | Accessibility, failure, performance, stability, strict indexing, docs (#55) |
 | 018 | pt-br | P1 | 017 | Implemented | N/A | Brazilian Portuguese interface; poster language chosen by the creator and stored in the link (#71, BCR-0015) |
-| 019 | constellation-tooltip | P2 | 014, 018 | In progress | N/A | Constellation hover tooltip (name, count, top named stars) and the figure star list in the inspector (#74) |
+| 019 | constellation-tooltip | P2 | 014, 018 | Implemented | N/A | Constellation hover tooltip (name, count, top named stars) and the figure star list in the inspector (#74) |
 
 ## Removed features
 
