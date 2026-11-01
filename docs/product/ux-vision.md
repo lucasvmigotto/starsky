@@ -755,6 +755,10 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.render.glow` | Glow intensity |
 | `landing.browse` | Just browsing? |
 | `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
+| `landing.explore` | Explore this sky |
+| `landing.poster` | Make a poster instead |
+| `landing.error.when` | Pick a date and time for the sky. |
+| `landing.error.timezone` | Unknown timezone {zone}. Use an IANA name like "America/New_York". |
 | `landing.tz.label` | Timezone |
 | `landing.tz.detect` | Detect |
 | `landing.coords.toggle` | Coordinates |

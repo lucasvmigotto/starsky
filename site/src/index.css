@@ -1646,3 +1646,12 @@ select.atlas-form-input option {
 .landing-coords-toggle {
   justify-self: start;
 }
+
+/* Landing actions: the primary action first and centred, the secondary beside it when there is room. */
+.landing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}

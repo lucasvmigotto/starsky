@@ -7,5 +7,5 @@ Feature: `013-location-first` | Branch: `feat/013-location-first` | Input: `spec
 - [x] T003 Lazy Leaflet map: tiles per ADR-0008, attribution, click and draggable marker, expand
 - [x] T004 Coordinates toggle and validation; map-failure fallback
 - [x] T005 Moment row and Advanced (limiting magnitude); remove poster options from the landing
-- [ ] T006 Explore this sky, Make a poster instead, random sky; identity (header, footer)
+- [x] T006 Explore this sky, Make a poster instead, random sky; identity (header, footer)
 - [ ] T007 e2e: new journey, J1–J4 migrated, tile and geocoder stubs, failures, keyboard, axe, phone widths; vision and docs
