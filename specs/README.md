@@ -2,11 +2,10 @@ Reconstructed by project:introspec on 2026-09-29; re-scoped by project:refactor 
 
 # Specs — feature index
 
-Status: `002` and `005` are **Implemented** (the CLI data tool ships today).
-`006` is Implemented, `000` is now **Implemented** (built 2026-09-30, reconciled
-2026-10-01), `007` is **Implemented** — exports wired, all FT/QA tasks closed,
-`Site e2e` green on `main` — and `008` is **In progress** (T002 done, deploy +
-budgets underway). `003` is retired. Nothing is Verified.
+Status: `000`, `002`, `005`, `006`, `007` and `009`–`016` are **Implemented**
+(on `dev`; promotion to `main` is pending). `008` is **In progress** (T002 done,
+deploy and budgets underway; versioned prefixes, smoke test and drills open).
+`017` is **In progress** (hardening, #55). `003` is retired. Nothing is Verified.
 
 | # | Feature | Priority | Depends | Frontend | Backend | Notes |
 |---|---|---|---|---|---|---|

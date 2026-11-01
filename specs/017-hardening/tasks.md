@@ -9,9 +9,9 @@ Track A (site tests and code), branch `hardening/site`:
 - [ ] A6 enable `noUncheckedIndexedAccess` in `site/tsconfig.json`. Handle every error without `!` or `as` casts used only to silence them. References and SVG pins stay unchanged.
 
 Track B (docs), branch `hardening/docs`:
-- [ ] B1 docs site en and pt-BR: new pages Explorer, Landing and links (`#c=`, `#e=`, `#studio=`, `#s=`) and Studio. Update the overview, viewer (poster page), concepts (glossary), architecture and roadmap. Correct the maturity labels. Generate `llms.txt` and the Markdown.
-- [ ] B2 README: product description, flow, screenshots path or none, OpenStreetMap policy and privacy, the data CLI unchanged.
-- [ ] B3 AGENTS.md: layout (lib/sky, explorer, landing, scene, studio), the four fragments, OpenStreetMap rules (no search-as-you-type, no unstubbed requests in tests), and that `noUncheckedIndexedAccess` is true once A6 lands.
-- [ ] B4 `specs/README.md` statuses and the `ux-vision` sweep for stale lines.
+- [x] B1 docs site en and pt-BR: new pages Explorer, Landing and links (`#c=`, `#e=`, `#studio=`, `#s=`) and Studio. Update the overview, viewer (poster page), concepts (glossary), architecture and roadmap. Correct the maturity labels. Generate `llms.txt` and the Markdown.
+- [x] B2 README: product description, flow, screenshots path or none, OpenStreetMap policy and privacy, the data CLI unchanged.
+- [x] B3 AGENTS.md: layout (lib/sky, explorer, landing, scene, studio), the four fragments, OpenStreetMap rules (no search-as-you-type, no unstubbed requests in tests), and that `noUncheckedIndexedAccess` is true once A6 lands.
+- [x] B4 `specs/README.md` statuses and the `ux-vision` sweep for stale lines.
 
 Close-out (me): final report, checkpoint, close #55.
