@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { formatLocalTime } from "../lib/caption.ts";
-import { displayHeadingTitle } from "../lib/heading.ts";
 import {
   stripUnsupported,
   titleAdjustedMessage,
@@ -18,16 +16,14 @@ import {
   type SegmentRow,
   type StarRow,
 } from "../lib/skymodel.ts";
-import { DISK_CX, DISK_CY } from "../lib/skymodel.ts";
-import { HOME_VIEW, zoomAt, type View } from "../lib/view.ts";
-import FiguresPanel from "./FiguresPanel.tsx";
-import ExportControls from "./ExportControls.tsx";
-import ShareDialog from "./ShareDialog.tsx";
+import PosterActions from "./PosterActions.tsx";
 import SkyCanvas from "./SkyCanvas.tsx";
-import ViewControls from "./ViewControls.tsx";
 import { EmptyState, InvalidState, LegacyState } from "./States.tsx";
 import { t } from "../i18n/index.ts";
 import SiteFooter from "./SiteFooter.tsx";
+import SiteHeader from "./SiteHeader.tsx";
+import PosterHeading from "./PosterHeading.tsx";
+import { Icon } from "./icons.tsx";
 
 type LinkState =
   | { kind: "empty" }
@@ -75,27 +71,15 @@ export default function ViewerPage() {
   const [segments, setSegments] = useState<SegmentRow[] | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
   const [fontError, setFontError] = useState<string | null>(null);
-  const [hovered, setHovered] = useState<number | null>(null);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [tooltip, setTooltip] = useState<number | null>(null);
-  const [view, setView] = useState<View>(HOME_VIEW);
   const [fontsReady, setFontsReady] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const animRef = useRef(0);
-  /**
-   * The view as it stands right now, for callbacks that must not close over a
-   * stale copy — the zoom buttons in particular, which would otherwise zoom
-   * from wherever the view was when the handler was last created.
-   */
-  const activeViewRef = useRef(view);
-  activeViewRef.current = view;
   /**
    * Announced async outcomes (000-design-system T035).
    *
-   * A canvas that appears silently, and a figure that lights up without saying
-   * so, are both invisible to anyone not looking at the screen. The export row
-   * already announced via its own `role="status"`; these two were the gap.
+   * A canvas that appears silently is invisible to anyone not looking at the
+   * screen. The export row already announced via its own `role="status"`; this
+   * was the gap.
    *
    * Polite, not assertive: nothing here is an error. The font failure stays
    * `role="alert"` because it withholds the poster (BCR-0007).
@@ -110,10 +94,6 @@ export default function ViewerPage() {
   useEffect(() => {
     const onHash = () => {
       setLink(readLink());
-      setSelected(null);
-      setHovered(null);
-      setTooltip(null);
-      setView(HOME_VIEW);
     };
     window.addEventListener("hashchange", onHash);
     return () => {
@@ -252,47 +232,6 @@ export default function ViewerPage() {
     segments,
   );
 
-  const animateView = useCallback((target: View) => {
-    cancelAnimationFrame(animRef.current);
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setView(target);
-      return;
-    }
-    const start = performance.now();
-    const duration = 650;
-    // Capture the current view at animation start.
-    setView((current) => {
-      const from = { ...current };
-      const tick = (now: number) => {
-        const t = Math.min(1, (now - start) / duration);
-        const eased =
-          t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
-        setView({
-          scale: from.scale + (target.scale - from.scale) * eased,
-          fx: from.fx + (target.fx - from.fx) * eased,
-          fy: from.fy + (target.fy - from.fy) * eased,
-        });
-        if (t < 1) animRef.current = requestAnimationFrame(tick);
-      };
-      animRef.current = requestAnimationFrame(tick);
-      return current;
-    });
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      cancelAnimationFrame(animRef.current);
-    };
-  }, []);
-
-  const resetView = useCallback(() => {
-    setSelected(null);
-    setHovered(null);
-    setAnnouncement(t("viewer.announced.viewReset"));
-    setTooltip(null);
-    animateView(HOME_VIEW);
-  }, [animateView]);
-
   /*
    * Hand the shared sky to the Explorer or the Studio. Dynamic imports keep the
    * scene codecs out of the Viewer's own chunk; the `#s=` link is never
@@ -314,85 +253,9 @@ export default function ViewerPage() {
     [link],
   );
 
-  /*
-   * A pointer, wheel or keyboard gesture, applied directly.
-   *
-   * Not `animateView`: the pointer is the easing curve, and a tween under a
-   * finger only ever fights it — which is how a map ends up feeling like it is
-   * sliding away from you instead of under you. Cancelling any tween in flight
-   * matters for the same reason; otherwise it keeps writing `view` over the
-   * gesture for the rest of its 650ms.
-   */
-  const handleViewGesture = useCallback((next: View) => {
-    cancelAnimationFrame(animRef.current);
-    /*
-     * A manual move leaves whatever was selected somewhere the visitor is now
-     * looking away from, so keeping it pressed in the panel would be claiming a
-     * focus the view no longer shows. It also drops the focus overlay, which
-     * would otherwise sit on top of unrelated sky.
-     */
-    setSelected(null);
-    setView(next);
-  }, []);
-
-  const zoomBy = useCallback(
-    (factor: number) => {
-      handleViewGesture(
-        zoomAt(activeViewRef.current, DISK_CX, DISK_CY, factor),
-      );
-    },
-    [handleViewGesture],
-  );
-
-  const zoomIn = useCallback(() => {
-    zoomBy(1.5);
-  }, [zoomBy]);
-  const zoomOut = useCallback(() => {
-    zoomBy(1 / 1.5);
-  }, [zoomBy]);
-
-  // Esc releases a focused figure.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && selected !== null) resetView();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [selected, resetView]);
-
-  const handleSelect = useCallback(
-    (index: number) => {
-      if (!model) return;
-      const fig = model.figures[index];
-      setSelected(index);
-      setTooltip(null);
-      // Announce what was focused *and* what now fills the view, since the
-      // zoom is the whole point of selecting.
-      setAnnouncement(
-        t("viewer.announced.figureSelected", { name: fig.name }),
-      );
-      animateView({ scale: 2.4, fx: fig.centroidX, fy: fig.centroidY });
-    },
-    [model, animateView],
-  );
-
-  const handleHoverFigure = useCallback((index: number | null) => {
-    setHovered(index);
-    setTooltip(index);
-  }, []);
-
   return (
-    <div className="atlas-page">
-      <header className="atlas-header">
-        <div>
-          <p className="font-display text-2xl leading-none">Starsky</p>
-          <p className="mt-1 text-xs tracking-wide text-cream/55">
-            {t("viewer.subtitle")}
-          </p>
-        </div>
-      </header>
+    <div className="atlas-page atlas-viewer-fit">
+      <SiteHeader />
 
       <main className="atlas-main">
         {link.kind === "empty" && <EmptyState />}
@@ -401,18 +264,7 @@ export default function ViewerPage() {
 
         {link.kind === "ready" && payload && (
           <>
-            <div className="atlas-moment">
-              <p className="font-display text-3xl leading-tight sm:text-4xl">
-                {displayHeadingTitle(payload, t)}
-              </p>
-              <p className="mt-2 text-sm text-cream/65">
-                {formatLocalTime(payload.when_utc, payload.tz)} ·{" "}
-                {payload.options.projection === "fisheye"
-                  ? "fisheye"
-                  : "stereographic"}{" "}
-                projection
-              </p>
-            </div>
+            <PosterHeading payload={payload} />
 
             {dataError && (
               <p role="alert" className="atlas-alert">
@@ -439,49 +291,11 @@ export default function ViewerPage() {
               <div
                 className={`atlas-explorer ${loaded ? "atlas-loaded" : ""}`}
               >
-                <div className="relative">
-                  <SkyCanvas
-                    payload={payload}
-                    model={model}
-                    view={view}
-                    hovered={hovered}
-                    selected={selected}
-                    canvasRef={canvasRef}
-                    onHoverFigure={handleHoverFigure}
-                    onSelectFigure={handleSelect}
-                    onViewGesture={handleViewGesture}
-                    onResetView={resetView}
-                    fontsReady={fontsReady}
-                  />
-                  {tooltip !== null && model.figures[tooltip] && (
-                    <div className="atlas-tooltip" role="status">
-                      <FigureTooltip
-                        figure={model.figures[tooltip]}
-                      />
-                    </div>
-                  )}
-                  {/*
-                    Inside the poster's grid item rather than beside it: at two
-                    columns a third child would take a column of its own and
-                    push the figure list out of the layout.
-                  */}
-                  <ViewControls
-                    view={view}
-                    onZoomIn={zoomIn}
-                    onZoomOut={zoomOut}
-                    onReset={resetView}
-                  />
-                </div>
-                <FiguresPanel
-                  figures={model.figures}
-                  hovered={hovered}
-                  selected={selected}
-                  onHover={(i) => {
-                    setHovered(i);
-                    setTooltip(i);
-                  }}
-                  onSelect={handleSelect}
-                  onReset={resetView}
+                <SkyCanvas
+                  payload={payload}
+                  model={model}
+                  canvasRef={canvasRef}
+                  fontsReady={fontsReady}
                 />
               </div>
             ) : (
@@ -491,31 +305,6 @@ export default function ViewerPage() {
                 </p>
               )
             )}
-
-            {model && <ShareDialog payload={payload} />}
-
-            {model && <ExportControls payload={payload} model={model} />}
-
-            <div className="atlas-viewer-actions">
-              <button
-                type="button"
-                className="atlas-btn-ghost"
-                onClick={() => {
-                  void goTo("explore");
-                }}
-              >
-                {t("viewer.exploreSky")}
-              </button>
-              <button
-                type="button"
-                className="atlas-btn-ghost"
-                onClick={() => {
-                  void goTo("studio");
-                }}
-              >
-                {t("viewer.makeYourOwn")}
-              </button>
-            </div>
 
             {/*
               Async outcomes (000-design-system T035). `sr-only` keeps it out of
@@ -538,25 +327,34 @@ export default function ViewerPage() {
         )}
       </main>
 
-      <SiteFooter />
-    </div>
-  );
-}
-
-function FigureTooltip({
-  figure,
-}: {
-  figure: { name: string; starIndices: number[]; brightestMag: number };
-}) {
-  return (
-    <div className="pointer-events-none mx-auto w-fit">
-      <p className="font-display text-lg leading-none">{figure.name}</p>
-      <p className="mt-1 text-xs text-cream/70">
-        {t("figures.tooltip", {
-          count: figure.starIndices.length,
-          mag: figure.brightestMag.toFixed(1),
-        })}
-      </p>
+      <SiteFooter>
+        {link.kind === "ready" && payload && model && (
+          <PosterActions payload={payload} model={model}>
+            <button
+              type="button"
+              className="atlas-btn-icon"
+              aria-label={t("viewer.exploreSky")}
+              title={t("viewer.exploreSky")}
+              onClick={() => {
+                void goTo("explore");
+              }}
+            >
+              <Icon name="explore" />
+            </button>
+            <button
+              type="button"
+              className="atlas-btn-icon"
+              aria-label={t("viewer.makeYourOwn")}
+              title={t("viewer.makeYourOwn")}
+              onClick={() => {
+                void goTo("studio");
+              }}
+            >
+              <Icon name="poster" />
+            </button>
+          </PosterActions>
+        )}
+      </SiteFooter>
     </div>
   );
 }

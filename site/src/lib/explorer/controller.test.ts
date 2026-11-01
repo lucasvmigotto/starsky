@@ -8,7 +8,7 @@ import {
   screenRay,
 } from "../sky/camera.ts";
 import { initialCamera } from "../sky/observer.ts";
-import { rotate } from "../sky/quat.ts";
+import { fromAxisAngle, multiply, normalize, rotate } from "../sky/quat.ts";
 import { type Vec3, angularDistanceDeg, vecToRaDec } from "../sky/vec.ts";
 import { ExplorerController, type ControllerChange } from "./controller.ts";
 import { CTX, dirAt, sceneOf } from "./fixture.ts";
@@ -399,5 +399,293 @@ describe("starAt (hover tooltip)", () => {
     expect(queue).toHaveLength(0);
     expect(changes).toEqual([]);
     expect(controller.frames).toBe(1);
+  });
+});
+
+
+describe("animated reset (FR-012)", () => {
+  function animated(reduced = false, camera: ExplorerCamera = horizonCamera(30)) {
+    const clock = { t: 0 };
+    const queue: (() => void)[] = [];
+    const changes: ControllerChange[] = [];
+    const timers: { callback: () => void; cleared: boolean }[] = [];
+    const { scene } = sceneOf(
+      [
+        { hip: 1, dir: dirAt(0, 0), mag: 1 },
+        { hip: 2, dir: dirAt(10, 20), mag: 2 },
+      ],
+      [["Tst", "Test", 1, 2]],
+    );
+    const controller = new ExplorerController({
+      scene,
+      ctx: CTX,
+      camera,
+      magLimit: 6.5,
+      viewport: VIEWPORT,
+      requestFrame: (cb) => {
+        queue.push(cb);
+        return queue.length;
+      },
+      draw: () => undefined,
+      setTimer: (callback) => timers.push({ callback, cleared: false }) - 1,
+      clearTimer: (handle) => {
+        timers[handle].cleared = true;
+      },
+      now: () => clock.t,
+      reducedMotion: () => reduced,
+    });
+    controller.subscribe((c) => changes.push(c));
+    /** Advance the clock by `ms`, then run the one pending frame. */
+    const step = (ms: number): void => {
+      clock.t += ms;
+      queue.splice(0).forEach((cb) => {
+        cb();
+      });
+    };
+    /** Fire the quiet-period timer that is still pending, as the page's timer would. */
+    const fireTimers = (): void => {
+      for (const timer of timers.filter((x) => !x.cleared)) {
+        timer.cleared = true;
+        timer.callback();
+      }
+    };
+    step(0);
+    return { controller, clock, queue, changes, step, fireTimers };
+  }
+
+  const target = (): ExplorerCamera => initialCamera(CTX);
+
+  it("does not jump: the first frames are between the pose and the initial view", () => {
+    const { controller, step, queue } = animated();
+    const from = controller.getCamera();
+    controller.reset();
+    expect(controller.getCamera()).toEqual(from);
+    expect(queue).toHaveLength(1);
+    step(100);
+    const mid = controller.getCamera();
+    expect(mid.fovDeg).toBeGreaterThan(30);
+    expect(mid.fovDeg).toBeLessThan(target().fovDeg);
+    expect(angularDistanceDeg(forward(mid), forward(from))).toBeGreaterThan(0);
+    expect(angularDistanceDeg(forward(mid), forward(target()))).toBeGreaterThan(0);
+  });
+
+  it("interpolates the field of view in log space", () => {
+    const { controller, step } = animated();
+    controller.reset();
+    step(1);
+    // Halfway through the easing the log of the FOV is halfway between the two.
+    const goal = target().fovDeg;
+    controller.reset();
+    step(600);
+    const half = controller.getCamera().fovDeg;
+    expect(half).toBeGreaterThan(30);
+    expect(half).toBeLessThan(goal);
+    const logFraction = (Math.log(half) - Math.log(30)) / (Math.log(goal) - Math.log(30));
+    expect(logFraction).toBeGreaterThan(0);
+    expect(logFraction).toBeLessThan(1);
+  });
+
+  it("ends exactly at the initial view and keeps asking for frames until then", () => {
+    const { controller, step, queue } = animated();
+    controller.reset();
+    let guard = 0;
+    while (queue.length > 0 && guard++ < 200) step(16);
+    expect(controller.getCamera()).toEqual(target());
+    expect(guard).toBeGreaterThan(10);
+    expect(queue).toHaveLength(0);
+  });
+
+  it("lasts between 300 and 800 ms, longer for a longer way round", () => {
+    const lasts = (camera: ExplorerCamera): number => {
+      const { controller, step, queue } = animated(false, camera);
+      controller.reset();
+      let t = 0;
+      while (queue.length > 0 && t < 2000) {
+        step(10);
+        t += 10;
+      }
+      return t;
+    };
+    const goal = target();
+    // A short turn: the initial view nudged by 8 degrees and left at its zoom.
+    const near = lasts({ orientation: normalize(multiply(fromAxisAngle([0, 1, 0], 8), goal.orientation)), fovDeg: goal.fovDeg });
+    const far = lasts({ orientation: normalize(multiply(fromAxisAngle([0, 1, 0], 170), goal.orientation)), fovDeg: goal.fovDeg });
+    expect(near).toBeGreaterThanOrEqual(300);
+    expect(near).toBeLessThanOrEqual(400);
+    expect(far).toBeGreaterThan(near);
+    expect(far).toBeLessThanOrEqual(810);
+  });
+
+  it("settles once, at the end, and not while it runs", () => {
+    const { controller, step, queue, changes, fireTimers } = animated();
+    controller.reset();
+    step(50);
+    fireTimers();
+    expect(changes.filter((c) => c.kind === "settled")).toHaveLength(0);
+    while (queue.length > 0) step(16);
+    fireTimers();
+    expect(changes.filter((c) => c.kind === "settled")).toHaveLength(1);
+    expect(controller.getCamera()).toEqual(target());
+  });
+
+  it("is cancelled by a drag, a wheel turn, a key or a pinch, and takes over from the current pose", () => {
+    const inputs: [string, (c: ExplorerController) => void][] = [
+      ["drag", (c) => { c.pointerDown(1, 100, 100); c.pointerMove(1, 140, 100); }],
+      ["wheel", (c) => { c.wheel(-100, 400, 300); }],
+      ["key", (c) => { c.key("ArrowLeft"); }],
+      ["zoom key", (c) => { c.key("+"); }],
+      ["pinch", (c) => { c.pointerDown(1, 300, 300); c.pointerDown(2, 400, 300); }],
+      ["zoom button", (c) => { c.zoomBy(1); }],
+    ];
+    for (const [name, input] of inputs) {
+      const { controller, step, queue, changes, fireTimers } = animated();
+      controller.reset();
+      step(120);
+      const pose = controller.getCamera();
+      input(controller);
+      // No further interpolation fights the input.
+      step(16);
+      step(16);
+      const after = controller.getCamera();
+      expect(angularDistanceDeg(forward(after), forward(pose)), name).toBeLessThan(40);
+      expect(after.fovDeg, name).not.toBe(target().fovDeg);
+      while (queue.length > 0) step(16);
+      expect(controller.getCamera(), name).not.toEqual(target());
+      fireTimers();
+      expect(changes.filter((c) => c.kind === "settled").length, name).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("restarts from the current pose when reset is pressed again", () => {
+    const { controller, step, queue } = animated();
+    controller.reset();
+    step(200);
+    const pose = controller.getCamera();
+    controller.reset();
+    step(1);
+    expect(angularDistanceDeg(forward(controller.getCamera()), forward(pose))).toBeLessThan(5);
+    while (queue.length > 0) step(16);
+    expect(controller.getCamera()).toEqual(target());
+  });
+
+  it("jumps under reduced motion, as before", () => {
+    const { controller, queue } = animated(true);
+    controller.reset();
+    expect(controller.getCamera()).toEqual(target());
+    expect(queue.length).toBeLessThanOrEqual(1);
+  });
+
+  it("animates Center on map the same way, keeping the zoom", () => {
+    const { controller, step, queue } = animated();
+    const fov = controller.getCamera().fovDeg;
+    const before = forward(controller.getCamera());
+    expect(controller.centerOn("HIP:2")).toBe(true);
+    expect(controller.getCamera().fovDeg).toBe(fov);
+    expect(angularDistanceDeg(forward(controller.getCamera()), before)).toBeCloseTo(0, 9);
+    while (queue.length > 0) step(16);
+    expect(controller.getCamera().fovDeg).toBe(fov);
+    expect(angularDistanceDeg(forward(controller.getCamera()), dirAt(10, 20))).toBeLessThan(0.01);
+  });
+
+  it("still jumps when no clock is given (the pure tests)", () => {
+    const { controller, flush } = setup();
+    flush();
+    controller.reset();
+    expect(controller.getCamera()).toEqual(initialCamera(CTX));
+  });
+});
+
+
+const last = <T,>(items: readonly T[]): T | undefined => items[items.length - 1];
+
+describe("constellation hover (FR-013)", () => {
+  // Segment of "Tst" between HIP 2 (10, 20) and HIP 3 (10, 24); HIP 1 is off at (0, 0).
+  function onSegment(c: ExplorerCamera, offsetPx = 0): { x: number; y: number } {
+    const a = project(c, dirAt(10, 20));
+    const b = project(c, dirAt(10, 24));
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + offsetPx };
+  }
+
+  it("hovers the constellation whose line is under the pointer, and redraws once", () => {
+    const { controller, queue, flush, plans } = setup();
+    flush();
+    const at = onSegment(controller.getCamera(), 3);
+    controller.hoverAt(at.x, at.y);
+    expect(controller.hover.id).toBe("CON:Tst");
+    expect(controller.hover.source).toBe("canvas");
+    expect(queue).toHaveLength(1);
+    flush();
+    expect(last(plans)?.lines.some((b) => b.hover)).toBe(true);
+  });
+
+  it("does not redraw for moves within the same figure, only when the id changes", () => {
+    const { controller, queue, flush } = setup();
+    flush();
+    const first = onSegment(controller.getCamera(), 2);
+    controller.hoverAt(first.x, first.y);
+    flush();
+    for (let i = 0; i < 20; i++) controller.hoverAt(first.x + i * 0.2, first.y + 1);
+    expect(queue).toHaveLength(0);
+    controller.hoverAt(5, 5);
+    expect(controller.hover.id).toBeNull();
+    expect(queue).toHaveLength(1);
+  });
+
+  it("leaves a star to its tooltip", () => {
+    const { controller, flush } = setup();
+    flush();
+    const star = project(controller.getCamera(), dirAt(10, 20));
+    controller.hoverAt(star.x + 2, star.y);
+    expect(controller.hover.id).toBeNull();
+  });
+
+  it("clears when a press or a drag starts, and on clearHover", () => {
+    const { controller, flush } = setup();
+    flush();
+    const at = onSegment(controller.getCamera(), 2);
+    controller.hoverAt(at.x, at.y);
+    controller.pointerDown(1, at.x, at.y);
+    expect(controller.hover.id).toBeNull();
+    controller.pointerUp(1, at.x, at.y);
+    controller.hoverAt(at.x, at.y);
+    expect(controller.hover.id).toBe("CON:Tst");
+    controller.clearHover();
+    expect(controller.hover.id).toBeNull();
+  });
+
+  it("redraws when the list sets the hover, and takes the label as a target too", () => {
+    const { controller, queue, flush, plans } = setup();
+    flush();
+    controller.hover.set("CON:Tst", "list");
+    expect(queue).toHaveLength(1);
+    flush();
+    expect(last(plans)?.labels.some((l) => l.hover) || last(plans)?.lines.some((b) => b.hover)).toBe(true);
+    const label = last(plans)?.labels.find((l) => l.id === "CON:Tst");
+    controller.hover.set(null, "list");
+    flush();
+    if (label) {
+      controller.hoverAt(label.x, label.y);
+      expect(controller.hover.id).toBe("CON:Tst");
+    }
+  });
+
+  it("leaves a hover the list set to the list: the canvas's leave does not clear it", () => {
+    const { controller, flush } = setup();
+    flush();
+    controller.hover.set("CON:Tst", "list");
+    controller.clearHover();
+    expect(controller.hover.id).toBe("CON:Tst");
+    controller.hover.set(null, "list");
+    const at = onSegment(controller.getCamera(), 2);
+    controller.hoverAt(at.x, at.y);
+    expect(controller.hover.source).toBe("canvas");
+    controller.clearHover();
+    expect(controller.hover.id).toBeNull();
+  });
+
+  it("does not count as a view change: the settled event is untouched", () => {
+    const { controller, changes } = setup();
+    controller.hover.set("CON:Tst", "list");
+    expect(changes).toEqual([]);
   });
 });

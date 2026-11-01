@@ -157,8 +157,9 @@ describe("ExportControls", () => {
     expect(group).toBeDefined();
   });
 
-  it("exposes a polite live region for status", () => {
+  it("exposes a polite live region for status, inside the popover", () => {
     render(<ExportControls payload={makePayload()} model={MODEL} />);
+    openFormats();
     const status = screen.getByRole("status");
     expect(status.getAttribute("aria-live")).toBe("polite");
   });

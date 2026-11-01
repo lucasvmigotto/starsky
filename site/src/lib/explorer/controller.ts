@@ -6,6 +6,8 @@
 
 import {
   type ExplorerCamera,
+  FOV_MAX_DEG,
+  FOV_MIN_DEG,
   clampFov,
   projectToViewport,
   rotateByDrag,
@@ -13,13 +15,14 @@ import {
   zoomAnchored,
 } from "../sky/camera.ts";
 import { type ObservationContext, initialCamera } from "../sky/observer.ts";
-import { multiply, normalize, fromUnitVectors, rotate } from "../sky/quat.ts";
+import { type Quat, multiply, normalize, fromUnitVectors, rotate, slerp } from "../sky/quat.ts";
 import type { SkyScene } from "../sky/scene.ts";
 import { type Vec3, normalizeVec } from "../sky/vec.ts";
-import { type FramePlan, type Viewport, planFrame } from "./frame.ts";
+import { type FramePlan, type LabelMark, type Viewport, planFrame } from "./frame.ts";
+import { HoverStore } from "./hover.ts";
 import { DEFAULT_LAYERS, type PlanLayers } from "./layers.ts";
 import { type ObserverView, prepareObserverView } from "./observerView.ts";
-import { type Pick, pickAt } from "./pick.ts";
+import { type Pick, pickAt, pickConstellationAt } from "./pick.ts";
 
 export type ControllerChange =
   | { kind: "selection"; selection: string | null }
@@ -52,6 +55,14 @@ export interface ControllerOptions {
   clearTimer?: (handle: number) => void;
   /** Quiet time before a change counts as settled; default 500. */
   settleMs?: number;
+  /**
+   * A millisecond clock, `performance.now` in the page. Without it the view
+   * never animates and Reset view and Center on map jump, which is what the pure
+   * tests want.
+   */
+  now?: () => number;
+  /** True under `prefers-reduced-motion`: the animations are skipped. */
+  reducedMotion?: () => boolean;
   draw: (plan: FramePlan, state: FrameState) => void;
 }
 
@@ -63,11 +74,35 @@ const KEY_ZOOM_FACTOR = 1.25;
 export const SETTLE_MS = 500;
 /** One arrow press turns the view by this share of the shorter side. */
 const KEY_ROTATE_SHARE = 0.1;
+/** Reset view and Center on map take 300 ms for a short turn and 800 ms for half the sky. */
+export const ANIMATION_MIN_MS = 300;
+export const ANIMATION_MAX_MS = 800;
+/** Distances below this many degrees are not worth animating. */
+const ANIMATION_MIN_DISTANCE_DEG = 0.01;
+const RAD_TO_DEG = 180 / Math.PI;
+
+/** An eased move of the whole camera, advanced in the frame loop. */
+interface Animation {
+  fromQ: Quat;
+  toQ: Quat;
+  fromLogFov: number;
+  toLogFov: number;
+  toFov: number;
+  start: number;
+  duration: number;
+}
+
+/** Ease in-out, quadratic. */
+function easeInOut(t: number): number {
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
 
 type Point = { x: number; y: number };
 
 export class ExplorerController {
   readonly view: ObserverView;
+  /** The constellation under the pointer or the panel list's pointer (FR-013). Not a view change. */
+  readonly hover = new HoverStore();
   /** Frames drawn so far; the e2e idle check reads it through the canvas. */
   frames = 0;
 
@@ -81,6 +116,11 @@ export class ExplorerController {
   private readonly setTimer: ControllerOptions["setTimer"];
   private readonly clearTimer: ControllerOptions["clearTimer"];
   private readonly settleMs: number;
+  private readonly now: ControllerOptions["now"];
+  private readonly reducedMotion: ControllerOptions["reducedMotion"];
+  private animation: Animation | null = null;
+  /** The labels the last frame drew, so a hover can hit them; replaced, never copied. */
+  private labels: readonly LabelMark[] = [];
   private settleHandle: number | null = null;
   private camera: ExplorerCamera;
   private layers: PlanLayers;
@@ -109,11 +149,17 @@ export class ExplorerController {
     this.setTimer = options.setTimer;
     this.clearTimer = options.clearTimer;
     this.settleMs = options.settleMs ?? SETTLE_MS;
+    this.now = options.now;
+    this.reducedMotion = options.reducedMotion;
     this.viewport = options.viewport;
     this.layers = options.layers ?? DEFAULT_LAYERS;
     this.camera = options.camera ?? initialCamera(options.ctx);
     this.view = prepareObserverView(options.scene, options.ctx);
     this.selection = this.known(options.selection ?? null) ? (options.selection ?? null) : null;
+    // A hover from either side is one frame, and neither touches the quiet period.
+    this.hover.subscribe(() => {
+      this.invalidate();
+    });
     this.invalidate();
   }
 
@@ -136,6 +182,28 @@ export class ExplorerController {
     };
   }
 
+  /**
+   * Hover the constellation whose figure or label is at this point (a mouse or
+   * pen resting there). Asks for a frame only when the hovered id changes.
+   */
+  hoverAt(x: number, y: number): void {
+    if (this.pointers.size > 0) {
+      this.clearHover();
+      return;
+    }
+    const id = pickConstellationAt(this.scene, this.view, this.camera, this.viewport, this.labels, x, y, {
+      magLimit: this.magLimit,
+      below: this.layers.below,
+      lines: this.layers.constellationLines,
+    });
+    this.hover.set(id, "canvas");
+  }
+
+  /** Clear a hover the canvas set; one the panel's list set is the list's to clear. */
+  clearHover(): void {
+    if (this.hover.source === "canvas") this.hover.set(null, "canvas");
+  }
+
   /** Ask for one frame; any number of calls before it runs make a single request. */
   invalidate(): void {
     if (this.disposed || this.handle !== null) return;
@@ -144,6 +212,7 @@ export class ExplorerController {
 
   dispose(): void {
     this.disposed = true;
+    this.animation = null;
     if (this.handle !== null) this.cancelFrame?.(this.handle);
     this.handle = null;
     if (this.settleHandle !== null) this.clearTimer?.(this.settleHandle);
@@ -166,8 +235,9 @@ export class ExplorerController {
     for (const listener of this.listeners) listener({ kind: "selection", selection: next });
   }
 
+  /** Back to the initial view, animated unless motion is reduced or no clock was given. */
   reset(): void {
-    this.setCamera(initialCamera(this.ctx));
+    this.animateTo(initialCamera(this.ctx));
   }
 
   setLayer<K extends keyof PlanLayers>(key: K, value: PlanLayers[K]): void {
@@ -179,20 +249,23 @@ export class ExplorerController {
 
   /** Zoom about the centre by `steps` key presses; positive zooms in. */
   zoomBy(steps: number): void {
+    this.cancelAnimation();
     const { width, height } = this.viewport;
     this.zoomTo(this.camera.fovDeg * Math.pow(KEY_ZOOM_FACTOR, -steps), width / 2, height / 2);
   }
 
-  /** Turn the view to the star or the constellation's centre; the zoom stays. Instant. */
+  /** Turn the view to the star or the constellation's centre; the zoom stays. Animated like Reset view. */
   centerOn(id: string): boolean {
     const star = this.starVector(id);
     const target = star ?? (this.scene.constellationIndexById.has(id) ? this.constellationCentre(id) : null);
     if (!target) return false;
-    this.lookToward(target);
+    this.lookToward(target, true);
     return true;
   }
 
   pointerDown(id: number, x: number, y: number): void {
+    this.cancelAnimation();
+    this.clearHover();
     if (this.pointers.size >= 2) return;
     this.pointers.set(id, { x, y });
     if (this.pointers.size === 1) {
@@ -247,12 +320,14 @@ export class ExplorerController {
   }
 
   wheel(deltaY: number, x: number, y: number): void {
+    this.cancelAnimation();
     const delta = Math.max(-WHEEL_MAX_DELTA, Math.min(WHEEL_MAX_DELTA, deltaY));
     this.zoomTo(this.camera.fovDeg * Math.exp(delta * WHEEL_SENSITIVITY), x, y);
   }
 
   /** True when the key was used, so the caller can stop the browser's own handling. */
   key(key: string): boolean {
+    if (key !== "Escape") this.cancelAnimation();
     const { width, height } = this.viewport;
     const step = Math.min(width, height) * KEY_ROTATE_SHARE;
     const cx = width / 2;
@@ -304,6 +379,7 @@ export class ExplorerController {
 
   /** Centre on the star or constellation under the pointer, else on the point itself. */
   doubleClick(x: number, y: number): void {
+    this.cancelAnimation();
     const { width, height } = this.viewport;
     const hit = this.pick(x, y);
     let target = screenRay(this.camera, x, y, width, height);
@@ -315,10 +391,81 @@ export class ExplorerController {
     this.lookToward(target);
   }
 
-  private lookToward(target: Vec3): void {
+  private lookToward(target: Vec3, animate = false): void {
     const forward = rotate(this.camera.orientation, [0, 0, -1]);
     const delta = fromUnitVectors(forward, target);
-    this.setCamera({ ...this.camera, orientation: normalize(multiply(delta, this.camera.orientation)) });
+    const next = { ...this.camera, orientation: normalize(multiply(delta, this.camera.orientation)) };
+    if (animate) this.animateTo(next);
+    else this.setCamera(next);
+  }
+
+  /**
+   * Move the camera to `target` over 300 to 800 ms, by quaternion slerp along
+   * the shortest path and the field of view in log space, eased in and out. It
+   * advances in the frame loop with the injected clock, and `settled` fires
+   * once when it ends or is cancelled.
+   */
+  private animateTo(target: ExplorerCamera): void {
+    const now = this.now;
+    if (!now || this.reducedMotion?.() === true) {
+      this.setCamera(target);
+      return;
+    }
+    this.animation = null;
+    const from = this.camera;
+    const dot = Math.min(
+      1,
+      Math.abs(
+        from.orientation[0] * target.orientation[0] +
+          from.orientation[1] * target.orientation[1] +
+          from.orientation[2] * target.orientation[2] +
+          from.orientation[3] * target.orientation[3],
+      ),
+    );
+    const turnDeg = 2 * Math.acos(dot) * RAD_TO_DEG;
+    const fovShare = Math.abs(Math.log(target.fovDeg / from.fovDeg)) / Math.log(FOV_MAX_DEG / FOV_MIN_DEG);
+    const distanceDeg = Math.max(turnDeg, fovShare * 180);
+    if (distanceDeg < ANIMATION_MIN_DISTANCE_DEG) {
+      this.setCamera(target);
+      return;
+    }
+    this.animation = {
+      fromQ: from.orientation,
+      toQ: target.orientation,
+      fromLogFov: Math.log(from.fovDeg),
+      toLogFov: Math.log(target.fovDeg),
+      toFov: target.fovDeg,
+      start: now(),
+      duration: ANIMATION_MIN_MS + (ANIMATION_MAX_MS - ANIMATION_MIN_MS) * Math.min(1, distanceDeg / 180),
+    };
+    this.invalidate();
+  }
+
+  /** Stop an animation where it is: the camera already holds the pose, and one settle follows. */
+  private cancelAnimation(): void {
+    if (this.animation === null) return;
+    this.animation = null;
+    this.touch();
+  }
+
+  /** One step of the animation, at the start of a frame. */
+  private advanceAnimation(): void {
+    const a = this.animation;
+    const now = this.now;
+    if (a === null || !now) return;
+    const t = Math.min(1, Math.max(0, (now() - a.start) / a.duration));
+    if (t >= 1) {
+      this.animation = null;
+      this.camera = { orientation: a.toQ, fovDeg: a.toFov };
+      this.touch();
+      return;
+    }
+    const e = easeInOut(t);
+    this.camera = {
+      orientation: slerp(a.fromQ, a.toQ, e),
+      fovDeg: Math.exp(a.fromLogFov + (a.toLogFov - a.fromLogFov) * e),
+    };
+    this.invalidate();
   }
 
   private starVector(id: string): Vec3 | null {
@@ -338,8 +485,8 @@ export class ExplorerController {
   private readonly onSettle = (): void => {
     this.settleHandle = null;
     if (this.disposed) return;
-    // Never mid-gesture: the next change or the gesture's end starts the wait again.
-    if (this.pointers.size > 0) {
+    // Never mid-gesture or mid-animation: the end starts the wait again.
+    if (this.pointers.size > 0 || this.animation !== null) {
       this.touch();
       return;
     }
@@ -349,6 +496,7 @@ export class ExplorerController {
   private readonly runFrame = (): void => {
     this.handle = null;
     if (this.disposed) return;
+    this.advanceAnimation();
     this.frames++;
     const plan = planFrame({
       scene: this.scene,
@@ -359,8 +507,10 @@ export class ExplorerController {
       magLimit: this.magLimit,
       selection: this.selection,
       hover: null,
+      hoverConstellation: this.hover.id,
       cardinalText: this.cardinalText,
     });
+    this.labels = plan.labels;
     this.draw(plan, { camera: this.camera, viewport: this.viewport, frames: this.frames });
   };
 
@@ -396,6 +546,7 @@ export class ExplorerController {
   }
 
   private setCamera(camera: ExplorerCamera): void {
+    this.animation = null;
     this.camera = camera;
     this.invalidate();
     this.touch();

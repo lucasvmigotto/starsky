@@ -18,7 +18,7 @@ describe("copy", () => {
     expect(t("studio.place.resolved", { place: "Times Square" })).toBe(
       "Showing Times Square",
     );
-    expect(t("footer.version", { version: "1.0.0" })).toBe("starsky v1.0.0");
+    expect(t("footer.version", { version: "1.0.0" })).toBe("starsky@v1.0.0");
     expect(
       t("viewer.export.done", { filename: "starsky-sky.png" }),
     ).toBe("Saved starsky-sky.png");
@@ -106,6 +106,15 @@ describe("copy", () => {
     // 180 → 183 for the export layout choice (012-poster-studio, BCR-0012).
     // 183 → 190 for the Poster Studio page (012-poster-studio).
     // 190 → 192 for the Explorer and Viewer hand-offs (012-poster-studio).
-    expect(copyKeys().length).toBe(195);
+    // 195 → 187 for the image-only Viewer (015, BCR-0013): the figures panel's
+    // seven keys and `viewer.announced.figureSelected` retire.
+    // 187 → 184 for the form regroup (015): the two Advanced legends in;
+    // the Sky and Observation legends (landing and Studio) and `landing.explain`
+    // out.
+    // 184 → 178 for the static Viewer image (FR-010): `viewer.announced.viewReset`,
+    // `viewer.canvasHint`, `viewer.viewControls`, `viewer.zoomIn`, `viewer.zoomOut` and
+    // `viewer.resetView` retire.
+    // 178 → 177 for the footer (FR-011): `footer.source` retires; the version is the link.
+    expect(copyKeys().length).toBe(177);
   });
 });

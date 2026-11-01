@@ -138,6 +138,8 @@ test.describe("Viewer actions", () => {
     await page.getByRole("button", { name: "Make your own from this sky" }).click();
     await expect(page.getByRole("heading", { level: 1, name: "Poster Studio" })).toBeVisible();
     await expect(page.getByLabel("Title", { exact: true })).toHaveValue("E2E Night");
+    // The limiting magnitude lives in the collapsed Advanced disclosure.
+    await page.getByText("Advanced", { exact: true }).click();
     await expect(page.getByLabel("Limiting magnitude")).toHaveValue("4.5");
   });
 });

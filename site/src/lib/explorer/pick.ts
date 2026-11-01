@@ -4,7 +4,7 @@ import { type ExplorerCamera, focalPx, projectSegment, screenRay } from "../sky/
 import type { BelowMode } from "../sky/payload.ts";
 import type { SkyScene } from "../sky/scene.ts";
 import { type Vec3, angularDistanceDeg, dot } from "../sky/vec.ts";
-import type { Viewport } from "./frame.ts";
+import type { LabelMark, Viewport } from "./frame.ts";
 import type { ObserverView } from "./observerView.ts";
 import { segmentShown, starShown } from "./visibility.ts";
 
@@ -96,4 +96,29 @@ export function pickAt(
     }
   }
   return hit === null ? null : { kind: "constellation", id: hit };
+}
+
+/**
+ * The constellation under the pointer for the hover highlight (FR-013): one
+ * whose label box holds the point, else one with a line segment within the
+ * segment tolerance. A star under the pointer keeps the pointer for its own
+ * tooltip, so there is no constellation hover then. `labels` is what the last
+ * frame drew; the lines layer being off removes only the segments.
+ */
+export function pickConstellationAt(
+  scene: SkyScene,
+  view: ObserverView,
+  camera: ExplorerCamera,
+  viewport: Viewport,
+  labels: readonly LabelMark[],
+  x: number,
+  y: number,
+  options: PickOptions = {},
+): string | null {
+  const hit = pickAt(scene, view, camera, viewport, x, y, options);
+  if (hit?.kind === "star") return null;
+  for (const label of labels) {
+    if (Math.abs(x - label.x) <= label.width / 2 && Math.abs(y - label.y) <= label.height / 2) return label.id;
+  }
+  return hit?.id ?? null;
 }

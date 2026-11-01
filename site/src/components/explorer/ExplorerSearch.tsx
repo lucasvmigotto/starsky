@@ -73,7 +73,7 @@ export default function ExplorerSearch({ scene, magLimit, onChoose, onClose, inp
           ref={inputRef}
           type="search"
           role="combobox"
-          className="explorer-search-input"
+          className="atlas-form-input explorer-search-input"
           aria-label={t("explorer.search.input")}
           placeholder={t("explorer.search.placeholder")}
           aria-expanded={results.length > 0}
@@ -89,7 +89,7 @@ export default function ExplorerSearch({ scene, magLimit, onChoose, onClose, inp
           }}
           onKeyDown={onKeyDown}
         />
-        <button type="button" className="explorer-close" onClick={onClose}>
+        <button type="button" className="atlas-btn-ghost" onClick={onClose}>
           {t("explorer.search.close")}
         </button>
       </div>

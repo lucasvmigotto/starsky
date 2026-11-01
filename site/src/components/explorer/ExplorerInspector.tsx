@@ -4,9 +4,10 @@
  * screens, a bottom sheet on narrow ones (the layout is CSS; this is the DOM).
  * It takes the selection as a prop, so a camera move never reaches it.
  */
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { JSX, ReactNode } from "react";
 import { t } from "../../i18n/index.ts";
+import { Icon } from "../icons.tsx";
 import {
   type ConstellationDetail,
   type GroupedConstellation,
@@ -15,6 +16,7 @@ import {
   describeStar,
   groupConstellations,
 } from "../../lib/explorer/inspect.ts";
+import type { HoverStore } from "../../lib/explorer/hover.ts";
 import type { ObserverView } from "../../lib/explorer/observerView.ts";
 import type { SkyScene } from "../../lib/sky/scene.ts";
 import { formatDegrees, formatMagnitude } from "./format.ts";
@@ -25,6 +27,8 @@ interface Props {
   scene: SkyScene;
   view: ObserverView;
   selection: string | null;
+  /** The constellation hover, shared with the canvas (FR-013). */
+  hover: HoverStore;
   open: boolean;
   /** Select and center. */
   onChoose: (id: string) => void;
@@ -141,12 +145,66 @@ interface GroupProps {
   items: readonly GroupedConstellation[];
   open: boolean;
   selection: string | null;
+  hover: HoverStore;
   onToggle: (open: boolean) => void;
   onChoose: (id: string) => void;
 }
 
+/** True while the pointer is on a figure in the sky or a list item for it (mouse and pen only). */
+function useHovering(hover: HoverStore, match: (id: string | null) => boolean): boolean {
+  return useSyncExternalStore(hover.subscribe, () => match(hover.id));
+}
+
+/** One list item. It alone re-renders when its own hover flips, so a hover never redraws the panel. */
+function ListItem({
+  item,
+  selection,
+  hover,
+  onChoose,
+}: {
+  item: GroupedConstellation;
+  selection: string | null;
+  hover: HoverStore;
+  onChoose: (id: string) => void;
+}): JSX.Element {
+  const hovered = useHovering(hover, (id) => id === item.id);
+  const ref = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    // Only a hover that came from the sky moves the list; one that came from this
+    // list is under the pointer already. Focus and the order are left alone.
+    if (!hovered || hover.source !== "canvas") return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    ref.current?.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" });
+  }, [hovered, hover]);
+  return (
+    <li>
+      <button
+        ref={ref}
+        type="button"
+        className="explorer-list-item"
+        aria-current={item.id === selection ? "true" : undefined}
+        data-hover={hovered ? "true" : undefined}
+        onPointerEnter={(event) => {
+          if (event.pointerType !== "touch") hover.set(item.id, "list");
+        }}
+        onPointerLeave={() => {
+          hover.clear(item.id);
+        }}
+        onClick={() => {
+          onChoose(item.id);
+        }}
+      >
+        <span>{item.name}</span>
+        {item.partly && <span className="sr-only"> {t("explorer.list.partly")}</span>}
+      </button>
+    </li>
+  );
+}
+
 /** One side of the horizon: a native disclosure, so it needs no script to open or close. */
-function ConstellationGroup({ titleId, heading, items, open, selection, onToggle, onChoose }: GroupProps): JSX.Element {
+function ConstellationGroup({ titleId, heading, items, open, selection, hover, onToggle, onChoose }: GroupProps): JSX.Element {
+  // A collapsed group shows the hover on its summary instead of opening.
+  const inside = useHovering(hover, (id) => id !== null && items.some((item) => item.id === id));
   return (
     <details
       className="explorer-group"
@@ -155,25 +213,12 @@ function ConstellationGroup({ titleId, heading, items, open, selection, onToggle
         onToggle(event.currentTarget.open);
       }}
     >
-      <summary id={titleId} className="explorer-group-summary">
+      <summary id={titleId} className="explorer-group-summary" data-hover={inside && !open ? "true" : undefined}>
         {heading}
       </summary>
       <ul className="explorer-list" aria-labelledby={titleId}>
         {items.map((item) => (
-          <li key={item.id}>
-            <button
-              type="button"
-              className="explorer-list-item"
-              aria-current={item.id === selection ? "true" : undefined}
-              onClick={() => {
-                onChoose(item.id);
-              }}
-            >
-              <span>{item.name}</span>
-              {item.partly && <span className="explorer-list-partly">{t("explorer.list.partly")}</span>}
-              <span className="explorer-list-abbr">{item.abbr}</span>
-            </button>
-          </li>
+          <ListItem key={item.id} item={item} selection={selection} hover={hover} onChoose={onChoose} />
         ))}
       </ul>
     </details>
@@ -184,6 +229,7 @@ function ExplorerInspector({
   scene,
   view,
   selection,
+  hover,
   open,
   onChoose,
   onCenter,
@@ -227,8 +273,14 @@ function ExplorerInspector({
             )}
             <h2 className="explorer-inspector-title">{title}</h2>
           </div>
-          <button type="button" className="explorer-close" onClick={onClose}>
-            {t("explorer.inspector.close")}
+          <button
+            type="button"
+            className="atlas-btn-icon"
+            aria-label={t("explorer.inspector.close")}
+            title={t("explorer.inspector.close")}
+            onClick={onClose}
+          >
+            <Icon name="close" />
           </button>
         </div>
         {detail === null ? (
@@ -241,10 +293,10 @@ function ExplorerInspector({
               <ConstellationFacts con={detail} />
             )}
             <div className="explorer-actions">
-              <button type="button" className="atlas-btn-ghost explorer-action" onClick={onCenter}>
+              <button type="button" className="atlas-btn-ghost" onClick={onCenter}>
                 {t("explorer.inspector.center")}
               </button>
-              <button type="button" className="atlas-btn-ghost explorer-action" onClick={onClear}>
+              <button type="button" className="atlas-btn-ghost" onClick={onClear}>
                 {t("explorer.inspector.clear")}
               </button>
             </div>
@@ -259,6 +311,7 @@ function ExplorerInspector({
           items={groups.above}
           open={aboveOpen}
           selection={selection}
+          hover={hover}
           onToggle={setAboveOpen}
           onChoose={onChoose}
         />
@@ -268,6 +321,7 @@ function ExplorerInspector({
           items={groups.below}
           open={belowOpen}
           selection={selection}
+          hover={hover}
           onToggle={setBelowOpen}
           onChoose={onChoose}
         />

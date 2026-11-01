@@ -13,9 +13,8 @@ export const enUS = {
   "landing.subtitle": "Drawn from 8 000+ stars, in your browser",
   "landing.mode.label": "Input mode",
   "landing.moment.legend": "Date and time",
-  "landing.sky.legend": "Sky",
   "landing.appearance.legend": "Appearance",
-  "landing.observation.legend": "Observation",
+  "landing.advanced.legend": "Advanced",
   "landing.render.fisheye": "Fisheye strength",
   "landing.render.separation": "Minimum separation",
   "landing.render.magnitude": "Limiting magnitude",
@@ -24,7 +23,6 @@ export const enUS = {
   "landing.render.glow": "Glow intensity",
   "landing.browse": "Just browsing?",
   "landing.browse.action": "Load a random sky",
-  "landing.explain": "What is this page?",
   "landing.openShared": "Open a shared sky",
   "landing.openShared.help": "Paste a link that ends in `#s=…`",
   "landing.mapMoment": "Map a moment",
@@ -50,35 +48,20 @@ export const enUS = {
   "studio.updated": "Map updated",
   "studio.poster.heading": "Poster Studio",
   "studio.poster.subtitle": "Compose the poster, then export it or copy a link.",
-  "studio.sky.legend": "Sky",
-  "studio.observation.legend": "Observation",
+  "studio.advanced.legend": "Advanced",
   "studio.summary.note":
     "Place and moment come from the sky you started with. Start again from the start page to change them.",
   "studio.returnToExplorer": "Return to Explorer",
   "studio.back": "Back to the start",
 
+  "site.name": "Starsky",
   "viewer.heading.default": "This night sky",
   "viewer.heading.abovePlace": "Night sky above {place}",
-  "viewer.subtitle": "A night-sky atlas moment, recomputed in your browser",
   "viewer.loading": "Charting the stars…",
   "viewer.announced.ready": "Night sky poster ready.",
-  "viewer.announced.figureSelected": "Showing {name}.",
-  "viewer.announced.viewReset": "Showing the whole sky again.",
   "viewer.announcementRegion": "Sky viewer status",
   "viewer.canvasLabel": "Night sky poster titled {title}",
   "viewer.canvasLabel.untitled": "Night sky poster",
-  // The canvas is operable: it takes focus, so it has to say what it answers
-  // to. Pointer gestures are named for the screen reader that cannot perform
-  // them, and the keys for the ones that have keys.
-  "viewer.canvasHint":
-    "Night sky map. Drag to move it, scroll to zoom. With the map focused, use the arrow keys to move, plus and minus to zoom, and 0 to show the whole sky.",
-  // The three view controls under the poster. A map that only moves under a
-  // drag is undiscoverable, and the same navigation has to work without a
-  // pointer at all.
-  "viewer.viewControls": "View controls",
-  "viewer.zoomIn": "Zoom in",
-  "viewer.zoomOut": "Zoom out",
-  "viewer.resetView": "Show the whole sky",
   "viewer.caption": "{coords} — {place} · {local} {tz}",
   "viewer.copyLink": "Copy link",
   "viewer.share.open": "Share",
@@ -106,19 +89,6 @@ export const enUS = {
   "viewer.export.layout.story": "Story (9:16)",
 
   "empty.title": "No sky on this page yet",
-  "figures.legend": "Figures in this sky",
-  "figures.subtitle":
-    "{count} figures above the horizon. Rest on a name to light it up, open one to draw closer.",
-  "figures.reset": "Reset view",
-  // The hover/focus tooltip beside the canvas. Distinct from `figures.stat`,
-  // which the panel uses — a tooltip wants the tighter phrasing.
-  "figures.tooltip": "{count} stars · brightest mag {mag}",
-  // Screen-reader-only: the canvas is not operable by pointer alone, so the
-  // figure list is the keyboard path and this says so.
-  "figures.hint":
-    "Use the list of figures beside the sky to explore each constellation by keyboard.",
-  "figures.stat": "{count} stars, brightest mag {mag}",
-  "figures.title": "Constellation figures",
   // Split around the `#s=…` fragment so it renders as `<code>` rather than as
   // literal backticks. The assembled sentence is exactly `empty.body` in the
   // vision; `i18n.test.ts` asserts the three parts read as one sentence.
@@ -156,8 +126,7 @@ export const enUS = {
 
   "loading.poster": "Drawing the sky…",
 
-  "footer.version": "starsky v{version}",
-  "footer.source": "source",
+  "footer.version": "starsky@v{version}",
   "footer.attribution":
     "Star data from Hipparcos and JPL. Constellation lines from Stellarium (CC BY-SA 4.0). Place lookup by OpenStreetMap contributors.",
 
@@ -209,11 +178,11 @@ export const enUS = {
   "explorer.inspector.clear": "Clear selection",
   "explorer.kind.star": "Star",
   "explorer.kind.constellation": "Constellation",
-  "explorer.tooltip.detail": "Magnitude {mag} · {horizon}",
+  "explorer.tooltip.detail": "{name} • Magnitude {mag}",
   "explorer.list.title": "Constellations",
   "explorer.list.above": "Above the horizon ({count})",
   "explorer.list.below": "Below the horizon ({count})",
-  "explorer.list.partly": "partly",
+  "explorer.list.partly": "partly above the horizon",
   "explorer.search.input": "Search constellations and stars",
   "explorer.search.placeholder": "Name, abbreviation or HIP number",
   "explorer.search.results": "Search results",

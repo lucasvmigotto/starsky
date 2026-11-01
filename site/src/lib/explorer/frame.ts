@@ -35,6 +35,8 @@ export interface FrameInput {
   /** `HIP:<n>` or `CON:<abbr>` */
   selection: string | null;
   hover: string | null;
+  /** `CON:<abbr>` under the pointer or the panel list's pointer; selection wins over it. */
+  hoverConstellation?: string | null;
   /** N, E, S, W; supplied by the caller so the planner holds no copy. */
   cardinalText?: readonly [string, string, string, string];
 }
@@ -52,6 +54,8 @@ export interface StarBatch {
 /** Segments as x1, y1, x2, y2 quadruples. */
 export interface LineBatch {
   selected: boolean;
+  /** Softer than selected: a hovered constellation that is not also selected. */
+  hover: boolean;
   dim: boolean;
   xy: number[];
 }
@@ -74,6 +78,7 @@ export interface LabelMark {
   width: number;
   height: number;
   selected: boolean;
+  hover: boolean;
   dim: boolean;
 }
 
@@ -265,13 +270,14 @@ function planStars(input: FrameInput): StarBatch[] {
 }
 
 function planLines(input: FrameInput): LineBatch[] {
-  const { scene, view, camera, viewport, layers, selection } = input;
+  const { scene, view, camera, viewport, layers, selection, hoverConstellation } = input;
   if (!layers.constellationLines) return [];
   const batches = new Map<number, LineBatch>();
   const v = scene.vectors;
   const vec = (i: number): Vec3 => [v[i * 3] ?? 0, v[i * 3 + 1] ?? 0, v[i * 3 + 2] ?? 0];
   for (const con of scene.constellations) {
     const selected = con.id === selection;
+    const hover = !selected && con.id === hoverConstellation;
     for (const [a, b] of con.segments) {
       const altA = view.altitudesDeg[a] ?? 0;
       const altB = view.altitudesDeg[b] ?? 0;
@@ -279,10 +285,10 @@ function planLines(input: FrameInput): LineBatch[] {
       const seg = projectSegment(camera, vec(a), vec(b), viewport.width, viewport.height);
       if (!seg) continue;
       const dim = isBelow(altA) || isBelow(altB);
-      const key = (selected ? 2 : 0) + (dim ? 1 : 0);
+      const key = (selected ? 4 : 0) + (hover ? 2 : 0) + (dim ? 1 : 0);
       let batch = batches.get(key);
       if (!batch) {
-        batch = { selected, dim, xy: [] };
+        batch = { selected, hover, dim, xy: [] };
         batches.set(key, batch);
       }
       batch.xy.push(seg[0], seg[1], seg[2], seg[3]);
@@ -382,7 +388,7 @@ function clampMark(mark: LabelMark, viewport: Viewport): LabelMark {
 }
 
 function planLabels(input: FrameInput): LabelMark[] {
-  const { scene, view, camera, viewport, layers, selection } = input;
+  const { scene, view, camera, viewport, layers, selection, hoverConstellation } = input;
   if (!layers.constellationLabels) return [];
   const v = scene.vectors;
   interface Candidate {
@@ -423,6 +429,7 @@ function planLabels(input: FrameInput): LabelMark[] {
         width,
         height: LABEL_HEIGHT_PX,
         selected: con.id === selection,
+        hover: con.id !== selection && con.id === hoverConstellation,
         dim: !anyAbove,
       },
     });
@@ -430,6 +437,7 @@ function planLabels(input: FrameInput): LabelMark[] {
   candidates.sort(
     (a, b) =>
       Number(b.mark.selected) - Number(a.mark.selected) ||
+      Number(b.mark.hover) - Number(a.mark.hover) ||
       a.brightness - b.brightness ||
       (a.mark.id < b.mark.id ? -1 : 1),
   );

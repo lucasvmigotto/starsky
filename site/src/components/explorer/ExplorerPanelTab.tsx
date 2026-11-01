@@ -5,6 +5,7 @@
  */
 import type { JSX, RefObject } from "react";
 import { t } from "../../i18n/index.ts";
+import { Icon } from "../icons.tsx";
 
 interface Props {
   open: boolean;
@@ -28,20 +29,7 @@ export default function ExplorerPanelTab({ open, controls, onToggle, buttonRef }
       onClick={onToggle}
     >
       <span className="explorer-tab-face" aria-hidden="true">
-        <svg
-          viewBox="0 0 24 24"
-          width="16"
-          height="16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path d={open ? "m9 18 6-6-6-6" : "m15 18-6-6 6-6"} />
-        </svg>
+        <Icon name={open ? "chevron-right" : "chevron-left"} size={16} />
       </span>
     </button>
   );

@@ -79,8 +79,12 @@ export class Canvas2dRenderer implements ExplorerRenderer {
   private drawLines(ctx: CanvasRenderingContext2D, plan: FramePlan): void {
     for (const batch of plan.lines) {
       ctx.globalAlpha = batch.dim ? explorer.alpha.dim : 1;
-      ctx.strokeStyle = batch.selected ? explorer.lineSelected : explorer.line;
-      ctx.lineWidth = batch.selected ? explorer.width.lineSelected : explorer.width.line;
+      ctx.strokeStyle = batch.selected ? explorer.lineSelected : batch.hover ? explorer.lineHover : explorer.line;
+      ctx.lineWidth = batch.selected
+        ? explorer.width.lineSelected
+        : batch.hover
+          ? explorer.width.lineHover
+          : explorer.width.line;
       ctx.beginPath();
       for (let i = 0; i < batch.xy.length; i += 4) {
         ctx.moveTo(batch.xy[i] ?? 0, batch.xy[i + 1] ?? 0);
@@ -135,8 +139,9 @@ export class Canvas2dRenderer implements ExplorerRenderer {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     for (const label of labels) {
-      ctx.font = label.selected ? explorer.font.labelSelected : explorer.font.label;
-      const color = label.selected
+      const emphasised = label.selected || label.hover;
+      ctx.font = emphasised ? explorer.font.labelSelected : explorer.font.label;
+      const color = emphasised
         ? explorer.labelSelected
         : label.dim
           ? explorer.labelBelow

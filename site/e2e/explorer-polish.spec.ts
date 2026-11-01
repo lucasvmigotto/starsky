@@ -214,7 +214,7 @@ test.describe("idle collapse", () => {
     await page.keyboard.press("Tab");
     await expect(stage(page)).toHaveAttribute("data-chrome", "visible");
     const focused = await page.evaluate(() => document.activeElement?.className ?? "");
-    expect(focused).toMatch(/explorer-(pin|tool|tab|copy|close|action|list)/);
+    expect(focused).toMatch(/atlas-btn|explorer-(tab|copy|link|list)/);
     await page.clock.runFor(IDLE_MS * 3);
     await expect(stage(page)).toHaveAttribute("data-chrome", "visible");
     await canvasOf(page).focus();
@@ -313,10 +313,13 @@ test.describe("constellation list by the horizon", () => {
     await below.locator("summary").click();
     await expect(below.locator(".explorer-list-item")).toHaveCount(nBelow);
     expect(nAbove + nBelow).toBe(88);
-    // "partly" is text, in the top group only.
-    expect(await above.locator(".explorer-list-partly").count()).toBeGreaterThan(0);
-    await expect(above.locator(".explorer-list-partly").first()).toHaveText("partly");
-    await expect(below.locator(".explorer-list-partly")).toHaveCount(0);
+    // Names only on screen; "partly above the horizon" is hidden text, in the top group only.
+    const partly = above.locator(".explorer-list-item .sr-only");
+    expect(await partly.count()).toBeGreaterThan(0);
+    await expect(partly.first()).toHaveText("partly above the horizon");
+    expect(await partly.first().evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
+    await expect(below.locator(".explorer-list-item .sr-only")).toHaveCount(0);
+    await expect(above.locator(".explorer-list-item").first().locator("span:not(.sr-only)")).toHaveCount(1);
   });
 
   test("the order is by name inside each group", async ({ page }) => {
@@ -486,20 +489,26 @@ test.describe("toolbar and panel tab", () => {
     expect(closed.height).toBeGreaterThanOrEqual(44);
     expect(closed.x + closed.width).toBeCloseTo(vp?.width ?? 0, 0);
     expect(closed.y + closed.height / 2).toBeCloseTo((vp?.height ?? 0) / 2, 0);
-    // Rounded only on the sky-facing side.
+    // Rounded only on the sky-facing side, with the toolbar container's radius.
     const face = tab(page).locator(".explorer-tab-face");
     const radius = await face.evaluate((el) => {
       const s = getComputedStyle(el);
       return [s.borderTopLeftRadius, s.borderBottomLeftRadius, s.borderTopRightRadius, s.borderBottomRightRadius];
     });
-    expect(radius).toEqual(["8px", "8px", "0px", "0px"]);
+    expect(radius).toEqual(["12px", "12px", "0px", "0px"]);
     await tab(page).click();
     await expect(tab(page)).toHaveAttribute("aria-expanded", "true");
     await expect(tab(page)).toHaveAttribute("aria-label", "Hide details");
     await expect(tab(page)).toHaveAttribute("data-chevron", "right");
-    const panel = await boxOf(page.getByRole("complementary", { name: "Inspector" }));
+    // The panel and the tab slide together; wait for them to arrive.
+    await expect
+      .poll(async () => {
+        const panel = await boxOf(page.getByRole("complementary", { name: "Inspector" }));
+        const onPanel = await boxOf(tab(page));
+        return Math.abs(onPanel.x + onPanel.width - panel.x);
+      })
+      .toBeLessThan(1);
     const onPanel = await boxOf(tab(page));
-    expect(onPanel.x + onPanel.width).toBeCloseTo(panel.x, 0);
     expect(onPanel.y + onPanel.height / 2).toBeCloseTo((vp?.height ?? 0) / 2, 0);
     await tab(page).click();
     await expect(tab(page)).toHaveAttribute("aria-expanded", "false");
@@ -521,8 +530,12 @@ test.describe("toolbar and panel tab", () => {
     await expect(page.locator("#explorer-inspector-body")).toBeHidden();
     await expect(tab(page)).toBeFocused();
     expect(await boxOf(canvas)).toEqual(before);
-    // No resize, so no extra frame was needed for it.
-    await expect(canvas).toHaveAttribute("data-frames", frames ?? "");
+    // No resize, so no frame was needed for it. The panel slides under a resting
+    // mouse, and a list item under it lights its figure (FR-013): that is the only
+    // thing allowed to draw, a frame for each hover that starts or ends.
+    await page.waitForTimeout(300);
+    const after = Number((await canvas.getAttribute("data-frames")) ?? "0");
+    expect(after - Number(frames ?? "0")).toBeLessThanOrEqual(3);
   });
 
   test("hiding the controls never resizes the canvas or leaves a band where the panel was", async ({ page }) => {
@@ -645,9 +658,7 @@ test.describe("star tooltip", () => {
     await expect(tooltip(page)).toHaveCount(0);
     await page.clock.runFor(200);
     await expect(tooltip(page)).toBeVisible();
-    await expect(tooltip(page)).toContainText("Sirius");
-    await expect(tooltip(page)).toContainText("Magnitude -1.44");
-    await expect(tooltip(page)).toContainText("Above the horizon");
+    await expect(tooltip(page)).toHaveText("Sirius • Magnitude -1.44");
     await expect(tooltip(page)).toHaveAttribute("aria-hidden", "true");
     expect(await tooltip(page).evaluate((el) => getComputedStyle(el).pointerEvents)).toBe("none");
   });

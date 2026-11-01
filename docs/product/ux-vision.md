@@ -69,7 +69,7 @@ Kept, evolved or replaced — the `frontend:build` stage needs this list.
 |---|---|---|
 | Routing | `HashRouter`, one wildcard route; `#s=` holds the payload | **Keep, extend.** No SPA fallback on the static host, and the share fragment must not fight router paths. Studio adds `#studio=`; both stay in one hash, not two router paths. |
 | Landing | A form — coordinates/place, date/time, tz, render options | **Replace with Studio.** The form is the Studio's controls; the landing becomes the choice between the two surfaces. |
-| Viewer | Map + constellation list + hover scrim + focus overlay | **Keep and elevate.** It is the product. |
+| Viewer | Map + constellation list + hover scrim + focus overlay | **Keep and elevate.** It is the product. *(Since BCR-0013 the page shows the image only: no figure list, no caption band on the page.)* |
 | Tokens | `--color-ink #0b0f19`, `--color-cream #f5efe0`, `--color-rose #b98a8a` | **Replace — in the UI only.** See *Two palettes*: `render-spec.json` keeps these exact values for the poster and is normative. The old CSS values were the *same* three colours as the poster's, which is what made the overlap easy to miss. |
 | Display face | Cormorant Garamond, `font-display` | **Keep, with a defined role.** Load-bearing: BCR-0006/0007 withhold the poster if it fails to load. |
 | `atlas-*` class names | ~50 classes | **Keep the names, replace the values.** Renaming them churns 506 lines and the e2e suite for no user-visible gain; retheming is a token change. |
@@ -211,14 +211,23 @@ phone visitor therefore taps once to get the controls. A mouse click selects as
 usual, because moving the mouse already woke the controls.
 
 **Star tooltip (014-explorer-polish).** Holding a mouse or pen pointer still
-over a star for 1.5 s shows a small tooltip beside it: the name (or HIP
-number), the apparent magnitude, and whether the star is above or below the
-horizon. It closes when the pointer moves to another spot, when a drag or a zoom
+over a star for 1.5 s shows a small one-line tooltip beside it: the name (or HIP
+number), then "• Magnitude" and the apparent magnitude, for example
+"Sirius • Magnitude -1.44". It says nothing about the horizon. It closes when the pointer moves to another spot, when a drag or a zoom
 starts, when the pointer leaves the map, and on Escape, which closes it before
 anything else and leaves the selection alone. It never covers the star and
 stays inside the screen. Touch and keyboard keep using selection and the panel,
 which show the same facts, so the tooltip is hidden from screen readers. It
 does not depend on the idle collapse.
+
+**Constellation hover (015).** A mouse or pen resting over a constellation's
+figure (near one of its lines, or over its name) draws that figure's lines a
+little brighter and thicker than resting lines, softer than a selection, with
+its name in the selected colour; a star under the pointer keeps the pointer for
+its tooltip. With the side panel open the matching list item is shaded and
+scrolled into view, without taking focus or changing the order; in the closed
+Below group the group's heading is shaded instead. Resting on a list item
+lights the figure in the sky. Selection wins over hover. Touch does not hover.
 
 ## Information architecture
 
@@ -228,9 +237,8 @@ No navigation chrome. Two surfaces, entered by intent, sharing one hash.
 /                         landing — choose a surface
 │
 ├── Viewer        #s=<payload>        a shared or canonical moment
-│                 ├── the map (primary, largest element)
-│                 ├── moment caption — title, local time, projection
-│                 ├── figure list — constellations, selectable
+│                 ├── heading — title, local time, projection
+│                 ├── the sky image (primary, centred; BCR-0013)
 │                 ├── share actions — copy link
 │                 ├── make your own — → #studio=
 │                 └── export — PNG · SVG · PDF (secondary)
@@ -277,7 +285,7 @@ Entry: a `#s=` link, possibly pasted or retyped.
 1. Parse the fragment. *Fail → F1-E1.*
 2. Load `catalog.json` + `constellations.json`. *Fail → F1-E2.*
 3. Confirm the caption font loaded (`document.fonts.check`). *Fail → F1-E3.*
-4. Draw the poster, then the figure list.
+4. Draw the poster's sky image.
 5. Done — map visible, no interaction required.
 
 **Five steps, none removable.** Step 3 exists because BCR-0007 withholds the
@@ -387,27 +395,26 @@ mobile                             desktop
 ┌──────────────────────┐          ┌────────────────────────────────────────┐
 │ Starsky      v1.0.0  │          │ Starsky                       v1.0.0    │
 │                      │          │                                        │
-│ Our first flat       │          │ Our first flat                           │
-│ 12 Jun 2024, 21:40   │          │ 12 Jun 2024, 21:40 · stereographic      │
+│ Our first flat       │          │             Our first flat              │
+│ 12 Jun 2024, 21:40   │          │          12 Jun 2024, 21:40 UTC         │
 │                      │          │                                        │
-│  ┌────────────────┐  │          │  ┌────────────────────────┐ ┌──────────┐ │
-│  │                │  │          │  │                        │ │ Cassiopeia│ │
-│  │      ★  ·      │  │          │  │       ★    ·           │ │ 42 stars │ │
-│  │   ·    ✦   ·   │  │          │  │                        │ │ mag 1.6  │ │
-│  │                │  │          │  │                        │ │──────────││ │
-│  └────────────────┘  │          │  └────────────────────────┘ │ Orion    │ │
-│                      │          │                                │ 58 stars │ │
-│  [Copy link] [PNG ▾] │          │ [Copy link] [SVG] [PDF] [PNG ▾]   │ │
-│                      │          │                                └──────────┘ │
-│  Figures             │          │                                        │
-│  · Cassiopeia        │          │ starsky v1.0.0 · GPL-3.0 · OSM       │
-│  · Orion             │          └────────────────────────────────────────┘
-└──────────────────────┘
+│  ┌────────────────┐  │          │        ┌────────────────────────┐      │
+│  │                │  │          │        │                        │      │
+│  │      ★  ·      │  │          │        │       ★    ·           │      │
+│  │   ·    ✦   ·   │  │          │        │                        │      │
+│  │                │  │          │        │                        │      │
+│  └────────────────┘  │          │        └────────────────────────┘      │
+│                      │          │                                        │
+│  [Share] [Export]    │          │ [Share] [Export] [Explore] [Make yours] │
+└──────────────────────┘          └────────────────────────────────────────┘
 ```
 
-The map is the largest element at every width. On mobile the figure list
-becomes a horizontal scroller rather than a column, so the map keeps its
-aspect ratio.
+The page is the heading and the sky image, centred, then share, export and the
+two actions (BCR-0013). The caption band under the image and the "Figures in
+this sky" panel are gone from the page; exploring figures is the Explorer's job.
+The exported PNG, SVG and PDF keep their caption band, byte for byte. The image
+is static: no drag, wheel, pinch, keys or zoom buttons; zooming and exploring
+live in the Explorer, reached from "Explore this sky".
 
 ### 3. Studio — build and tune
 
@@ -478,9 +485,7 @@ poster's rose constellation lines (`#b98a8a`) will sit beside verdigris accents
 boundary:
 
 > **`color.accent` is for interactive chrome only — never for anything that
-> represents a constellation in the map.** A selected figure's highlight in the
-> `FiguresPanel` is chrome (verdigris border, verdigris scrim). But anything
-> drawn *inside* the canvas takes its colour from `render-spec.json` and never
+> represents a constellation in the map.** Anything drawn *inside* the canvas takes its colour from `render-spec.json` and never
 > from a UI token.
 
 If the rose/verdigris tension proves too strong once seen, the correct fix is a
@@ -516,12 +521,12 @@ not and is therefore restricted to decoration.
 | Role | Face | Notes |
 |---|---|---|
 | Display, celestial proper names, caption preview | Cormorant Garamond 300–700 | Same face as the artifact |
-| UI chrome, labels, body, numbers | `system-ui` stack | Never a display face |
-| Coordinates, dates, counts | system sans + `tabular-nums` | Cormorant has no tabular figures; numbers would jitter |
+| UI chrome, labels, body, numbers | Inter Variable (latin, self-hosted, OFL), then the `system-ui` stack | Never a display face. Bundled so every machine shows the same face (015) |
+| Coordinates, dates, counts | Inter + `tabular-nums` | Cormorant has no tabular figures; numbers would jitter |
 
 **The serif boundary is nouns from the sky vs. the interface's furniture.**
-Constellation names in `FiguresPanel` are *the words the poster draws in the
-same face*, so they are Cormorant. Buttons, labels and hints are not.
+Constellation names the poster draws are in the same face, so they are
+Cormorant. Buttons, labels and hints are not.
 
 Cormorant is retained deliberately: BCR-0006/0007 make a font failure withhold
 the poster, and it is already bundled (no third-party request).
@@ -555,7 +560,7 @@ no drop shadows, and `rgba(0,0,0,.1)` card shadows are an AI-default tell.
 
 One orchestrated moment: the map fades up once, when it is ready
 (`atlas-rise`, 700 ms). Everything else is motion that answers an action — the
-figure list on hover, the export button's progress. No entrance animations on
+export button's progress, the side panel sliding in and out. No entrance animations on
 sections, no hover transitions on every card. `prefers-reduced-motion` is
 already honoured in `index.css` and must survive the token change.
 
@@ -616,12 +621,11 @@ Breakpoints by content, not by device:
 
 | Width | Change |
 |---|---|
-| ≥ 64rem | Viewer splits map / figure list side by side; Studio splits map / controls |
-| 40–64rem | Single column; figure list beside the map where it fits |
-| < 40rem | Single column; figure list becomes a horizontal scroller so the map keeps its aspect ratio; export actions wrap to their own row |
+| ≥ 64rem | Viewer is one centred column (heading, image, actions); Studio splits map / controls |
+| 40–64rem | Single column |
+| < 40rem | Single column; export actions wrap to their own row |
 
-Touch targets: 44px minimum for every control, including figure buttons in the
-scroller. Nothing is hidden at small widths except the subtitle line, which is
+Touch targets: 44px minimum for every control. Nothing is hidden at small widths except the subtitle line, which is
 redundant with the caption below it.
 
 ---
@@ -743,9 +747,8 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.randomSky` | Load a random sky → renders `viewer.randomSky` |
 | `landing.mode.label` | Input mode |
 | `landing.moment.legend` | Date and time |
-| `landing.sky.legend` | Sky |
 | `landing.appearance.legend` | Appearance |
-| `landing.observation.legend` | Observation |
+| `landing.advanced.legend` | Advanced |
 | `landing.render.fisheye` | Fisheye strength |
 | `landing.render.separation` | Minimum separation |
 | `landing.render.magnitude` | Limiting magnitude |
@@ -754,25 +757,12 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.render.glow` | Glow intensity |
 | `landing.browse` | Just browsing? |
 | `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
-| `landing.explain` | What is this page? |
-
-**Landing · the figure panel**
-
-| Key | Copy |
-|---|---|
-| `figures.legend` | Figures in this sky |
-| `figures.subtitle` | {count} figures above the horizon. Rest on a name to light it up, open one to draw closer. |
-| `figures.hint` | Use the list of figures beside the sky to explore each constellation by keyboard. *(screen-reader only)* |
-| `figures.reset` | Reset view |
-| `figures.stat` | {count} stars, brightest mag {mag} |
-| `figures.tooltip` | {count} stars · brightest mag {mag} *(the hover tooltip)* |
-| `figures.title` | Constellation figures |
 
 **Viewer · shell**
 
 | Key | Copy |
 |---|---|
-| `viewer.subtitle` | A night-sky atlas moment, recomputed in your browser |
+| `site.name` | Starsky *(the header's one item, a link to the start; on the Studio and Viewer, not on the full-bleed Explorer)* |
 | `viewer.loading` | Charting the stars… |
 
 **Viewer · announcements** (`role="status"`, `aria-live="polite"`, `sr-only`)
@@ -780,16 +770,9 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | Key | Copy |
 |---|---|
 | `viewer.announced.ready` | Night sky poster ready. |
-| `viewer.announced.figureSelected` | Showing {name}. |
-| `viewer.announced.viewReset` | Showing the whole sky again. |
 | `viewer.announcementRegion` | Sky viewer status *(the region's `aria-label`, so it is distinguishable from the export row's)* |
 | `viewer.canvasLabel` | Night sky poster titled {title} |
 | `viewer.canvasLabel.untitled` | Night sky poster |
-| `viewer.canvasHint` | Night sky map. Drag to move it, scroll to zoom. With the map focused, use the arrow keys to move, plus and minus to zoom, and 0 to show the whole sky. *(screen-reader only, the canvas's `aria-describedby`)* |
-| `viewer.viewControls` | View controls *(the button group's `aria-label`)* |
-| `viewer.zoomIn` | Zoom in |
-| `viewer.zoomOut` | Zoom out |
-| `viewer.resetView` | Show the whole sky |
 | `dataError.title` | Star data could not be loaded |
 | `dataError.body` | Regenerate it with `starsky catalog` and reload. |
 | `fontError.title` | The poster font could not be loaded |
@@ -820,8 +803,7 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `studio.updated` | Map updated |
 | `studio.poster.heading` | Poster Studio |
 | `studio.poster.subtitle` | Compose the poster, then export it or copy a link. |
-| `studio.sky.legend` | Sky |
-| `studio.observation.legend` | Observation |
+| `studio.advanced.legend` | Advanced |
 | `studio.summary.note` | Place and moment come from the sky you started with. Start again from the start page to change them. |
 | `studio.returnToExplorer` | Return to Explorer |
 | `studio.back` | Back to the start |
@@ -946,8 +928,7 @@ parts read as one sentence, asserted by `i18n.test.ts`.
 
 | Key | Copy |
 |---|---|
-| `footer.version` | starsky v{version} |
-| `footer.source` | source |
+| `footer.version` | starsky@v{version} |
 | `footer.attribution` | Star data from Hipparcos and JPL. Constellation lines from Stellarium (CC BY-SA 4.0). Place lookup by OpenStreetMap contributors. |
 
 **Explorer** (`#e=`; the map is 010-explorer-canvas, the interface around it is 011-explorer-ui)
@@ -1001,11 +982,11 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 | `explorer.inspector.clear` | Clear selection |
 | `explorer.kind.star` | Star |
 | `explorer.kind.constellation` | Constellation |
-| `explorer.tooltip.detail` | Magnitude {mag} · {horizon} *(the hover tooltip; {horizon} is `explorer.inspector.horizon.above` or `.below`)* |
+| `explorer.tooltip.detail` | {name} • Magnitude {mag} *(the hover tooltip; {name} is the star's name or its HIP number)* |
 | `explorer.list.title` | Constellations |
 | `explorer.list.above` | Above the horizon ({count}) |
 | `explorer.list.below` | Below the horizon ({count}) |
-| `explorer.list.partly` | partly |
+| `explorer.list.partly` | partly above the horizon *(visually hidden, read by screen readers)* |
 | `explorer.search.input` | Search constellations and stars |
 | `explorer.search.placeholder` | Name, abbreviation or HIP number |
 | `explorer.search.results` | Search results |

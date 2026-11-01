@@ -12,6 +12,8 @@
  */
 import { useState } from "react";
 import { t } from "../i18n/index.ts";
+import { Icon } from "./icons.tsx";
+import { usePopoverStyle } from "./popover.ts";
 import { formatLocalTime, formatCoords } from "../lib/caption.ts";
 import type { SharePayload } from "../lib/share.ts";
 
@@ -22,6 +24,9 @@ interface Props {
    * `#s=` link, so the copy is the finished sky and never the `#studio=` draft.
    */
   getLink?: () => string;
+  /** Controlled by the action area, so only one disclosure is open at a time. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 /** What the recipient gets: place, moment, and the settings that change the sky. */
@@ -31,8 +36,13 @@ function sceneSummary(payload: SharePayload): string {
   return `${where} · ${when} · ${payload.options.projection} projection · mag ${payload.options.magnitude_limit.toFixed(1)}`;
 }
 
-export default function ShareDialog({ payload, getLink }: Props) {
-  const [open, setOpen] = useState(false);
+export default function ShareDialog({ payload, getLink, open: controlled, onOpenChange }: Props) {
+  const [own, setOwn] = useState(false);
+  const open = controlled ?? own;
+  const setOpen = (next: boolean): void => {
+    setOwn(next);
+    onOpenChange?.(next);
+  };
   const [status, setStatus] = useState("");
   const panelId = "share-details";
   const triggerId = "share-trigger";
@@ -46,42 +56,49 @@ export default function ShareDialog({ payload, getLink }: Props) {
     }
   };
 
+  const popover = usePopoverStyle(open, triggerId);
+  const label = open ? t("viewer.share.close") : t("viewer.share.open");
+
   return (
     <div className="atlas-export">
       <button
         type="button"
         id={triggerId}
-        className="atlas-export-trigger"
+        className="atlas-btn-icon"
+        aria-label={label}
+        title={label}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => {
-          setOpen((value) => !value);
+          setOpen(!open);
         }}
       >
-        {open ? t("viewer.share.close") : t("viewer.share.open")}
+        <Icon name="share" />
       </button>
 
       <div
         id={panelId}
-        className="atlas-export-actions"
+        className="atlas-popover"
         role="group"
         aria-label={t("viewer.share.heading")}
+        style={popover}
         hidden={!open}
       >
         <p className="atlas-form-hint">{sceneSummary(payload)}</p>
         <button
           type="button"
-          className="atlas-export-button"
+          className="atlas-btn-ghost"
           onClick={() => {
             void copyLink();
           }}
         >
+          <Icon name="link" />
           {t("viewer.copyLink")}
         </button>
+        <p className="atlas-export-status" role="status" aria-live="polite">
+          {status}
+        </p>
       </div>
-      <p className="atlas-export-status" role="status" aria-live="polite">
-        {status}
-      </p>
     </div>
   );
 }

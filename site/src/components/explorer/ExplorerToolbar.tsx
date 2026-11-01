@@ -6,6 +6,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import type { JSX, RefObject } from "react";
 import { t } from "../../i18n/index.ts";
+import { Icon } from "../icons.tsx";
 import type { ExplorerController } from "../../lib/explorer/controller.ts";
 import { FOV_MAX_DEG, FOV_MIN_DEG } from "../../lib/sky/camera.ts";
 
@@ -72,7 +73,7 @@ function ExplorerToolbar({
       <button
         ref={zoomInRef}
         type="button"
-        className="explorer-tool explorer-tool-icon"
+        className="atlas-btn-icon"
         aria-label={zoomInLabel}
         title={tip(zoomInLabel, "+")}
         disabled={atMin}
@@ -80,12 +81,12 @@ function ExplorerToolbar({
           zoom(1, zoomInRef, zoomOutRef);
         }}
       >
-        <span aria-hidden="true">+</span>
+        <Icon name="zoom-in" />
       </button>
       <button
         ref={zoomOutRef}
         type="button"
-        className="explorer-tool explorer-tool-icon"
+        className="atlas-btn-icon"
         aria-label={zoomOutLabel}
         title={tip(zoomOutLabel, "-")}
         disabled={atMax}
@@ -93,49 +94,53 @@ function ExplorerToolbar({
           zoom(-1, zoomOutRef, zoomInRef);
         }}
       >
-        <span aria-hidden="true">−</span>
+        <Icon name="zoom-out" />
       </button>
       <button
         type="button"
-        className="explorer-tool explorer-tool-text"
+        className="atlas-btn-icon"
+        aria-label={resetLabel}
         title={tip(resetLabel, "0")}
         onClick={() => {
           controller.reset();
           refresh();
         }}
       >
-        {resetLabel}
+        <Icon name="reset" />
       </button>
       <button
         ref={layersRef}
         type="button"
-        className="explorer-tool explorer-tool-text"
+        className="atlas-btn-icon"
+        aria-label={t("explorer.toolbar.layers")}
         title={t("explorer.toolbar.layers")}
         aria-expanded={layersOpen}
         aria-haspopup="true"
         onClick={onToggleLayers}
       >
-        {t("explorer.toolbar.layers")}
+        <Icon name="layers" />
       </button>
       <button
         ref={searchRef}
         type="button"
-        className="explorer-tool explorer-tool-text"
+        className="atlas-btn-icon"
+        aria-label={t("explorer.toolbar.search")}
         title={t("explorer.toolbar.search")}
         aria-expanded={searchOpen}
         aria-haspopup="true"
         onClick={onToggleSearch}
       >
-        {t("explorer.toolbar.search")}
+        <Icon name="search" />
       </button>
       {onCreatePoster && (
         <button
           type="button"
-          className="explorer-tool explorer-tool-text"
+          className="atlas-btn-icon"
+          aria-label={t("explorer.toolbar.poster")}
           title={t("explorer.toolbar.poster")}
           onClick={onCreatePoster}
         >
-          {t("explorer.toolbar.poster")}
+          <Icon name="poster" />
         </button>
       )}
     </div>

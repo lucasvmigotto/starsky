@@ -29,7 +29,6 @@ COPY_NAMESPACES = (
     "landing.",
     "studio.",
     "viewer.",
-    "figures.",
     "empty.",
     "legacy.",
     "invalid.",
@@ -37,6 +36,7 @@ COPY_NAMESPACES = (
     "fontError.",
     "loading.",
     "footer.",
+    "site.",
     "explorer.",
 )
 

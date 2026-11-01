@@ -14,7 +14,7 @@ test.describe("footer", () => {
     await page.goto(viewerUrl(fragmentFor()));
     const footer = page.locator("footer");
     await expect(footer).toBeVisible();
-    await expect(footer).toContainText(`starsky v${pkg.version}`);
+    await expect(footer.getByRole("link", { name: `starsky@v${pkg.version}` })).toBeVisible();
     // The placeholder must be substituted, not rendered literally.
     await expect(footer).not.toContainText("{version}");
   });
@@ -29,7 +29,9 @@ test.describe("footer", () => {
 
   test("links the repository, not a 404 tag path", async ({ page }) => {
     await page.goto(viewerUrl(fragmentFor()));
-    const link = page.getByRole("link", { name: "source" });
+    // One link: the version is the link to the source (FR-011).
+    await expect(page.locator("footer").getByRole("link")).toHaveCount(1);
+    const link = page.getByRole("link", { name: `starsky@v${pkg.version}` });
     await expect(link).toHaveAttribute(
       "href",
       "https://github.com/lucasvmigotto/starsky",

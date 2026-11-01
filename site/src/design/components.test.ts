@@ -20,14 +20,12 @@ const DOC = readFileSync(join(import.meta.dirname, "components.md"), "utf-8");
 const INVENTORY: ReadonlyArray<readonly [string, "built" | "planned"]> = [
   ["SiteFooter", "built"],
   ["SkyCanvas", "built"],
-  ["FiguresPanel", "built"],
   ["ExportControls", "built"],
   ["States", "built"],
   ["Button", "planned"],
   ["Surface", "planned"],
   ["Tooltip", "built"],
   ["StatusRegion", "built"],
-  ["FigureList", "planned"],
   ["LocaleSelect", "planned"],
 ];
 

@@ -41,10 +41,12 @@ import {
   draftHash,
   studioFragmentFromHash,
 } from "../../lib/studio/draft.ts";
-import ExportControls from "../ExportControls.tsx";
-import ShareDialog from "../ShareDialog.tsx";
+import PosterActions from "../PosterActions.tsx";
 import PosterFields, { type PosterFieldValues } from "../poster/PosterFields.tsx";
+import PosterHeading from "../PosterHeading.tsx";
 import SiteFooter from "../SiteFooter.tsx";
+import SiteHeader from "../SiteHeader.tsx";
+import { Icon } from "../icons.tsx";
 
 /** How long input must rest before the preview and the fragment follow it. */
 export const DRAFT_DEBOUNCE_MS = 150;
@@ -145,12 +147,20 @@ function Preview({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !fontsReady) return;
+    // The page shows the sky image only (015); the caption stays in the
+    // exports. Compose the whole poster, then blit its sky rows.
     const geometry = posterGeometry(CANVAS_W);
-    canvas.width = Math.round(geometry.sizePx * dpr);
-    canvas.height = Math.round(geometry.canvasHeight * dpr);
+    const whole = document.createElement("canvas");
+    whole.width = Math.round(geometry.sizePx * dpr);
+    whole.height = Math.round(geometry.canvasHeight * dpr);
+    const wholeCtx = whole.getContext("2d");
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    renderPoster(ctx, payload, model, CANVAS_W, dpr, PREVIEW);
+    if (!wholeCtx) return;
+    renderPoster(wholeCtx, payload, model, CANVAS_W, dpr, PREVIEW);
+    const rows = Math.round(geometry.skyPx * dpr);
+    canvas.width = whole.width;
+    canvas.height = rows;
+    ctx?.drawImage(whole, 0, 0, whole.width, rows, 0, 0, whole.width, rows);
   }, [payload, model, fontsReady, dpr]);
 
   const title = payload.options.title;
@@ -177,7 +187,7 @@ function StateScreen({ title, body }: { title: string; body: string }): JSX.Elem
     <main className="explorer-state">
       <div className="atlas-empty">
         <h1 className="font-display text-3xl">{title}</h1>
-        <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-cream/70" role="alert">
+        <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-text-muted" role="alert">
           {body}
         </p>
         <div className="mt-6 flex justify-center">
@@ -302,17 +312,12 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
 
   return (
     <div className="atlas-page">
-      <header className="atlas-header">
-        <div>
-          <p className="font-display text-2xl leading-none">Starsky</p>
-          <p className="mt-1 text-xs tracking-wide text-cream/55">{t("viewer.subtitle")}</p>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="atlas-main">
         <div className="atlas-moment">
           <h1 className="font-display text-3xl leading-tight sm:text-4xl">{t("studio.poster.heading")}</h1>
-          <p className="mt-2 text-sm text-cream/65">{t("studio.poster.subtitle")}</p>
+          <p className="mt-2 text-sm text-text-muted">{t("studio.poster.subtitle")}</p>
         </div>
 
         {dataError !== null && (
@@ -336,6 +341,7 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
 
         <div className="atlas-studio">
           <div className="atlas-studio-preview">
+            <PosterHeading payload={applied} />
             {model && fontError === null ? (
               <Preview payload={applied} model={model} fontsReady={fontsReady} />
             ) : (
@@ -349,7 +355,7 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
           </div>
 
           <div className="atlas-studio-side">
-            <fieldset className="atlas-form-group atlas-panel">
+            <fieldset className="atlas-panel">
               <legend className="atlas-form-legend">{t("studio.moment.legend")}</legend>
               {applied.place !== null && <p>{applied.place}</p>}
               <p className={applied.place === null ? undefined : "atlas-form-hint"}>
@@ -364,9 +370,8 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
                 idPrefix="studio"
                 collapsible={false}
                 legends={{
-                  sky: t("studio.sky.legend"),
                   appearance: t("studio.appearance.legend"),
-                  observation: t("studio.observation.legend"),
+                  advanced: t("studio.advanced.legend"),
                 }}
                 titleLabel={t("studio.title.label")}
                 titlePlaceholder={t("studio.title.placeholder")}
@@ -377,24 +382,6 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
                 }}
               />
             </div>
-
-            {model && (
-              <>
-                <ShareDialog
-                  payload={applied}
-                  getLink={() => absoluteLink(`#s=${encodePayload(applied)}`, window.location)}
-                />
-                <ExportControls payload={applied} model={model} />
-              </>
-            )}
-
-            <div className="atlas-studio-actions">
-              {returnHref !== null && (
-                <a className="atlas-btn-ghost" href={returnHref}>
-                  {t("studio.returnToExplorer")}
-                </a>
-              )}
-            </div>
           </div>
         </div>
 
@@ -403,7 +390,26 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
         </p>
       </main>
 
-      <SiteFooter />
+      <SiteFooter>
+        {model && (
+          <PosterActions
+            payload={applied}
+            model={model}
+            getLink={() => absoluteLink(`#s=${encodePayload(applied)}`, window.location)}
+          >
+            {returnHref !== null && (
+              <a
+                className="atlas-btn-icon"
+                href={returnHref}
+                aria-label={t("studio.returnToExplorer")}
+                title={t("studio.returnToExplorer")}
+              >
+                <Icon name="explore" />
+              </a>
+            )}
+          </PosterActions>
+        )}
+      </SiteFooter>
     </div>
   );
 }

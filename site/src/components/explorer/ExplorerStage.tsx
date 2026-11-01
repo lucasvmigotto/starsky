@@ -255,6 +255,7 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
           scene={scene}
           view={controller.view}
           selection={selection}
+          hover={controller.hover}
           open={panels.inspector}
           onChoose={choose}
           onCenter={center}

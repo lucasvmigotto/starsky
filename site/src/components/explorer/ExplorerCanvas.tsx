@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { JSX, RefObject } from "react";
 import { t } from "../../i18n/index.ts";
+import { explorer } from "../../design/tokens.ts";
 import { ExplorerController } from "../../lib/explorer/controller.ts";
 import { layersFromPayload } from "../../lib/explorer/layers.ts";
 import { Canvas2dRenderer } from "../../lib/explorer/render/canvas2d.ts";
@@ -64,6 +65,8 @@ export default function ExplorerCanvas({
       magLimit: payload.mag,
       viewport: { width: rect.width, height: rect.height },
       cardinalText: cardinalText(),
+      now: () => performance.now(),
+      reducedMotion: () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       requestFrame: (callback) => window.requestAnimationFrame(callback),
       cancelFrame: (handle) => {
         window.cancelAnimationFrame(handle);
@@ -77,6 +80,7 @@ export default function ExplorerCanvas({
         // Read by the e2e idle and pole checks, not by product code.
         canvas.dataset["frames"] = String(state.frames);
         canvas.dataset["fov"] = state.camera.fovDeg.toFixed(3);
+        canvas.dataset["q"] = state.camera.orientation.join(",");
       },
     });
 
@@ -95,6 +99,12 @@ export default function ExplorerCanvas({
     const onPointerMove = (e: PointerEvent): void => {
       const p = local(e);
       controller.pointerMove(e.pointerId, p.x, p.y);
+      // A mouse or pen resting over a figure highlights it; touch and drags do not.
+      if (e.pointerType === "touch" || e.buttons !== 0) controller.clearHover();
+      else controller.hoverAt(p.x, p.y);
+    };
+    const onPointerLeave = (): void => {
+      controller.clearHover();
     };
     const onPointerUp = (e: PointerEvent): void => {
       const p = local(e);
@@ -120,6 +130,7 @@ export default function ExplorerCanvas({
 
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("pointerleave", onPointerLeave);
     canvas.addEventListener("pointerup", onPointerUp);
     canvas.addEventListener("pointercancel", onPointerCancel);
     canvas.addEventListener("lostpointercapture", onPointerCancel);
@@ -140,12 +151,22 @@ export default function ExplorerCanvas({
     setAnnouncement(t("explorer.announced.ready"));
     onController?.(controller);
 
+    // Canvas text never triggers a webfont load. Ask for it, then redraw once
+    // so labels drawn in the fallback face are replaced; no cost per frame.
+    void document.fonts.load(explorer.font.label).then(
+      () => {
+        controller.invalidate();
+      },
+      () => undefined,
+    );
+
     return () => {
       onController?.(null);
       unsubscribe();
       observer.disconnect();
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointerleave", onPointerLeave);
       canvas.removeEventListener("pointerup", onPointerUp);
       canvas.removeEventListener("pointercancel", onPointerCancel);
       canvas.removeEventListener("lostpointercapture", onPointerCancel);

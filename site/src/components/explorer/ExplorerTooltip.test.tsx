@@ -55,14 +55,13 @@ afterEach(() => {
 });
 
 describe("ExplorerTooltip", () => {
-  it("shows the star's name or HIP number, magnitude and horizon after the pointer rests", async () => {
+  it("reads \"<name or HIP> • Magnitude <value>\" with no horizon text after the pointer rests", async () => {
     const { send, tip, rest } = mount();
     send("pointermove");
     expect(tip()).toBeNull();
     await rest();
-    expect(tip()?.textContent).toContain("HIP 1");
-    expect(tip()?.textContent).toContain("Magnitude 1.00");
-    expect(tip()?.textContent).toMatch(/Above the horizon|Below the horizon/);
+    expect(tip()?.textContent).toBe("HIP 1 • Magnitude 1.00");
+    expect(tip()?.textContent).not.toMatch(/horizon/i);
   });
 
   it("is hidden from screen readers and never takes the pointer", async () => {

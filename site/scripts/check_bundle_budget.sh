@@ -5,7 +5,8 @@
 #   bundle (dist JS+CSS, fonts excluded) > 500 KB
 #   data   (data/*.json)                 > 400 KB
 #
-# Fonts are excluded from the bundle by design: the poster face is a fixed
+# Fonts (*.woff2) are excluded from the bundle sum by design: the poster face
+# and the interface face (Inter, 015) are fixed
 # first-party asset (BCR-0006), not code that grows with features.
 set -euo pipefail
 
@@ -42,6 +43,7 @@ sizes() {
       let entries = [];
       try { entries = readdirSync(dir); } catch { continue; }
       for (const e of entries) {
+        if (e.endsWith(".woff2")) continue; // fonts are excluded by design
         const p = join(dir, e);
         try { if (statSync(p).isFile()) files.push(p); } catch {}
       }

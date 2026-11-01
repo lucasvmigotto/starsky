@@ -10,10 +10,11 @@ if (!domReady) {
   GlobalRegistrator.register({ url: "http://localhost/" });
 }
 
-const { cleanup, fireEvent, render, screen, within } = await import("@testing-library/react");
+const { act, cleanup, fireEvent, render, screen, within } = await import("@testing-library/react");
 const { default: ExplorerInspector } = await import("./ExplorerInspector.tsx");
 const { CTX, dirAt, sceneOf } = await import("../../lib/explorer/fixture.ts");
 
+import { HoverStore } from "../../lib/explorer/hover.ts";
 import { prepareObserverView } from "../../lib/explorer/observerView.ts";
 
 const { scene } = sceneOf(
@@ -43,13 +44,14 @@ interface Calls {
   closed: number;
 }
 
-function mount(selection: string | null, open = true) {
+function mount(selection: string | null, open = true, hover = new HoverStore()) {
   const calls: Calls = { chosen: [], centered: 0, cleared: 0, toggled: 0, closed: 0 };
   render(
     <ExplorerInspector
       scene={scene}
       view={view}
       selection={selection}
+      hover={hover}
       open={open}
       onChoose={(id) => calls.chosen.push(id)}
       onCenter={() => {
@@ -125,6 +127,7 @@ describe("ExplorerInspector, a star", () => {
         scene={bare}
         view={prepareObserverView(bare, CTX)}
         selection="HIP:9"
+        hover={new HoverStore()}
         open
         onChoose={() => undefined}
         onCenter={() => undefined}
@@ -167,8 +170,12 @@ describe("ExplorerInspector, nothing selected", () => {
     const list = screen.getByRole("list", { name: /Above the horizon/ });
     const names = within(list)
       .getAllByRole("button")
-      .map((b) => b.textContent);
-    expect(names).toEqual(["CruxpartlyCru", "OrionpartlyOri"]);
+      .map((b) => b.querySelector("span:not(.sr-only)")?.textContent);
+    expect(names).toEqual(["Crux", "Orion"]);
+    // The visible text is the name and nothing else; no abbreviation, no "partly".
+    for (const button of within(list).getAllByRole("button")) {
+      expect(button.querySelectorAll("span:not(.sr-only)")).toHaveLength(1);
+    }
     fireEvent.click(within(list).getByRole("button", { name: /Orion/ }));
     expect(calls.chosen).toEqual(["CON:Ori"]);
   });
@@ -201,12 +208,15 @@ describe("ExplorerInspector, constellations by the horizon", () => {
     expect(group(/^Below the horizon/).open).toBe(false);
   });
 
-  it("says partly in words, only for a constellation that is partly below", () => {
+  it("says partly above the horizon to screen readers only, and only for a partly-below constellation", () => {
     mount(null);
     const above = screen.getByRole("list", { name: /Above the horizon/ });
-    expect(within(above).getAllByText("partly")).toHaveLength(2);
+    const hidden = within(above).getAllByText("partly above the horizon");
+    expect(hidden).toHaveLength(2);
+    for (const el of hidden) expect(el.className).toContain("sr-only");
+    expect(within(above).getByRole("button", { name: "Orion partly above the horizon" })).toBeTruthy();
     const below = group(/^Below the horizon/);
-    expect(within(below).queryByText("partly")).toBeNull();
+    expect(within(below).queryByText("partly above the horizon")).toBeNull();
   });
 
   it("lets a constellation below the horizon be chosen", () => {
@@ -235,8 +245,87 @@ describe("ExplorerInspector, open and closed", () => {
     const handle = screen.getByRole("button", { name: /Hide details/ });
     expect(handle.getAttribute("aria-expanded")).toBe("true");
     fireEvent.click(handle);
-    fireEvent.click(screen.getByRole("button", { name: "Close inspector" }));
+    const close = screen.getByRole("button", { name: "Close inspector" });
+    expect(close.textContent).toBe("");
+    expect(close.getAttribute("title")).toBe("Close inspector");
+    expect(close.querySelector("svg")?.getAttribute("data-icon")).toBe("close");
+    fireEvent.click(close);
     expect(calls.toggled).toBe(1);
     expect(calls.closed).toBe(1);
+  });
+});
+
+
+describe("ExplorerInspector hover (FR-013)", () => {
+  const item = (name: RegExp): HTMLElement => screen.getByRole("button", { name });
+  let scrolls: { el: Element; arg: unknown }[] = [];
+  const original: Element["scrollIntoView"] = Element.prototype.scrollIntoView.bind(Element.prototype);
+
+  function spy(): void {
+    scrolls = [];
+    Element.prototype.scrollIntoView = function (this: Element, arg?: boolean | ScrollIntoViewOptions): void {
+      scrolls.push({ el: this, arg });
+    };
+  }
+  afterEach(() => {
+    Element.prototype.scrollIntoView = original;
+  });
+
+  it("styles the matching list item and scrolls it into view, without moving focus or the order", () => {
+    spy();
+    const hover = new HoverStore();
+    mount(null, true, hover);
+    const before = screen.getAllByRole("button", { name: /Orion|Crux/ }).map((b) => b.textContent);
+    const focused = document.activeElement;
+    act(() => {
+      hover.set("CON:Ori", "canvas");
+    });
+    expect(item(/Orion/).getAttribute("data-hover")).toBe("true");
+    expect(item(/Crux/).getAttribute("data-hover")).toBeNull();
+    expect(scrolls).toHaveLength(1);
+    expect(scrolls[0]?.el).toBe(item(/Orion/));
+    expect((scrolls[0]?.arg as ScrollIntoViewOptions).block).toBe("nearest");
+    expect(document.activeElement).toBe(focused);
+    expect(screen.getAllByRole("button", { name: /Orion|Crux/ }).map((b) => b.textContent)).toEqual(before);
+    act(() => {
+      hover.set(null, "canvas");
+    });
+    expect(item(/Orion/).getAttribute("data-hover")).toBeNull();
+  });
+
+  it("does not scroll when the hover came from the list itself", () => {
+    spy();
+    const hover = new HoverStore();
+    mount(null, true, hover);
+    fireEvent.pointerEnter(item(/Orion/), { pointerType: "mouse" });
+    expect(hover.id).toBe("CON:Ori");
+    expect(hover.source).toBe("list");
+    expect(scrolls).toHaveLength(0);
+    fireEvent.pointerLeave(item(/Orion/), { pointerType: "mouse" });
+    expect(hover.id).toBeNull();
+  });
+
+  it("ignores touch pointers", () => {
+    const hover = new HoverStore();
+    mount(null, true, hover);
+    fireEvent.pointerEnter(item(/Orion/), { pointerType: "touch" });
+    expect(hover.id).toBeNull();
+  });
+
+  it("shows the hover style on the collapsed Below group's summary and leaves it closed", () => {
+    spy();
+    const hover = new HoverStore();
+    mount(null, true, hover);
+    const below = [...document.querySelectorAll("details.explorer-group")].find((d) => d.querySelector("summary")?.textContent?.startsWith("Below"));
+    expect(below?.hasAttribute("open")).toBe(false);
+    act(() => {
+      hover.set("CON:Vel", "canvas");
+    });
+    expect(below?.querySelector("summary")?.getAttribute("data-hover")).toBe("true");
+    expect(below?.hasAttribute("open")).toBe(false);
+    act(() => {
+      hover.set("CON:Ori", "canvas");
+    });
+    expect(below?.querySelector("summary")?.getAttribute("data-hover")).toBeNull();
   });
 });

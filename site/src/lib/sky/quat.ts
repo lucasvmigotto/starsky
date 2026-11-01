@@ -96,3 +96,36 @@ export function fromBasis(x: Vec3, y: Vec3, z: Vec3): Quat {
   }
   return normalize(q);
 }
+
+/**
+ * Spherical interpolation from `a` (t = 0) to `b` (t = 1) along the shortest
+ * path: `b` and `-b` are one rotation, so the sign is chosen by the dot product.
+ * Nearly identical inputs fall back to a normalised lerp, where `sin(theta)`
+ * would divide by almost nothing. Pure; the inputs are not modified.
+ */
+export function slerp(a: Quat, b: Quat, t: number): Quat {
+  let bx = b[0];
+  let by = b[1];
+  let bz = b[2];
+  let bw = b[3];
+  let cos = a[0] * bx + a[1] * by + a[2] * bz + a[3] * bw;
+  if (cos < 0) {
+    cos = -cos;
+    bx = -bx;
+    by = -by;
+    bz = -bz;
+    bw = -bw;
+  }
+  let wa: number;
+  let wb: number;
+  if (cos > 1 - 1e-9) {
+    wa = 1 - t;
+    wb = t;
+  } else {
+    const theta = Math.acos(cos);
+    const sin = Math.sin(theta);
+    wa = Math.sin((1 - t) * theta) / sin;
+    wb = Math.sin(t * theta) / sin;
+  }
+  return normalize([wa * a[0] + wb * bx, wa * a[1] + wb * by, wa * a[2] + wb * bz, wa * a[3] + wb * bw]);
+}
