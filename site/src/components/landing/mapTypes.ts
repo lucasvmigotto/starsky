@@ -27,6 +27,8 @@ export interface MapHandle {
   setLocation: (lat: number, lon: number, focus: MapFocus) => void;
   /** The container changed size (the page gave the map more or less room). */
   resize: () => void;
+  /** The interface language changed (018): retitle the controls, the marker and the credit. */
+  setLabels: (labels: MapLabels) => void;
   destroy: () => void;
 }
 

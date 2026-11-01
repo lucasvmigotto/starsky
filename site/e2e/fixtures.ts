@@ -84,8 +84,10 @@ export function pdfPages(bytes: Buffer): { width: number; height: number }[] {
  */
 export async function openExport(
   page: import("@playwright/test").Page,
+  /** The trigger's name in the page's language ("Exportar" in pt-BR). */
+  label = "Export",
 ): Promise<void> {
-  const trigger = page.getByRole("button", { name: "Export", exact: true });
+  const trigger = page.getByRole("button", { name: label, exact: true });
   await expect(trigger).toBeVisible();
   if ((await trigger.getAttribute("aria-expanded")) === "false") {
     await trigger.click();
@@ -102,6 +104,14 @@ export function exportStatus(page: import("@playwright/test").Page) {
     .locator(".atlas-export")
     .filter({ has: page.getByRole("group", { name: "Export formats", includeHidden: true }) })
     .locator(".atlas-export-status");
+}
+
+/**
+ * The landing's place-search results. Scoped to their listbox: the footer's
+ * language switcher (018) is a native select whose options are `option`s too.
+ */
+export function placeOptions(page: import("@playwright/test").Page) {
+  return page.getByRole("listbox", { name: "Matching places" }).getByRole("option");
 }
 
 /** Sirius, HIP:32349, J2000 as the catalogue holds it. */

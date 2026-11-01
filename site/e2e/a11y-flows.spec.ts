@@ -18,6 +18,7 @@ import {
   explorerUrl,
   fragmentFor,
   openExport,
+  placeOptions,
   stubSearch,
   studioUrl,
   test,
@@ -66,7 +67,7 @@ test.describe("axe across states: landing", () => {
     const search = page.getByRole("combobox", { name: "Search for a place" });
     await search.fill("eiffel");
     await search.press("Enter");
-    await expect(page.getByRole("option")).toHaveCount(1);
+    await expect(placeOptions(page)).toHaveCount(1);
     await expectNoBlocking(page);
   });
 

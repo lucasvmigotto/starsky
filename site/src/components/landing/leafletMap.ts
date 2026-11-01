@@ -20,7 +20,7 @@ import {
   TILE_MAX_ZOOM,
   TILE_URL_TEMPLATE,
 } from "../../lib/landing/map-config.ts";
-import type { MapFocus, MapHandle, MapOptions } from "./mapTypes.ts";
+import type { MapFocus, MapHandle, MapLabels, MapOptions } from "./mapTypes.ts";
 
 // Leaflet derives its default icon URLs from the stylesheet's location, which a
 // bundler moves; passing the imported files keeps the marker bundled and found.
@@ -47,12 +47,13 @@ export function createMap(container: HTMLElement, options: MapOptions): MapHandl
     worldCopyJump: true,
   });
 
-  L.control
-    .zoom({ zoomInTitle: options.labels.zoomIn, zoomOutTitle: options.labels.zoomOut })
+  let labels = options.labels;
+  let zoom = L.control
+    .zoom({ zoomInTitle: labels.zoomIn, zoomOutTitle: labels.zoomOut })
     .addTo(map);
   // Always visible (ADR-0008). The Leaflet prefix is dropped: it adds a link and a
   // flag nobody asked for, and the policy asks only for the OpenStreetMap credit.
-  L.control.attribution({ prefix: false }).addAttribution(options.labels.attributionHtml).addTo(map);
+  const attribution = L.control.attribution({ prefix: false }).addAttribution(labels.attributionHtml).addTo(map);
 
   let loaded = 0;
   let errors = 0;
@@ -100,6 +101,14 @@ export function createMap(container: HTMLElement, options: MapOptions): MapHandl
     },
     resize() {
       map.invalidateSize();
+    },
+    setLabels(next: MapLabels) {
+      // Leaflet fixes a zoom control's titles when it is built, so it is rebuilt.
+      zoom.remove();
+      zoom = L.control.zoom({ zoomInTitle: next.zoomIn, zoomOutTitle: next.zoomOut }).addTo(map);
+      attribution.removeAttribution(labels.attributionHtml).addAttribution(next.attributionHtml);
+      marker.getElement()?.setAttribute("alt", next.marker);
+      labels = next;
     },
     destroy() {
       map.remove();

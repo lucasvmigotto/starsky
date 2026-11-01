@@ -32,6 +32,7 @@ function fakeMap(): Fake {
       return {
         setLocation: (lat, lon, focus) => fake.moves.push({ lat, lon, focus }),
         resize: () => fake.resizes.push(1),
+        setLabels: () => undefined,
         destroy: () => fake.destroyed.push(1),
       };
     },

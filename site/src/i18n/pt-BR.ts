@@ -16,7 +16,7 @@ import type { CopyKey } from "./en-US.ts";
 
 export const ptBR: Record<CopyKey, string> = {
   "landing.title": "De onde você quer explorar o céu?",
-  "footer.tagline": "Mais de 8 000 estrelas, desenhadas no seu navegador",
+  "footer.tagline": "8 000+ estrelas, desenhadas no navegador",
   "landing.moment.legend": "Data e hora",
   "landing.advanced.legend": "Avançado",
   "landing.render.fisheye": "Intensidade do olho de peixe",

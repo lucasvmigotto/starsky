@@ -7,7 +7,7 @@
  * suite must never hit Nominatim's live service; `j8` is the opt-in live check.
  */
 import { decodeExplorer } from "../src/lib/sky/payload.ts";
-import { expect, stubSearch, test } from "./fixtures.ts";
+import { expect, placeOptions, stubSearch, test } from "./fixtures.ts";
 
 const SEARCH = "Search for a place";
 
@@ -32,7 +32,7 @@ test.describe("J4 place lookup", () => {
     await startLanding(page);
     await page.getByRole("combobox", { name: SEARCH }).fill("Eiffel Tower");
     await page.getByRole("button", { name: "Search", exact: true }).click();
-    await page.getByRole("option").first().click();
+    await placeOptions(page).first().click();
     await page.getByRole("button", { name: "Explore this sky" }).click();
 
     await expect(page.getByRole("img", { name: /sky map/i })).toBeVisible();

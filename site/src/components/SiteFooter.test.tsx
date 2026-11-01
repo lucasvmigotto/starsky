@@ -50,6 +50,7 @@ describe("SiteFooter (FR-011)", () => {
     const end = document.querySelector(".atlas-footer-end");
     expect([...(end?.children ?? [])].map((c) => c.className)).toEqual([
       "atlas-footer-actions",
+      "atlas-footer-lang",
       "atlas-footer-meta atlas-footer-version",
     ]);
   });

@@ -9,7 +9,7 @@ import type { Page } from "@playwright/test";
 import { creationFragmentFromHash, decodeCreation, encodeCreation } from "../src/lib/landing/creation.ts";
 import { decodeExplorer } from "../src/lib/sky/payload.ts";
 import { decodeDraft } from "../src/lib/studio/draft.ts";
-import { TILE_HOST, expect, stubSearch, test, wakeChrome } from "./fixtures.ts";
+import { TILE_HOST, expect, placeOptions, stubSearch, test, wakeChrome } from "./fixtures.ts";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const EIFFEL = {
@@ -254,11 +254,11 @@ test.describe("search", () => {
     await chooseMoment(page);
     await search(page).fill("tower");
     await searchButton(page).click();
-    await expect(page.getByRole("option")).toHaveCount(2);
+    await expect(placeOptions(page)).toHaveCount(2);
     await expect(page.getByRole("status").filter({ hasText: "2 places found" })).toBeVisible();
     expect(network.searchRequests).toHaveLength(1);
     await search(page).press("ArrowDown");
-    await expect(page.getByRole("option").nth(1)).toHaveAttribute("aria-selected", "true");
+    await expect(placeOptions(page).nth(1)).toHaveAttribute("aria-selected", "true");
     await search(page).press("ArrowUp");
     await search(page).press("Enter");
     await expect(page.getByRole("listbox")).toBeHidden();
@@ -281,7 +281,7 @@ test.describe("search", () => {
     await mapReady(page);
     await search(page).fill("eiffel");
     await search(page).press("Enter");
-    await page.getByRole("option").first().click();
+    await placeOptions(page).first().click();
     await expect(page.locator(".landing-selected")).toContainText("Eiffel Tower");
     // The map pans and zooms to Paris: the tile that holds it at zoom 9 is asked for.
     await expect.poll(() => network.tileRequests.some((url) => url.endsWith("/9/259/176.png"))).toBe(true);
@@ -293,7 +293,7 @@ test.describe("search", () => {
     await mapReady(page);
     await search(page).fill("eiffel");
     await search(page).press("Enter");
-    await page.getByRole("option").first().click();
+    await placeOptions(page).first().click();
     await expect(search(page)).toHaveValue("Eiffel Tower, Paris, France");
     await canvas(page).click({ position: { x: 120, y: 70 } });
     await expect(page.locator(".landing-selected")).toContainText("Dropped pin");
@@ -305,7 +305,7 @@ test.describe("search", () => {
     await openLanding(page);
     await search(page).fill("eiffel");
     await search(page).press("Enter");
-    await expect(page.getByRole("option")).toHaveCount(1);
+    await expect(placeOptions(page)).toHaveCount(1);
     await search(page).press("Escape");
     await expect(page.getByRole("listbox")).toBeHidden();
     await expect(search(page)).toHaveValue("eiffel");
@@ -318,9 +318,9 @@ test.describe("search", () => {
     // Past the old 400 ms pause: nothing was asked, nothing is listed.
     await page.waitForTimeout(700);
     expect(network.searchRequests).toHaveLength(0);
-    await expect(page.getByRole("option")).toHaveCount(0);
+    await expect(placeOptions(page)).toHaveCount(0);
     await searchButton(page).click();
-    await expect(page.getByRole("option")).toHaveCount(1);
+    await expect(placeOptions(page)).toHaveCount(1);
     expect(network.searchRequests).toHaveLength(1);
   });
 
@@ -356,7 +356,7 @@ test.describe("search", () => {
     await openLanding(page);
     await search(page).fill("eiffel");
     await search(page).press("Enter");
-    await expect(page.getByRole("option")).toHaveCount(1);
+    await expect(placeOptions(page)).toHaveCount(1);
     await search(page).pressSequentially(" tower");
     await expect(page.getByRole("listbox")).toBeHidden();
     expect(network.searchRequests).toHaveLength(1);
@@ -367,10 +367,10 @@ test.describe("search", () => {
     await openLanding(page);
     await search(page).fill("Eiffel");
     await search(page).press("Enter");
-    await expect(page.getByRole("option")).toHaveCount(1);
+    await expect(placeOptions(page)).toHaveCount(1);
     await search(page).fill("  eiffel ");
     await searchButton(page).click();
-    await expect(page.getByRole("option")).toHaveCount(1);
+    await expect(placeOptions(page)).toHaveCount(1);
     expect(network.searchRequests).toHaveLength(1);
   });
 
@@ -405,7 +405,7 @@ test.describe("search", () => {
     await openLanding(page);
     await search(page).fill("Rio");
     await search(page).press("Enter");
-    await expect(page.getByRole("option")).toHaveCount(1);
+    await expect(placeOptions(page)).toHaveCount(1);
     expect(network.searchRequests).toHaveLength(1);
   });
 });
@@ -514,7 +514,7 @@ test.describe("the moment and the actions", () => {
     await search(page).focus();
     await page.keyboard.type("eiffel");
     await page.keyboard.press("Enter");
-    await expect(page.getByRole("option")).toHaveCount(1);
+    await expect(placeOptions(page)).toHaveCount(1);
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Enter");
     await expect(page.locator(".landing-selected")).toContainText("Eiffel Tower");
@@ -678,7 +678,7 @@ test.describe("layout and accessibility", () => {
       await page.getByLabel("Title").fill("A fairly long title for a narrow phone screen to hold");
       await search(page).fill("tower");
       await searchButton(page).click();
-      await expect(page.getByRole("option")).toHaveCount(2);
+      await expect(placeOptions(page)).toHaveCount(2);
       const overflow = await page.evaluate(() => {
         const w = window.innerWidth;
         const out: string[] = [];
@@ -711,7 +711,7 @@ test.describe("layout and accessibility", () => {
     await page.getByText("Advanced", { exact: true }).click();
     await search(page).fill("tower");
     await searchButton(page).click();
-    await expect(page.getByRole("option")).toHaveCount(2);
+    await expect(placeOptions(page)).toHaveCount(2);
     expect(await blocking()).toBe("");
     await search(page).press("Escape");
     await coordinatesSwitch(page).click();
