@@ -101,6 +101,11 @@ sync into the other's bucket even with a shared token.
 
 ## Environments and promotion
 
+The landing's default place is a build-time setting (`VITE_DEFAULT_PLACE`,
+`VITE_DEFAULT_LAT`, `VITE_DEFAULT_LON` in the build step's environment; see the
+README). The site workflows set none, so the built-in São Bernardo do Campo
+default applies; changing it needs a rebuild and deploy, not a code change.
+
 `dev` → `main`. Promotion to `main` is a merge, and `main` is what deploys the
 site and publishes images. There is no staging tier: the site is static, so a
 bad deploy is reverted by re-pointing the R2 prefix (see `docs/product/adr/0002`).
