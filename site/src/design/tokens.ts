@@ -68,6 +68,8 @@ export const explorer = {
   background: color.bg,
   star: color.text,
   line: color.border,
+  /** A hovered figure: softer than selection, brighter than a resting line. */
+  lineHover: color.textMuted,
   lineSelected: color.text,
   horizon: color.textFaint,
   grid: color.borderSoft,
@@ -93,7 +95,7 @@ export const explorer = {
     cardinal: "600 13px 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif",
   },
   /** Stroke widths in CSS pixels. */
-  width: { line: 1, lineSelected: 2, horizon: 1.25, grid: 1, ring: 2, hoverRing: 1 },
+  width: { line: 1, lineHover: 1.5, lineSelected: 2, horizon: 1.25, grid: 1, ring: 2, hoverRing: 1 },
   /** A glow circle is this many times the star radius. */
   glowScale: 2.6,
   /** Gap between a selection ring and its label. */

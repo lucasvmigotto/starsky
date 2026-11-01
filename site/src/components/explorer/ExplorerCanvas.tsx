@@ -99,6 +99,12 @@ export default function ExplorerCanvas({
     const onPointerMove = (e: PointerEvent): void => {
       const p = local(e);
       controller.pointerMove(e.pointerId, p.x, p.y);
+      // A mouse or pen resting over a figure highlights it; touch and drags do not.
+      if (e.pointerType === "touch" || e.buttons !== 0) controller.clearHover();
+      else controller.hoverAt(p.x, p.y);
+    };
+    const onPointerLeave = (): void => {
+      controller.clearHover();
     };
     const onPointerUp = (e: PointerEvent): void => {
       const p = local(e);
@@ -124,6 +130,7 @@ export default function ExplorerCanvas({
 
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("pointerleave", onPointerLeave);
     canvas.addEventListener("pointerup", onPointerUp);
     canvas.addEventListener("pointercancel", onPointerCancel);
     canvas.addEventListener("lostpointercapture", onPointerCancel);
@@ -159,6 +166,7 @@ export default function ExplorerCanvas({
       observer.disconnect();
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointerleave", onPointerLeave);
       canvas.removeEventListener("pointerup", onPointerUp);
       canvas.removeEventListener("pointercancel", onPointerCancel);
       canvas.removeEventListener("lostpointercapture", onPointerCancel);

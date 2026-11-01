@@ -974,7 +974,9 @@ select.atlas-form-input option {
   opacity: 1;
 }
 
-.explorer-list-item:hover {
+.explorer-list-item:hover,
+.explorer-list-item[data-hover="true"],
+.explorer-group-summary[data-hover="true"] {
   background: var(--color-raised);
 }
 

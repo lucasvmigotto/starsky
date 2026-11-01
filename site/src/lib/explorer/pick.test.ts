@@ -1,7 +1,8 @@
 import { describe, expect, it } from "bun:test";
 import { type ExplorerCamera, lookAt, projectToViewport } from "../sky/camera.ts";
 import { dirAt, sceneOf } from "./fixture.ts";
-import { pickAt } from "./pick.ts";
+import { pickAt, pickConstellationAt } from "./pick.ts";
+import type { LabelMark } from "./frame.ts";
 
 const VIEWPORT = { width: 800, height: 600 };
 
@@ -99,5 +100,55 @@ describe("pickAt segments", () => {
     const x = (a.x + b.x) / 2;
     const y = (a.y + b.y) / 2;
     expect(pickAt(scene, view, cam, VIEWPORT, x, y, { lines: false })).toBeNull();
+  });
+});
+
+
+describe("pickConstellationAt (hover)", () => {
+  // Two stars joined by one segment of "Tst", a third star off to the side.
+  const stars = [
+    { hip: 1, dir: dirAt(0, -10), mag: 2 },
+    { hip: 2, dir: dirAt(0, 10), mag: 2 },
+    { hip: 3, dir: dirAt(15, 30), mag: 2 },
+  ];
+  const segments: Parameters<typeof sceneOf>[1] = [["Tst", "Test", 1, 2]];
+
+  function label(x: number, y: number): LabelMark {
+    return { id: "CON:Tst", text: "Test", x, y, width: 80, height: 18, selected: false, hover: false, dim: false };
+  }
+
+  it("picks a constellation near one of its line segments, by pixel distance", () => {
+    const { scene, view } = sceneOf(stars, segments);
+    const cam = camera();
+    const a = screenOf(cam, 0, -10);
+    const b = screenOf(cam, 0, 10);
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    expect(pickConstellationAt(scene, view, cam, VIEWPORT, [], mid.x, mid.y + 5)).toBe("CON:Tst");
+    expect(pickConstellationAt(scene, view, cam, VIEWPORT, [], mid.x, mid.y + 40)).toBeNull();
+  });
+
+  it("picks it by its label box when the pointer is off every line", () => {
+    const { scene, view } = sceneOf(stars, segments);
+    const cam = camera();
+    expect(pickConstellationAt(scene, view, cam, VIEWPORT, [label(100, 100)], 130, 105)).toBe("CON:Tst");
+    expect(pickConstellationAt(scene, view, cam, VIEWPORT, [label(100, 100)], 150, 105)).toBeNull();
+    expect(pickConstellationAt(scene, view, cam, VIEWPORT, [label(100, 100)], 130, 125)).toBeNull();
+  });
+
+  it("leaves a star to its own tooltip: over a star there is no constellation hover", () => {
+    const { scene, view } = sceneOf(stars, segments);
+    const cam = camera();
+    const onStar = screenOf(cam, 0, -10);
+    expect(pickConstellationAt(scene, view, cam, VIEWPORT, [], onStar.x + 2, onStar.y)).toBeNull();
+  });
+
+  it("ignores the lines when that layer is off, but still takes a label", () => {
+    const { scene, view } = sceneOf(stars, segments);
+    const cam = camera();
+    const a = screenOf(cam, 0, -10);
+    const b = screenOf(cam, 0, 10);
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    expect(pickConstellationAt(scene, view, cam, VIEWPORT, [], mid.x, mid.y + 3, { lines: false })).toBeNull();
+    expect(pickConstellationAt(scene, view, cam, VIEWPORT, [label(mid.x, mid.y)], mid.x, mid.y, { lines: false })).toBe("CON:Tst");
   });
 });

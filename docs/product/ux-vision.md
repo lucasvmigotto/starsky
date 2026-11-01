@@ -220,6 +220,15 @@ stays inside the screen. Touch and keyboard keep using selection and the panel,
 which show the same facts, so the tooltip is hidden from screen readers. It
 does not depend on the idle collapse.
 
+**Constellation hover (015).** A mouse or pen resting over a constellation's
+figure (near one of its lines, or over its name) draws that figure's lines a
+little brighter and thicker than resting lines, softer than a selection, with
+its name in the selected colour; a star under the pointer keeps the pointer for
+its tooltip. With the side panel open the matching list item is shaded and
+scrolled into view, without taking focus or changing the order; in the closed
+Below group the group's heading is shaded instead. Resting on a list item
+lights the figure in the sky. Selection wins over hover. Touch does not hover.
+
 ## Information architecture
 
 No navigation chrome. Two surfaces, entered by intent, sharing one hash.

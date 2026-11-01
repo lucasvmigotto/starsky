@@ -174,6 +174,7 @@ describe("FR-001: a moving sky does not rerender the panels", () => {
             scene={world.scene}
             view={world.controller.view}
             selection="HIP:1"
+            hover={world.controller.hover}
             open
             onChoose={noop}
             onCenter={noop}

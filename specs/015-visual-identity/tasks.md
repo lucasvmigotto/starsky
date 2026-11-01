@@ -14,3 +14,4 @@ Feature: `015-visual-identity` | Branch: `feat/015-visual-identity` | Input: `sp
 - [x] T009 FR-010 single-row actions, one panel open at a time, static Viewer image, heading without projection
 - [x] T010 FR-011 Viewer fits the viewport, footer actions as icon buttons with popovers, starsky@v<version> footer link
 - [x] T011 FR-012 animated Reset view and Center on map (slerp, log FOV, eased, cancellable)
+- [x] T012 FR-013 constellation hover highlight linked with the side panel list

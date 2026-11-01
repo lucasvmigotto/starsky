@@ -594,3 +594,98 @@ describe("animated reset (FR-012)", () => {
     expect(controller.getCamera()).toEqual(initialCamera(CTX));
   });
 });
+
+
+const last = <T,>(items: readonly T[]): T | undefined => items[items.length - 1];
+
+describe("constellation hover (FR-013)", () => {
+  // Segment of "Tst" between HIP 2 (10, 20) and HIP 3 (10, 24); HIP 1 is off at (0, 0).
+  function onSegment(c: ExplorerCamera, offsetPx = 0): { x: number; y: number } {
+    const a = project(c, dirAt(10, 20));
+    const b = project(c, dirAt(10, 24));
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + offsetPx };
+  }
+
+  it("hovers the constellation whose line is under the pointer, and redraws once", () => {
+    const { controller, queue, flush, plans } = setup();
+    flush();
+    const at = onSegment(controller.getCamera(), 3);
+    controller.hoverAt(at.x, at.y);
+    expect(controller.hover.id).toBe("CON:Tst");
+    expect(controller.hover.source).toBe("canvas");
+    expect(queue).toHaveLength(1);
+    flush();
+    expect(last(plans)?.lines.some((b) => b.hover)).toBe(true);
+  });
+
+  it("does not redraw for moves within the same figure, only when the id changes", () => {
+    const { controller, queue, flush } = setup();
+    flush();
+    const first = onSegment(controller.getCamera(), 2);
+    controller.hoverAt(first.x, first.y);
+    flush();
+    for (let i = 0; i < 20; i++) controller.hoverAt(first.x + i * 0.2, first.y + 1);
+    expect(queue).toHaveLength(0);
+    controller.hoverAt(5, 5);
+    expect(controller.hover.id).toBeNull();
+    expect(queue).toHaveLength(1);
+  });
+
+  it("leaves a star to its tooltip", () => {
+    const { controller, flush } = setup();
+    flush();
+    const star = project(controller.getCamera(), dirAt(10, 20));
+    controller.hoverAt(star.x + 2, star.y);
+    expect(controller.hover.id).toBeNull();
+  });
+
+  it("clears when a press or a drag starts, and on clearHover", () => {
+    const { controller, flush } = setup();
+    flush();
+    const at = onSegment(controller.getCamera(), 2);
+    controller.hoverAt(at.x, at.y);
+    controller.pointerDown(1, at.x, at.y);
+    expect(controller.hover.id).toBeNull();
+    controller.pointerUp(1, at.x, at.y);
+    controller.hoverAt(at.x, at.y);
+    expect(controller.hover.id).toBe("CON:Tst");
+    controller.clearHover();
+    expect(controller.hover.id).toBeNull();
+  });
+
+  it("redraws when the list sets the hover, and takes the label as a target too", () => {
+    const { controller, queue, flush, plans } = setup();
+    flush();
+    controller.hover.set("CON:Tst", "list");
+    expect(queue).toHaveLength(1);
+    flush();
+    expect(last(plans)?.labels.some((l) => l.hover) || last(plans)?.lines.some((b) => b.hover)).toBe(true);
+    const label = last(plans)?.labels.find((l) => l.id === "CON:Tst");
+    controller.hover.set(null, "list");
+    flush();
+    if (label) {
+      controller.hoverAt(label.x, label.y);
+      expect(controller.hover.id).toBe("CON:Tst");
+    }
+  });
+
+  it("leaves a hover the list set to the list: the canvas's leave does not clear it", () => {
+    const { controller, flush } = setup();
+    flush();
+    controller.hover.set("CON:Tst", "list");
+    controller.clearHover();
+    expect(controller.hover.id).toBe("CON:Tst");
+    controller.hover.set(null, "list");
+    const at = onSegment(controller.getCamera(), 2);
+    controller.hoverAt(at.x, at.y);
+    expect(controller.hover.source).toBe("canvas");
+    controller.clearHover();
+    expect(controller.hover.id).toBeNull();
+  });
+
+  it("does not count as a view change: the settled event is untouched", () => {
+    const { controller, changes } = setup();
+    controller.hover.set("CON:Tst", "list");
+    expect(changes).toEqual([]);
+  });
+});

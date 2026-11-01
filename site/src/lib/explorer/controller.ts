@@ -18,10 +18,11 @@ import { type ObservationContext, initialCamera } from "../sky/observer.ts";
 import { type Quat, multiply, normalize, fromUnitVectors, rotate, slerp } from "../sky/quat.ts";
 import type { SkyScene } from "../sky/scene.ts";
 import { type Vec3, normalizeVec } from "../sky/vec.ts";
-import { type FramePlan, type Viewport, planFrame } from "./frame.ts";
+import { type FramePlan, type LabelMark, type Viewport, planFrame } from "./frame.ts";
+import { HoverStore } from "./hover.ts";
 import { DEFAULT_LAYERS, type PlanLayers } from "./layers.ts";
 import { type ObserverView, prepareObserverView } from "./observerView.ts";
-import { type Pick, pickAt } from "./pick.ts";
+import { type Pick, pickAt, pickConstellationAt } from "./pick.ts";
 
 export type ControllerChange =
   | { kind: "selection"; selection: string | null }
@@ -100,6 +101,8 @@ type Point = { x: number; y: number };
 
 export class ExplorerController {
   readonly view: ObserverView;
+  /** The constellation under the pointer or the panel list's pointer (FR-013). Not a view change. */
+  readonly hover = new HoverStore();
   /** Frames drawn so far; the e2e idle check reads it through the canvas. */
   frames = 0;
 
@@ -116,6 +119,8 @@ export class ExplorerController {
   private readonly now: ControllerOptions["now"];
   private readonly reducedMotion: ControllerOptions["reducedMotion"];
   private animation: Animation | null = null;
+  /** The labels the last frame drew, so a hover can hit them; replaced, never copied. */
+  private labels: readonly LabelMark[] = [];
   private settleHandle: number | null = null;
   private camera: ExplorerCamera;
   private layers: PlanLayers;
@@ -151,6 +156,10 @@ export class ExplorerController {
     this.camera = options.camera ?? initialCamera(options.ctx);
     this.view = prepareObserverView(options.scene, options.ctx);
     this.selection = this.known(options.selection ?? null) ? (options.selection ?? null) : null;
+    // A hover from either side is one frame, and neither touches the quiet period.
+    this.hover.subscribe(() => {
+      this.invalidate();
+    });
     this.invalidate();
   }
 
@@ -171,6 +180,28 @@ export class ExplorerController {
     return () => {
       this.listeners.delete(listener);
     };
+  }
+
+  /**
+   * Hover the constellation whose figure or label is at this point (a mouse or
+   * pen resting there). Asks for a frame only when the hovered id changes.
+   */
+  hoverAt(x: number, y: number): void {
+    if (this.pointers.size > 0) {
+      this.clearHover();
+      return;
+    }
+    const id = pickConstellationAt(this.scene, this.view, this.camera, this.viewport, this.labels, x, y, {
+      magLimit: this.magLimit,
+      below: this.layers.below,
+      lines: this.layers.constellationLines,
+    });
+    this.hover.set(id, "canvas");
+  }
+
+  /** Clear a hover the canvas set; one the panel's list set is the list's to clear. */
+  clearHover(): void {
+    if (this.hover.source === "canvas") this.hover.set(null, "canvas");
   }
 
   /** Ask for one frame; any number of calls before it runs make a single request. */
@@ -234,6 +265,7 @@ export class ExplorerController {
 
   pointerDown(id: number, x: number, y: number): void {
     this.cancelAnimation();
+    this.clearHover();
     if (this.pointers.size >= 2) return;
     this.pointers.set(id, { x, y });
     if (this.pointers.size === 1) {
@@ -475,8 +507,10 @@ export class ExplorerController {
       magLimit: this.magLimit,
       selection: this.selection,
       hover: null,
+      hoverConstellation: this.hover.id,
       cardinalText: this.cardinalText,
     });
+    this.labels = plan.labels;
     this.draw(plan, { camera: this.camera, viewport: this.viewport, frames: this.frames });
   };
 

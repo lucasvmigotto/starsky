@@ -306,3 +306,45 @@ describe("camera agreement", () => {
     expect(CTX.latDeg).toBe(40);
   });
 });
+
+
+describe("constellation hover (FR-013)", () => {
+  const stars = [
+    { hip: 1, dir: dirAt(0, -8), mag: 2 },
+    { hip: 2, dir: dirAt(0, 8), mag: 2 },
+    { hip: 3, dir: dirAt(10, -8), mag: 2 },
+    { hip: 4, dir: dirAt(10, 8), mag: 2 },
+  ];
+  const segments: Parameters<typeof sceneOf>[1] = [
+    ["Aaa", "Alpha", 1, 2],
+    ["Bbb", "Beta", 3, 4],
+  ];
+
+  it("draws only the hovered constellation's lines as a hover batch", () => {
+    const plan = planOf(stars, { hoverConstellation: "CON:Aaa" }, segments);
+    const hovered = plan.lines.filter((b) => b.hover);
+    expect(hovered).toHaveLength(1);
+    expect(hovered[0]?.xy.length).toBe(4);
+    expect(hovered[0]?.selected).toBe(false);
+    expect(plan.lines.filter((b) => !b.hover && !b.selected).reduce((n, b) => n + b.xy.length, 0)).toBe(4);
+  });
+
+  it("marks the hovered label", () => {
+    const plan = planOf(stars, { hoverConstellation: "CON:Bbb" }, segments);
+    expect(plan.labels.find((l) => l.id === "CON:Bbb")?.hover).toBe(true);
+    expect(plan.labels.find((l) => l.id === "CON:Aaa")?.hover).toBe(false);
+  });
+
+  it("lets the selected style win over hover", () => {
+    const plan = planOf(stars, { selection: "CON:Aaa", hoverConstellation: "CON:Aaa" }, segments);
+    expect(plan.lines.some((b) => b.hover)).toBe(false);
+    expect(plan.lines.some((b) => b.selected)).toBe(true);
+    expect(plan.labels.find((l) => l.id === "CON:Aaa")).toMatchObject({ selected: true, hover: false });
+  });
+
+  it("changes nothing when no constellation is hovered", () => {
+    const plan = planOf(stars, {}, segments);
+    expect(plan.lines.some((b) => b.hover)).toBe(false);
+    expect(plan.labels.some((l) => l.hover)).toBe(false);
+  });
+});
