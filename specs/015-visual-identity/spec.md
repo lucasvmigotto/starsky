@@ -31,6 +31,7 @@ The three surfaces drifted apart: different fonts per machine, text buttons wher
 - **FR-003** Constellation list shows the name only. Drop the visible abbreviation and the visible "partly" word. Keep "partly above the horizon" for screen readers (visually hidden text in the item).
 - **FR-004** The side panel slides in and out from the right with the existing motion token (transform, about 200 ms ease-out), and the panel tab moves with it. No motion under `prefers-reduced-motion`. The canvas still never resizes.
 - **FR-005** The panel tab matches the identity: same surface, border and radius as the toolbar container, not the accent-blue outline. Audit any other element using the focus or accent colour as a resting border; the focus colour is only for focus rings and the selection ring.
+- **FR-008** The Explorer star tooltip is one line, "<Name> • Magnitude <value>" (for example "Sirius • Magnitude -1.44"), with the HIP number when the star is unnamed, the magnitude formatted as in the inspector, and no horizon text. Copy key `explorer.tooltip.detail`.
 
 ### Viewer (poster page) — BCR-0013
 

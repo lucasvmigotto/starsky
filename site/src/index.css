@@ -1062,13 +1062,8 @@ select.atlas-form-input option {
   pointer-events: none;
 }
 
-.explorer-tooltip-title {
-  font-size: 0.9375rem;
-}
-
 .explorer-tooltip-detail {
-  font-size: 0.8125rem;
-  color: var(--color-text-muted);
+  font-size: 0.9375rem;
 }
 
 /* Inspector: a right panel that floats over the sky, so opening it never resizes the canvas. */

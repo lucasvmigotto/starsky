@@ -209,7 +209,7 @@ export const enUS = {
   "explorer.inspector.clear": "Clear selection",
   "explorer.kind.star": "Star",
   "explorer.kind.constellation": "Constellation",
-  "explorer.tooltip.detail": "Magnitude {mag} · {horizon}",
+  "explorer.tooltip.detail": "{name} • Magnitude {mag}",
   "explorer.list.title": "Constellations",
   "explorer.list.above": "Above the horizon ({count})",
   "explorer.list.below": "Below the horizon ({count})",

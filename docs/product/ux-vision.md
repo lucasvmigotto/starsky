@@ -211,9 +211,9 @@ phone visitor therefore taps once to get the controls. A mouse click selects as
 usual, because moving the mouse already woke the controls.
 
 **Star tooltip (014-explorer-polish).** Holding a mouse or pen pointer still
-over a star for 1.5 s shows a small tooltip beside it: the name (or HIP
-number), the apparent magnitude, and whether the star is above or below the
-horizon. It closes when the pointer moves to another spot, when a drag or a zoom
+over a star for 1.5 s shows a small one-line tooltip beside it: the name (or HIP
+number), then "• Magnitude" and the apparent magnitude, for example
+"Sirius • Magnitude -1.44". It says nothing about the horizon. It closes when the pointer moves to another spot, when a drag or a zoom
 starts, when the pointer leaves the map, and on Escape, which closes it before
 anything else and leaves the selection alone. It never covers the star and
 stays inside the screen. Touch and keyboard keep using selection and the panel,
@@ -1001,7 +1001,7 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 | `explorer.inspector.clear` | Clear selection |
 | `explorer.kind.star` | Star |
 | `explorer.kind.constellation` | Constellation |
-| `explorer.tooltip.detail` | Magnitude {mag} · {horizon} *(the hover tooltip; {horizon} is `explorer.inspector.horizon.above` or `.below`)* |
+| `explorer.tooltip.detail` | {name} • Magnitude {mag} *(the hover tooltip; {name} is the star's name or its HIP number)* |
 | `explorer.list.title` | Constellations |
 | `explorer.list.above` | Above the horizon ({count}) |
 | `explorer.list.below` | Below the horizon ({count}) |

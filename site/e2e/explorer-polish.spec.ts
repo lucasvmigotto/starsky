@@ -645,9 +645,7 @@ test.describe("star tooltip", () => {
     await expect(tooltip(page)).toHaveCount(0);
     await page.clock.runFor(200);
     await expect(tooltip(page)).toBeVisible();
-    await expect(tooltip(page)).toContainText("Sirius");
-    await expect(tooltip(page)).toContainText("Magnitude -1.44");
-    await expect(tooltip(page)).toContainText("Above the horizon");
+    await expect(tooltip(page)).toHaveText("Sirius • Magnitude -1.44");
     await expect(tooltip(page)).toHaveAttribute("aria-hidden", "true");
     expect(await tooltip(page).evaluate((el) => getComputedStyle(el).pointerEvents)).toBe("none");
   });

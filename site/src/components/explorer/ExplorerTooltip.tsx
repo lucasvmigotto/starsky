@@ -101,14 +101,8 @@ export default function ExplorerTooltip({ controller, scene, canvas, rightInset,
   if (!detail) return null;
   return (
     <div ref={el} className="explorer-tooltip" aria-hidden="true">
-      <p className="explorer-tooltip-title">{detail.title}</p>
       <p className="explorer-tooltip-detail">
-        {t("explorer.tooltip.detail", {
-          mag: formatMagnitude(detail.mag),
-          horizon: t(
-            detail.horizon === "above" ? "explorer.inspector.horizon.above" : "explorer.inspector.horizon.below",
-          ),
-        })}
+        {t("explorer.tooltip.detail", { name: detail.title, mag: formatMagnitude(detail.mag) })}
       </p>
     </div>
   );
