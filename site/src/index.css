@@ -877,7 +877,7 @@ select.atlas-form-input option {
 .explorer-pin[aria-pressed="true"],
 .explorer-tool[aria-expanded="true"] {
   background: var(--color-raised);
-  border-color: var(--color-accent);
+  border-color: var(--color-text-muted);
 }
 
 .explorer-pin:focus-visible,
@@ -1092,7 +1092,7 @@ select.atlas-form-input option {
 .explorer-tab {
   position: absolute;
   top: 50%;
-  right: var(--explorer-inset);
+  right: 0;
   z-index: 4;
   display: flex;
   justify-content: flex-end;
@@ -1113,9 +1113,9 @@ select.atlas-form-input option {
   width: 24px;
   height: 56px;
   background: color-mix(in srgb, var(--color-surface) 90%, transparent);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-soft);
   border-right: 0;
-  border-radius: var(--radius-control) 0 0 var(--radius-control);
+  border-radius: var(--radius-panel) 0 0 var(--radius-panel);
   transition: background var(--motion-duration-short) var(--motion-ease);
 }
 
@@ -1133,8 +1133,47 @@ select.atlas-form-input option {
   outline-offset: 2px;
 }
 
-.explorer-inspector[data-open="false"] {
-  display: none;
+/*
+ * Wide screens: the panel and its tab slide from the right by transform, so
+ * the canvas is never resized. The closed panel turns invisible only after it
+ * has left, which keeps it out of the tab order without cutting the slide.
+ */
+@media (min-width: 48rem) and (min-height: 32.01rem) {
+  .explorer-inspector {
+    transition:
+      transform var(--motion-duration-panel) var(--motion-ease),
+      opacity var(--motion-duration-panel) var(--motion-ease);
+  }
+
+  .explorer-inspector[data-open="false"] {
+    transform: translateX(100%);
+    visibility: hidden;
+    transition:
+      transform var(--motion-duration-panel) var(--motion-ease),
+      opacity var(--motion-duration-panel) var(--motion-ease),
+      visibility 0s linear var(--motion-duration-panel);
+  }
+
+  /* Kept laid out while it slides away; the closed panel is invisible anyway. */
+  .explorer-inspector-body[hidden] {
+    display: block;
+  }
+
+  .explorer-tab {
+    transition:
+      transform var(--motion-duration-panel) var(--motion-ease),
+      opacity var(--motion-duration-panel) var(--motion-ease);
+  }
+
+  .explorer-tab[aria-expanded="true"] {
+    transform: translate(calc(-1 * var(--explorer-panel-w)), -50%);
+  }
+
+  .explorer-dock {
+    transition:
+      right var(--motion-duration-panel) var(--motion-ease),
+      max-width var(--motion-duration-panel) var(--motion-ease);
+  }
 }
 
 .explorer-sheet-handle {
@@ -1220,7 +1259,7 @@ select.atlas-form-input option {
 
 .explorer-list-item[aria-current="true"] {
   background: var(--color-raised);
-  border-color: var(--color-accent);
+  border-color: var(--color-border);
 }
 
 .explorer-group {
@@ -1342,8 +1381,6 @@ select.atlas-form-input option {
  * brings them all back. The one-line moment stays.
  */
 .explorer-toolbar,
-.explorer-tab,
-.explorer-inspector,
 .explorer-moment > button {
   transition: opacity var(--motion-duration-panel) var(--motion-ease);
 }
@@ -1363,7 +1400,10 @@ select.atlas-form-input option {
 @media (prefers-reduced-motion: reduce) {
   .explorer-toolbar,
   .explorer-tab,
+  .explorer-tab[aria-expanded],
   .explorer-inspector,
+  .explorer-inspector[data-open],
+  .explorer-dock,
   .explorer-moment > button,
   .explorer-moment-full,
   .explorer-moment-line,
