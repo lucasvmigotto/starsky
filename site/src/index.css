@@ -1408,6 +1408,52 @@ select.atlas-form-input option {
   list-style: none;
 }
 
+/* A figure's stars (019): a list that scrolls on its own, so a long figure leaves the rest of the panel in reach. */
+.explorer-members {
+  margin-top: var(--space-2);
+  max-height: 16rem;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.explorer-member {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-1) var(--space-3);
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.explorer-member:hover {
+  background: var(--color-raised);
+}
+
+/* Inset, so the scrolling list does not clip the ring. */
+.explorer-member:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.explorer-member-detail {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.explorer-inspector-title:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .explorer-actions {
   margin-block-end: var(--space-4);
   display: flex;
@@ -1546,6 +1592,12 @@ select.atlas-form-input option {
   .explorer-inspector-body {
     overflow-y: auto;
     max-height: calc(38dvh - 44px);
+  }
+
+  /* The sheet's body already scrolls; a second scroller inside it would trap the thumb. */
+  .explorer-members {
+    max-height: none;
+    overflow-y: visible;
   }
 }
 

@@ -164,6 +164,84 @@ describe("ExplorerInspector, a constellation", () => {
   });
 });
 
+describe("ExplorerInspector, stars in the figure (019)", () => {
+  const members = (): HTMLElement[] => within(screen.getByRole("group", { name: "Stars in the figure" })).getAllByRole("button");
+
+  it("lists every star of the figure, brightest first, by name or HIP number with its magnitude", () => {
+    mount("CON:Ori");
+    expect(members().map((b) => b.textContent)).toEqual([
+      "Rigel magnitude 0.50",
+      "HIP 2 magnitude 2.00",
+      "HIP 3 magnitude 3.00, below the horizon",
+    ]);
+  });
+
+  it("names each entry for assistive technology, the horizon in words", () => {
+    mount("CON:Ori");
+    expect(screen.getByRole("button", { name: "HIP 3 magnitude 3.00, below the horizon" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Rigel magnitude 0.50" })).toBeTruthy();
+  });
+
+  it("selects the star an entry names", () => {
+    const calls = mount("CON:Ori");
+    fireEvent.click(at(members(), 1));
+    expect(calls.chosen).toEqual(["HIP:2"]);
+  });
+
+  it("is not there for a star, or with nothing selected", () => {
+    mount("HIP:1");
+    expect(screen.queryByRole("group", { name: "Stars in the figure" })).toBeNull();
+    cleanup();
+    mount(null);
+    expect(screen.queryByRole("group", { name: "Stars in the figure" })).toBeNull();
+  });
+
+  it("moves focus to the chosen star's title, since the entry that had it is gone", () => {
+    const chosen: string[] = [];
+    const ui = (selection: string) => (
+      <ExplorerInspector
+        scene={scene}
+        view={view}
+        selection={selection}
+        hover={new HoverStore()}
+        open
+        onChoose={(id) => chosen.push(id)}
+        onCenter={() => undefined}
+        onClear={() => undefined}
+        onToggle={() => undefined}
+        onClose={() => undefined}
+      />
+    );
+    const { rerender } = render(ui("CON:Ori"));
+    const entry = at(members(), 0);
+    entry.focus();
+    fireEvent.click(entry);
+    expect(chosen).toEqual(["HIP:1"]);
+    rerender(ui("HIP:1"));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Rigel", level: 2 }));
+  });
+
+  it("leaves focus alone when the selection changes some other way", () => {
+    const ui = (selection: string) => (
+      <ExplorerInspector
+        scene={scene}
+        view={view}
+        selection={selection}
+        hover={new HoverStore()}
+        open
+        onChoose={() => undefined}
+        onCenter={() => undefined}
+        onClear={() => undefined}
+        onToggle={() => undefined}
+        onClose={() => undefined}
+      />
+    );
+    const { rerender } = render(ui("CON:Ori"));
+    rerender(ui("HIP:1"));
+    expect(document.activeElement).not.toBe(screen.getByRole("heading", { name: "Rigel", level: 2 }));
+  });
+});
+
 describe("ExplorerInspector, nothing selected", () => {
   it("says so and lists the constellations above the horizon by name", () => {
     const calls = mount(null);

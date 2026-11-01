@@ -4,10 +4,11 @@
  * screens, a bottom sheet on narrow ones (the layout is CSS; this is the DOM).
  * It takes the selection as a prop, so a camera move never reaches it.
  */
-import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { JSX, ReactNode } from "react";
 import { t } from "../../i18n/index.ts";
 import { Icon } from "../icons.tsx";
+import { type FigureStar, figureStars } from "../../lib/explorer/figure.ts";
 import {
   type ConstellationDetail,
   type GroupedConstellation,
@@ -114,6 +115,41 @@ function StarFacts({ star, onChoose }: { star: StarDetail; onChoose: (id: string
         </ul>
       )}
     </>
+  );
+}
+
+/**
+ * Every star of the selected figure, brightest first (019). Each entry selects
+ * its star as a pick in the sky does; a long figure scrolls within the list.
+ */
+function FigureStars({ stars, onChoose }: { stars: readonly FigureStar[]; onChoose: (id: string) => void }): JSX.Element {
+  return (
+    <div role="group" aria-labelledby="explorer-members-title" className="explorer-facts">
+      <h3 id="explorer-members-title" className="explorer-facts-title">
+        {t("explorer.members.title")}
+      </h3>
+      <ul className="explorer-members">
+        {stars.map((star) => (
+          <li key={star.id}>
+            <button
+              type="button"
+              className="explorer-member"
+              onClick={() => {
+                onChoose(star.id);
+              }}
+            >
+              <span className="explorer-member-name">{star.title}</span>
+              {/* A space, so the accessible name reads "Rigel magnitude 0.13" in every browser. */}{" "}
+              <span className="explorer-member-detail">
+                {t(star.below ? "explorer.members.detailBelow" : "explorer.members.detail", {
+                  mag: formatMagnitude(star.mag),
+                })}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -250,6 +286,25 @@ function ExplorerInspector({
     return describeStar(scene, view.ctx, selection) ?? describeConstellation(scene, view, selection);
   }, [scene, view, selection]);
   const title = detail === null ? t("explorer.inspector.label") : detail.kind === "star" ? detail.title : detail.name;
+  const members = useMemo(
+    () => (detail?.kind === "constellation" ? figureStars(scene, view, detail.id) : null),
+    [scene, view, detail],
+  );
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
+  /** Set when a figure's list chose the selection: its button is gone, so focus goes to the new title. */
+  const focusTitle = useRef(false);
+  const chooseMember = useCallback(
+    (id: string): void => {
+      focusTitle.current = true;
+      onChoose(id);
+    },
+    [onChoose],
+  );
+  useEffect(() => {
+    if (!focusTitle.current) return;
+    focusTitle.current = false;
+    titleRef.current?.focus();
+  }, [selection]);
 
   return (
     <aside className="explorer-inspector" aria-label={t("explorer.inspector.label")} data-open={open}>
@@ -271,7 +326,9 @@ function ExplorerInspector({
                 {t(detail.kind === "star" ? "explorer.kind.star" : "explorer.kind.constellation")}
               </p>
             )}
-            <h2 className="explorer-inspector-title">{title}</h2>
+            <h2 ref={titleRef} className="explorer-inspector-title" tabIndex={-1}>
+              {title}
+            </h2>
           </div>
           <button
             type="button"
@@ -290,7 +347,10 @@ function ExplorerInspector({
             {detail.kind === "star" ? (
               <StarFacts star={detail} onChoose={onChoose} />
             ) : (
-              <ConstellationFacts con={detail} />
+              <>
+                <ConstellationFacts con={detail} />
+                {members !== null && members.length > 0 && <FigureStars stars={members} onChoose={chooseMember} />}
+              </>
             )}
             <div className="explorer-actions">
               <button type="button" className="atlas-btn-ghost" onClick={onCenter}>
