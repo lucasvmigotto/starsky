@@ -216,7 +216,7 @@ test.describe("contrast (WCAG 2.2 AA)", () => {
     );
   });
 
-  test("the Explorer's header and panel text meet 4.5:1", async ({ page }) => {
+  test("the Explorer's panel text meets 4.5:1", async ({ page }) => {
     await page.goto(explorerUrl(SIRIUS, { sel: "HIP:32349" }));
     await expect(page.getByRole("img", { name: /sky map/i })).toHaveAttribute("data-frames", /^[1-9]\d*$/);
     await wakeChrome(page);
@@ -225,8 +225,8 @@ test.describe("contrast (WCAG 2.2 AA)", () => {
     await expect(page.locator("#explorer-inspector-body")).toBeVisible();
     await expectReadable(
       page,
-      [".atlas-site-name", ".explorer-kind", ".explorer-list-item span", ".explorer-inspector .atlas-btn-ghost", ".explorer-fact dt", ".explorer-fact dd"],
-      5,
+      [".explorer-kind", ".explorer-list-item span", ".explorer-inspector .atlas-btn-ghost", ".explorer-fact dt", ".explorer-fact dd"],
+      4,
     );
   });
 });

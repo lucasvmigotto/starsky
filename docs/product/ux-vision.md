@@ -752,7 +752,7 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 
 | Key | Copy |
 |---|---|
-| `site.name` | Starsky *(the header's one item, a link to the start; the same on the Explorer, Studio and Viewer)* |
+| `site.name` | Starsky *(the header's one item, a link to the start; on the Studio and Viewer, not on the full-bleed Explorer)* |
 | `viewer.loading` | Charting the stars… |
 
 **Viewer · announcements** (`role="status"`, `aria-live="polite"`, `sr-only`)

@@ -700,19 +700,10 @@ select.atlas-form-input option {
   color: var(--color-text-muted);
 }
 
-/* Sky Explorer (#e=): the shared header, then one canvas filling the rest. */
-.explorer-shell {
+/* Sky Explorer (#e=): one full-viewport canvas, no header; the moment line floats over the sky. */
+.explorer-stage {
   position: fixed;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg);
-}
-
-.explorer-stage {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
   background: var(--color-bg);
 }
 

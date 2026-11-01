@@ -233,7 +233,6 @@ test.describe("one header", () => {
   const surfaces: [string, () => string][] = [
     ["viewer", () => viewerUrl(fragmentFor())],
     ["studio", () => studioUrl(fragmentFor())],
-    ["explorer", () => explorerUrl(SIRIUS)],
   ];
   for (const [name, url] of surfaces) {
     test(`${name} carries the shared header`, async ({ page }) => {
@@ -248,6 +247,17 @@ test.describe("one header", () => {
       expect(style.family).toContain("Cormorant Garamond");
     });
   }
+
+  test("the Explorer is full-bleed: no header, the canvas fills the viewport", async ({ page }) => {
+    await openExplorer(page);
+    await expect(page.getByRole("banner")).toHaveCount(0);
+    const box = await page.getByRole("img", { name: /sky map/i }).boundingBox();
+    const vp = page.viewportSize();
+    if (!box || !vp) throw new Error("no box");
+    expect(box.y).toBe(0);
+    expect(box.height).toBe(vp.height);
+    expect(box.width).toBe(vp.width);
+  });
 
   test("the interface font is Inter, from the same origin", async ({ page }) => {
     const fonts: string[] = [];

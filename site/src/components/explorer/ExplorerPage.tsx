@@ -14,7 +14,6 @@ import {
 } from "../../lib/sky/payload.ts";
 import { type SkyScene, prepareScene } from "../../lib/sky/scene.ts";
 import type { SegmentRow } from "../../lib/skymodel.ts";
-import SiteHeader from "../SiteHeader.tsx";
 import ExplorerStage from "./ExplorerStage.tsx";
 
 const DATA_BASE = `${import.meta.env.BASE_URL}data/`;
@@ -121,19 +120,16 @@ export default function ExplorerPage(): JSX.Element {
   }
 
   return (
-    <div className="explorer-shell">
-      <SiteHeader />
-      <main className="explorer-stage">
-        <h1 className="sr-only">{t("explorer.heading")}</h1>
-        {scene ? (
-          <ExplorerStage scene={scene} payload={link.payload} />
-        ) : (
-          <p className="atlas-loading" role="status">
-            {t("explorer.loading")}
-          </p>
-        )}
-      </main>
-    </div>
+    <main className="explorer-stage">
+      <h1 className="sr-only">{t("explorer.heading")}</h1>
+      {scene ? (
+        <ExplorerStage scene={scene} payload={link.payload} />
+      ) : (
+        <p className="atlas-loading" role="status">
+          {t("explorer.loading")}
+        </p>
+      )}
+    </main>
   );
 }
 
@@ -141,7 +137,6 @@ export default function ExplorerPage(): JSX.Element {
 function StateFrame({ title, children }: { title: string; children: ReactNode }): JSX.Element {
   return (
     <>
-      <SiteHeader />
       <main className="explorer-state">
         <div className="atlas-empty">
           <h1 className="font-display text-3xl">{title}</h1>

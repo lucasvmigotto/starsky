@@ -45,7 +45,7 @@ The three surfaces drifted apart: different fonts per machine, text buttons wher
 
 ### One layout language
 
-- **FR-007** Explorer, Studio and Viewer share: the header (site name), surface colours, radii, the same button styles (primary, ghost, icon), the same form controls, the same panel style and spacing scale. Studio's controls panel and the Viewer's action area use the Explorer panel style. Remove one-off styles that duplicate a shared one.
+- **FR-007** Explorer, Studio and Viewer share: the header (site name; the Explorer stays full-bleed with only its moment line over the sky, so the header is on the Studio and Viewer), surface colours, radii, the same button styles (primary, ghost, icon), the same form controls, the same panel style and spacing scale. Studio's controls panel and the Viewer's action area use the Explorer panel style. Remove one-off styles that duplicate a shared one.
 - The Studio preview shows only the sky image too, like the Viewer, with the title and moment as text above or beside it; exports still include the caption.
 
 ## Must not change

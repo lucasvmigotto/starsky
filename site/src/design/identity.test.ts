@@ -25,12 +25,14 @@ function rule(selector: string): string {
 }
 
 describe("the header", () => {
-  it("is one shared component on all three surfaces", () => {
+  it("is one shared component on the Studio and Viewer, and absent from the full-bleed Explorer", () => {
     expect(read("components/SiteHeader.tsx")).toContain('className="atlas-site-name"');
-    for (const [name, source] of Object.entries(PAGES)) {
-      expect(source, name).toContain("<SiteHeader");
-      expect(source, name).not.toContain('<header className="atlas-header">');
+    for (const name of ["viewer", "studio"] as const) {
+      expect(PAGES[name], name).toContain("<SiteHeader");
+      expect(PAGES[name], name).not.toContain('<header className="atlas-header">');
     }
+    expect(PAGES.explorer).not.toContain("SiteHeader");
+    expect(css).not.toContain(".explorer-shell");
   });
 });
 
