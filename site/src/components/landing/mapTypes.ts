@@ -25,6 +25,8 @@ export type MapFocus = "keep" | "place";
 export interface MapHandle {
   /** Move the marker. `place` also brings the place into view, close enough to see. */
   setLocation: (lat: number, lon: number, focus: MapFocus) => void;
+  /** The container changed size (the page gave the map more or less room). */
+  resize: () => void;
   destroy: () => void;
 }
 

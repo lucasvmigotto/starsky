@@ -10,6 +10,9 @@ import { t } from "../../i18n/index.ts";
 import { OSM_COPYRIGHT_URL, OSM_FIXTHEMAP_URL } from "../../lib/landing/map-config.ts";
 import type { MapFocus, MapHandle, MapLabels, MapModule } from "./mapTypes.ts";
 
+/** How long the container rests before the map is told its size changed. */
+export const RESIZE_DEBOUNCE_MS = 100;
+
 export type MapProblem = "chunk" | "tiles";
 
 interface Props {
@@ -89,6 +92,25 @@ export default function LocationMap({
   useEffect(() => {
     if (ready) handle.current?.setLocation(lat, lon, focus);
   }, [ready, lat, lon, focus]);
+
+  // The page may give the map more or less room as the window changes; Leaflet only
+  // redraws its tiles when told, so a resize of the container is passed on (debounced).
+  useEffect(() => {
+    const element = container.current;
+    if (!ready || !element || !("ResizeObserver" in window)) return;
+    let timer: number | undefined;
+    const observer = new ResizeObserver(() => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        handle.current?.resize();
+      }, RESIZE_DEBOUNCE_MS);
+    });
+    observer.observe(element);
+    return () => {
+      window.clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [ready]);
 
   // The box keeps its size whatever it holds, so the page below never shifts.
   return (

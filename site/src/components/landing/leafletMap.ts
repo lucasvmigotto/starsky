@@ -98,6 +98,9 @@ export function createMap(container: HTMLElement, options: MapOptions): MapHandl
         map.panTo(at);
       }
     },
+    resize() {
+      map.invalidateSize();
+    },
     destroy() {
       map.remove();
     },

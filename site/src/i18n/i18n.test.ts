@@ -124,7 +124,9 @@ describe("copy", () => {
     // 212 → 207 for the always-visible map and the Coordinates switch: `landing.map.show`,
     // `.hide`, `.expand`, `.collapse` and `.skip` retire, and 212 → 206 with `landing.poster`
     // ("Make a poster instead": Explore this sky is the only action) (013-location-first).
-    // 206 → 207 for the unreadable `#c=` link notice (013-location-first).
-    expect(copyKeys().length).toBe(207);
+    // 206 → 207 for the unreadable `#c=` link notice (013-location-first); 207 → 208 for the Studio:
+    // the subtitle retires and the summary note splits around its link to the start page;
+    // 208 → 210 for the capitalised Projection options (`landing.render.projection.*`).
+    expect(copyKeys().length).toBe(210);
   });
 });

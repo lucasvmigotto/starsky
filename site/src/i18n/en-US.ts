@@ -10,17 +10,19 @@
  */
 export const enUS = {
   "landing.title": "Where do you want to explore the sky from?",
-  "landing.subtitle": "Drawn from 8 000+ stars, in your browser",
+  "footer.tagline": "Drawn from 8 000+ stars, in your browser",
   "landing.moment.legend": "Date and time",
   "landing.advanced.legend": "Advanced",
   "landing.render.fisheye": "Fisheye strength",
-  "landing.render.separation": "Minimum separation",
+  "landing.render.separation": "Min. separation",
   "landing.render.magnitude": "Limiting magnitude",
   "landing.render.lines": "Constellation lines",
   "landing.render.labels": "Constellation labels",
   "landing.render.glow": "Glow intensity",
   "landing.browse": "Just browsing?",
   "landing.browse.action": "Load a random sky",
+  "landing.render.projection.stereographic": "Stereographic",
+  "landing.render.projection.fisheye": "Fisheye",
   "landing.creation.invalid": "That link could not be read, so the form is blank.",
   "landing.explore": "Explore this sky",
   "landing.error.when": "Pick a date and time for the sky.",
@@ -37,7 +39,7 @@ export const enUS = {
   "landing.selected.typed": "Typed coordinates",
   "landing.map.label": "Map for choosing a place",
   "landing.map.loading": "Loading the map…",
-  "landing.map.hint": "Click the map or drag the marker to set the place.",
+  "landing.map.hint": "Click or drag the pin to set the place",
   "landing.map.marker": "Observing place",
   "landing.map.attribution": "© {osm} contributors · {report}",
   "landing.map.osm": "OpenStreetMap",
@@ -46,7 +48,7 @@ export const enUS = {
   "landing.map.chunkFailed": "The map could not be loaded. Search still works, or turn on Coordinates to type a place.",
   "landing.search.label": "Search for a place",
   "landing.search.placeholder": "City, address or landmark",
-  "landing.search.credit": "Place search by Nominatim, {attribution}.",
+  "landing.search.credit": "Search by Nominatim",
   "landing.search.listLabel": "Matching places",
   "landing.search.searching": "Searching…",
   "landing.search.results": "{count} places found. Use the arrow keys to choose one.",
@@ -77,10 +79,10 @@ export const enUS = {
   "studio.title.placeholder": "Our first flat",
   "studio.updated": "Map updated",
   "studio.poster.heading": "Poster Studio",
-  "studio.poster.subtitle": "Compose the poster, then export it or copy a link.",
   "studio.advanced.legend": "Advanced",
-  "studio.summary.note":
-    "Place and moment come from the sky you started with. Start again from the start page to change them.",
+  "studio.summary.noteBefore": "From the sky you started with. Change it on the ",
+  "studio.summary.noteLink": "start page",
+  "studio.summary.noteAfter": ".",
   "studio.returnToExplorer": "Return to Explorer",
   "studio.back": "Back to the start",
 
@@ -158,7 +160,7 @@ export const enUS = {
 
   "footer.version": "starsky@v{version}",
   "footer.attribution":
-    "Star data from Hipparcos and JPL. Constellation lines from Stellarium (CC BY-SA 4.0). Place lookup by OpenStreetMap contributors.",
+    "Stars: Hipparcos, JPL · Lines: Stellarium (CC BY-SA 4.0) · Places: © OpenStreetMap contributors",
 
   "explorer.heading": "Sky Explorer",
   "explorer.loading": "Charting the stars…",

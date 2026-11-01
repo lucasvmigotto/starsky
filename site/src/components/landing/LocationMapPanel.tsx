@@ -1,12 +1,11 @@
 /**
  * The map under the place field: always on the page, its Leaflet code loaded
  * lazily. Its box is the same size while it loads or if it fails, so nothing
- * below it moves. Under it, the search credit and the map hint; a tile failure
+ * below it moves. Under it, one line with the map hint and the Nominatim credit (the OpenStreetMap credit is the map's own always-visible attribution, ADR-0008); a tile failure
  * is reported in place, in the flow.
  */
 import type { JSX } from "react";
 import { t } from "../../i18n/index.ts";
-import { OSM_ATTRIBUTION } from "../../lib/geocode.ts";
 import LocationMap, { type MapProblem } from "./LocationMap.tsx";
 import type { MapFocus, MapModule } from "./mapTypes.ts";
 
@@ -49,8 +48,11 @@ export default function LocationMapPanel({
           {t("landing.map.tilesFailed")}
         </p>
       )}
-      <p className="atlas-form-hint">{t("landing.search.credit", { attribution: OSM_ATTRIBUTION })}</p>
-      <p className="atlas-form-hint">{t("landing.map.hint")}</p>
+      <p className="atlas-form-hint">
+        {t("landing.map.hint")}
+        {" · "}
+        {t("landing.search.credit")}
+      </p>
     </div>
   );
 }

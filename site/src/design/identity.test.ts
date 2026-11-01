@@ -85,9 +85,10 @@ describe("the footer actions (FR-011)", () => {
     expect(css).not.toContain(".atlas-viewcontrols");
   });
 
-  it("put the actions row first on a phone and on the right from 48rem", () => {
-    expect(rule(".atlas-footer-actions")).toContain("order: -1");
-    expect(css).toMatch(/@media \(min-width: 48rem\) \{\s*\.atlas-footer-actions \{\s*order: 0/);
+  it("sit in the footer's end group, just before the version link", () => {
+    expect(rule(".atlas-footer-end")).toContain("margin-left: auto");
+    expect(rule(".atlas-footer-actions")).toContain("display: flex");
+    expect(rule(".atlas-footer-actions")).not.toContain("order");
   });
 
   it("open Share and Export as fixed popovers above their button", () => {
@@ -95,10 +96,10 @@ describe("the footer actions (FR-011)", () => {
     expect(read("components/popover.ts")).toContain("vh - rect.top");
   });
 
-  it("are rendered by the footer in the Viewer and the Studio", () => {
-    for (const name of ["viewer", "studio"] as const) {
-      expect(PAGES[name], name).toMatch(/<SiteFooter>[\s\S]*<PosterActions/);
-    }
+  it("are rendered by the footer in the Viewer, and under Advanced in the Studio (013)", () => {
+    expect(PAGES.viewer).toMatch(/<SiteFooter>[\s\S]*<PosterActions/);
+    expect(PAGES.studio).toMatch(/<SiteFooter \/>/);
+    expect(PAGES.studio).toMatch(/<PosterFields[\s\S]*atlas-studio-buttons[\s\S]*<PosterActions/);
   });
 
   it("let the Viewer fit a wide screen without scrolling", () => {

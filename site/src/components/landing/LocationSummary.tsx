@@ -18,20 +18,24 @@ export default function LocationSummary({ location }: { location: LandingLocatio
   const named = location.place !== null;
   return (
     <div role="status" className="landing-selected">
-      <p className="atlas-form-hint">{t("landing.selected.label")}</p>
+      {/* Kept for screen readers: the line below reads "Exploring from <place>, <coordinates>". */}
+      <p className="sr-only">{t("landing.selected.label")}</p>
       <p className="landing-selected-line">
         {named ? (
-          <span className="landing-selected-name">{location.place}</span>
+          // The bullet trails the place, never leads the coordinates, so a wrapped line cannot start with it.
+          <span className="landing-selected-lead">
+            <span className="landing-selected-name">{location.place}</span>
+            <span className="landing-selected-coords" aria-hidden="true">
+              {"\u00a0•"}
+            </span>
+          </span>
         ) : (
           // No place name: the coordinates stand alone, and a screen reader still hears what they are.
           <span className="sr-only">{placeName(location)}, </span>
         )}
         {/* The bullet is for the eye; a comma is for the ear. */}
         {named && <span className="sr-only">, </span>}
-        <span className="landing-selected-coords">
-          {named && <span aria-hidden="true">• </span>}
-          {formatCoords(location.lat, location.lon)}
-        </span>
+        <span className="landing-selected-coords">{formatCoords(location.lat, location.lon)}</span>
       </p>
     </div>
   );

@@ -98,11 +98,20 @@ describe("PosterFields", () => {
     expect(document.getElementById("landing-title")?.closest(".atlas-form-pair")).toBeNull();
   });
 
+  it("shows the projection options capitalised while their values stay lowercase", () => {
+    setup([]);
+    const options = [...document.querySelectorAll<HTMLOptionElement>("#landing-projection option")];
+    expect(options.map((o) => [o.value, o.textContent])).toEqual([
+      ["stereographic", "Stereographic"],
+      ["fisheye", "Fisheye"],
+    ]);
+  });
+
   it("shows Shape as a two-option segmented switch that is still a named radiogroup", () => {
     setup([]);
     const group = screen.getByRole("radiogroup", { name: "Shape" });
     expect(group.className).toContain("atlas-segmented");
-    expect(screen.getAllByRole("radio").map((r) => r.getAttribute("value"))).toEqual(["circle", "square"]);
+    expect(screen.getAllByRole("radio").map((r) => r.getAttribute("value"))).toEqual(["square", "circle"]);
     expect(screen.getByRole("radio", { name: "circle" })).toBeDefined();
     expect(screen.getByRole("radio", { name: "square" })).toBeDefined();
   });

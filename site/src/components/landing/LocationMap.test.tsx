@@ -19,16 +19,18 @@ interface Fake {
   created: MapOptions[];
   moves: { lat: number; lon: number; focus: MapFocus }[];
   destroyed: number[];
+  resizes: number[];
 }
 
 function fakeMap(): Fake {
-  const fake: Fake = { created: [], moves: [], destroyed: [], module: { createMap: () => { throw new Error("unset"); } } };
+  const fake: Fake = { created: [], moves: [], destroyed: [], resizes: [], module: { createMap: () => { throw new Error("unset"); } } };
   fake.module = {
     createMap: (container, options) => {
       fake.created.push(options);
       container.setAttribute("data-fake-map", "true");
       return {
         setLocation: (lat, lon, focus) => fake.moves.push({ lat, lon, focus }),
+        resize: () => fake.resizes.push(1),
         destroy: () => fake.destroyed.push(1),
       };
     },
@@ -105,10 +107,12 @@ describe("LocationMapPanel", () => {
     expect(html).not.toMatch(/noreferrer|referrerpolicy/i);
   });
 
-  it("shows the search credit and the map hint under the map", () => {
+  it("shows the map hint and the search credit as one line under the map", () => {
     mount(fakeMap());
-    expect(screen.getByText(/Place search by Nominatim, © OpenStreetMap contributors/)).toBeDefined();
-    expect(screen.getByText("Click the map or drag the marker to set the place.")).toBeDefined();
+    const line = screen.getByText(/Click or drag the pin to set the place/);
+    expect(line.textContent).toBe(
+      "Click or drag the pin to set the place · Search by Nominatim",
+    );
   });
 
   it("reports a pick and a tile failure upward", async () => {
@@ -155,6 +159,40 @@ describe("LocationMapPanel", () => {
     await waitFor(() => {
       expect(fake.moves[fake.moves.length - 1]).toEqual({ lat: 48.85, lon: 2.35, focus: "place" });
     });
+  });
+
+  it("tells the map when its container changes size, once per burst", async () => {
+    const callbacks: (() => void)[] = [];
+    const disconnected: number[] = [];
+    const real = (window as unknown as Record<string, unknown>)["ResizeObserver"];
+    (window as unknown as Record<string, unknown>)["ResizeObserver"] = class {
+      constructor(callback: () => void) {
+        callbacks.push(callback);
+      }
+      observe(): void {}
+      disconnect(): void {
+        disconnected.push(1);
+      }
+    };
+    try {
+      const fake = fakeMap();
+      const calls: Calls = { picks: [], problems: [] };
+      const { unmount } = render(panel(fake, calls, {}));
+      await waitFor(() => {
+        expect(callbacks).toHaveLength(1);
+      });
+      callbacks[0]?.();
+      callbacks[0]?.();
+      callbacks[0]?.();
+      expect(fake.resizes).toHaveLength(0);
+      await waitFor(() => {
+        expect(fake.resizes).toHaveLength(1);
+      });
+      unmount();
+      expect(disconnected).toHaveLength(1);
+    } finally {
+      (window as unknown as Record<string, unknown>)["ResizeObserver"] = real;
+    }
   });
 
   it("destroys the map when it leaves the page", async () => {

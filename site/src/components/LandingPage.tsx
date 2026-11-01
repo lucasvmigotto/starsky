@@ -3,12 +3,11 @@
  * explore the sky from?", answered by search, the map or coordinates. The form
  * state is one reducer in `lib/landing`; this component only wires it to the
  * controls. Poster choices live in the Studio. The form is kept in `#c=` (replaceState,
- * debounced) so a filled-in landing can be shared; the link is read once, on arrival.
+ * debounced), so the address bar is the link to share; it is read once, on arrival.
  */
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { JSX } from "react";
 import { t } from "../i18n/index.ts";
-import { absoluteLink } from "../lib/explorer/link.ts";
 import { creationFragmentFromHash, decodeCreation, encodeCreation } from "../lib/landing/creation.ts";
 import { defaultTimezone, exploreHash, undrawableTitleCharacter } from "../lib/landing/payload.ts";
 import {
@@ -23,7 +22,6 @@ import { fragmentFromHash } from "../lib/share.ts";
 import { randomSampleFragment } from "../lib/site.ts";
 import SiteFooter from "./SiteFooter.tsx";
 import SiteHeader from "./SiteHeader.tsx";
-import ExplorerCopyLink from "./explorer/ExplorerCopyLink.tsx";
 import AdvancedFields from "./landing/AdvancedFields.tsx";
 import CoordinateFields from "./landing/CoordinateFields.tsx";
 import CoordinateSwitch from "./landing/CoordinateSwitch.tsx";
@@ -83,8 +81,6 @@ export default function LandingPage(): JSX.Element {
       window.clearTimeout(timer);
     };
   }, [fragment]);
-  const latestFragment = useRef(fragment);
-  latestFragment.current = fragment;
 
   const explore = (): void => {
     const input = toLandingInput(state);
@@ -107,7 +103,6 @@ export default function LandingPage(): JSX.Element {
         <div className="atlas-form-wrap">
           <div className="atlas-moment">
             <h1 className="font-display text-3xl leading-tight sm:text-4xl">{t("landing.title")}</h1>
-            <p className="mt-2 text-sm text-text-muted">{t("landing.subtitle")}</p>
           </div>
 
           <div className="atlas-panel atlas-form landing-card">
@@ -176,19 +171,19 @@ export default function LandingPage(): JSX.Element {
                   dispatch({ type: "tz-changed", tz: defaultTimezone() });
                 }}
               />
+              {message !== null && (
+              <p role="alert" className="atlas-form-error">
+                {message}
+              </p>
+            )}
+
+            <div className="landing-foot">
               <AdvancedFields
                 mag={state.mag}
                 onMag={(mag) => {
                   dispatch({ type: "mag-changed", mag });
                 }}
               />
-
-              {message !== null && (
-                <p role="alert" className="atlas-form-error">
-                  {message}
-                </p>
-              )}
-
               <div className="landing-actions">
                 <button
                   type="button"
@@ -199,10 +194,8 @@ export default function LandingPage(): JSX.Element {
                 >
                   {t("landing.explore")}
                 </button>
-                <ExplorerCopyLink
-                  getLink={() => absoluteLink(`#c=${latestFragment.current}`, window.location)}
-                />
               </div>
+            </div>
             </div>
           </div>
 

@@ -280,29 +280,38 @@ link — P1 — never sees the landing at all.
 │ ┌────────────────────────────────────────────────────────┐ │
 │ │ map, 280 px (220 on phones), always shown              │ │
 │ └────────────────────────────────────────────────────────┘ │
-│ Place search by Nominatim, © OpenStreetMap contributors.   │
-│ Click the map or drag the marker to set the place.         │
-│ Exploring from                                             │
+│ Click or drag the pin to set the place · Search by Nominatim│
 │ Newark • 40.7357°N, 74.1724°W                              │
 │ Title (optional)                                           │
 │ [ Date and time          ] [ Timezone          ] [◎]     │
-│ > Advanced   (limiting magnitude only)                     │
+│ > Advanced (limiting magnitude only)                       │
 │                    [ Explore this sky ]                    │
 └────────────────────────────────────────────────────────────┘
 Just browsing? Load a random sky.
 ```
 
-From 1024 px the card is two columns, so the landing fits one screen: the search
-row, the map and its two hints on the left; the summary, Title, moment, Advanced
-and the action on the right. Detect is a locate icon button beside the timezone.
-`#c=<fragment>` opens the landing pre-filled (a creation link, see
-`docs/product/architecture.md`); the page keeps it in step with the form, and a
-copy-link icon beside the action shares it. A link it cannot read leaves a blank
-form with a short notice.
+The card is one column at every width and fits one screen on a large display
+(1440x900, 1920x1080) with Advanced closed: the map gives up height first, the
+map hint and the search credit share a line, Advanced has a full-width row,
+and "Explore this sky" is centred on the row below it. Detect is a locate icon button beside the
+timezone. `#c=<fragment>` opens the landing pre-filled (a creation link, see
+`docs/product/architecture.md`); the page keeps it in step with the form, so the
+address bar is the link to share. A link it cannot read leaves a blank form with
+a short notice.
+
+The Poster Studio (013) fits one screen the same way from 1024 px wide: no
+visible page title (an `sr-only` heading remains), the preview as large as the
+height and column allow, a Moment card with the landing's one-line summary and a
+short note linking to the start page, compact Appearance controls, the shape
+switch reading `square | circle`.
+
+The footer, on every page, is one row: data credits on the left, the page's
+actions then the `starsky@v<version>` link at the end (stacked on phones).
 
 With the Coordinates switch on, Latitude and Longitude replace the search field
 in place; the map stays and follows them. The summary reads
-`<place> • <coordinates>` on one line, the coordinates alone for a dropped pin
+`<place> • <coordinates>` on one line (its "Exploring from" label,
+`landing.selected.label`, is visually hidden and read before it), the coordinates alone for a dropped pin
 (announced as "Dropped pin"). If tiles or Leaflet fail, the map's own box says so
 and points to the switch.
 
@@ -778,19 +787,21 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | Key | Copy |
 |---|---|
 | `landing.title` | Where do you want to explore the sky from? |
-| `landing.subtitle` | Drawn from 8 000+ stars, in your browser |
+| `footer.tagline` | Drawn from 8 000+ stars, in your browser |
 | `landing.locale.label` | Language |
 | `landing.randomSky` | Load a random sky → renders `viewer.randomSky` |
 | `landing.moment.legend` | Date and time |
 | `landing.advanced.legend` | Advanced |
 | `landing.render.fisheye` | Fisheye strength |
-| `landing.render.separation` | Minimum separation |
+| `landing.render.separation` | Min. separation |
 | `landing.render.magnitude` | Limiting magnitude |
 | `landing.render.lines` | Constellation lines |
 | `landing.render.labels` | Constellation labels |
 | `landing.render.glow` | Glow intensity |
 | `landing.browse` | Just browsing? |
 | `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
+| `landing.render.projection.stereographic` | Stereographic |
+| `landing.render.projection.fisheye` | Fisheye |
 | `landing.creation.invalid` | That link could not be read, so the form is blank. |
 | `landing.explore` | Explore this sky |
 | `landing.error.when` | Pick a date and time for the sky. |
@@ -807,7 +818,7 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.selected.typed` | Typed coordinates |
 | `landing.map.label` | Map for choosing a place |
 | `landing.map.loading` | Loading the map… |
-| `landing.map.hint` | Click the map or drag the marker to set the place. |
+| `landing.map.hint` | Click or drag the pin to set the place |
 | `landing.map.marker` | Observing place |
 | `landing.map.attribution` | © {osm} contributors · {report} |
 | `landing.map.osm` | OpenStreetMap |
@@ -816,7 +827,7 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.map.chunkFailed` | The map could not be loaded. Search still works, or turn on Coordinates to type a place. |
 | `landing.search.label` | Search for a place |
 | `landing.search.placeholder` | City, address or landmark |
-| `landing.search.credit` | Place search by Nominatim, {attribution}. |
+| `landing.search.credit` | Search by Nominatim |
 | `landing.search.listLabel` | Matching places |
 | `landing.search.searching` | Searching… |
 | `landing.search.results` | {count} places found. Use the arrow keys to choose one. |
@@ -868,9 +879,10 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `studio.title.placeholder` | Our first flat |
 | `studio.updated` | Map updated |
 | `studio.poster.heading` | Poster Studio |
-| `studio.poster.subtitle` | Compose the poster, then export it or copy a link. |
 | `studio.advanced.legend` | Advanced |
-| `studio.summary.note` | Place and moment come from the sky you started with. Start again from the start page to change them. |
+| `studio.summary.noteBefore` | From the sky you started with. Change it on the  |
+| `studio.summary.noteLink` | start page |
+| `studio.summary.noteAfter` | . |
 | `studio.returnToExplorer` | Return to Explorer |
 | `studio.back` | Back to the start |
 
@@ -995,7 +1007,7 @@ parts read as one sentence, asserted by `i18n.test.ts`.
 | Key | Copy |
 |---|---|
 | `footer.version` | starsky@v{version} |
-| `footer.attribution` | Star data from Hipparcos and JPL. Constellation lines from Stellarium (CC BY-SA 4.0). Place lookup by OpenStreetMap contributors. |
+| `footer.attribution` | Stars: Hipparcos, JPL · Lines: Stellarium (CC BY-SA 4.0) · Places: © OpenStreetMap contributors |
 
 **Explorer** (`#e=`; the map is 010-explorer-canvas, the interface around it is 011-explorer-ui)
 

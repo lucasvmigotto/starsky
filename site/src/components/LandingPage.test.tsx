@@ -41,10 +41,10 @@ describe("LandingPage structure (013)", () => {
     expect(screen.queryByLabelText("Latitude")).toBeNull();
   });
 
-  it("shows the search credit and the map hint, then the summary, in that order below the row", () => {
+  it("shows the map hint and the search credit on one line, then the summary, below the row", () => {
     render(<LandingPage />);
     const text = document.querySelector(".landing-card")?.textContent ?? "";
-    const order = ["Search for a place", "Place search by Nominatim", "Click the map or drag the marker", "Exploring from"].map((m) => text.indexOf(m));
+    const order = ["Search for a place", "Click or drag the pin", "Search by Nominatim", "Exploring from"].map((m) => text.indexOf(m));
     expect(order.every((i) => i >= 0)).toBe(true);
     expect([...order].sort((x, y) => x - y)).toEqual(order);
   });
@@ -181,9 +181,7 @@ describe("LandingPage actions (013)", () => {
   it("Explore this sky is the only action: no poster button", () => {
     render(<LandingPage />);
     expect(screen.queryByRole("button", { name: /poster/i })).toBeNull();
-    // The copy-link icon is not a second call to action.
-    expect(document.querySelectorAll(".landing-actions .atlas-btn")).toHaveLength(1);
-    expect(screen.getByRole("button", { name: "Copy link" }).className).toContain("atlas-btn-icon");
+    expect(document.querySelectorAll(".landing-actions button")).toHaveLength(1);
   });
 
   it("names an unknown timezone and stays on the page", () => {
@@ -306,8 +304,15 @@ describe("LandingPage #c= creation link (013)", () => {
     }
   });
 
-  it("offers a copy-link icon for the pre-filled form", () => {
+  it("has no copy-link button: the address bar is the link", () => {
     render(<LandingPage />);
-    expect(screen.getByRole("button", { name: "Copy link" })).toBeDefined();
+    expect(screen.queryByRole("button", { name: /copy link/i })).toBeNull();
+  });
+
+  it("puts Advanced on its own row, with the one action in the row below", () => {
+    render(<LandingPage />);
+    const row = document.querySelector(".landing-foot");
+    expect(row?.querySelector("details > summary")?.textContent).toBe("Advanced");
+    expect(row?.querySelector(".landing-actions button")?.textContent).toBe("Explore this sky");
   });
 });

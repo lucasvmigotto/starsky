@@ -27,14 +27,18 @@ export default function SiteFooter({ children }: Props): React.JSX.Element {
     <footer className="atlas-footer">
       <div className="atlas-footer-main">
         <div className="atlas-footer-info">
-          <p className="atlas-footer-meta">
+          <p className="atlas-footer-meta">{t("footer.attribution")}</p>
+        </div>
+        <div className="atlas-footer-end">
+          {children !== undefined && <div className="atlas-footer-actions">{children}</div>}
+          <p className="atlas-footer-meta atlas-footer-version">
+            {t("footer.tagline")}
+            {" · "}
             <a className="atlas-link" href={SOURCE_URL} rel="noreferrer">
               {t("footer.version", { version: __APP_VERSION__ })}
             </a>
           </p>
-          <p className="atlas-footer-meta">{t("footer.attribution")}</p>
         </div>
-        {children !== undefined && <div className="atlas-footer-actions">{children}</div>}
       </div>
     </footer>
   );

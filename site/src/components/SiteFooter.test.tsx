@@ -22,13 +22,36 @@ describe("SiteFooter (FR-011)", () => {
     expect(screen.getAllByRole("link")).toHaveLength(1);
   });
 
-  it("keeps the attribution below the link", () => {
+  it("puts the credits on the left and the version link at the end", () => {
     render(<SiteFooter />);
-    const metas = [...document.querySelectorAll(".atlas-footer-meta")];
-    expect(metas).toHaveLength(2);
-    expect(metas[0]?.textContent).toBe("starsky@v9.8.7");
-    expect(metas[1]?.textContent).toContain("Stellarium");
-    expect(metas[1]?.textContent).toContain("OpenStreetMap");
+    const info = document.querySelector(".atlas-footer-info");
+    const end = document.querySelector(".atlas-footer-end");
+    expect(info?.textContent).toContain("Stellarium");
+    expect(info?.textContent).toContain("OpenStreetMap");
+    expect(info?.querySelector("a")).toBeNull();
+    expect(end?.querySelector(".atlas-footer-version a")?.textContent).toBe("starsky@v9.8.7");
+    expect(info?.compareDocumentPosition(end as Node) ?? 0).toBe(4);
+  });
+
+  it("puts the tagline right before the version link, in one group, and only the version is a link", () => {
+    render(<SiteFooter />);
+    const group = document.querySelector(".atlas-footer-version");
+    expect(group?.textContent).toBe("Drawn from 8 000+ stars, in your browser · starsky@v9.8.7");
+    expect(group?.querySelectorAll("a")).toHaveLength(1);
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+  });
+
+  it("puts the actions just before the version link in the keyboard order", () => {
+    render(
+      <SiteFooter>
+        <button type="button" aria-label="Thing" />
+      </SiteFooter>,
+    );
+    const end = document.querySelector(".atlas-footer-end");
+    expect([...(end?.children ?? [])].map((c) => c.className)).toEqual([
+      "atlas-footer-actions",
+      "atlas-footer-meta atlas-footer-version",
+    ]);
   });
 
   it("shows page actions on the right when given, and nothing when not", () => {
