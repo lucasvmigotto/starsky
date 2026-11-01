@@ -1,6 +1,6 @@
 # BCR-0014 — The square poster fills the square
 
-Status: accepted (2026-11-01)
+Status: accepted (2026-11-01), implemented by feature 016 (specs/016-square-fill)
 Owner: lucas
 Date: 2026-11-01
 

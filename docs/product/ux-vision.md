@@ -303,7 +303,10 @@ The Poster Studio (013) fits one screen the same way from 1024 px wide: no
 visible page title (an `sr-only` heading remains), the preview as large as the
 height and column allow, a Moment card with the landing's one-line summary and a
 short note linking to the start page, compact Appearance controls, the shape
-switch reading `square | circle`.
+switch reading `square | circle`. Square means the whole sky square is sky:
+the view is zoomed so the square is inscribed in the horizon, its corners on
+the horizon, and clipped to the square (BCR-0014); circle keeps the full
+horizon disc with its ring.
 
 The footer, on every page, is one row: data credits on the left, the page's
 actions then the `starsky@v<version>` link at the end (stacked on phones).

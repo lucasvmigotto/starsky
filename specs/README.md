@@ -24,7 +24,7 @@ budgets underway). `003` is retired. Nothing is Verified.
 | 014 | explorer-polish | P1 | 012 | Implemented | N/A | Idle collapse, horizon list, copy icon, star tooltip, brighter stars, controls, panel tab, rounder corners (lands before 013) |
 | 015 | visual-identity | P1 | 014 | Implemented | N/A | Bundled UI font, icon buttons, sliding panel, image-only poster page, one layout language (BCR-0013; lands before 013) |
 | 013 | location-first | P1 | 015 | Implemented | N/A | Map-first landing: search, lazy Leaflet map, coordinates, moment, opens the Explorer, `#c=` link; Studio on one screen (ADR-0008) |
-| 016 | square-fill | P1 | 013 | In progress | N/A | Square poster fills the square, inscribed in the horizon (BCR-0014) |
+| 016 | square-fill | P1 | 013 | Implemented | N/A | Square poster fills the square, inscribed in the horizon (BCR-0014) |
 
 ## Removed features
 

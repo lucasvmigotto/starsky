@@ -1,6 +1,6 @@
 # 016 — Square poster fills the square
 
-Feature: `016-square-fill` | Status: In progress | Depends: 013 | Issue: #62 | Direction: BCR-0014
+Feature: `016-square-fill` | Status: Implemented | Depends: 013 | Issue: #62 | Direction: BCR-0014
 
 ## Why
 
