@@ -1,21 +1,63 @@
 # 🔭 starsky — personalized night-sky posters
 
-A static, client-only night-sky poster generator. The **site** (`site/`) is the
-whole application: it renders the poster in the browser and exports PNG, SVG and
-PDF. The **CLI** is a small Python tool that builds the sky data the site
-fetches — nothing more.
+A static, client-only night-sky explorer and poster studio. The **site**
+(`site/`) is the whole application: it renders the sky in the browser, lets you
+explore it, and exports posters as PNG, SVG and PDF. The **CLI** is a small
+Python tool that builds the sky data the site fetches — nothing more.
 
 Open source, no server, no database, no accounts. Python 3.14 + Polars, `uv`;
 React + TypeScript 7 + Bun; deployed to Cloudflare R2.
+
+## What it does
+
+The flow is **landing → Explorer → export**.
+
+1. **Landing.** "Where do you want to explore the sky from?" Search for a place
+   (Enter, the search button, or leaving the field — never as you type) or
+   switch to coordinates; an always-visible OpenStreetMap map shows the place
+   and accepts a click or a dragged pin. Add an optional title, a date, time and
+   timezone, and a limiting magnitude under Advanced. **Explore this sky** opens
+   the Explorer.
+2. **Explorer** (`#e=`). A navigable sky on Canvas 2D: drag to look around, zoom
+   from 5° to 120°, switch layers, inspect stars and constellations, search.
+   Objects below the horizon are never presented as observable.
+3. **Poster Studio** (`#studio=`). Choose projection, square or circle (a square
+   fills the square), fisheye strength, minimum separation, glow and title with a
+   live preview, then export PNG, SVG or PDF in the standard or the 9:16 story
+   (1080×1920) layout.
+4. **Poster page** (`#s=`). A shared link renders the exact poster, with share,
+   export, "Explore this sky" and "Make your own".
+
+## Links
+
+State lives in the URL fragment, so the same link shows the same sky to everyone.
+There are four versioned fragments:
+
+| Fragment | Opens | Holds |
+| --- | --- | --- |
+| `#c=` | the landing, pre-filled | place, coordinates, moment, title, limiting magnitude (tolerant per field) |
+| `#e=` | the Explorer | the scene plus camera, field of view, layers, selection |
+| `#studio=` | the Poster Studio | a poster draft (same codec as `#s=`) |
+| `#s=` | the poster page | the finished poster; byte-compatible with every link since v1 |
+
+## OpenStreetMap and privacy
+
+Place search (Nominatim) and the landing map (OpenStreetMap tiles) run from the
+visitor's browser and follow the OpenStreetMap policies: no autocomplete, at
+most one request per second, a per-session cache, tiles for the visible view
+only, and attribution always shown. starsky stores nothing and has no accounts,
+and links carry their payload in the URL fragment, which never reaches the host.
+The one disclosure: OpenStreetMap sees the visitor's IP address when they search
+or view the landing map. Coordinates always work without either service.
 
 ## How it fits together
 
 ```
 Hipparcos catalog ─┐
-                   ├─ starsky (CLI) ──► catalog.json, constellations.json ──┐
-Stellarium IAU ────┘                                                      │
-                                                                          ▼
-                                       site/ (React + TS) ──► poster PNG / SVG / PDF
+                   ├─ starsky (CLI) ──► catalog.json, constellations.json, names.json ──┐
+Stellarium IAU ────┘                                                                   │
+                                                                                       ▼
+                                          site/ (React + TS) ──► Explorer, poster PNG / SVG / PDF
 ```
 
 The browser does its own astronomy (alt/az from right ascension and declination)
@@ -26,9 +68,12 @@ anything.
 
 ```bash
 uv sync --all-groups
-uv run python -m starsky cache warm      # download catalog + lines into the cache
+uv run python -m starsky cache warm      # download catalog, lines and names into the cache
 uv run python -m starsky catalog         # write site/public/data/*.json
 ```
+
+`catalog` writes `catalog.json` (stars), `constellations.json` (figure lines) and
+`names.json` (HIP-keyed star names).
 
 `catalog` flags: `--mag-limit` (default 6.5) and `--output-dir` (default
 `site/public/data`). Bare `python -m starsky` prints help and opens no socket.
@@ -70,7 +115,7 @@ The image is a one-shot data job, not a service:
 
 ```bash
 docker build -t starsky .
-docker run --rm -v "$PWD/out:/out" starsky    # writes catalog.json + constellations.json
+docker run --rm -v "$PWD/out:/out" starsky    # writes catalog.json, constellations.json, names.json
 ```
 
 Without DHI access, build with the public fallback:
@@ -88,8 +133,10 @@ Runtime runs as UID/GID 65532.
 | Workflow | Purpose |
 | --- | --- |
 | `ci.yml` | ruff, `ty`, pytest, and a real `cache warm` + `catalog` build asserting the JSON shape. |
-| `site_r2.yml` | site lint, `tsgo` typecheck, `bun test`, build, and deploy to R2 on `main`. |
-
+| `site_ci.yml` | site lint, typecheck, i18n agreement, tests, build and budgets. |
+| `site_e2e.yml` | Playwright journeys on Chromium and Firefox. |
+| `site_r2.yml` | rebuild, verify and deploy the product to R2 on `main`. |
+| `site_docs.yml` | verify and deploy the docs site (`docs/site/`) to its own bucket. |
 | `ghcr.yml` / `dockerhub.yml` | publish the CLI image. |
 | `release.yml` | tag and release. |
 
@@ -120,8 +167,8 @@ reached attributively. Checked by `scripts/check_declarative_imports.py`.
 
 ## Attribution
 
-- Geocoding © OpenStreetMap contributors (Nominatim usage policy) — called from
-  the browser.
+- Map and places © OpenStreetMap contributors (ODbL): Nominatim search and map
+  tiles, called from the browser under their usage policies.
 - Stars: Hipparcos Catalogue (ESA); constellation lines: Stellarium IAU
   skyculture (CC BY-SA 4.0).
 - Font: Cormorant Garamond (SIL OFL 1.1), bundled in `assets/fonts/`.

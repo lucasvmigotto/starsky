@@ -37,6 +37,11 @@ cd docs/site && bun run test:e2e   # run as `bun run test:e2e`, not `bun test`
   Opens no socket, renders nothing.
 - `site/` — React 19 + TS 7 (`tsgo`) + Vite 8 + Tailwind 4 product app.
   `render-spec.json` is the normative render contract (one implementation).
+  Flow: landing → Explorer → Poster Studio → poster page. Code by context
+  in `site/src/lib/`: `sky` (vectors, observer, camera, scene; no UI, no
+  network), `explorer`, `landing` (place search, `#c=`), `scene` (Explorer ↔
+  poster translation), `studio` (`#studio=` draft), `render` (poster,
+  export, story layout).
 - `docs/site/` — React docs site (en + pt-BR), Markdown + `llms.txt`
   generated from the same typed content (`scripts/generate_llms.ts`).
 - `specs/` — feature specs + `tasks.md` (status in `specs/README.md`).
@@ -56,6 +61,17 @@ cd docs/site && bun run test:e2e   # run as `bun run test:e2e`, not `bun test`
 - TypeScript imports keep their `.ts`/`.tsx` extensions
   (`allowImportingTsExtensions`); `noUncheckedIndexedAccess` is on —
   index access returns `T | undefined`, handle it, don't assert it away.
+- **Four URL fragments**, each versioned (`v: 1`), ≤ 4096 chars, same
+  codec: `#c=` landing form (tolerant per field), `#e=` Explorer,
+  `#studio=` Studio draft, `#s=` poster. `#s=` must stay byte-compatible
+  with every link issued since v1: never change its codec, field set or
+  canonical-JSON order; reject out-of-range values, never clamp.
+- **OpenStreetMap rules** (Nominatim + tiles; being blocked is the top
+  risk): no search-as-you-type (submit, search button or leaving the field
+  only), ≥ 1 s between Nominatim requests, session cache, tiles for the
+  visible view only with attribution visible. Tests never contact real
+  OSM hosts: e2e fixtures stub both and fail on any unstubbed request
+  (`site/e2e/network-guard.spec.ts`).
 - Strict ESLint (`no-unnecessary-condition`, no void-return shorthand):
   `import.meta.env.*` is fully typed — no `?.`/`??` on it.
 - **HashRouter takes no `basename`** — the host prefix lives in the URL

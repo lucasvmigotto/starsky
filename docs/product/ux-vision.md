@@ -24,10 +24,11 @@ Three consequences run through every decision below:
 
 1. **The map is the page.** Chrome recedes; the poster is the brightest object
    in the view and nothing competes with it.
-2. **Two surfaces, one product.** Someone arriving from a shared link and
-   someone arriving to build one are equally likely and must both be served
-   excellently. They are different surfaces — **Viewer** and **Studio** — not
-   one page with two moods.
+2. **Distinct surfaces, one product.** Someone arriving from a shared link and
+   someone arriving to explore a sky are equally likely and must both be served
+   excellently. They get different surfaces — the **Explorer** (primary),
+   the **Poster Studio** and the **poster page** (the Viewer) — not one page
+   with several moods.
 3. **The UI agrees with the artifact.** The poster is drawn in Cormorant
    Garamond; the interface uses the same face for the same words, so the name
    "Cassiopeia" is not set twice in two different voices on the same screen.
@@ -68,7 +69,7 @@ Kept, evolved or replaced — the `frontend:build` stage needs this list.
 | Element | Today | Verdict |
 |---|---|---|
 | Routing | `HashRouter`, one wildcard route; `#s=` holds the payload | **Keep, extend.** No SPA fallback on the static host, and the share fragment must not fight router paths. Studio adds `#studio=`; both stay in one hash, not two router paths. |
-| Landing | A form — coordinates/place, date/time, tz, render options | **Replace with Studio.** The form is the Studio's controls; the landing becomes the choice between the two surfaces. |
+| Landing | A form — coordinates/place, date/time, tz, render options | **Replaced (013).** The landing is location-first and asks one question; the poster controls moved to the Studio, which is reached from the Explorer. |
 | Viewer | Map + constellation list + hover scrim + focus overlay | **Keep and elevate.** It is the product. *(Since BCR-0013 the page shows the image only: no figure list, no caption band on the page.)* |
 | Tokens | `--color-ink #0b0f19`, `--color-cream #f5efe0`, `--color-rose #b98a8a` | **Replace — in the UI only.** See *Two palettes*: `render-spec.json` keeps these exact values for the poster and is normative. The old CSS values were the *same* three colours as the poster's, which is what made the overlap easy to miss. |
 | Display face | Cormorant Garamond, `font-display` | **Keep, with a defined role.** Load-bearing: BCR-0006/0007 withhold the poster if it fails to load. |
@@ -235,21 +236,21 @@ lights the figure in the sky. Selection wins over hover. Touch does not hover.
 No navigation chrome. Two surfaces, entered by intent, sharing one hash.
 
 ```
-/                         landing — choose a surface
+/                         landing — where to explore the sky from (see below)
 │
 ├── Viewer        #s=<payload>        a shared or canonical moment
 │                 ├── heading — title, local time, projection
 │                 ├── the sky image (primary, centred; BCR-0013)
 │                 ├── share actions — copy link
+│                 ├── explore this sky — → Explorer
 │                 ├── make your own — → #studio=
 │                 └── export — PNG · SVG · PDF (secondary)
 │
-└── Studio        #studio=<draft>     build and tune a moment
-                  ├── the map (still primary, live)
-                  ├── location — coordinates | place
-                  ├── moment — date, time, timezone
+└── Studio        #studio=<draft>     compose the poster (012, 013)
+                  ├── the poster preview (primary, live)
+                  ├── moment — a one-line summary, edited on the start page
                   └── appearance — projection, fisheye, separation,
-                                  magnitude, glow, constellations, shape, title
+                                  glow, shape, title
 ```
 
 **Why no tabs or sidebar.** Two surfaces, reachable from one decision, plus a
@@ -347,8 +348,9 @@ that decide whether the visitor sees anything.
 
 ### F2 — Map a moment (P2, P3)
 
-Entry: landing → "Map a moment" (`#studio=`), or the Viewer → "Make your own
-from this sky", which seeds Studio from the shared payload.
+Entry (as first designed; superseded by F4 and the location-first landing):
+the Viewer → "Make your own from this sky", which seeds Studio from the shared
+payload. Today a poster is made from the Explorer, never from the landing.
 1. Choose coordinates or place.
 2. Enter coordinates, *or* a place name → geocode → resolved coordinates
    shown for confirmation before anything renders.
@@ -370,7 +372,7 @@ opens `#studio=` and lands in an editor rather than on the map they were sent.
 
 ### F3 — Keep it (P2, P3)
 
-Entry: from the Viewer, once the map is right.
+Entry: from the Studio or the poster page, once the poster is right.
 1. Choose a layout, Standard or Story (9:16, 1080 × 1920), then PNG, SVG or PDF.
    The layout is chosen at export time and is never part of a link.
 2. Export renders at print resolution; the PNG is the current view.
@@ -466,38 +468,38 @@ The exported PNG, SVG and PDF keep their caption band, byte for byte. The image
 is static: no drag, wheel, pinch, keys or zoom buttons; zooming and exploring
 live in the Explorer, reached from "Explore this sky".
 
-### 3. Studio — build and tune
+### 3. Poster Studio — compose
 
-Purpose: compose a moment, seeing every change as it happens.
-Primary action: the map redraws live; the share link updates silently.
+Purpose: compose the poster, seeing every change as it happens.
+Primary action: the preview redraws after a short pause; the `#studio=` fragment
+follows it silently. The place and moment are not edited here: they come from
+the Explorer (or the poster page) and are changed on the start page.
 
 ```
-desktop
+desktop (from 1024 px, one screen)
 ┌──────────────────────────────────────────────────────────────┐
-│ Starsky — adjust this sky                        v1.0.0      │
+│ Starsky                                                      │
 ├────────────────────────────────┬─────────────────────────────┤
-│                                │ Location                    │
-│      ★     ·        ✦          │ ( • ) Coordinates           │
-│   ·          ★·                 │ (   ) Place                 │
-│                                │   40.7580   -73.9855        │
-│                                │                             │
 │                                │ Moment                      │
-│                                │   Date  2024-06-12          │
-│                                │   Time  21:40   Zone UTC    │
-│  ┌──────────────────────────┐  │                             │
-│  │ Our first flat           │  │ Appearance                  │
-│  │ 40.7580°N, 73.9855°W     │  │   Projection  stereographic▾│
-│  └──────────────────────────┘  │   Magnitude ──────●────     │
-│                                │   Shape      (•) Circle      │
-│  [Copy link] [PNG] [SVG] [PDF] │              ( ) Square      │
-├─────────────────────────────┴─────────────────────────────┤
-│ starsky v1.0.0 · GPL-3.0 · Stellarium CC BY-SA · OSM        │
+│                                │   Newark • 40.7357°N, 74.2°W│
+│      poster preview            │   From the sky you started  │
+│      (as large as the height   │   with. Change it on the    │
+│       and column allow)        │   start page.               │
+│                                │                             │
+│                                │ Appearance                  │
+│                                │   Projection  Stereographic▾│
+│                                │   Shape       square|circle │
+│                                │   Fisheye · Separation · Glow│
+│                                │   Title                     │
+│  [Copy link] [PNG] [SVG] [PDF] │ [Return to Explorer]        │
+├────────────────────────────────┴─────────────────────────────┤
+│ Stars: Hipparcos · Lines and names: Stellarium · © OpenStreetMap │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Controls on the right, map always visible on the left.** Not a submit-then-
-reveal: the map draws from the moment the place resolves, so every control has
-visible consequences.
+**Controls on the right, the preview always visible on the left.** Every
+control has a visible consequence. Export offers the Standard or Story (9:16)
+layout, chosen at export time.
 
 ---
 
