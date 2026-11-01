@@ -147,7 +147,7 @@ Invariants:
   - **LimitingMagnitude:** [1, 7] in poster and creation links, [-2, 12] in `#e=`. It is clamped to [1, 7] when a scene crosses into a poster.
 - **Lifecycle: PlaceSearch** (`landing/search.ts`):
   - States: `idle → loading → results | empty | error`.
-  - `submit` moves any state to `loading`.
+  - `submit` moves any state to `loading` (or straight to `results`/`empty` on a cache hit).
   - `cancel` (a place is chosen or the field is cleared) moves any state to `idle`.
   - `dispose` is terminal.
   - A new query aborts the request in flight, so a late response is dropped and never shown.
@@ -230,7 +230,7 @@ Invariants:
 | Export layout never stored in a link | BCR-0012 | ExportControls state only | Unit: payload has no format key |
 | Viewer shows the image and its heading only | BCR-0013 | ViewerPage | e2e `identity.spec.ts` |
 | Square fills the square, inscribed | BCR-0014 | `render/poster.ts skyExtent` | Reference `sydney-xmas-square.png` |
-| Search Nominatim only on explicit submit, ≤ 1 request/s, cache repeats | Nominatim policy S1 | `landing/search.ts` (issue #65: today it also searches 400 ms after typing, a violation) | Unit: typing sends nothing; e2e: request count |
+| Search Nominatim only on explicit submit, ≤ 1 request/s, cache repeats | Nominatim policy S1 | `landing/search.ts` (issue #65, fixed: typing sends nothing, blur with new text submits, 1 s spacing, session cache) | Unit: typing sends nothing; e2e: request count |
 | Tiles only for the visible view, attribution always visible, Referer kept | OSM tile policy S2; ADR-0008 | Leaflet config, `map-config.ts`, no Referrer-Policy | e2e `landing.spec.ts`, `network-guard.spec.ts` |
 | Tests never contact real tile or geocoder servers | Constitution 1.2.0; ADR-0008 | e2e fixtures fail on unstubbed hosts | `network-guard.spec.ts` |
 | Copy agrees with ux-vision both ways | AGENTS.md | `check_i18n_keys.py` | CI gate |
@@ -279,7 +279,7 @@ Not legal advice. The brief's "Compliance: N/A" still fits, because starsky coll
 
 | System | Direction, mode | Anti-corruption | Idempotency | Failure behaviour |
 |---|---|---|---|---|
-| Nominatim search | Browser → OSM, sync fetch, cancellable | `geocode.ts` maps results to `ResolvedPlace`; Referer identifies the app | Read-only; repeat queries should be cached (#65) | Inline "couldn't search" message; coordinates still work; nothing navigates |
+| Nominatim search | Browser → OSM, sync fetch, cancellable | `geocode.ts` maps results to `ResolvedPlace`; Referer identifies the app | Read-only; repeat queries are cached for the page session, 1 request/s (#65) | Inline "couldn't search" message; coordinates still work; nothing navigates |
 | OSM tiles | Browser → OSM, on view (landing only) | Leaflet; URL in one config value | Read-only, browser-cached per headers | Failure shown in the map's box; search and coordinates still work |
 | Hipparcos / Stellarium hosts | CI → sources, build time | Parquet loaders (`src/starsky/data`) | Cache warm reruns safely | 3 retries, then the build fails with no deploy |
 | Cloudflare R2 | CI → bucket | `site_r2.yml` | Re-upload overwrites, `index.html` last | Failed deploy leaves the previous build serving |

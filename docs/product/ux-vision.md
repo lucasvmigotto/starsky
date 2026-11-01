@@ -276,11 +276,12 @@ link — P1 — never sees the landing at all.
 ```
 ┌ Where do you want to explore the sky from? ───────────────┐
 │ Search for a place                                         │
-│ [ City, address or landmark          ]   (o) Coordinates   │
+│ [ City, address or landmark     [Q] ]   (o) Coordinates   │
 │ ┌────────────────────────────────────────────────────────┐ │
 │ │ map, 280 px (220 on phones), always shown              │ │
 │ └────────────────────────────────────────────────────────┘ │
 │ Click or drag the pin to set the place · Search by Nominatim│
+│ Place search and the map come from OpenStreetMap, which …  │
 │ Newark • 40.7357°N, 74.1724°W                              │
 │ Title (optional)                                           │
 │ [ Date and time          ] [ Timezone          ] [◎]     │
@@ -293,7 +294,8 @@ Just browsing? Load a random sky.
 The card is one column at every width and fits one screen on a large display
 (1440x900, 1920x1080) with Advanced closed: the map gives up height first, the
 map hint and the search credit share a line, Advanced has a full-width row,
-and "Explore this sky" is centred on the row below it. Detect is a locate icon button beside the
+and "Explore this sky" is centred on the row below it. The search runs only on Enter, the magnifier button inside the field, or leaving
+the field with new text, never while typing (Nominatim policy, issue #65). Detect is a locate icon button beside the
 timezone. `#c=<fragment>` opens the landing pre-filled (a creation link, see
 `docs/product/architecture.md`); the page keeps it in step with the form, so the
 address bar is the link to share. A link it cannot read leaves a blank form with
@@ -830,6 +832,9 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.map.chunkFailed` | The map could not be loaded. Search still works, or turn on Coordinates to type a place. |
 | `landing.search.label` | Search for a place |
 | `landing.search.placeholder` | City, address or landmark |
+| `landing.privacy` | Place search and the map come from {osm}, which sees your IP address. starsky stores nothing. |
+| `landing.privacy.osm` | OpenStreetMap |
+| `landing.search.submit` | Search |
 | `landing.search.credit` | Search by Nominatim |
 | `landing.search.listLabel` | Matching places |
 | `landing.search.searching` | Searching… |
@@ -1010,7 +1015,7 @@ parts read as one sentence, asserted by `i18n.test.ts`.
 | Key | Copy |
 |---|---|
 | `footer.version` | starsky@v{version} |
-| `footer.attribution` | Stars: Hipparcos, JPL · Lines: Stellarium (CC BY-SA 4.0) · Places: © OpenStreetMap contributors |
+| `footer.attribution` | Stars: Hipparcos · Lines and names: Stellarium (CC BY-SA 4.0) · Map and places: © OpenStreetMap contributors |
 
 **Explorer** (`#e=`; the map is 010-explorer-canvas, the interface around it is 011-explorer-ui)
 
