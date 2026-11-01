@@ -128,6 +128,12 @@ describe("copy", () => {
     // the subtitle retires and the summary note splits around its link to the start page;
     // 208 → 210 for the capitalised Projection options (`landing.render.projection.*`).
     // 213 → 217 for the error boundary's page (`site.error.*`, 017 hardening).
-    expect(copyKeys().length).toBe(217);
+    // 217 → 227 for pt-BR (018): `landing.locale.*` (3) become `site.language.*`
+    // (3, the footer switcher); `studio.lang.label` / `.hint` (the poster
+    // language); five PosterFields words that were inline English
+    // (`landing.render.projection`, `.shape`, `.shape.square`, `.shape.circle`,
+    // `.glowToggle`); and the share summary (`viewer.share.summary`,
+    // `.projection.stereographic`, `.projection.fisheye`).
+    expect(copyKeys().length).toBe(227);
   });
 });

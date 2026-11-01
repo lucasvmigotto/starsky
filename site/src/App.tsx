@@ -4,6 +4,7 @@ import ErrorBoundary from "./components/ErrorBoundary.tsx";
 import LandingPage from "./components/LandingPage.tsx";
 import ViewerPage from "./components/ViewerPage.tsx";
 import { t } from "./i18n/index.ts";
+import { useLocale } from "./i18n/useLocale.ts";
 import { fragmentFromHash } from "./lib/share.ts";
 
 // The Explorer is its own chunk: `#s=` and the landing never download it.
@@ -117,6 +118,9 @@ function Guarded() {
 }
 
 export default function App() {
+  // Subscribed at the root, so a language switch re-renders every page in place
+  // (018): nothing remounts, so the form, the camera and the draft are kept.
+  useLocale();
   return (
     // The docs-hub prefix lives in the URL pathname via Vite's `base`; the
     // hash carries the route. A hash router must NOT set `basename` — it would

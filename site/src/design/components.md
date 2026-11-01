@@ -70,14 +70,18 @@ The Explorer's star tooltip, one line: `<Name> • Magnitude <value>`
 - **Assertive?** No. `role="alert"` is reserved for the font failure, which
   withholds the poster (BCR-0007)
 
-### `LocaleSelect` — planned
+### `LocaleSelect` — built (018-pt-br, in `SiteFooter`)
 
 `en-US` / `pt-BR`. A native `<select>`: two options do not justify a listbox,
 and a native control gets keyboard behaviour and the platform picker for free.
+Each option names its language in itself (`site.language.en`,
+`site.language.ptBR`) and carries its own `lang`. The Studio's poster-language
+select (`studio.lang.label`) is the same control, for the poster's words.
 
-- **States**: default · focus-visible
-- **Do**: label it (`landing.locale.label`). **Don't**: ship it before `pt-BR`
-  exists — a picker with one option is a lie about the feature
+- **States**: default · hover · focus-visible
+- **Do**: label it (`site.language.label`), keep it a 44 px target. **Don't**:
+  translate the language names — a visitor lost in the wrong language must
+  still find their own
 
 ---
 

@@ -2,11 +2,13 @@
  * `en-US` catalogue — generated from `docs/product/ux-vision.md`
  * → *Key-screen copy*, not hand-typed, so a key cannot drift from the vision.
  *
- * Regenerate with `bun run i18n:extract` after editing the vision.
+ * After editing the vision's tables, update this file and `pt-BR.ts` to match;
+ * `scripts/check_i18n_keys.py` fails until the keys (and the pt-BR copy) agree.
  *
- * `pt-BR` ships as a separate slice after the retheme (vision D17), so there is
- * exactly one locale here. Nothing user-visible may be written inline in a
- * component — that is what the `no-literal-copy` lint rule enforces.
+ * `pt-BR.ts` holds exactly these keys (018-pt-br): it is typed against
+ * `CopyKey`, so a missing or extra key is a type error. Nothing user-visible
+ * may be written inline in a component — that is what the `no-literal-copy`
+ * lint rule enforces.
  */
 export const enUS = {
   "landing.title": "Where do you want to explore the sky from?",
@@ -62,9 +64,11 @@ export const enUS = {
   "landing.openShared.help": "Paste a link that ends in `#s=…`",
   "landing.mapMoment": "Map a moment",
   "landing.mapMoment.help": "Choose a place and a date",
-  "landing.locale.label": "Language",
-  "landing.locale.en": "English",
-  "landing.locale.ptBR": "Português (Brasil)",
+  "landing.render.projection": "Projection",
+  "landing.render.shape": "Shape",
+  "landing.render.shape.square": "square",
+  "landing.render.shape.circle": "circle",
+  "landing.render.glowToggle": "Glow",
 
   "studio.heading": "Map a moment",
   "studio.mode.coordinates": "Coordinates",
@@ -88,12 +92,18 @@ export const enUS = {
   "studio.summary.noteAfter": ".",
   "studio.returnToExplorer": "Return to Explorer",
   "studio.back": "Back to the start",
+  "studio.lang.label": "Poster language",
+  "studio.lang.hint": "The date on the poster and its exports is written in this language.",
 
   "site.name": "Starsky",
   "site.error.title": "This page could not be loaded",
   "site.error.body": "Part of the page did not load, or something went wrong. Check your connection and reload.",
   "site.error.reload": "Reload",
   "site.error.start": "Back to the start",
+  // Each language is named in itself (an endonym), whatever the active locale.
+  "site.language.label": "Language",
+  "site.language.en": "English",
+  "site.language.ptBR": "Português (Brasil)",
   "viewer.heading.default": "This night sky",
   "viewer.heading.abovePlace": "Night sky above {place}",
   "viewer.loading": "Charting the stars…",
@@ -106,6 +116,9 @@ export const enUS = {
   "viewer.share.open": "Share",
   "viewer.share.close": "Close share",
   "viewer.share.heading": "Share this sky",
+  "viewer.share.summary": "{where} · {when} · {projection} projection · mag {mag}",
+  "viewer.share.projection.stereographic": "stereographic",
+  "viewer.share.projection.fisheye": "fisheye",
   "viewer.linkCopied": "Link copied",
   "viewer.linkFailed": "Could not copy the link. Select the address bar and copy it.",
   "viewer.randomSky": "Load a random sky",

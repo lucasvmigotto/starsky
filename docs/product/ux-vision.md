@@ -708,7 +708,7 @@ WCAG 2.2 AA minimum, verified not assumed.
 - **Announcements** — poster ready, figure selected, export complete, and each
   error state are announced politely; only the font failure is `assertive`
   (`role="alert"`, already implemented for BCR-0007).
-- **Language** — `<html lang="en">` today; the i18n keys below assume more.
+- **Language** — `<html lang>` follows the active locale (`en-US` or `pt-BR`, 018); the switcher is in the footer.
 
 ---
 
@@ -795,7 +795,6 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 |---|---|
 | `landing.title` | Where do you want to explore the sky from? |
 | `footer.tagline` | Drawn from 8 000+ stars, in your browser |
-| `landing.locale.label` | Language |
 | `landing.randomSky` | Load a random sky → renders `viewer.randomSky` |
 | `landing.moment.legend` | Date and time |
 | `landing.advanced.legend` | Advanced |
@@ -805,6 +804,11 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.render.lines` | Constellation lines |
 | `landing.render.labels` | Constellation labels |
 | `landing.render.glow` | Glow intensity |
+| `landing.render.projection` | Projection *(the poster fields, Studio)* |
+| `landing.render.shape` | Shape |
+| `landing.render.shape.square` | square |
+| `landing.render.shape.circle` | circle |
+| `landing.render.glowToggle` | Glow *(the checkbox beside Glow intensity)* |
 | `landing.browse` | Just browsing? |
 | `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
 | `landing.render.projection.stereographic` | Stereographic |
@@ -854,6 +858,9 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `site.error.body` | Part of the page did not load, or something went wrong. Check your connection and reload. |
 | `site.error.reload` | Reload |
 | `site.error.start` | Back to the start |
+| `site.language.label` | Language *(the footer switcher's label, 018; screen-reader only)* |
+| `site.language.en` | English *(each language named in itself, in every locale)* |
+| `site.language.ptBR` | Português (Brasil) |
 | `viewer.loading` | Charting the stars… |
 
 **Viewer · announcements** (`role="status"`, `aria-live="polite"`, `sr-only`)
@@ -867,8 +874,6 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `dataError.title` | Star data could not be loaded |
 | `dataError.body` | Regenerate it with `starsky catalog` and reload. |
 | `fontError.title` | The poster font could not be loaded |
-| `landing.locale.en` | English |
-| `landing.locale.ptBR` | Português (Brasil) |
 | `landing.openShared` | Open a shared sky |
 | `landing.openShared.help` | Paste a link that ends in `#s=…` |
 | `landing.mapMoment` | Map a moment |
@@ -899,6 +904,8 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `studio.summary.noteAfter` | . |
 | `studio.returnToExplorer` | Return to Explorer |
 | `studio.back` | Back to the start |
+| `studio.lang.label` | Poster language *(018; options are `site.language.*`)* |
+| `studio.lang.hint` | The date on the poster and its exports is written in this language. *(the select's description, screen-reader only)* |
 
 **Viewer**
 
@@ -910,6 +917,9 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `viewer.share.open` | Share |
 | `viewer.share.close` | Close share |
 | `viewer.share.heading` | Share this sky |
+| `viewer.share.summary` | {where} · {when} · {projection} projection · mag {mag} |
+| `viewer.share.projection.stereographic` | stereographic |
+| `viewer.share.projection.fisheye` | fisheye |
 | `viewer.copyLink` | Copy link |
 | `viewer.linkCopied` | Link copied |
 | `viewer.randomSky` | Load a random sky |
@@ -1114,29 +1124,284 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 
 ---
 
+## Key-screen copy — pt-BR
+
+The same keys as *Key-screen copy*, in Brazilian Portuguese (018-pt-br,
+BCR-0015). This table is the source for `site/src/i18n/pt-BR.ts`:
+`site/scripts/check_i18n_keys.py` fails unless the catalogue has exactly these
+keys with exactly these values (leading and trailing spaces, which a table
+cannot hold, are the catalogue's own), and the en-US keys above are the same
+set.
+
+- **Voice**: *você*, sentence case, plain verbs ("Explorar este céu", not
+  "Vamos explorar"); no *gerundismo*, no calques of the English word order.
+- **Terms**: céu, estrela, constelação, pôster, horizonte, magnitude, projeção
+  estereográfica, olho de peixe; the surfaces are the **Explorador** and the
+  **Estúdio** (de pôster). Cardinal points read N, L, S, O in the Explorer;
+  coordinates keep the poster's °N/°S/°E/°W.
+- **Kept as they are**: fragment formats, coordinates, the version string,
+  licence and attribution notices (Hipparcos, Stellarium, CC BY-SA 4.0,
+  © OpenStreetMap contributors — only the labels around them are translated),
+  constellation and star names, OpenStreetMap and Nominatim. Each language is
+  named in itself (`site.language.*`).
+
+| Key | Copy |
+|---|---|
+| `landing.title` | De onde você quer explorar o céu? |
+| `footer.tagline` | Mais de 8 000 estrelas, desenhadas no seu navegador |
+| `landing.moment.legend` | Data e hora |
+| `landing.advanced.legend` | Avançado |
+| `landing.render.fisheye` | Intensidade do olho de peixe |
+| `landing.render.separation` | Separação mín. |
+| `landing.render.magnitude` | Magnitude limite |
+| `landing.render.lines` | Linhas das constelações |
+| `landing.render.labels` | Nomes das constelações |
+| `landing.render.glow` | Intensidade do brilho |
+| `landing.browse` | Só quer dar uma olhada? |
+| `landing.browse.action` | Carregar um céu aleatório |
+| `landing.render.projection.stereographic` | Estereográfica |
+| `landing.render.projection.fisheye` | Olho de peixe |
+| `landing.creation.invalid` | Não foi possível ler esse link, então o formulário está em branco. |
+| `landing.explore` | Explorar este céu |
+| `landing.error.when` | Escolha uma data e uma hora para o céu. |
+| `landing.error.timezone` | Fuso horário desconhecido: {zone}. Use um nome IANA, como "America/Sao_Paulo". |
+| `landing.tz.label` | Fuso horário |
+| `landing.tz.detect` | Detectar meu fuso horário |
+| `landing.coords.toggle` | Coordenadas |
+| `landing.coords.lat` | Latitude |
+| `landing.coords.lon` | Longitude |
+| `landing.error.lat` | A latitude deve ser um número entre -90 e 90. |
+| `landing.error.lon` | A longitude deve ser um número entre -180 e 180. |
+| `landing.selected.label` | Explorando a partir de |
+| `landing.selected.pin` | Ponto marcado no mapa |
+| `landing.selected.typed` | Coordenadas digitadas |
+| `landing.map.label` | Mapa para escolher um lugar |
+| `landing.map.loading` | Carregando o mapa… |
+| `landing.map.hint` | Clique ou arraste o marcador para definir o lugar |
+| `landing.map.marker` | Local de observação |
+| `landing.map.attribution` | © {osm} contributors · {report} |
+| `landing.map.osm` | OpenStreetMap |
+| `landing.map.report` | Relatar um problema |
+| `landing.map.tilesFailed` | Não foi possível carregar as imagens do mapa. A busca continua funcionando, ou ative Coordenadas para digitar um lugar. |
+| `landing.map.chunkFailed` | Não foi possível carregar o mapa. A busca continua funcionando, ou ative Coordenadas para digitar um lugar. |
+| `landing.search.label` | Buscar um lugar |
+| `landing.search.placeholder` | Cidade, endereço ou ponto de referência |
+| `landing.privacy` | A busca de lugares e o mapa vêm do {osm}, que vê o seu endereço IP. O starsky não guarda nada. |
+| `landing.privacy.osm` | OpenStreetMap |
+| `landing.search.submit` | Buscar |
+| `landing.search.credit` | Busca pelo Nominatim |
+| `landing.search.listLabel` | Lugares encontrados |
+| `landing.search.searching` | Buscando… |
+| `landing.search.results` | {count} lugares encontrados. Use as setas do teclado para escolher um. |
+| `landing.search.resultsOne` | 1 lugar encontrado. Use as setas do teclado para escolhê-lo. |
+| `landing.search.empty` | Nenhum lugar encontrado para “{query}”. Tente outro nome, ou use o mapa ou as coordenadas. |
+| `landing.search.error` | A busca de lugares está indisponível agora. Use o mapa ou as coordenadas. |
+| `landing.openShared` | Abrir um céu compartilhado |
+| `landing.openShared.help` | Cole um link que termine em `#s=…` |
+| `landing.mapMoment` | Mapear um momento |
+| `landing.mapMoment.help` | Escolha um lugar e uma data |
+| `landing.render.projection` | Projeção |
+| `landing.render.shape` | Formato |
+| `landing.render.shape.square` | quadrado |
+| `landing.render.shape.circle` | círculo |
+| `landing.render.glowToggle` | Brilho |
+| `studio.heading` | Mapear um momento |
+| `studio.mode.coordinates` | Coordenadas |
+| `studio.mode.place` | Lugar |
+| `studio.place.label` | Lugar |
+| `studio.place.placeholder` | Avenida Paulista, São Paulo |
+| `studio.place.resolving` | Procurando esse lugar… |
+| `studio.place.resolved` | Mostrando {place} |
+| `studio.place.unresolved` | Não foi possível encontrar “{query}”. Tente um nome de lugar mais completo, ou mude para Coordenadas. |
+| `studio.moment.legend` | Momento |
+| `studio.zone.hint` | Opcional — detectado a partir do lugar. |
+| `studio.appearance.legend` | Aparência |
+| `studio.title.label` | Título |
+| `studio.title.placeholder` | Nosso primeiro apartamento |
+| `studio.updated` | Mapa atualizado |
+| `studio.poster.heading` | Estúdio de pôster |
+| `studio.advanced.legend` | Avançado |
+| `studio.summary.noteBefore` | Do céu com que você começou. Para mudá-lo, volte à |
+| `studio.summary.noteLink` | página inicial |
+| `studio.summary.noteAfter` | . |
+| `studio.returnToExplorer` | Voltar ao Explorador |
+| `studio.back` | Voltar ao início |
+| `studio.lang.label` | Idioma do pôster |
+| `studio.lang.hint` | A data no pôster e nas exportações é escrita neste idioma. |
+| `site.name` | Starsky |
+| `site.error.title` | Não foi possível carregar esta página |
+| `site.error.body` | Parte da página não carregou, ou algo deu errado. Verifique sua conexão e recarregue. |
+| `site.error.reload` | Recarregar |
+| `site.error.start` | Voltar ao início |
+| `site.language.label` | Idioma |
+| `site.language.en` | English |
+| `site.language.ptBR` | Português (Brasil) |
+| `viewer.heading.default` | Este céu noturno |
+| `viewer.heading.abovePlace` | Céu noturno sobre {place} |
+| `viewer.loading` | Mapeando as estrelas… |
+| `viewer.announced.ready` | Pôster do céu noturno pronto. |
+| `viewer.announcementRegion` | Status do visualizador do céu |
+| `viewer.canvasLabel` | Pôster do céu noturno com o título {title} |
+| `viewer.canvasLabel.untitled` | Pôster do céu noturno |
+| `viewer.caption` | {coords} — {place} · {local} {tz} |
+| `viewer.copyLink` | Copiar link |
+| `viewer.share.open` | Compartilhar |
+| `viewer.share.close` | Fechar compartilhamento |
+| `viewer.share.heading` | Compartilhar este céu |
+| `viewer.share.summary` | {where} · {when} · projeção {projection} · mag. {mag} |
+| `viewer.share.projection.stereographic` | estereográfica |
+| `viewer.share.projection.fisheye` | olho de peixe |
+| `viewer.linkCopied` | Link copiado |
+| `viewer.linkFailed` | Não foi possível copiar o link. Selecione a barra de endereço e copie. |
+| `viewer.randomSky` | Carregar um céu aleatório |
+| `viewer.makeYourOwn` | Criar o seu a partir deste céu |
+| `viewer.exploreSky` | Explorar este céu |
+| `viewer.export.png` | PNG |
+| `viewer.export.svg` | SVG |
+| `viewer.export.pdf` | PDF |
+| `viewer.export.working` | Desenhando em resolução máxima… |
+| `viewer.export.done` | {filename} salvo |
+| `viewer.export.failed` | A exportação em {format} falhou ({detail}). O mapa não foi afetado — tente de novo. |
+| `viewer.export.open` | Exportar |
+| `viewer.export.close` | Fechar exportação |
+| `viewer.export.formats` | Formatos de exportação |
+| `viewer.export.preparing` | Preparando {format}… |
+| `viewer.export.layout` | Layout |
+| `viewer.export.layout.standard` | Padrão |
+| `viewer.export.layout.story` | Story (9:16) |
+| `empty.title` | Ainda não há um céu nesta página |
+| `empty.bodyPrefix` | Esta página lê um momento compartilhado no próprio endereço — procure um link que termine em |
+| `empty.bodySuffix` | . |
+| `empty.action` | Carregar um céu aleatório |
+| `legacy.title` | Um tipo antigo de link |
+| `legacy.body` | Esse link vem de uma versão anterior. Mapeie um novo momento. |
+| `invalid.title` | Este link não contém um céu |
+| `invalid.body` | Não foi possível ler o link ({detail}). Talvez ele tenha sido cortado. |
+| `landing.randomSky` | Carregar um céu aleatório |
+| `dataError.title` | Não foi possível carregar os dados das estrelas |
+| `dataError.body` | Gere-os de novo com `starsky catalog` e recarregue. |
+| `dataError.bodyPrefix` | Não foi possível carregar os dados das estrelas ({detail}). Gere-os de novo com |
+| `dataError.command` | starsky catalog |
+| `dataError.bodySuffix` | e publique de novo. |
+| `fontError.title` | Não foi possível carregar a fonte do pôster |
+| `fontError.body` | O pôster não é exibido para não ser desenhado com uma fonte substituta. |
+| `fontError.bodyPrefix` | Não foi possível carregar a fonte do pôster ({detail}). |
+| `fontError.bodySuffix` | O pôster não é exibido, porque seria desenhado com uma fonte substituta, e não com a fonte para a qual foi criado. |
+| `fontError.titleUnsupported` | A fonte do pôster não consegue desenhar {character}. Remova esse caractere ou escolha um título que a fonte consiga desenhar. |
+| `fontError.titleAdjusted` | Este título continha {characters}, que a fonte do pôster não consegue desenhar. Esses caracteres foram removidos para que o pôster corresponda às exportações. |
+| `loading.poster` | Desenhando o céu… |
+| `footer.version` | starsky@v{version} |
+| `footer.attribution` | Estrelas: Hipparcos · Linhas e nomes: Stellarium (CC BY-SA 4.0) · Mapa e lugares: © OpenStreetMap contributors |
+| `explorer.heading` | Explorador do céu |
+| `explorer.loading` | Mapeando as estrelas… |
+| `explorer.canvasLabel` | Mapa do céu sobre {place} |
+| `explorer.canvasLabel.untitled` | Mapa do céu |
+| `explorer.canvasHint` | Arraste para olhar ao redor, role ou faça pinça para dar zoom e clique duas vezes para centralizar um ponto. Com o mapa em foco, as setas giram a vista, mais e menos dão zoom, 0 volta ao início e Esc limpa a seleção. |
+| `explorer.announced.ready` | Explorador do céu pronto. |
+| `explorer.announced.starAbove` | {name} selecionada, acima do horizonte. |
+| `explorer.announced.starBelow` | {name} selecionada, abaixo do horizonte. |
+| `explorer.announced.constellation` | Constelação {name} selecionada. |
+| `explorer.announced.cleared` | Seleção removida. |
+| `explorer.cardinal.n` | N |
+| `explorer.cardinal.e` | L |
+| `explorer.cardinal.s` | S |
+| `explorer.cardinal.w` | O |
+| `explorer.back` | Voltar ao início |
+| `explorer.inspector.label` | Inspetor |
+| `explorer.inspector.empty` | Nada selecionado. Escolha uma estrela ou uma constelação no mapa ou na lista. |
+| `explorer.inspector.close` | Fechar inspetor |
+| `explorer.inspector.expand` | Mostrar detalhes |
+| `explorer.inspector.collapse` | Ocultar detalhes |
+| `explorer.inspector.catalog` | Catálogo |
+| `explorer.inspector.derived` | Para este lugar e momento |
+| `explorer.inspector.name` | Nome |
+| `explorer.inspector.hip` | Número HIP |
+| `explorer.inspector.magnitude` | Magnitude aparente |
+| `explorer.inspector.ra` | Ascensão reta |
+| `explorer.inspector.dec` | Declinação |
+| `explorer.inspector.altitude` | Altitude |
+| `explorer.inspector.azimuth` | Azimute |
+| `explorer.inspector.horizon` | Horizonte |
+| `explorer.inspector.horizon.above` | Acima do horizonte |
+| `explorer.inspector.horizon.below` | Abaixo do horizonte |
+| `explorer.inspector.approximate` | cerca de {value} |
+| `explorer.inspector.precision` | Aproximado, com precisão de 0,1°. O catálogo não é corrigido pela precessão, então as posições podem se desviar até cerca de 1° longe do ano 2000. |
+| `explorer.inspector.figureOf` | Parte da figura de {name} |
+| `explorer.inspector.abbr` | Abreviatura da UAI |
+| `explorer.inspector.starCount` | Estrelas na figura |
+| `explorer.inspector.aboveCount` | Acima do horizonte agora |
+| `explorer.inspector.aboveValue` | {above} de {total} |
+| `explorer.inspector.brightest` | Estrela mais brilhante |
+| `explorer.inspector.brightestValue` | {name}, magnitude {mag} |
+| `explorer.inspector.center` | Centralizar no mapa |
+| `explorer.inspector.clear` | Limpar seleção |
+| `explorer.kind.star` | Estrela |
+| `explorer.kind.constellation` | Constelação |
+| `explorer.tooltip.detail` | {name} • Magnitude {mag} |
+| `explorer.list.title` | Constelações |
+| `explorer.list.above` | Acima do horizonte ({count}) |
+| `explorer.list.below` | Abaixo do horizonte ({count}) |
+| `explorer.list.partly` | parcialmente acima do horizonte |
+| `explorer.search.input` | Buscar constelações e estrelas |
+| `explorer.search.placeholder` | Nome, abreviatura ou número HIP |
+| `explorer.search.results` | Resultados da busca |
+| `explorer.search.none` | Nenhum resultado. |
+| `explorer.search.countOne` | 1 resultado. |
+| `explorer.search.countMany` | {count} resultados. |
+| `explorer.search.close` | Fechar busca |
+| `explorer.search.starDetail` | HIP {hip}, magnitude {mag} |
+| `explorer.moment.label` | Momento |
+| `explorer.moment.pin` | Manter os detalhes abertos |
+| `explorer.link.copy` | Copiar link |
+| `explorer.link.copied` | Link copiado. |
+| `explorer.link.failed` | Não foi possível copiar o link. Copie-o da barra de endereço. |
+| `explorer.toolbar.label` | Controles do mapa |
+| `explorer.toolbar.zoomIn` | Aproximar |
+| `explorer.toolbar.zoomOut` | Afastar |
+| `explorer.toolbar.reset` | Redefinir a vista |
+| `explorer.toolbar.layers` | Camadas |
+| `explorer.toolbar.search` | Buscar |
+| `explorer.toolbar.poster` | Criar pôster |
+| `explorer.toolbar.shortcut` | {label} ({key}) |
+| `explorer.layers.title` | Camadas |
+| `explorer.layers.constellationLines` | Linhas das constelações |
+| `explorer.layers.constellationLabels` | Nomes das constelações |
+| `explorer.layers.horizon` | Horizonte |
+| `explorer.layers.cardinalDirections` | Pontos cardeais |
+| `explorer.layers.equatorialGrid` | Grade equatorial |
+| `explorer.layers.below` | Abaixo do horizonte |
+| `explorer.layers.below.dimmed` | Esmaecido |
+| `explorer.layers.below.hidden` | Oculto |
+| `explorer.layers.close` | Fechar camadas |
+| `explorer.announced.label` | Avisos do mapa |
+
+---
+
 ## Localization
 
-- **Locales: `en-US` default, `pt-BR` secondary.** The keys above are the
-  contract; `pt-BR` ships as its own slice after the retheme, so neither change
-  is buried in the other's diff.
-- **No i18n framework is installed today** — every string is inline JSX
-  (`LandingPage.tsx` alone holds ~15). Copy lands extraction-ready against these
-  keys even before the framework is chosen.
-- **The UI localizes; the poster does not.** `formatDetailLine`
-  (`site/src/lib/caption.ts`) feeds *both* the UI caption and the poster
-  artifact (`export.ts:112`, `poster.ts:300`), and
-  `reference.test.ts:229` asserts the caption equals a stored string in
-  `render-matrix.json`. A locale-dependent caption would make the **same
-  `#s=` link render a different poster in São Paulo than in London**, and fail
-  the reference test for any non-`en-US` visitor. A share link is a promise
-  that everyone sees the same sky.
-  - **UI chrome**: the active locale (`pt-BR` → `12 de jun. de 2024, 21:40`).
-  - **Artifact**: fixed `en-US`, permanently — a product constraint, not a
-    default that may drift.
-  - `formatLocalTime` currently passes `undefined` to
-    `Intl.DateTimeFormat`, which means "whatever the visitor's browser wants":
-    neither `en-US` nor deterministic. Both call sites get an **explicit**
-    locale parameter.
+- **Locales: `en-US` default, `pt-BR` secondary** (018-pt-br). The keys
+  above are the contract; the pt-BR table beside them is the second catalogue.
+  The interface locale is the visitor's stored choice (`localStorage`,
+  `starsky.locale`, guarded), else the first `en*` or `pt*` tag in
+  `navigator.languages`, else `en-US`; the footer switcher changes it in place,
+  without a reload.
+- **No i18n framework.** `t(key, params)` resolves against the active
+  catalogue; a missing key still renders `⟨key⟩` and warns.
+- **The interface follows the visitor; the poster follows its link**
+  (BCR-0015, superseding D16). `formatDetailLine` (`site/src/lib/caption.ts`)
+  takes an explicit locale at every call site:
+  - **UI chrome** (the moment line, the share summary, the Studio hint, the
+    Explorer's moment strip): the active locale
+    (`pt-BR` → `12 de jun. de 2024, 21:40`).
+  - **Artifact** (canvas, PNG, SVG, PDF, and the canvas's text alternative):
+    the link's `lang`, absent = `en-US`. The Studio's *Poster language* select
+    sets it, defaulting to the interface language on the way in from the
+    Explorer. A link without `lang` draws exactly what it drew before 018, so
+    a share link still promises everyone the same poster.
+  - Only the date is localized on the poster: coordinates, the place, the
+    zone name, the title and the constellation names are the same in every
+    language.
+  - `Intl.DateTimeFormat` never receives `undefined` as its locale.
 - **Text expansion: 40% allowance** on buttons and legend text — Portuguese is
   the near target and expands on both.
 - **Do not translate:** the `#s=` / `#studio=` fragment formats; coordinate
@@ -1150,6 +1415,9 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
   the pattern in `caption.ts`; the i18n layer must not reintroduce a
   locale-dependent default.
 - **`<html lang>`** follows the active locale, not a hardcoded `en`.
+- **Numbers in the interface** use the active locale's decimal separator
+  (`4,5` in pt-BR) and never group digits; the poster's numbers (coordinates)
+  keep their own format.
 
 ---
 
