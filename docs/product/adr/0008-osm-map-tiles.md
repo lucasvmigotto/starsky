@@ -20,7 +20,7 @@ The owner approved search plus a Leaflet map for choosing a place. A map needs t
 Option 1, under the [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/), checked 2026-10-31. Constitution 1.2.0, principle VI, permits this call.
 
 - URL `https://tile.openstreetmap.org/{z}/{x}/{y}.png`, held in one configuration value so the provider can change without other code changes.
-- Tiles load only after the visitor opens the map. Leaflet itself is lazy-loaded. The poster, Explorer and shared links request no tiles.
+- Tiles load only on the landing page, where the map is always shown (amended 2026-11-01, owner request in 013: "Map should be always visible"), and only for the visible view. Leaflet itself is lazy-loaded. The poster, Studio, Explorer and shared links request no tiles.
 - Attribution stays visible on the map, with a "report a map issue" link to `openstreetmap.org/fixthemap`.
 - No prefetching, seeding or offline tile storage. No `Referrer-Policy` that strips the Referer.
 - Automated tests never reach the tile server: e2e stubs tile requests.
@@ -30,8 +30,8 @@ Option 1, under the [OSM tile usage policy](https://operations.osmfoundation.org
 
 Good: free, no key, no pipeline.
 
-Bad: the visitor's IP reaches OpenStreetMap once they open the map. Availability is best-effort, with no SLA, and access may be blocked without notice. Self-hosting or a provider is the fallback if that happens.
+Bad: the visitor's IP reaches OpenStreetMap when the landing page shows the map. Availability is best-effort, with no SLA, and access may be blocked without notice. Self-hosting or a provider is the fallback if that happens.
 
 ## Confirmation
 
-An e2e test asserts no tile request before the map opens, that attribution is visible once it does, and that a tile failure leaves the form usable.
+An e2e test asserts no tile request outside the landing page, that attribution is always visible on the map, and that a tile failure leaves the form usable.

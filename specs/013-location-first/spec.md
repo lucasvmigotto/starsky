@@ -57,4 +57,4 @@ Revised after the owner tried the page (see "Owner direction" at the end): the m
 
 "Clicking in map, the layout brokes. Map should be always visible. Full screen map is not necessary. Make Place input search and right bellow, the map. Coordinate input could be a switch right side in line of place input - if active, replace place input with two lat lon inputs." Then: "Explore this sky should be the only CTA button here" (landing → Explorer → export); the Title returns; the summary is one line `<place> • <coordinates>`.
 
-Consequence for ADR-0008: its line "Tiles load only after the visitor opens the map" no longer holds, because the map is always on the landing. Tiles are still on demand for the visible view only, with no prefetch or storage; the ADR needs a one-line amendment by its owner.
+Consequence for ADR-0008: its line "Tiles load only after the visitor opens the map" no longer holds, because the map is always on the landing. Tiles are still on demand for the visible view only, with no prefetch or storage; ADR-0008 was amended accordingly on 2026-11-01.
