@@ -108,6 +108,9 @@ describe("copy", () => {
     // 190 → 192 for the Explorer and Viewer hand-offs (012-poster-studio).
     // 195 → 187 for the image-only Viewer (015, BCR-0013): the figures panel's
     // seven keys and `viewer.announced.figureSelected` retire.
-    expect(copyKeys().length).toBe(187);
+    // 187 → 184 for the form regroup (015): the two Advanced legends in;
+    // the Sky and Observation legends (landing and Studio) and `landing.explain`
+    // out.
+    expect(copyKeys().length).toBe(184);
   });
 });

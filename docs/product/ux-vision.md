@@ -737,9 +737,8 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.randomSky` | Load a random sky → renders `viewer.randomSky` |
 | `landing.mode.label` | Input mode |
 | `landing.moment.legend` | Date and time |
-| `landing.sky.legend` | Sky |
 | `landing.appearance.legend` | Appearance |
-| `landing.observation.legend` | Observation |
+| `landing.advanced.legend` | Advanced |
 | `landing.render.fisheye` | Fisheye strength |
 | `landing.render.separation` | Minimum separation |
 | `landing.render.magnitude` | Limiting magnitude |
@@ -748,7 +747,6 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.render.glow` | Glow intensity |
 | `landing.browse` | Just browsing? |
 | `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
-| `landing.explain` | What is this page? |
 
 **Viewer · shell**
 
@@ -801,8 +799,7 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `studio.updated` | Map updated |
 | `studio.poster.heading` | Poster Studio |
 | `studio.poster.subtitle` | Compose the poster, then export it or copy a link. |
-| `studio.sky.legend` | Sky |
-| `studio.observation.legend` | Observation |
+| `studio.advanced.legend` | Advanced |
 | `studio.summary.note` | Place and moment come from the sky you started with. Start again from the start page to change them. |
 | `studio.returnToExplorer` | Return to Explorer |
 | `studio.back` | Back to the start |

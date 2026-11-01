@@ -443,10 +443,78 @@ select.atlas-form-input option {
   min-width: 0;
 }
 
-.atlas-form-radio-row {
+.atlas-form-radio-row,
+.atlas-form-check-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1.25rem;
+  gap: var(--space-1) var(--space-6);
+}
+
+/* Related controls share a row on wide screens and stack on small ones. */
+.atlas-form-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 40rem) {
+  .atlas-form-pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* A label that wraps grows upward, so the controls in a row stay level. */
+    align-items: end;
+  }
+}
+
+/* Two options as one segmented switch; the radios stay real and cover their segment. */
+.atlas-segmented {
+  display: inline-flex;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.atlas-segment {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+}
+
+.atlas-segment + .atlas-segment {
+  border-left: 1px solid var(--color-border);
+}
+
+.atlas-segment input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.atlas-segment span {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 var(--space-3);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  transition: background var(--motion-duration-short) var(--motion-ease);
+}
+
+.atlas-segment input:checked + span {
+  color: var(--color-text);
+  background: var(--color-raised);
+  font-weight: 600;
+}
+
+.atlas-segment input:focus-visible + span {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
 }
 
 .atlas-form-radio {
@@ -472,13 +540,8 @@ select.atlas-form-input option {
   outline-offset: 2px;
 }
 
-.atlas-form-check-row {
-  display: grid;
-  gap: 0.5rem;
-}
-
 .atlas-form-check {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   min-height: 44px;
   gap: var(--space-3);
@@ -507,16 +570,31 @@ select.atlas-form-input option {
 .atlas-form-details {
   border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-panel);
-  padding: 0.8rem 1rem;
+  padding: 0 var(--space-4);
   background: var(--color-surface);
-  display: grid;
-  gap: 0.9rem;
+  gap: var(--space-4);
   font-size: 0.875rem;
 }
 
 .atlas-form-details > summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
   cursor: pointer;
   color: var(--color-text-muted);
+}
+
+/* Open: the content sits under the summary with room around it. */
+.atlas-form-details[open] {
+  padding-bottom: var(--space-4);
+}
+
+.atlas-form-details[open] > * + * {
+  margin-top: var(--space-4);
+}
+
+.atlas-form-details[open] > summary + * {
+  margin-top: var(--space-1);
 }
 
 .atlas-form-details > summary:focus-visible {
@@ -533,7 +611,7 @@ select.atlas-form-input option {
 }
 
 .atlas-form-submit {
-  justify-self: start;
+  justify-self: center;
 }
 
 .atlas-form-submit:disabled {
@@ -556,14 +634,6 @@ select.atlas-form-input option {
   cursor: pointer;
 }
 
-.atlas-form-explainer {
-  margin-top: 1.25rem;
-}
-
-.atlas-form-explainer .atlas-empty {
-  padding: 2rem 1rem;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .atlas-explorer.atlas-loaded {
     animation: none;
@@ -572,7 +642,8 @@ select.atlas-form-input option {
 
   .atlas-btn,
   .atlas-btn-ghost,
-  .atlas-btn-icon {
+  .atlas-btn-icon,
+  .atlas-segment span {
     transition: none;
   }
 }

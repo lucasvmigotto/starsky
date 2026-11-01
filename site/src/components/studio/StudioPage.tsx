@@ -371,9 +371,8 @@ function Studio({ initial, adjusted }: { initial: SharePayload; adjusted: string
                 idPrefix="studio"
                 collapsible={false}
                 legends={{
-                  sky: t("studio.sky.legend"),
                   appearance: t("studio.appearance.legend"),
-                  observation: t("studio.observation.legend"),
+                  advanced: t("studio.advanced.legend"),
                 }}
                 titleLabel={t("studio.title.label")}
                 titlePlaceholder={t("studio.title.placeholder")}

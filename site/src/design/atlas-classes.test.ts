@@ -48,7 +48,6 @@ const REQUIRED: ReadonlyArray<readonly [string, readonly string[]]> = [
       "atlas-form-submit",
       "atlas-form-alt",
       "atlas-form-linkbtn",
-      "atlas-form-explainer",
       "atlas-form-input",
       "atlas-form-label",
     ],

@@ -12,7 +12,6 @@ import { randomSampleFragment } from "../lib/site.ts";
 import { DEFAULTS } from "../lib/scene/defaults.ts";
 import { toWhenUtcIso, zonedTimeToUtc } from "../lib/time.ts";
 import PosterFields, { type PosterFieldValues } from "./poster/PosterFields.tsx";
-import { EmptyState } from "./States.tsx";
 
 type LocationMode = "coordinates" | "place";
 
@@ -267,35 +266,37 @@ export default function LandingPage() {
 
         <fieldset className="atlas-form-group">
           <legend className="atlas-form-legend">{t("landing.moment.legend")}</legend>
-          <div className="atlas-form-field">
-            <label htmlFor="landing-when">{t("landing.moment.legend")}</label>
-            <input
-              id="landing-when"
-              type="datetime-local"
-              className="atlas-form-input"
-              required
-              value={when}
-              onChange={(e) => {
-                setWhen(e.target.value);
-              }}
-            />
-          </div>
-          <div className="atlas-form-field">
-            <label htmlFor="landing-tz">Timezone</label>
-            <div className="atlas-form-row">
+          <div className="atlas-form-pair">
+            <div className="atlas-form-field">
+              <label htmlFor="landing-when">{t("landing.moment.legend")}</label>
               <input
-                id="landing-tz"
-                type="text"
+                id="landing-when"
+                type="datetime-local"
                 className="atlas-form-input"
-                value={tz}
+                required
+                value={when}
                 onChange={(e) => {
-                  setTz(e.target.value);
+                  setWhen(e.target.value);
                 }}
-                autoComplete="off"
               />
-              <button type="button" className="atlas-btn-ghost" onClick={detectTimezone}>
-                Detect
-              </button>
+            </div>
+            <div className="atlas-form-field">
+              <label htmlFor="landing-tz">Timezone</label>
+              <div className="atlas-form-row">
+                <input
+                  id="landing-tz"
+                  type="text"
+                  className="atlas-form-input"
+                  value={tz}
+                  onChange={(e) => {
+                    setTz(e.target.value);
+                  }}
+                  autoComplete="off"
+                />
+                <button type="button" className="atlas-btn-ghost" onClick={detectTimezone}>
+                  Detect
+                </button>
+              </div>
             </div>
           </div>
         </fieldset>
@@ -303,9 +304,8 @@ export default function LandingPage() {
         <PosterFields
           idPrefix="landing"
           legends={{
-            sky: t("landing.sky.legend"),
             appearance: t("landing.appearance.legend"),
-            observation: t("landing.observation.legend"),
+            advanced: t("landing.advanced.legend"),
           }}
           titleLabel="Title (optional)"
           value={fields}
@@ -332,10 +332,6 @@ export default function LandingPage() {
         </button>
         .
       </p>
-      <details className="atlas-form-details atlas-form-explainer">
-        <summary>{t("landing.explain")}</summary>
-        <EmptyState />
-      </details>
     </div>
   );
 }

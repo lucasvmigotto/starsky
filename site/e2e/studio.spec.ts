@@ -23,6 +23,13 @@ async function openStudio(page: Page, overrides = {}): Promise<void> {
   await expect(page.getByRole("img", { name: POSTER })).toBeVisible();
 }
 
+/** Constellation lines and labels and the limiting magnitude sit in one collapsed disclosure (015). */
+async function openAdvanced(page: Page): Promise<void> {
+  const details = page.locator("details", { has: page.getByText("Advanced", { exact: true }) });
+  if ((await details.getAttribute("open")) === null) await details.getByText("Advanced", { exact: true }).click();
+  await expect(details.getByLabel("Limiting magnitude")).toBeVisible();
+}
+
 /** The canvas's pixels, as a data URL, to compare two states of the preview. */
 function pixels(page: Page): Promise<string> {
   return page
@@ -40,10 +47,12 @@ test.describe("Poster Studio", () => {
   test("shows the poster, the poster-only controls and a read-only summary", async ({ page }) => {
     await openStudio(page);
     await expect(page.getByRole("heading", { level: 1, name: "Poster Studio" })).toBeVisible();
-    for (const label of ["Projection", "Fisheye strength", "Minimum separation", "Glow intensity", "Limiting magnitude", "Title"]) {
+    for (const label of ["Projection", "Fisheye strength", "Minimum separation", "Glow intensity", "Title"]) {
       await expect(page.getByLabel(label, { exact: true })).toBeVisible();
     }
     await expect(page.getByRole("radiogroup", { name: "Shape" })).toBeVisible();
+    await openAdvanced(page);
+    await expect(page.getByLabel("Limiting magnitude", { exact: true })).toBeVisible();
     await expect(page.getByLabel("Constellation lines")).toBeVisible();
     await expect(page.getByLabel("Constellation labels")).toBeVisible();
     const summary = page.getByRole("group", { name: "Moment" });
@@ -58,6 +67,7 @@ test.describe("Poster Studio", () => {
     });
     const before = await pixels(page);
 
+    await openAdvanced(page);
     await page.getByLabel("Limiting magnitude").fill("6.8");
     await expect.poll(() => pixels(page)).not.toBe(before);
     await expect.poll(() => draftOf(page).options.magnitude_limit).toBe(6.8);
@@ -67,9 +77,10 @@ test.describe("Poster Studio", () => {
     await expect.poll(() => pixels(page)).not.toBe(afterMagnitude);
     await expect.poll(() => draftOf(page).options.shape).toBe("square");
 
-    const afterShape = await pixels(page);
+    // The title is in the caption band, which the page no longer draws (BCR-0013):
+    // it shows as the heading text above the image instead.
     await page.getByLabel("Title", { exact: true }).fill("Second thoughts");
-    await expect.poll(() => pixels(page)).not.toBe(afterShape);
+    await expect(page.locator(".atlas-studio-preview .atlas-moment")).toContainText("Second thoughts");
     await expect.poll(() => draftOf(page).options.title).toBe("Second thoughts");
 
     // Same document throughout: replaceState never reloaded the page.
@@ -112,6 +123,7 @@ test.describe("Poster Studio", () => {
       });
     });
     await openStudio(page);
+    await openAdvanced(page);
     await page.getByLabel("Limiting magnitude").fill("3.5");
     await expect.poll(() => draftOf(page).options.magnitude_limit).toBe(3.5);
     await page.getByRole("button", { name: "Share", exact: true }).click();
@@ -157,6 +169,10 @@ test.describe("Poster Studio", () => {
         return el.id || el.getAttribute("aria-label") || (el.textContent ?? "").trim();
       });
       if (id) reached.add(id);
+      // The limiting magnitude is in the collapsed Advanced disclosure: open it from the keyboard.
+      if (id === "Advanced" && (await page.locator("details", { has: page.getByText("Advanced", { exact: true }) }).getAttribute("open")) === null) {
+        await page.keyboard.press("Enter");
+      }
     }
     for (const expected of [
       "studio-projection",

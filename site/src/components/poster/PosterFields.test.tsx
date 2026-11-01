@@ -24,7 +24,7 @@ const VALUES: PosterFieldValues = {
   title: "",
 };
 
-const LEGENDS = { sky: "Sky", appearance: "Appearance", observation: "Observation" };
+const LEGENDS = { appearance: "Appearance", advanced: "Advanced" };
 
 afterEach(() => {
   cleanup();
@@ -62,16 +62,49 @@ describe("PosterFields", () => {
     expect(screen.getByRole("radiogroup", { name: "Shape" })).toBeDefined();
   });
 
-  it("collapsible sections are <details> with the three legends, as on the landing", () => {
+  it("collapsible sections are <details>: Appearance and one Advanced", () => {
     setup([]);
     const summaries = [...document.querySelectorAll("details.atlas-form-details > summary")].map((e) => e.textContent);
-    expect(summaries).toEqual(["Sky", "Appearance", "Observation"]);
+    expect(summaries).toEqual(["Appearance", "Advanced"]);
   });
 
-  it("open sections are fieldsets, always visible, for the Studio", () => {
+  it("the Studio's Appearance is an open fieldset; Advanced is still a collapsed disclosure", () => {
     setup([], { collapsible: false });
-    expect(document.querySelectorAll("details").length).toBe(0);
     expect(screen.getByRole("group", { name: "Appearance" })).toBeDefined();
+    const advanced = document.querySelectorAll("details");
+    expect(advanced).toHaveLength(1);
+    expect(advanced[0].hasAttribute("open")).toBe(false);
+    expect(advanced[0].querySelector("summary")?.textContent).toBe("Advanced");
+  });
+
+  it("Advanced holds constellation lines, labels and the limiting magnitude, and nothing else", () => {
+    setup([]);
+    const advanced = [...document.querySelectorAll("details")].find((d) => d.querySelector("summary")?.textContent === "Advanced");
+    const labels = [...(advanced?.querySelectorAll("label") ?? [])].map((el) => el.textContent);
+    expect(labels).toEqual(["Constellation lines", "Constellation labels", "Limiting magnitude"]);
+    expect(advanced?.querySelector("#landing-title")).toBeNull();
+  });
+
+  it("pairs related controls: projection with shape, fisheye with separation, glow with its intensity", () => {
+    setup([]);
+    const pairs = [...document.querySelectorAll(".atlas-form-pair")];
+    const ids = pairs.map((pair) => [...pair.querySelectorAll("select, input")].map((el) => el.id || el.getAttribute("name")));
+    expect(ids).toEqual([
+      ["landing-projection", "shape", "shape"],
+      ["landing-fisheye", "landing-separation"],
+      [null, "landing-glow"],
+    ]);
+    // The title spans the full width, outside any pair.
+    expect(document.getElementById("landing-title")?.closest(".atlas-form-pair")).toBeNull();
+  });
+
+  it("shows Shape as a two-option segmented switch that is still a named radiogroup", () => {
+    setup([]);
+    const group = screen.getByRole("radiogroup", { name: "Shape" });
+    expect(group.className).toContain("atlas-segmented");
+    expect(screen.getAllByRole("radio").map((r) => r.getAttribute("value"))).toEqual(["circle", "square"]);
+    expect(screen.getByRole("radio", { name: "circle" })).toBeDefined();
+    expect(screen.getByRole("radio", { name: "square" })).toBeDefined();
   });
 
   it("reports one change as a patch", () => {

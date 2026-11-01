@@ -104,6 +104,30 @@ describe("the stylesheet", () => {
   });
 });
 
+describe("form layout (FR-009)", () => {
+  it("centres the primary submit at its natural width", () => {
+    const submit = rule(".atlas-form-submit");
+    expect(submit).toContain("justify-self: center");
+    expect(submit).not.toMatch(/width:\s*100%/);
+  });
+
+  it("lays pairs side by side on wide screens and stacks them on small ones", () => {
+    expect(rule(".atlas-form-pair")).toContain("grid-template-columns: minmax(0, 1fr);");
+    expect(css).toMatch(/@media \(min-width: 40rem\) \{\s*\.atlas-form-pair \{\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  });
+
+  it("wraps radio and checkbox rows with even spacing", () => {
+    const block = rule(".atlas-form-radio-row,\n.atlas-form-check-row");
+    expect(block).toContain("flex-wrap: wrap");
+    expect(block).toMatch(/gap: var\(--space-\d\) var\(--space-\d\)/);
+  });
+
+  it("draws the Shape switch as segments over real radios", () => {
+    expect(rule(".atlas-segmented")).toContain("display: inline-flex");
+    expect(css).toContain(".atlas-segment input:checked + span");
+  });
+});
+
 describe("the Studio preview", () => {
   it("shows the sky image only, with the title and moment as text above it", () => {
     expect(PAGES.studio).toContain("geometry.skyPx");

@@ -265,6 +265,88 @@ test.describe("one header", () => {
   });
 });
 
+test.describe("the shared form layout (FR-009)", () => {
+  const wide = (page: Page): boolean => (page.viewportSize()?.width ?? 0) >= 700;
+  const top = async (locator: Locator): Promise<number> => {
+    const box = await locator.boundingBox();
+    if (!box) throw new Error("no box");
+    return Math.round(box.y);
+  };
+
+  test("the landing has no explainer, and its primary button is centred at its natural width", async ({ page }) => {
+    await page.goto("/");
+    const submit = page.getByRole("button", { name: "Show my sky" });
+    await expect(submit).toBeVisible();
+    await expect(page.getByText("What is this page?")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Load a random sky" })).toBeVisible();
+    const form = await page.locator("form.atlas-panel").boundingBox();
+    const box = await submit.boundingBox();
+    if (!form || !box) throw new Error("no boxes");
+    expect(box.x + box.width / 2).toBeCloseTo(form.x + form.width / 2, 0);
+    expect(box.width).toBeLessThan(form.width * 0.7);
+  });
+
+  test("date and time sit beside the timezone on wide screens and stack on small ones, labels visible", async ({ page }) => {
+    await page.goto("/");
+    const when = page.getByLabel("Date and time", { exact: true });
+    const zone = page.getByLabel("Timezone", { exact: true });
+    await expect(when).toBeVisible();
+    await expect(zone).toBeVisible();
+    await expect(page.getByRole("button", { name: "Detect" })).toBeVisible();
+    if (wide(page)) expect(await top(when)).toBe(await top(zone));
+    else expect(await top(zone)).toBeGreaterThan(await top(when));
+  });
+
+  test("radios and checkboxes sit inline and wrap", async ({ page }) => {
+    await page.goto("/");
+    const modes = page.getByRole("radiogroup", { name: "Input mode" }).getByRole("radio");
+    await expect(modes).toHaveCount(2);
+    expect(await top(modes.first())).toBe(await top(modes.last()));
+    await page.getByText("Advanced", { exact: true }).click();
+    const lines = page.getByLabel("Constellation lines");
+    const labels = page.getByLabel("Constellation labels");
+    if (wide(page)) expect(await top(lines)).toBe(await top(labels));
+  });
+
+  test("Appearance pairs its controls, and Shape is a two-option segmented switch", async ({ page }) => {
+    await page.goto("/");
+    await page.getByText("Appearance", { exact: true }).click();
+    const projection = page.getByLabel("Projection", { exact: true });
+    const shape = page.getByRole("radiogroup", { name: "Shape" });
+    await expect(shape.getByRole("radio")).toHaveCount(2);
+    await expect(shape.getByRole("radio", { name: "circle" })).toBeChecked();
+    const fisheye = page.getByLabel("Fisheye strength");
+    const separation = page.getByLabel("Minimum separation");
+    const glowToggle = page.getByLabel("Glow", { exact: true });
+    const glow = page.getByLabel("Glow intensity");
+    if (wide(page)) {
+      expect(Math.abs((await top(projection)) - (await top(shape)))).toBeLessThanOrEqual(30);
+      expect(await top(fisheye)).toBe(await top(separation));
+      expect(Math.abs((await top(glow)) - (await top(glowToggle)))).toBeLessThanOrEqual(48);
+    } else {
+      expect(await top(shape)).toBeGreaterThan(await top(projection));
+      expect(await top(separation)).toBeGreaterThan(await top(fisheye));
+    }
+    // The title is full width, below the pairs.
+    expect(await top(page.getByLabel("Title (optional)"))).toBeGreaterThan(await top(glow));
+    // Choosing a segment works through the real radio and is announced as checked.
+    await shape.getByRole("radio", { name: "square" }).check();
+    await expect(shape.getByRole("radio", { name: "square" })).toBeChecked();
+    await expect(shape.getByRole("radio", { name: "circle" })).not.toBeChecked();
+  });
+
+  test("the Studio uses the same layout, with Advanced collapsed", async ({ page }) => {
+    await page.goto(studioUrl(fragmentFor()));
+    await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
+    const advanced = page.locator("details", { has: page.getByText("Advanced", { exact: true }) });
+    await expect(advanced).toHaveJSProperty("open", false);
+    await expect(page.getByLabel("Limiting magnitude")).toBeHidden();
+    await expect(page.getByRole("radiogroup", { name: "Shape" }).getByRole("radio")).toHaveCount(2);
+    await advanced.getByText("Advanced", { exact: true }).click();
+    await expect(page.getByLabel("Limiting magnitude")).toBeVisible();
+  });
+});
+
 test.describe("phone widths", () => {
   for (const width of [360, 390]) {
     test.describe(`${width.toString()} px`, () => {
@@ -273,14 +355,16 @@ test.describe("phone widths", () => {
         ["viewer", () => viewerUrl(fragmentFor())],
         ["studio", () => studioUrl(fragmentFor())],
         ["explorer", () => explorerUrl(SIRIUS)],
+        ["landing", () => "/"],
       ];
       for (const [name, url] of surfaces) {
         test(`${name} does not scroll sideways`, async ({ page }) => {
           await page.goto(url());
           if (name === "explorer") await openExplorer(page);
+          else if (name === "landing") await expect(page.getByRole("button", { name: "Show my sky" })).toBeVisible();
           else await expect(page.getByRole("img", { name: /night sky poster/i })).toBeVisible();
           if (name === "viewer") await openExport(page);
-          if (name === "studio") {
+          if (name === "landing" || name === "studio") {
             // Open every disclosure so the widest content is measured.
             for (const summary of await page.locator("details > summary").all()) await summary.click();
           }

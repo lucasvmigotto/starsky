@@ -33,6 +33,10 @@ The three surfaces drifted apart: different fonts per machine, text buttons wher
 - **FR-005** The panel tab matches the identity: same surface, border and radius as the toolbar container, not the accent-blue outline. Audit any other element using the focus or accent colour as a resting border; the focus colour is only for focus rings and the selection ring.
 - **FR-008** The Explorer star tooltip is one line, "<Name> • Magnitude <value>" (for example "Sirius • Magnitude -1.44"), with the HIP number when the star is unnamed, the magnitude formatted as in the inspector, and no horizon text. Copy key `explorer.tooltip.detail`.
 
+### Forms
+
+- **FR-009** The landing form and the shared `PosterFields` (so the Studio too) share one layout. Radio groups and checkboxes sit inline with even spacing and wrap on small screens. Date and time and the timezone (with Detect) share a row on wide screens and stack on small ones, labels visible. "Sky" and "Observation" merge into one collapsed **Advanced** disclosure (constellation lines, labels, limiting magnitude). Projection and Shape share a row; Shape is a two-option segmented switch over real radios (same group name `Shape`, options `circle` and `square`). Appearance is a compact grid: projection with shape, fisheye with minimum separation, glow toggle with glow intensity, title full width; each pair stacks on small screens and slider values stay aligned. The "What is this page?" disclosure leaves the landing. The primary "Show my sky" button is centred at its natural width (the Studio has no primary action). Every input keeps its id, name and accessible name.
+
 ### Viewer (poster page) — BCR-0013
 
 - **FR-006** The Viewer page shows the heading text above (title, date and projection line) and the poster sky image, then Share, Export and the two actions. Remove from the page: the caption band below the image (it repeats the heading) and the "Figures in this sky" side panel with its hover highlighting. Center the image.

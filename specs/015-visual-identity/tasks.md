@@ -10,4 +10,4 @@ Feature: `015-visual-identity` | Branch: `feat/015-visual-identity` | Input: `sp
 - [x] T005 FR-006 Viewer image only (BCR-0013)
 - [x] T006 FR-007 shared layout language; Studio preview image only
 - [x] T007 e2e, axe, phone widths; screenshots of all surfaces
-- [ ] T008 FR-009 shared form layout: inline radios and checks, paired rows, Advanced, segmented Shape, no explainer, centred submit
+- [x] T008 FR-009 shared form layout: inline radios and checks, paired rows, Advanced, segmented Shape, no explainer, centred submit
