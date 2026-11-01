@@ -12,4 +12,4 @@ Tests come first (constitution IV). Executor `builder`, Reviewer `thinker`.
 - [x] T006 Pure chrome visibility machine, tested with a fake clock
 - [x] T007 Idle collapse and collapsed start wired in; first touch only restores
 - [x] T008 Star tooltip after 1.5 s of hover
-- [ ] T009 e2e for all of the above on all projects; keyboard, axe, 390 px, short landscape; existing specs updated only where the spec changes behavior
+- [x] T009 e2e for all of the above on all projects; keyboard, axe, 390 px, short landscape; existing specs updated only where the spec changes behavior

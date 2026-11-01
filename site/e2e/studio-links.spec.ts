@@ -18,6 +18,7 @@ import {
   studioUrl,
   test,
   viewerUrl,
+  wakeChrome,
 } from "./fixtures.ts";
 
 /**
@@ -37,6 +38,7 @@ function explorerOf(page: Page): ReturnType<typeof decodeExplorer> {
 async function toolbar(page: Page) {
   const bar = page.getByRole("toolbar", { name: "Map controls" });
   await expect(bar).toBeVisible();
+  await wakeChrome(page);
   return bar;
 }
 
