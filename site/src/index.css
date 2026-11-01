@@ -1680,6 +1680,13 @@ select.atlas-form-input option {
   cursor: pointer;
 }
 
+/* Wrapped under the field on a phone: no label to clear, so no nudge. */
+@media (max-width: 40rem) {
+  .landing-switch {
+    margin-top: 0;
+  }
+}
+
 .landing-switch:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
