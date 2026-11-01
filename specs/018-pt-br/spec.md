@@ -1,6 +1,6 @@
 # 018 — Brazilian Portuguese
 
-Feature: `018-pt-br` | Status: Planned | Depends: 017 | Issue: #71 | Direction: BCR-0015, ux-vision D17
+Feature: `018-pt-br` | Status: Implemented | Depends: 017 | Issue: #71 | Direction: BCR-0015, ux-vision D17
 
 ## Why
 

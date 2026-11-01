@@ -31,6 +31,13 @@ export const overviewEn: PageContent = {
         "Privacy: starsky stores nothing and has no accounts. Links carry their payload in the URL fragment, which the browser never sends to the host. The one exception to be aware of is OpenStreetMap: place search (Nominatim) and the landing map tiles run from your browser, so OpenStreetMap sees your IP address.",
       ],
     },
+    {
+      heading: "Languages",
+      paragraphs: [
+        "The interface speaks English (en-US) and Brazilian Portuguese (pt-BR). The first visit follows your browser's language; the switcher in the footer changes it, and the choice is remembered on this browser only. Switching re-renders the page in place, keeping what you typed.",
+        "The poster has its own language, the poster language, chosen in the Poster Studio and stored in the link. The browser of whoever opens the link never changes it, so everyone sees the same poster. Constellation and star names, coordinates, the version and the data credits are never translated.",
+      ],
+    },
   ],
 };
 
@@ -145,6 +152,7 @@ export const viewerEn: PageContent = {
       paragraphs: [
         "A shared link ends in #s= followed by the payload. Opening it renders the exact poster: the image and its heading, nothing else. There is no map to pan and no form to face; the poster is the page. The route id of this page stays viewer so existing links keep working.",
         "A corrupt fragment, a missing payload, or an unsupported version each renders its own named state with a next step, never a blank page.",
+        "The poster's caption is in the poster language the link carries (English when it carries none). The page around it, including the date under the title, follows your interface language.",
       ],
     },
     {
@@ -337,11 +345,11 @@ export const roadmapEn: PageContent = {
           ["explorer-polish, visual-identity (014, 015)", "Implemented", "Idle collapse, horizon list, tooltips, bundled interface font, image-only poster page."],
           ["location-first (013)", "Implemented", "Map-first landing, #c= link."],
           ["square-fill (016)", "Implemented", "Square poster fills the square."],
+          ["pt-br (018)", "Implemented", "Interface in en-US and pt-BR with a footer switcher; poster language chosen in the Studio and stored in the link (BCR-0015)."],
           ["site-delivery (008)", "Partial", "Deploy, budgets and gates wired; versioned prefixes, smoke test and drills open."],
           ["hardening (017)", "Partial", "In progress: accessibility, failure, performance and stability passes, strict indexing, docs."],
           ["Promotion of dev to main", "Planned — not implemented yet.", "Pending the owner's go-ahead."],
           ["Versioned R2 prefixes, manifest, rollback drill", "Planned — not implemented yet.", "008 T003, T018, T021."],
-          ["pt-BR product locale", "Planned — not implemented yet.", "Ships as its own slice after the catalogue exists."],
           ["WebGL renderer", "Planned — not implemented yet.", "Later, and only if Canvas 2D limits are hit (ADR-0007)."],
           ["Gradio app / Python renderer / HF Space", "Retired.", "Removed by BCR-0001/0003/0005; will not return."],
         ],
@@ -422,10 +430,10 @@ export const linksEn: PageContent = {
       table: {
         head: ["Fragment", "Holds", "Opens", "Reading rule"],
         rows: [
-          ["#c=", "A pre-filled landing form: place, coordinates, local date and time, timezone, title, limiting magnitude.", "The landing", "Tolerant per field"],
-          ["#e=", "A scene (place, moment, title, limiting magnitude) plus a durable view: camera, field of view, layers, selection.", "The Explorer", "Strict, whole payload"],
+          ["#c=", "A pre-filled landing form: place, coordinates, local date and time, timezone, title, limiting magnitude, poster language.", "The landing", "Tolerant per field"],
+          ["#e=", "A scene (place, moment, title, limiting magnitude, poster language) plus a durable view: camera, field of view, layers, selection.", "The Explorer", "Strict, whole payload"],
           ["#studio=", "A poster being composed: the same payload as #s=.", "The Poster Studio", "Strict"],
-          ["#s=", "The finished poster: coordinates, moment, timezone, appearance options.", "The poster page", "Strict, version-migrated"],
+          ["#s=", "The finished poster: coordinates, moment, timezone, appearance options, poster language.", "The poster page", "Strict, version-migrated"],
         ],
       },
     },
@@ -442,6 +450,13 @@ export const linksEn: PageContent = {
       paragraphs: [
         "#s= is the canonical artifact: the sky someone sent you. The Studio uses its own fragment so a tuned draft can never replace it. Copying the link from the Studio yields a #s= link, not a #studio= one, so what you share is the finished poster rather than an editing session.",
         "#s= stays byte-compatible with every link issued since version 1. The export layout (standard or story) is never stored in any link.",
+      ],
+    },
+    {
+      heading: "The poster language: lang",
+      paragraphs: [
+        "Every fragment may carry one optional top-level field, lang, with exactly one value: \"pt-BR\". It is the poster language, and absent means English (en-US). English is never written, so every link made before it existed keeps its exact bytes and draws the same poster.",
+        "#s=, #studio= and #e= reject any other value, \"en-US\" included, as they reject any out-of-range field. #c= drops an unknown lang and pre-fills the rest. The interface language is never stored in a link: it belongs to the person reading, the poster language to the poster.",
       ],
     },
   ],
@@ -463,6 +478,13 @@ export const studioEn: PageContent = {
       paragraphs: [
         "The preview follows your changes after a short pause, and the fragment follows the preview. The controls are projection (stereographic or fisheye), shape (square or circle), fisheye strength, minimum separation between stars, glow, and the title.",
         "A title the poster typeface cannot draw is refused in the Studio. One that arrives from a link loses the characters it cannot draw, and the Studio says so.",
+      ],
+    },
+    {
+      heading: "Poster language",
+      paragraphs: [
+        "Poster language sets the language of the caption's date: English (Jun 24, 2025, 8:30 PM) or Portuguese (24 de jun. de 2025, 20:30). A new poster starts in the interface language, or in the language the Explorer link already carries; a draft or poster link keeps the language it holds. The choice is stored in #studio= and in the #s= link you copy, so every recipient sees the same caption whatever their browser speaks.",
+        "Only the date changes: the title is your own text, and constellation and star names are proper names. English writes nothing into the link, so a poster in English has exactly the link it always had.",
       ],
     },
     {

@@ -1,6 +1,6 @@
 # BCR-0015 — The interface speaks pt-BR, and the poster's language travels in the link
 
-Status: accepted (2026-11-01), implemented by feature 018 (specs/018-pt-br)
+Status: accepted (2026-11-01), implemented (2026-11-01) by feature 018 (specs/018-pt-br)
 Owner: lucas
 Date: 2026-11-01
 
