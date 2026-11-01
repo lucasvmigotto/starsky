@@ -186,6 +186,11 @@ body {
 }
 
 @media (min-width: 64rem) {
+  /* The credits give way (and wrap inside their own box) before the actions are pushed to a second row. */
+  .atlas-footer-main {
+    flex-wrap: nowrap;
+  }
+
   .atlas-footer-end {
     flex: none;
     flex-wrap: nowrap;
@@ -1613,6 +1618,20 @@ select.atlas-form-input option {
   position: relative;
 }
 
+/* The search button sits inside the field, at its right end; the input leaves room for it. */
+.landing-search-submit {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 44px;
+  padding: 0;
+  border-color: transparent;
+}
+
+.landing-search-box .atlas-form-input {
+  padding-right: 44px;
+}
+
 .landing-results {
   position: absolute;
   top: calc(100% + var(--space-1));
@@ -1939,4 +1958,16 @@ select.atlas-form-input option {
 
 .atlas-studio-buttons .atlas-actions {
   gap: var(--space-2);
+}
+
+/* The privacy line: one small muted line under the hint, tight so the landing keeps one screen at 1440x900. */
+.landing-privacy {
+  margin-top: calc(-1 * var(--space-1));
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.landing-privacy a {
+  color: inherit;
+  text-decoration: underline;
 }

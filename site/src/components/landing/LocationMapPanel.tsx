@@ -1,7 +1,7 @@
 /**
  * The map under the place field: always on the page, its Leaflet code loaded
  * lazily. Its box is the same size while it loads or if it fails, so nothing
- * below it moves. Under it, one line with the map hint and the Nominatim credit (the OpenStreetMap credit is the map's own always-visible attribution, ADR-0008); a tile failure
+ * below it moves. Under it, one line with the map hint and the Nominatim credit, then a privacy line (OpenStreetMap sees the visitor's IP) (the OpenStreetMap credit is the map's own always-visible attribution, ADR-0008); a tile failure
  * is reported in place, in the flow.
  */
 import type { JSX } from "react";
@@ -30,6 +30,7 @@ export default function LocationMapPanel({
   onPick,
   onProblem,
 }: Props): JSX.Element {
+  const [privacyBefore = "", privacyAfter = ""] = t("landing.privacy", { osm: "\u0001" }).split("\u0001");
   return (
     <div className="landing-map">
       <div role="region" aria-label={t("landing.map.label")} className="landing-map-region">
@@ -52,6 +53,11 @@ export default function LocationMapPanel({
         {t("landing.map.hint")}
         {" · "}
         {t("landing.search.credit")}
+      </p>
+      <p className="atlas-form-hint landing-privacy">
+        {privacyBefore}
+        <a href="https://osmfoundation.org/wiki/Privacy_Policy">{t("landing.privacy.osm")}</a>
+        {privacyAfter}
       </p>
     </div>
   );

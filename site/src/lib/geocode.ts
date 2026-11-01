@@ -8,8 +8,8 @@
  *   header instead of the REQUIRED descriptive `User-Agent` the Python app
  *   sends. No `email` parameter is used.
  * - There is no response cache and no throttle here beyond the caller's own
- *   (the landing debounces its search and cancels a request when the text
- *   changes); Nominatim's usage policy (max ~1 req/s, no heavy/bulk use) applies.
+ *   (`lib/landing/search.ts` searches only on submit, spaces requests 1 s apart,
+ *   caches answers and cancels on typing); Nominatim's usage policy applies.
  */
 
 const SEARCH_URL = "https://nominatim.openstreetmap.org/search";
