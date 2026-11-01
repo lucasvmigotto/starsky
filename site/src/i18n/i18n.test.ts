@@ -134,6 +134,8 @@ describe("copy", () => {
     // (`landing.render.projection`, `.shape`, `.shape.square`, `.shape.circle`,
     // `.glowToggle`); and the share summary (`viewer.share.summary`,
     // `.projection.stereographic`, `.projection.fisheye`).
-    expect(copyKeys().length).toBe(227);
+    // 227 → 235 for the privacy page: `landing.privacy` and `.osm` retire, and
+    // `landing.privacy.link` plus nine `site.privacy.*` keys arrive.
+    expect(copyKeys().length).toBe(235);
   });
 });

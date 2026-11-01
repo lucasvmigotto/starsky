@@ -6,6 +6,7 @@
  */
 import type { JSX } from "react";
 import { t } from "../../i18n/index.ts";
+import { PRIVACY_HASH } from "../PrivacyPage.tsx";
 import LocationMap, { type MapProblem } from "./LocationMap.tsx";
 import type { MapFocus, MapModule } from "./mapTypes.ts";
 
@@ -30,7 +31,6 @@ export default function LocationMapPanel({
   onPick,
   onProblem,
 }: Props): JSX.Element {
-  const [privacyBefore = "", privacyAfter = ""] = t("landing.privacy", { osm: "\u0001" }).split("\u0001");
   return (
     <div className="landing-map">
       <div role="region" aria-label={t("landing.map.label")} className="landing-map-region">
@@ -53,11 +53,10 @@ export default function LocationMapPanel({
         {t("landing.map.hint")}
         {" · "}
         {t("landing.search.credit")}
-      </p>
-      <p className="atlas-form-hint landing-privacy">
-        {privacyBefore}
-        <a href="https://osmfoundation.org/wiki/Privacy_Policy">{t("landing.privacy.osm")}</a>
-        {privacyAfter}
+        {" · "}
+        <a className="landing-privacy-link" href={PRIVACY_HASH}>
+          {t("landing.privacy.link")}
+        </a>
       </p>
     </div>
   );

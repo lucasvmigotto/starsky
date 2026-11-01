@@ -342,13 +342,22 @@ test.describe("search", () => {
     expect(network.searchRequests).toHaveLength(1);
   });
 
-  test("the privacy line is shown and links the OpenStreetMap policy", async ({ page }) => {
+  test("the map hint links the privacy page, which links the OpenStreetMap policy and comes back", async ({
+    page,
+  }) => {
     await openLanding(page);
-    await expect(page.getByText("which sees your IP address. starsky stores nothing.")).toBeVisible();
-    await expect(page.locator(".landing-privacy a")).toHaveAttribute(
+    // The notice no longer takes a line of the landing: a link closes the hint line.
+    await expect(page.getByText("which sees your IP address")).toHaveCount(0);
+    await page.getByRole("link", { name: "Privacy", exact: true }).click();
+    await expect(page).toHaveURL(/#privacy$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Privacy" })).toBeVisible();
+    await expect(page.getByText(/which sees your IP address/)).toBeVisible();
+    await expect(page.getByRole("link", { name: "privacy policy" })).toHaveAttribute(
       "href",
       "https://osmfoundation.org/wiki/Privacy_Policy",
     );
+    await page.getByRole("link", { name: "Back to the start" }).click();
+    await expect(page.getByRole("button", { name: /explore this sky/i })).toBeVisible();
   });
 
   test("typing after results closes the stale list without a request", async ({ page, network }) => {

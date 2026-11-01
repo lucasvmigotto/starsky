@@ -56,10 +56,11 @@ There are four versioned fragments:
 Place search (Nominatim) and the landing map (OpenStreetMap tiles) run from the
 visitor's browser and follow the OpenStreetMap policies: no autocomplete, at
 most one request per second, a per-session cache, tiles for the visible view
-only, and attribution always shown. starsky stores nothing and has no accounts,
+only, and attribution always shown. starsky keeps no record of visitors and has no accounts,
 and links carry their payload in the URL fragment, which never reaches the host.
 The one disclosure: OpenStreetMap sees the visitor's IP address when they search
-or view the landing map. Coordinates always work without either service.
+or view the landing map, explained on the Privacy page (`#privacy`, linked from
+the landing map hint). Coordinates always work without either service.
 
 ## How it fits together
 
