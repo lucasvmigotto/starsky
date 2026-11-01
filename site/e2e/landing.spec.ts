@@ -61,8 +61,6 @@ async function expectExplorer(page: Page): Promise<void> {
 
 test.describe("the question", () => {
   test("asks where to explore from: search with the Coordinates switch, the map right under, the moment, one button", async ({ page, network }) => {
-    // One column: the order down the page is the order in the markup.
-    await page.setViewportSize({ width: 800, height: 1000 });
     await openLanding(page);
     await expect(search(page)).toBeVisible();
     await expect(coordinatesSwitch(page)).toHaveAttribute("aria-checked", "false");
@@ -79,7 +77,7 @@ test.describe("the question", () => {
     await expect(page.getByRole("link", { name: /^starsky@v\d/ })).toBeVisible();
     // Order: field row, then the map, the credit and hint, then the summary.
     const y = async (locator: ReturnType<Page["locator"]>): Promise<number> => (await locator.boundingBox())?.y ?? -1;
-    const order = [await y(search(page)), await y(page.locator(".landing-map-box")), await y(page.getByText("Place search by Nominatim")), await y(page.getByText("Click the map or drag the marker")), await y(page.locator(".landing-selected"))];
+    const order = [await y(search(page)), await y(page.locator(".landing-map-box")), await y(page.getByText("Search by Nominatim")), await y(page.getByText("Click or drag the pin")), await y(page.locator(".landing-selected"))];
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     // The geocoder is called only when the visitor searches.
     expect(network.searchRequests).toEqual([]);
@@ -160,7 +158,7 @@ test.describe("the map (ADR-0008)", () => {
     await chooseMoment(page);
     await mapReady(page);
     const before = await page.locator(".landing-selected").innerText();
-    await canvas(page).click({ position: { x: 90, y: 150 } });
+    await canvas(page).click({ position: { x: 120, y: 70 } });
     const summary = page.locator(".landing-selected");
     await expect(summary).toContainText("Dropped pin");
     await expect(summary).toContainText(/\d+\.\d{4}°[NS], \d+\.\d{4}°[EW]/);
@@ -195,7 +193,7 @@ test.describe("the map (ADR-0008)", () => {
       return [b?.y ?? 0, b?.height ?? 0, c?.y ?? 0];
     };
     const before = await box();
-    await canvas(page).click({ position: { x: 90, y: 150 } });
+    await canvas(page).click({ position: { x: 120, y: 70 } });
     await expect(page.locator(".landing-selected")).toContainText("Dropped pin");
     expect(await box()).toEqual(before);
     const covered = await page.evaluate(() => {
@@ -241,7 +239,7 @@ test.describe("the map (ADR-0008)", () => {
     await chooseMoment(page);
     const notice = page.getByText("The map could not be loaded. Search still works, or turn on Coordinates to type a place.");
     await expect(notice).toBeVisible();
-    expect((await page.locator(".landing-map-box").boundingBox())?.height).toBeGreaterThanOrEqual(200);
+    expect((await page.locator(".landing-map-box").boundingBox())?.height).toBeGreaterThanOrEqual(140);
     await expect(page.locator(".leaflet-container")).toHaveCount(0);
     await page.getByRole("button", { name: "Explore this sky" }).click();
     await expectExplorer(page);
@@ -293,7 +291,7 @@ test.describe("search", () => {
     await search(page).fill("eiffel");
     await page.getByRole("option").first().click();
     await expect(search(page)).toHaveValue("Eiffel Tower, Paris, France");
-    await canvas(page).click({ position: { x: 90, y: 150 } });
+    await canvas(page).click({ position: { x: 120, y: 70 } });
     await expect(page.locator(".landing-selected")).toContainText("Dropped pin");
     await expect(search(page)).toHaveValue("");
   });
@@ -398,7 +396,7 @@ test.describe("coordinates", () => {
     await mapReady(page);
     await coordinatesSwitch(page).click();
     const before = await page.getByLabel("Latitude").inputValue();
-    await canvas(page).click({ position: { x: 90, y: 150 } });
+    await canvas(page).click({ position: { x: 120, y: 70 } });
     await expect(page.getByLabel("Latitude")).not.toHaveValue(before);
     await expect(page.locator(".landing-selected")).toContainText("Dropped pin");
   });
@@ -468,7 +466,7 @@ test.describe("one screen on a large display (FR-010)", () => {
     [1440, 900],
     [1920, 1080],
   ] as const) {
-    test(`needs no page scroll at ${width.toString()}x${height.toString()}, Advanced closed`, async ({ page }) => {
+    test(`one column, and no page scroll at ${width.toString()}x${height.toString()} with Advanced closed`, async ({ page }) => {
       await page.setViewportSize({ width, height });
       await openLanding(page);
       await mapReady(page);
@@ -478,20 +476,30 @@ test.describe("one screen on a large display (FR-010)", () => {
         viewport: window.innerHeight,
       }));
       expect(sizes.page).toBeLessThanOrEqual(sizes.viewport);
-      // Two columns: the moment sits beside the place, not under it.
+      // One column: the card is at most 45rem wide and the map takes its full width and grows into the spare height.
+      const card = await page.locator(".landing-card").boundingBox();
       const map = await page.locator(".landing-map-box").boundingBox();
-      const title = await page.getByLabel("Title").boundingBox();
-      expect((title?.x ?? 0) > (map?.x ?? 0) + (map?.width ?? 0) - 1).toBe(true);
-      expect(map?.height ?? 0).toBeGreaterThanOrEqual(320);
+      expect(card?.width ?? 0).toBeLessThanOrEqual(724);
+      expect(map?.width ?? 0).toBeGreaterThan((card?.width ?? 0) - 60);
+      expect(map?.height ?? 0).toBeGreaterThanOrEqual(200);
+      // The map takes the height the rest leaves, up to 60vh, and not a pixel into a scroll.
+      expect(map?.height ?? 0).toBeLessThanOrEqual(height * 0.6 + 1);
+      if (width === 1920) expect(map?.height ?? 0).toBeGreaterThan(300);
+      // Advanced has a full-width row; Explore this sky is centred on the one below it.
+      const advanced = await page.locator("details").boundingBox();
+      const explore = await page.getByRole("button", { name: "Explore this sky" }).boundingBox();
+      expect(advanced?.width ?? 0).toBeGreaterThan((card?.width ?? 0) - 60);
+      expect((explore?.y ?? 0) >= (advanced?.y ?? 0) + (advanced?.height ?? 0) + 8).toBe(true);
+      expect((explore?.x ?? 0) + (explore?.width ?? 0) / 2).toBeCloseTo((card?.x ?? 0) + (card?.width ?? 0) / 2, 0);
     });
   }
 
-  test("a tablet keeps one column", async ({ page }) => {
-    await page.setViewportSize({ width: 800, height: 1000 });
+  test("a phone keeps Advanced above the action", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await openLanding(page);
-    const map = await page.locator(".landing-map-box").boundingBox();
-    const title = await page.getByLabel("Title").boundingBox();
-    expect((title?.y ?? 0) > (map?.y ?? 0) + (map?.height ?? 0)).toBe(true);
+    const advanced = await page.getByText("Advanced", { exact: true }).boundingBox();
+    const explore = await page.getByRole("button", { name: "Explore this sky" }).boundingBox();
+    expect((explore?.y ?? 0) > (advanced?.y ?? 0) + 20).toBe(true);
   });
 });
 
@@ -582,11 +590,10 @@ test.describe("#c= creation link (FR-012)", () => {
     await expect(page.getByLabel("Title")).toHaveValue("Pasted");
   });
 
-  test("the copy-link icon copies the pre-filled form's #c= link", async ({ page, context }) => {
-    await context.grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => undefined);
+  test("there is no copy-link button: the address bar is the link", async ({ page }) => {
     await page.goto(`/#c=${encodeCreation(CREATION)}`);
-    await page.getByRole("button", { name: "Copy link" }).click();
-    await expect(page.getByRole("button", { name: "Copy link" })).toHaveAttribute("data-icon", "check");
+    await expect(page.getByRole("button", { name: "Explore this sky" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /copy link/i })).toHaveCount(0);
   });
 
   test("#c= does not disturb the other links", async ({ page }) => {

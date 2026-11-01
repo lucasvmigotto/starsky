@@ -38,6 +38,32 @@ test.describe("footer", () => {
     );
   });
 
+  for (const [width, height] of [
+    [1440, 900],
+    [1920, 1080],
+  ] as const) {
+    test(`keeps the credits on one line at ${width.toString()} px, tagline and version on the right`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto(viewerUrl(fragmentFor()));
+      const credits = page.locator("footer .atlas-footer-info .atlas-footer-meta");
+      await expect(credits).toHaveText(
+        "Stars: Hipparcos, JPL · Lines: Stellarium (CC BY-SA 4.0) · Places: © OpenStreetMap contributors",
+      );
+      const box = await credits.boundingBox();
+      const lineHeight = await credits.evaluate((el) => parseFloat(getComputedStyle(el).lineHeight));
+      expect(box?.height ?? 99).toBeLessThanOrEqual(lineHeight * 1.5);
+      const version = await page.locator("footer .atlas-footer-version").boundingBox();
+      expect((version?.x ?? 0) > (box?.x ?? 0) + (box?.width ?? 0)).toBe(true);
+    });
+  }
+
+  test("puts the tagline right before the version link, on the right", async ({ page }) => {
+    await page.goto(viewerUrl(fragmentFor()));
+    const group = page.locator("footer .atlas-footer-version");
+    await expect(group).toHaveText(`Drawn from 8 000+ stars, in your browser · starsky@v${pkg.version}`);
+    await expect(group.getByRole("link")).toHaveCount(1);
+  });
+
   test("has no download control — one export surface (D15)", async ({ page }) => {
     await page.goto(viewerUrl(fragmentFor()));
     // The old footer had a "Save image" button; the export row owns that now.

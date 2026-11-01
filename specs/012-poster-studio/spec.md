@@ -39,3 +39,7 @@ Posters become an output of the sky. They need their own surface, connected to t
 - **FR-003** Scene conversions are pure and tested; bad magnitudes and options are clamped to the ranges the share validation accepts.
 - **FR-004** Camera memory for the return trip is per-tab, tolerates unavailable storage, is used only if the scene matches, and is never in a link.
 - **FR-005** Studio code loads lazily. Copy is in the catalogue and the vision. The bundle budget still passes.
+
+## Layout note (013-location-first)
+
+On a wide, tall screen (from 1024 px wide) the Studio, like the landing and the Viewer, fits one screen with no page scroll at 1440x900 and 1920x1080 with Advanced closed. The page heading "Poster Studio" stays for the page's structure and screen readers (`sr-only`) and the subtitle is gone; the Moment card shows the landing's one-line summary, the local time, and one short note linking back to the start page pre-filled (`#c=`). The preview takes the height the header, poster heading and footer leave: the canvas keeps its drawn pixels and aspect and only its display size changes (CSS), so exports and reference images are untouched. Controls are compact ("Min. separation" fits its row) and the shape switch reads square then circle. Phones keep the stacked layout and scroll.

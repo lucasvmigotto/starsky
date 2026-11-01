@@ -47,7 +47,7 @@ test.describe("Poster Studio", () => {
   test("shows the poster, the poster-only controls and a read-only summary", async ({ page }) => {
     await openStudio(page);
     await expect(page.getByRole("heading", { level: 1, name: "Poster Studio" })).toBeVisible();
-    for (const label of ["Projection", "Fisheye strength", "Minimum separation", "Glow intensity", "Title"]) {
+    for (const label of ["Projection", "Fisheye strength", "Min. separation", "Glow intensity", "Title"]) {
       await expect(page.getByLabel(label, { exact: true })).toBeVisible();
     }
     await expect(page.getByRole("radiogroup", { name: "Shape" })).toBeVisible();
@@ -219,5 +219,57 @@ test.describe("Poster Studio", () => {
     // Stacked: the controls sit below the preview, not beside it.
     expect((title?.y ?? 0)).toBeGreaterThan((poster?.y ?? 0) + (poster?.height ?? 0) - 1);
     await page.screenshot({ path: "test-results/studio-390.png", fullPage: true });
+  });
+});
+
+test.describe("Poster Studio: one screen on a large display (013)", () => {
+  for (const [width, height] of [
+    [1440, 900],
+    [1920, 1080],
+  ] as const) {
+    test(`needs no page scroll at ${width.toString()}x${height.toString()} with Advanced closed, and the preview fills the height`, async ({ page }) => {
+      test.skip(test.info().project.name === "mobile-chromium", "a desktop layout");
+      await page.setViewportSize({ width, height });
+      await openStudio(page);
+      const details = page.locator("details", { has: page.getByText("Advanced", { exact: true }) });
+      await expect(details).toHaveJSProperty("open", false);
+      const fit = await page.evaluate(() => ({ scroll: document.documentElement.scrollHeight, inner: window.innerHeight }));
+      expect(fit.scroll).toBeLessThanOrEqual(fit.inner);
+      // The poster is the largest square-ish image the column and the height allow.
+      const canvas = await page.getByRole("img", { name: POSTER }).boundingBox();
+      const foot = await page.locator("footer").boundingBox();
+      expect(canvas?.height ?? 0).toBeGreaterThan(height * 0.5);
+      expect((canvas?.y ?? 0) + (canvas?.height ?? 0)).toBeLessThanOrEqual(foot?.y ?? 0);
+      // Display size only: the canvas keeps its drawn pixels.
+      const pixels = await page.getByRole("img", { name: POSTER }).evaluate((el) => (el as HTMLCanvasElement).width);
+      expect(pixels).toBeGreaterThanOrEqual(canvas?.width ?? 0);
+      // The controls column is not cut off.
+      await expect(page.getByLabel("Title", { exact: true })).toBeVisible();
+      const title = await page.getByLabel("Title", { exact: true }).boundingBox();
+      expect((title?.y ?? 0) + (title?.height ?? 0)).toBeLessThanOrEqual(foot?.y ?? 0);
+    });
+  }
+
+  test("has a page heading for screen readers, no visible H1 text, and a one-line summary", async ({ page }) => {
+    await openStudio(page);
+    const h1 = page.getByRole("heading", { level: 1, name: "Poster Studio" });
+    await expect(h1).toHaveClass(/sr-only/);
+    await expect(page.getByText("Compose the poster, then export it")).toHaveCount(0);
+    await expect(page.locator(".landing-selected-line")).toBeVisible();
+    await expect(page.getByRole("link", { name: "start page" })).toHaveAttribute("href", /^#c=/);
+  });
+
+  test("the start page link reopens the landing pre-filled with this scene", async ({ page }) => {
+    await openStudio(page);
+    await page.getByRole("link", { name: "start page" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Where do you want to explore the sky from?" })).toBeVisible();
+    await expect(page.getByLabel("Title")).toHaveValue("E2E Night");
+    await expect(page.getByLabel("Timezone", { exact: true })).toHaveValue("UTC");
+  });
+
+  test("the shape switch reads square then circle", async ({ page }) => {
+    await openStudio(page);
+    const labels = await page.getByRole("radiogroup", { name: "Shape" }).getByRole("radio").evaluateAll((els) => els.map((el) => (el as HTMLInputElement).value));
+    expect(labels).toEqual(["square", "circle"]);
   });
 });
