@@ -41,6 +41,9 @@ export function createMap(container: HTMLElement, options: MapOptions): MapHandl
     zoomControl: false,
     attributionControl: false,
     scrollWheelZoom: false,
+    // The container is not a tab stop: the search field and the Coordinates switch are
+    // the keyboard route, and the page should pass the map without stopping on it.
+    keyboard: false,
     worldCopyJump: true,
   });
 
@@ -94,9 +97,6 @@ export function createMap(container: HTMLElement, options: MapOptions): MapHandl
       } else if (!map.getBounds().contains(at)) {
         map.panTo(at);
       }
-    },
-    resize() {
-      map.invalidateSize();
     },
     destroy() {
       map.remove();

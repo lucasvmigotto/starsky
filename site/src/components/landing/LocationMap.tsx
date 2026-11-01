@@ -16,7 +16,7 @@ interface Props {
   lat: number;
   lon: number;
   focus: MapFocus;
-  expanded: boolean;
+  problem: MapProblem | null;
   onPick: (lat: number, lon: number) => void;
   onProblem: (problem: MapProblem | null) => void;
   /** The module loader; a dynamic import, replaceable in tests. */
@@ -43,7 +43,7 @@ export default function LocationMap({
   lat,
   lon,
   focus,
-  expanded,
+  problem,
   onPick,
   onProblem,
   load,
@@ -90,18 +90,20 @@ export default function LocationMap({
     if (ready) handle.current?.setLocation(lat, lon, focus);
   }, [ready, lat, lon, focus]);
 
-  useEffect(() => {
-    if (ready) handle.current?.resize();
-  }, [ready, expanded]);
-
+  // The box keeps its size whatever it holds, so the page below never shifts.
   return (
-    <>
-      {!ready && (
-        <p role="status" className="atlas-form-hint">
+    <div className="landing-map-box">
+      <div ref={container} className="landing-map-canvas" hidden={problem === "chunk"} />
+      {problem === "chunk" && (
+        <p role="status" className="landing-map-notice">
+          {t("landing.map.chunkFailed")}
+        </p>
+      )}
+      {problem !== "chunk" && !ready && (
+        <p role="status" className="landing-map-notice">
           {t("landing.map.loading")}
         </p>
       )}
-      <div ref={container} className="landing-map-canvas" />
-    </>
+    </div>
   );
 }

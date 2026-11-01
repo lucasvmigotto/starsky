@@ -15,7 +15,7 @@ afterEach(() => {
 
 describe("MomentFields", () => {
   it("puts date and time, timezone and Detect in one pair, with visible labels", () => {
-    render(<MomentFields when="2026-01-01T00:00" tz="UTC" onWhen={() => undefined} onTz={() => undefined} onDetect={() => undefined} />);
+    render(<MomentFields title="" titleError={null} onTitle={() => undefined} when="2026-01-01T00:00" tz="UTC" onWhen={() => undefined} onTz={() => undefined} onDetect={() => undefined} />);
     const pair = document.getElementById("landing-when")?.closest(".atlas-form-pair");
     expect(pair).not.toBeNull();
     expect(pair?.querySelector("#landing-tz")).not.toBeNull();
@@ -24,10 +24,31 @@ describe("MomentFields", () => {
     expect(screen.getByRole("button", { name: "Detect" })).toBeDefined();
   });
 
+  it("puts an optional Title first, above the date row, and reports it", () => {
+    const seen: string[] = [];
+    render(<MomentFields title="" titleError={null} onTitle={(x) => seen.push(x)} when="2026-01-01T00:00" tz="UTC" onWhen={() => undefined} onTz={() => undefined} onDetect={() => undefined} />);
+    const title = screen.getByLabelText<HTMLInputElement>("Title");
+    expect(title.maxLength).toBe(200);
+    expect(title.compareDocumentPosition(screen.getByLabelText("Date and time")) & 4).toBeTruthy();
+    fireEvent.change(title, { target: { value: "Our first flat" } });
+    expect(seen).toEqual(["Our first flat"]);
+  });
+
+  it("shows the title error beside the field as an alert tied to it", () => {
+    render(<MomentFields title="x" titleError="cannot draw" onTitle={() => undefined} when="2026-01-01T00:00" tz="UTC" onWhen={() => undefined} onTz={() => undefined} onDetect={() => undefined} />);
+    const title = screen.getByLabelText("Title");
+    expect(title.getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByRole("alert").textContent).toBe("cannot draw");
+    expect(title.getAttribute("aria-describedby")).toBe(screen.getByRole("alert").id);
+  });
+
   it("reports edits and Detect", () => {
     const seen: string[] = [];
     render(
       <MomentFields
+        title=""
+        titleError={null}
+        onTitle={() => undefined}
         when="2026-01-01T00:00"
         tz="UTC"
         onWhen={(w) => seen.push(`when:${w}`)}

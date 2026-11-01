@@ -10,7 +10,6 @@ if ((globalThis as unknown as Record<string, unknown>)["document"] === undefined
 const { cleanup, fireEvent, render, screen } = await import("@testing-library/react");
 const { default: LandingPage } = await import("./LandingPage.tsx");
 const { decodeExplorer } = await import("../lib/sky/payload.ts");
-const { decodeDraft } = await import("../lib/studio/draft.ts");
 
 afterEach(() => {
   cleanup();
@@ -30,11 +29,23 @@ describe("LandingPage structure (013)", () => {
     expect(screen.getByRole("combobox", { name: "Search for a place" })).toBeDefined();
   });
 
-  it("starts with the map closed and the coordinates collapsed", () => {
+  it("shows the map at once, under the search, with a Coordinates switch beside it", () => {
     render(<LandingPage />);
-    expect(screen.getByRole("button", { name: "Show map" }).getAttribute("aria-expanded")).toBe("false");
-    expect(screen.getByRole("button", { name: "Coordinates" }).getAttribute("aria-expanded")).toBe("false");
-    expect(screen.queryByRole("region", { name: "Map for choosing a place" })).toBeNull();
+    expect(screen.getByRole("region", { name: "Map for choosing a place" })).toBeDefined();
+    const sw = screen.getByRole("switch", { name: "Coordinates" });
+    expect(sw.getAttribute("aria-checked")).toBe("false");
+    const row = sw.closest(".landing-place-row");
+    expect(row?.querySelector("[role=combobox]")).not.toBeNull();
+    expect(screen.queryByRole("button", { name: /show map|hide map|expand map|skip the map/i })).toBeNull();
+    expect(screen.queryByLabelText("Latitude")).toBeNull();
+  });
+
+  it("shows the search credit and the map hint, then the summary, in that order below the row", () => {
+    render(<LandingPage />);
+    const text = document.querySelector(".landing-place")?.textContent ?? "";
+    const order = ["Search for a place", "Place search by Nominatim", "Click the map or drag the marker", "Exploring from"].map((m) => text.indexOf(m));
+    expect(order.every((i) => i >= 0)).toBe(true);
+    expect([...order].sort((x, y) => x - y)).toEqual(order);
   });
 
   it("names the chosen place and its coordinates from the start", () => {
@@ -43,9 +54,20 @@ describe("LandingPage structure (013)", () => {
     expect(document.body.textContent).toContain("40.7580°N, 73.9855°W");
   });
 
-  it("opens the coordinates and keeps them in step with the place", () => {
+  it("the switch replaces the search with latitude and longitude, and back", () => {
     render(<LandingPage />);
-    fireEvent.click(screen.getByRole("button", { name: "Coordinates" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Coordinates" }));
+    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(screen.getByLabelText("Latitude")).toBeDefined();
+    expect(screen.getByRole("region", { name: "Map for choosing a place" })).toBeDefined();
+    fireEvent.click(screen.getByRole("switch", { name: "Coordinates" }));
+    expect(screen.getByRole("combobox", { name: "Search for a place" })).toBeDefined();
+    expect(screen.queryByLabelText("Latitude")).toBeNull();
+  });
+
+  it("types coordinates and keeps them in step with the place", () => {
+    render(<LandingPage />);
+    fireEvent.click(screen.getByRole("switch", { name: "Coordinates" }));
     fireEvent.change(screen.getByLabelText("Latitude"), { target: { value: "-12.5" } });
     fireEvent.change(screen.getByLabelText("Longitude"), { target: { value: "130.25" } });
     expect(document.body.textContent).toContain("Typed coordinates");
@@ -54,10 +76,10 @@ describe("LandingPage structure (013)", () => {
 
   it("flags out-of-range coordinates without losing the page", () => {
     render(<LandingPage />);
-    fireEvent.click(screen.getByRole("button", { name: "Coordinates" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Coordinates" }));
     fireEvent.change(screen.getByLabelText("Latitude"), { target: { value: "95" } });
     expect(screen.getByRole("alert").textContent).toBe("Latitude must be a number between -90 and 90.");
-    expect(screen.getByRole("combobox", { name: "Search for a place" })).toBeDefined();
+    expect(screen.getByRole("region", { name: "Map for choosing a place" })).toBeDefined();
   });
 
   it("puts date and time and the timezone with Detect in one pair", () => {
@@ -78,7 +100,7 @@ describe("LandingPage structure (013)", () => {
     render(<LandingPage />);
     const summaries = [...document.querySelectorAll("details > summary")].map((e) => e.textContent);
     expect(summaries).toEqual(["Advanced"]);
-    for (const id of ["landing-projection", "landing-fisheye", "landing-separation", "landing-glow", "landing-title"]) {
+    for (const id of ["landing-projection", "landing-fisheye", "landing-separation", "landing-glow"]) {
       expect(document.getElementById(id), id).toBeNull();
     }
     expect(screen.queryByRole("radiogroup")).toBeNull();
@@ -115,7 +137,7 @@ describe("LandingPage actions (013)", () => {
   it("carries a dropped pin's coordinates with no place name", () => {
     render(<LandingPage />);
     fixMoment();
-    fireEvent.click(screen.getByRole("button", { name: "Coordinates" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Coordinates" }));
     fireEvent.change(screen.getByLabelText("Latitude"), { target: { value: "-33.8688" } });
     fireEvent.change(screen.getByLabelText("Longitude"), { target: { value: "151.2093" } });
     fireEvent.click(screen.getByRole("button", { name: "Explore this sky" }));
@@ -133,14 +155,33 @@ describe("LandingPage actions (013)", () => {
     expect(decodeExplorer(window.location.hash.slice(3)).mag).toBe(4.5);
   });
 
-  it("Make a poster instead opens a #studio= draft of the same scene with the default composition", () => {
+  it("carries the title into the #e= link, and leaves it null when empty", () => {
     render(<LandingPage />);
     fixMoment();
-    fireEvent.click(screen.getByRole("button", { name: "Make a poster instead" }));
-    expect(window.location.hash.startsWith("#studio=")).toBe(true);
-    const poster = decodeDraft(window.location.hash.slice("#studio=".length));
-    expect(poster).toMatchObject({ lat: 40.758, lon: -73.9855, tz: "America/New_York", when_utc: "2026-01-01T05:00:00Z" });
-    expect(poster.options).toMatchObject({ projection: "stereographic", shape: "circle", title: null });
+    fireEvent.click(screen.getByRole("button", { name: "Explore this sky" }));
+    expect(decodeExplorer(window.location.hash.slice(3)).title).toBeNull();
+    window.location.hash = "";
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Our first flat" } });
+    fireEvent.click(screen.getByRole("button", { name: "Explore this sky" }));
+    expect(decodeExplorer(window.location.hash.slice(3)).title).toBe("Our first flat");
+  });
+
+  it("refuses an undrawable title in place, with the Studio's message, and stays", () => {
+    render(<LandingPage />);
+    fixMoment();
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Night 🌌" } });
+    expect(screen.getByRole("alert").textContent).toContain("🌌");
+    fireEvent.click(screen.getByRole("button", { name: "Explore this sky" }));
+    expect(window.location.hash).toBe("");
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Night" } });
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("Explore this sky is the only action: no poster button", () => {
+    render(<LandingPage />);
+    expect(screen.queryByRole("button", { name: /poster/i })).toBeNull();
+    const actions = document.querySelector(".landing-actions");
+    expect(actions?.querySelectorAll("button")).toHaveLength(1);
   });
 
   it("names an unknown timezone and stays on the page", () => {
@@ -155,20 +196,18 @@ describe("LandingPage actions (013)", () => {
   it("asks for a moment when the field is empty", () => {
     render(<LandingPage />);
     fireEvent.change(screen.getByLabelText("Date and time"), { target: { value: "" } });
-    fireEvent.click(screen.getByRole("button", { name: "Make a poster instead" }));
+    fireEvent.click(screen.getByRole("button", { name: "Explore this sky" }));
     expect(screen.getByRole("alert").textContent).toBe("Pick a date and time for the sky.");
     expect(window.location.hash).toBe("");
   });
 
-  it("does not leave while the coordinates are invalid, and shows them", () => {
+  it("does not leave while the coordinates are invalid", () => {
     render(<LandingPage />);
     fixMoment();
-    fireEvent.click(screen.getByRole("button", { name: "Coordinates" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Coordinates" }));
     fireEvent.change(screen.getByLabelText("Latitude"), { target: { value: "95" } });
-    fireEvent.click(screen.getByRole("button", { name: "Coordinates" }));
     fireEvent.click(screen.getByRole("button", { name: "Explore this sky" }));
     expect(window.location.hash).toBe("");
-    expect(screen.getByRole("button", { name: "Coordinates" }).getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByRole("alert").textContent).toBe("Latitude must be a number between -90 and 90.");
   });
 

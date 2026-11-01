@@ -14,14 +14,13 @@ function start(): LandingState {
 }
 
 describe("initial state", () => {
-  it("starts at the default place, now, the given zone, with the map and coordinates closed", () => {
+  it("starts at the default place, now, the given zone, with the coordinates switch off", () => {
     const s = start();
     expect(s.location).toMatchObject({ lat: 40.758, lon: -73.9855, source: "default" });
     expect(s.when).toBe("2026-03-01T12:30");
     expect(s.tz).toBe("UTC");
     expect(s.mag).toBe(5.8);
-    expect(s.mapOpen).toBe(false);
-    expect(s.mapExpanded).toBe(false);
+    expect(s.mapProblem).toBeNull();
     expect(s.coordsOpen).toBe(false);
     expect(s.error).toBeNull();
     expect(s.latText).toBe("40.7580");
@@ -69,6 +68,14 @@ describe("typing coordinates", () => {
     expect(coordinateCheck(s)).toMatchObject({ latInvalid: true, lonInvalid: false });
   });
 
+  it("the switch restarts the fields from the place", () => {
+    let s = landingReducer(start(), { type: "coordinates-toggled" });
+    s = landingReducer(s, { type: "coordinates-edited", latText: "95", lonText: "x" });
+    s = landingReducer(s, { type: "coordinates-toggled" });
+    expect(s.coordsOpen).toBe(false);
+    expect([s.latText, s.lonText]).toEqual(["40.7580", "-73.9855"]);
+  });
+
   it("toggles open and closed", () => {
     const open = landingReducer(start(), { type: "coordinates-toggled" });
     expect(open.coordsOpen).toBe(true);
@@ -77,40 +84,11 @@ describe("typing coordinates", () => {
 });
 
 describe("the map", () => {
-  it("opens and closes, and closing shrinks it too", () => {
-    let s = landingReducer(start(), { type: "map-toggled" });
-    expect(s.mapOpen).toBe(true);
-    s = landingReducer(s, { type: "map-expand-toggled" });
-    expect(s.mapExpanded).toBe(true);
-    s = landingReducer(s, { type: "map-toggled" });
-    expect(s).toMatchObject({ mapOpen: false, mapExpanded: false });
-  });
-
-  it("only expands while open", () => {
-    expect(landingReducer(start(), { type: "map-expand-toggled" }).mapExpanded).toBe(false);
-  });
-
-  it("Escape shrinks an expanded map and does nothing else", () => {
-    let s = landingReducer(start(), { type: "map-toggled" });
-    s = landingReducer(s, { type: "map-expand-toggled" });
-    s = landingReducer(s, { type: "map-escape" });
-    expect(s).toMatchObject({ mapOpen: true, mapExpanded: false });
-    expect(landingReducer(s, { type: "map-escape" })).toBe(s);
-  });
-
-  it("forgets a map problem when it is closed or opened again", () => {
-    let s = landingReducer(start(), { type: "map-toggled" });
-    s = landingReducer(s, { type: "map-problem", problem: "chunk" });
-    s = landingReducer(s, { type: "map-toggled" });
-    expect(s.mapProblem).toBeNull();
-    s = landingReducer(landingReducer(s, { type: "map-toggled" }), { type: "map-problem", problem: "tiles" });
-    expect(landingReducer(landingReducer(s, { type: "map-toggled" }), { type: "map-toggled" }).mapProblem).toBeNull();
-  });
-
   it("records a map problem without touching the form", () => {
     const s = landingReducer(start(), { type: "map-problem", problem: "tiles" });
     expect(s.mapProblem).toBe("tiles");
     expect(s.location).toEqual(start().location);
+    expect(landingReducer(s, { type: "map-problem", problem: null }).mapProblem).toBeNull();
   });
 });
 
@@ -123,12 +101,19 @@ describe("moment and advanced", () => {
   });
 });
 
+describe("title", () => {
+  it("is stored as typed and starts empty", () => {
+    expect(start().title).toBe("");
+    expect(landingReducer(start(), { type: "title-changed", title: "Our first flat" }).title).toBe("Our first flat");
+  });
+});
+
 describe("toLandingInput", () => {
   it("passes the location, moment and magnitude", () => {
     const r = toLandingInput(start());
     expect(r).toEqual({
       ok: true,
-      value: { lat: 40.758, lon: -73.9855, place: "Times Square, New York, NY", when: "2026-03-01T12:30", tz: "UTC", mag: 5.8 },
+      value: { lat: 40.758, lon: -73.9855, place: "Times Square, New York, NY", when: "2026-03-01T12:30", tz: "UTC", mag: 5.8, title: "" },
     });
   });
 

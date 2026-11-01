@@ -1,6 +1,5 @@
 import { describe, expect, it } from "bun:test";
 import { decodeExplorer } from "../sky/payload.ts";
-import { decodeDraft } from "../studio/draft.ts";
 import { DEFAULT_LAYERS } from "../explorer/layers.ts";
 import { layersToPayload } from "../explorer/link.ts";
 import { initialCamera } from "../sky/observer.ts";
@@ -12,7 +11,7 @@ import {
   formatLocalNow,
   normalizeLongitude,
   parseLocalDateTime,
-  studioHash,
+  undrawableTitleCharacter,
   validateCoordinates,
 } from "./payload.ts";
 
@@ -23,6 +22,7 @@ const NYC: LandingInput = {
   when: "2026-01-01T00:00",
   tz: "America/New_York",
   mag: 5.8,
+  title: "",
 };
 
 function ok<T>(result: { ok: true; value: T } | { ok: false }): T {
@@ -72,6 +72,20 @@ describe("buildExplorerPayload", () => {
     expect(payload.place).toHaveLength(200);
   });
 
+  it("carries a trimmed title, and null for an empty one", () => {
+    expect(ok(buildExplorerPayload({ ...NYC, title: "  Our first flat " })).title).toBe("Our first flat");
+    expect(ok(buildExplorerPayload({ ...NYC, title: "   " })).title).toBeNull();
+    expect(ok(buildExplorerPayload(NYC)).title).toBeNull();
+  });
+
+  it("refuses a title the poster face cannot draw, naming the character", () => {
+    expect(buildExplorerPayload({ ...NYC, title: "Night 🌌" })).toEqual({
+      ok: false,
+      error: { kind: "title", character: "🌌" },
+    });
+    expect(undrawableTitleCharacter("Céu Austral")).toBeNull();
+  });
+
   it("names the moment when it is missing or malformed", () => {
     expect(buildExplorerPayload({ ...NYC, when: "" })).toEqual({
       ok: false,
@@ -103,23 +117,9 @@ describe("hashes", () => {
     for (const [i, c] of decoded.q.entries()) expect(c).toBeCloseTo(built.q[i] ?? NaN, 5);
   });
 
-  it("studioHash is a #studio= draft with the same scene and the default composition", () => {
-    const hash = ok(studioHash(NYC));
-    expect(hash.startsWith("#studio=")).toBe(true);
-    const poster = decodeDraft(hash.slice("#studio=".length));
-    expect(poster.lat).toBe(NYC.lat);
-    expect(poster.place).toBe(NYC.place);
-    expect(poster.when_utc).toBe("2026-01-01T05:00:00Z");
-    expect(poster.tz).toBe(NYC.tz);
-    expect(poster.options.projection).toBe("stereographic");
-    expect(poster.options.shape).toBe("circle");
-    expect(poster.options.title).toBeNull();
-    expect(poster.options.magnitude_limit).toBe(5.8);
-  });
-
-  it("both refuse a bad moment", () => {
+  it("refuses a bad moment or zone", () => {
     expect(exploreHash({ ...NYC, when: "" }).ok).toBe(false);
-    expect(studioHash({ ...NYC, tz: "Nope/Nope" }).ok).toBe(false);
+    expect(exploreHash({ ...NYC, tz: "Nope/Nope" }).ok).toBe(false);
   });
 });
 

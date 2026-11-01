@@ -5,15 +5,14 @@
  */
 import { DEFAULT_LAYERS } from "../explorer/layers.ts";
 import { layersToPayload } from "../explorer/link.ts";
-import { explorerToPoster } from "../scene/convert.ts";
 import { DEFAULTS } from "../scene/defaults.ts";
+import { unsupportedInPosterFont } from "../render/glyphs.ts";
 import { initialCamera } from "../sky/observer.ts";
 import { type ExplorerPayload, encodeExplorer } from "../sky/payload.ts";
-import { draftHash } from "../studio/draft.ts";
 import { toWhenUtcIso, zonedTimeToUtc } from "../time.ts";
 
 /** The Explorer link rejects longer text (`MAX_TEXT_CHARS` in `sky/payload.ts`). */
-const MAX_PLACE_CHARS = 200;
+export const MAX_TEXT_CHARS = 200;
 
 export interface LandingInput {
   lat: number;
@@ -25,9 +24,23 @@ export interface LandingInput {
   tz: string;
   /** Limiting magnitude. */
   mag: number;
+  /** Optional title, as typed. */
+  title: string;
 }
 
-export type LandingError = { kind: "when" } | { kind: "timezone"; zone: string };
+export type LandingError =
+  | { kind: "when" }
+  | { kind: "timezone"; zone: string }
+  | { kind: "title"; character: string };
+
+/**
+ * The first character of the title the poster face cannot draw, or null. The
+ * visitor typed it and has made nothing yet, so it is refused here, as in the
+ * Studio, rather than stripped later.
+ */
+export function undrawableTitleCharacter(title: string): string | null {
+  return unsupportedInPosterFont(title.trim())[0] ?? null;
+}
 
 export type Built<T> = { ok: true; value: T } | { ok: false; error: LandingError };
 
@@ -55,6 +68,8 @@ function resolveMoment(when: string, tz: string): Built<{ date: Date; zone: stri
 }
 
 export function buildExplorerPayload(input: LandingInput): Built<ExplorerPayload> {
+  const character = undrawableTitleCharacter(input.title);
+  if (character !== null) return { ok: false, error: { kind: "title", character } };
   const moment = resolveMoment(input.when, input.tz);
   if (!moment.ok) return moment;
   const when_utc = toWhenUtcIso(moment.value.date).slice(0, 19) + "Z";
@@ -69,10 +84,10 @@ export function buildExplorerPayload(input: LandingInput): Built<ExplorerPayload
       v: 1,
       lat: input.lat,
       lon: input.lon,
-      place: input.place === null ? null : input.place.slice(0, MAX_PLACE_CHARS),
+      place: input.place === null ? null : input.place.slice(0, MAX_TEXT_CHARS),
       tz: moment.value.zone,
       when_utc,
-      title: null,
+      title: input.title.trim() === "" ? null : input.title.trim().slice(0, MAX_TEXT_CHARS),
       mag: input.mag,
       q: camera.orientation,
       fov: camera.fovDeg,
@@ -87,13 +102,6 @@ export function exploreHash(input: LandingInput): Built<string> {
   const built = buildExplorerPayload(input);
   if (!built.ok) return built;
   return { ok: true, value: `#e=${encodeExplorer(built.value)}` };
-}
-
-/** `#studio=<draft>`: the same scene with the default composition. */
-export function studioHash(input: LandingInput): Built<string> {
-  const built = buildExplorerPayload(input);
-  if (!built.ok) return built;
-  return { ok: true, value: draftHash(explorerToPoster(built.value)) };
 }
 
 export interface CoordinateCheck {

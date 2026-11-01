@@ -28,12 +28,12 @@ export interface LandingState {
   location: LandingLocation;
   latText: string;
   lonText: string;
+  /** The Coordinates switch: latitude and longitude replace the search field. */
   coordsOpen: boolean;
   when: string;
   tz: string;
   mag: number;
-  mapOpen: boolean;
-  mapExpanded: boolean;
+  title: string;
   /** Why the map is not usable; the form works either way. */
   mapProblem: "chunk" | "tiles" | null;
   error: FormError | null;
@@ -47,9 +47,7 @@ export type LandingAction =
   | { type: "when-changed"; when: string }
   | { type: "tz-changed"; tz: string }
   | { type: "mag-changed"; mag: number }
-  | { type: "map-toggled" }
-  | { type: "map-expand-toggled" }
-  | { type: "map-escape" }
+  | { type: "title-changed"; title: string }
   | { type: "map-problem"; problem: "chunk" | "tiles" | null }
   | { type: "error"; error: FormError | null };
 
@@ -74,8 +72,7 @@ export function createInitialState({ now, zone }: { now: Date; zone: string }): 
     when: formatLocalNow(now, zone),
     tz: zone,
     mag: DEFAULTS.magnitudeLimit,
-    mapOpen: false,
-    mapExpanded: false,
+    title: DEFAULTS.title,
     mapProblem: null,
     error: null,
   };
@@ -117,22 +114,22 @@ export function landingReducer(state: LandingState, action: LandingAction): Land
       };
     }
     case "coordinates-toggled":
-      return { ...state, coordsOpen: !state.coordsOpen };
+      // Either way the fields start from the place, so no half-typed text outlives the switch.
+      return {
+        ...state,
+        coordsOpen: !state.coordsOpen,
+        latText: coordText(state.location.lat),
+        lonText: coordText(state.location.lon),
+        error: null,
+      };
     case "when-changed":
       return { ...state, when: action.when, error: null };
     case "tz-changed":
       return { ...state, tz: action.tz, error: null };
+    case "title-changed":
+      return { ...state, title: action.title, error: null };
     case "mag-changed":
       return { ...state, mag: action.mag };
-    case "map-toggled":
-      // Each opening is a fresh try, so a failed load or tile fetch is not remembered.
-      return state.mapOpen
-        ? { ...state, mapOpen: false, mapExpanded: false, mapProblem: null }
-        : { ...state, mapOpen: true, mapProblem: null };
-    case "map-expand-toggled":
-      return state.mapOpen ? { ...state, mapExpanded: !state.mapExpanded } : state;
-    case "map-escape":
-      return state.mapExpanded ? { ...state, mapExpanded: false } : state;
     case "map-problem":
       return state.mapProblem === action.problem ? state : { ...state, mapProblem: action.problem };
     case "error":
@@ -159,6 +156,7 @@ export function toLandingInput(
       when: state.when,
       tz: state.tz,
       mag: state.mag,
+      title: state.title,
     },
   };
 }

@@ -1516,7 +1516,17 @@ select.atlas-form-input option {
 }
 
 /* Landing (013): the place search list sits in the flow, under its field. */
+/* The list floats under the field, so dismissing it never moves the page under a click. */
+.landing-search-box {
+  position: relative;
+}
+
 .landing-results {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  z-index: 10;
   max-height: 14rem;
   overflow-y: auto;
   list-style: none;
@@ -1544,46 +1554,110 @@ select.atlas-form-input option {
   color: var(--color-text-muted);
 }
 
-/* Landing map (013): collapsed to a button, 280 px open (220 on phones), larger when expanded. */
+/* Landing place (013): the field and its switch in one row, the map right under, then the summary. */
+.landing-place {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.landing-place-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.landing-place-field {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+/* Nudged down to the input, past the label, on wide rows; wraps below it on a phone. */
+.landing-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  margin-top: 1.5rem;
+  padding: 0 var(--space-1);
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.landing-switch:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.landing-switch-track {
+  display: inline-flex;
+  align-items: center;
+  width: 2.5rem;
+  height: 1.5rem;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-bg);
+}
+
+.landing-switch-thumb {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: calc(var(--radius-control) / 2);
+  background: var(--color-text-muted);
+  transition: transform var(--motion-duration-short) var(--motion-ease);
+}
+
+.landing-switch[aria-checked="true"] .landing-switch-track {
+  background: var(--color-accent);
+}
+
+.landing-switch[aria-checked="true"] .landing-switch-thumb {
+  background: var(--color-accent-ink);
+  transform: translateX(1rem);
+}
+
 .landing-map {
   display: grid;
   gap: var(--space-2);
 }
 
-.landing-map-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.landing-map-frame {
+/* The box is the map's size always (280 px, 220 on phones), loading or failed, so nothing shifts. */
+.landing-map-box {
   position: relative;
-  display: grid;
-  gap: var(--space-2);
-}
-
-.landing-map-canvas {
   height: 220px;
-  width: 100%;
   border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-panel);
   overflow: hidden;
-  /* Tiles are a light map; keep it from glowing against the dark page. */
   background: var(--color-surface);
 }
 
 @media (min-width: 40rem) {
-  .landing-map-canvas {
+  .landing-map-box {
     height: 280px;
   }
 }
 
-.landing-map-frame[data-expanded="true"] .landing-map-canvas {
-  height: min(32rem, 70vh);
+.landing-map-canvas {
+  height: 100%;
+  width: 100%;
 }
 
-/* Leaflet sets its own stacking; the page's popovers stay above it. */
+.landing-map-notice {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
 .landing-map-canvas.leaflet-container {
   z-index: 0;
   font: inherit;
@@ -1599,36 +1673,21 @@ select.atlas-form-input option {
   text-decoration: underline;
 }
 
-.landing-map-notice {
+.landing-map-tiles-notice {
   color: var(--color-text);
-}
-
-/* Visible only when focused, so the keyboard can pass the map without it adding noise. */
-.landing-map-skip {
-  position: absolute;
-  top: var(--space-2);
-  left: var(--space-2);
-  z-index: 2;
-  transform: translateY(-300%);
-  min-height: 44px;
-  padding: 0 var(--space-3);
-  font: inherit;
-  font-size: 0.875rem;
-  color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-}
-
-.landing-map-skip:focus-visible {
-  transform: none;
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
 }
 
 .landing-selected {
   display: grid;
   gap: var(--space-1);
+}
+
+/* Place and coordinates on one baseline; wraps between them, never inside the coordinates. */
+.landing-selected-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-2);
 }
 
 .landing-selected-name {
@@ -1638,20 +1697,18 @@ select.atlas-form-input option {
   overflow-wrap: anywhere;
 }
 
-.landing-coords {
-  display: grid;
-  gap: var(--space-3);
+/* The coordinates keep the hint style they had on their own line. */
+.landing-selected-coords {
+  font-size: 0.78rem;
+  color: var(--color-text-faint);
+  white-space: nowrap;
 }
 
-.landing-coords-toggle {
-  justify-self: start;
-}
 
-/* Landing actions: the primary action first and centred, the secondary beside it when there is room. */
+/* Landing actions: the primary action centred on its own line, the secondary under it. */
 .landing-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: var(--space-3);
 }

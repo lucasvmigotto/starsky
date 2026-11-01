@@ -7,7 +7,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { JSX, KeyboardEvent } from "react";
 import { t } from "../../i18n/index.ts";
-import { OSM_ATTRIBUTION, type ResolvedPlace, searchPlaces } from "../../lib/geocode.ts";
+import { type ResolvedPlace, searchPlaces } from "../../lib/geocode.ts";
 import {
   type SearchController,
   type SearchFn,
@@ -124,52 +124,53 @@ export default function PlaceSearch({
   return (
     <div className="atlas-form-field landing-search">
       <label htmlFor={`${base}-input`}>{t("landing.search.label")}</label>
-      <input
-        id={`${base}-input`}
-        type="text"
-        role="combobox"
-        className="atlas-form-input"
-        placeholder={t("landing.search.placeholder")}
-        aria-expanded={open}
-        aria-controls={listId}
-        aria-autocomplete="list"
-        aria-activedescendant={open ? optionId(current) : undefined}
-        autoComplete="off"
-        spellCheck={false}
-        value={text}
-        onChange={(event) => {
-          setText(event.target.value);
-          controller.current?.input(event.target.value);
-        }}
-        onKeyDown={onKeyDown}
-        onBlur={() => {
-          setDismissed(true);
-        }}
-      />
-      <ul id={listId} role="listbox" aria-label={t("landing.search.listLabel")} className="landing-results" hidden={!open}>
-        {open &&
-          results.map((place, index) => (
-            <li
-              key={`${String(place.lat)},${String(place.lon)},${place.short}`}
-              id={optionId(index)}
-              role="option"
-              aria-selected={index === current}
-              className="landing-result"
-              onMouseDown={(event) => {
-                event.preventDefault();
-              }}
-              onClick={() => {
-                choose(place);
-              }}
-            >
-              {place.short}
-            </li>
-          ))}
-      </ul>
+      <div className="landing-search-box">
+        <input
+          id={`${base}-input`}
+          type="text"
+          role="combobox"
+          className="atlas-form-input"
+          placeholder={t("landing.search.placeholder")}
+          aria-expanded={open}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={open ? optionId(current) : undefined}
+          autoComplete="off"
+          spellCheck={false}
+          value={text}
+          onChange={(event) => {
+            setText(event.target.value);
+            controller.current?.input(event.target.value);
+          }}
+          onKeyDown={onKeyDown}
+          onBlur={() => {
+            setDismissed(true);
+          }}
+        />
+        <ul id={listId} role="listbox" aria-label={t("landing.search.listLabel")} className="landing-results" hidden={!open}>
+          {open &&
+            results.map((place, index) => (
+              <li
+                key={`${String(place.lat)},${String(place.lon)},${place.short}`}
+                id={optionId(index)}
+                role="option"
+                aria-selected={index === current}
+                className="landing-result"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                }}
+                onClick={() => {
+                  choose(place);
+                }}
+              >
+                {place.short}
+              </li>
+            ))}
+        </ul>
+      </div>
       <p role="status" aria-live="polite" className="atlas-form-hint landing-search-status">
         {statusOf(state)}
       </p>
-      <p className="atlas-form-hint">{t("landing.search.credit", { attribution: OSM_ATTRIBUTION })}</p>
     </div>
   );
 }

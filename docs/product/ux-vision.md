@@ -139,6 +139,7 @@ conflict. **The sky is the product; the poster is an artifact made from it.**
 
 ```
 /                 landing: where do you want to explore the sky from?
+│                 (013: one card, one button, "Explore this sky" → #e=)
 │
 ├── Explorer      #e=<payload>        primary, full-viewport celestial map
 │                 ├── adaptive metadata (one line on load; expanded, compact, pinned)
@@ -266,9 +267,36 @@ protecting (a shared memory) would be silently replaced. Separate prefixes make
 that impossible by construction, and `#s=` stays byte-compatible with every
 link already in the wild.
 
-**The landing is not a form.** It is the choice: *open a shared sky* (paste a
-link) or *map a moment* (Studio). A visitor with a link — P1 — must never be
-made to fill in a form to see it.
+**The landing asks one question** (013-location-first, superseding the choice
+of surfaces): *where do you want to explore the sky from?* Its single action is
+**Explore this sky**, which opens `#e=`. The flow is landing → Explorer → export;
+a poster is made from the Explorer, never from the landing. A visitor with a
+link — P1 — never sees the landing at all.
+
+```
+┌ Where do you want to explore the sky from? ───────────────┐
+│ Search for a place                                         │
+│ [ City, address or landmark          ]   (o) Coordinates   │
+│ ┌────────────────────────────────────────────────────────┐ │
+│ │ map, 280 px (220 on phones), always shown              │ │
+│ └────────────────────────────────────────────────────────┘ │
+│ Place search by Nominatim, © OpenStreetMap contributors.   │
+│ Click the map or drag the marker to set the place.         │
+│ Exploring from                                             │
+│ Newark • 40.7357°N, 74.1724°W                              │
+│ Title (optional)                                           │
+│ [ Date and time          ] [ Timezone          ] [Detect]  │
+│ > Advanced   (limiting magnitude only)                     │
+│                    [ Explore this sky ]                    │
+└────────────────────────────────────────────────────────────┘
+Just browsing? Load a random sky.
+```
+
+With the Coordinates switch on, Latitude and Longitude replace the search field
+in place; the map stays and follows them. The summary reads
+`<place> • <coordinates>` on one line, the coordinates alone for a dropped pin
+(announced as "Dropped pin"). If tiles or Leaflet fail, the map's own box says so
+and points to the switch.
 
 **Terminology** uses the brief's glossary unchanged: **poster**, **place**,
 **coordinates**, **observation**, **projection**, **shape**, **RenderOptions**.
@@ -756,7 +784,6 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.browse` | Just browsing? |
 | `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
 | `landing.explore` | Explore this sky |
-| `landing.poster` | Make a poster instead |
 | `landing.error.when` | Pick a date and time for the sky. |
 | `landing.error.timezone` | Unknown timezone {zone}. Use an IANA name like "America/New_York". |
 | `landing.tz.label` | Timezone |
@@ -770,19 +797,14 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.selected.pin` | Dropped pin |
 | `landing.selected.typed` | Typed coordinates |
 | `landing.map.label` | Map for choosing a place |
-| `landing.map.show` | Show map |
-| `landing.map.hide` | Hide map |
-| `landing.map.expand` | Expand map |
-| `landing.map.collapse` | Shrink map |
 | `landing.map.loading` | Loading the map… |
-| `landing.map.skip` | Skip the map |
 | `landing.map.hint` | Click the map or drag the marker to set the place. |
 | `landing.map.marker` | Observing place |
 | `landing.map.attribution` | © {osm} contributors · {report} |
 | `landing.map.osm` | OpenStreetMap |
 | `landing.map.report` | Report a problem |
-| `landing.map.tilesFailed` | The map tiles could not be loaded. Search and coordinates still work. |
-| `landing.map.chunkFailed` | The map could not be loaded. Search and coordinates still work. |
+| `landing.map.tilesFailed` | The map tiles could not be loaded. Search still works, or turn on Coordinates to type a place. |
+| `landing.map.chunkFailed` | The map could not be loaded. Search still works, or turn on Coordinates to type a place. |
 | `landing.search.label` | Search for a place |
 | `landing.search.placeholder` | City, address or landmark |
 | `landing.search.credit` | Place search by Nominatim, {attribution}. |

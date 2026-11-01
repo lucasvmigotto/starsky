@@ -180,11 +180,6 @@ describe("PlaceSearch", () => {
     expect(h.signals[0]?.aborted).toBe(true);
   });
 
-  it("shows the Nominatim credit", () => {
-    mount([]);
-    expect(screen.getByText(/Place search by Nominatim, © OpenStreetMap contributors/)).toBeDefined();
-  });
-
   it("follows the page when the place changes elsewhere", () => {
     const { rerender } = render(
       <PlaceSearch fieldText="Paris" debounceMs={5} search={() => Promise.resolve([])} onChoose={() => undefined} />,

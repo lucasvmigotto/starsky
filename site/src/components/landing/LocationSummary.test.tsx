@@ -13,22 +13,36 @@ afterEach(() => {
 });
 
 describe("LocationSummary", () => {
-  it("shows a searched place by name with its coordinates", () => {
+  it("is one line: the name, a bullet and the coordinates, with the label above", () => {
     render(<LocationSummary location={{ lat: 48.8584, lon: 2.2945, place: "Eiffel Tower, Paris", source: "search" }} />);
     const status = screen.getByRole("status");
     expect(status.textContent).toContain("Exploring from");
-    expect(status.textContent).toContain("Eiffel Tower, Paris");
-    expect(status.textContent).toContain("48.8584°N, 2.2945°E");
+    const line = status.querySelector(".landing-selected-line");
+    expect(line?.querySelector(".landing-selected-name")?.textContent).toBe("Eiffel Tower, Paris");
+    const coords = line?.querySelector(".landing-selected-coords");
+    expect(coords?.textContent).toBe("• 48.8584°N, 2.2945°E");
+    expect(coords?.querySelector("[aria-hidden=true]")?.textContent).toBe("• ");
   });
 
-  it("calls a dropped pin 'Dropped pin' and formats its coordinates", () => {
+  it("reads naturally to a screen reader: the bullet is hidden and a comma stands in", () => {
+    render(<LocationSummary location={{ lat: 1, lon: 2, place: "Paris", source: "search" }} />);
+    const line = document.querySelector(".landing-selected-line");
+    expect(line?.querySelector(".sr-only")?.textContent).toBe(", ");
+    expect(line?.textContent).toContain("Paris, ");
+    expect(document.querySelector("[aria-hidden=true]")?.textContent).toBe("• ");
+  });
+
+  it("shows the coordinates alone, with no bullet, for a dropped pin, and names it for screen readers", () => {
     render(<LocationSummary location={{ lat: -33.8688, lon: 151.2093, place: null, source: "pin" }} />);
-    expect(screen.getByRole("status").textContent).toContain("Dropped pin");
-    expect(screen.getByRole("status").textContent).toContain("33.8688°S, 151.2093°E");
+    const line = document.querySelector(".landing-selected-line");
+    expect(line?.querySelector(".landing-selected-name")).toBeNull();
+    expect(line?.querySelector("[aria-hidden=true]")).toBeNull();
+    expect(line?.querySelector(".landing-selected-coords")?.textContent).toBe("33.8688°S, 151.2093°E");
+    expect(line?.querySelector(".sr-only")?.textContent).toBe("Dropped pin, ");
   });
 
-  it("calls typed coordinates what they are", () => {
+  it("calls typed coordinates what they are, for screen readers", () => {
     render(<LocationSummary location={{ lat: 1, lon: 2, place: null, source: "typed" }} />);
-    expect(screen.getByRole("status").textContent).toContain("Typed coordinates");
+    expect(document.querySelector(".sr-only")?.textContent).toBe("Typed coordinates, ");
   });
 });

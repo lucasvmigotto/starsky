@@ -5,8 +5,13 @@
  */
 import type { JSX } from "react";
 import { t } from "../../i18n/index.ts";
+import { MAX_TEXT_CHARS } from "../../lib/landing/payload.ts";
 
 interface Props {
+  title: string;
+  /** Why the title was refused, shown beside it. */
+  titleError: string | null;
+  onTitle: (title: string) => void;
   when: string;
   tz: string;
   onWhen: (when: string) => void;
@@ -14,8 +19,31 @@ interface Props {
   onDetect: () => void;
 }
 
-export default function MomentFields({ when, tz, onWhen, onTz, onDetect }: Props): JSX.Element {
+export default function MomentFields({ title, titleError, onTitle, when, tz, onWhen, onTz, onDetect }: Props): JSX.Element {
   return (
+    <>
+      <div className="atlas-form-field">
+        <label htmlFor="landing-title">{t("studio.title.label")}</label>
+        <input
+          id="landing-title"
+          type="text"
+          className="atlas-form-input"
+          value={title}
+          maxLength={MAX_TEXT_CHARS}
+          placeholder={t("studio.title.placeholder")}
+          aria-invalid={titleError === null ? undefined : true}
+          aria-describedby={titleError === null ? undefined : "landing-title-error"}
+          autoComplete="off"
+          onChange={(event) => {
+            onTitle(event.target.value);
+          }}
+        />
+        {titleError !== null && (
+          <p id="landing-title-error" role="alert" className="atlas-form-error">
+            {titleError}
+          </p>
+        )}
+      </div>
     <div className="atlas-form-pair">
       <div className="atlas-form-field">
         <label htmlFor="landing-when">{t("landing.moment.legend")}</label>
@@ -50,5 +78,6 @@ export default function MomentFields({ when, tz, onWhen, onTz, onDetect }: Props
         </div>
       </div>
     </div>
+    </>
   );
 }
