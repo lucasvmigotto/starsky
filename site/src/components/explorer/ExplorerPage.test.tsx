@@ -56,14 +56,21 @@ class StubResizeObserver {
 }
 
 const realFetch = globalThis.fetch;
+const realFonts = Object.getOwnPropertyDescriptor(document, "fonts");
 
 beforeEach(() => {
+  Object.defineProperty(document, "fonts", {
+    configurable: true,
+    value: { ready: Promise.resolve(), check: () => true, load: () => Promise.resolve([]) },
+  });
   resetSceneCache();
   (globalThis as unknown as Record<string, unknown>)["ResizeObserver"] = StubResizeObserver;
 });
 
 afterEach(() => {
   cleanup();
+  if (realFonts) Object.defineProperty(document, "fonts", realFonts);
+  else Reflect.deleteProperty(document, "fonts");
   globalThis.fetch = realFetch;
   window.location.hash = "";
 });

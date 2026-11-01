@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { JSX, RefObject } from "react";
 import { t } from "../../i18n/index.ts";
+import { explorer } from "../../design/tokens.ts";
 import { ExplorerController } from "../../lib/explorer/controller.ts";
 import { layersFromPayload } from "../../lib/explorer/layers.ts";
 import { Canvas2dRenderer } from "../../lib/explorer/render/canvas2d.ts";
@@ -139,6 +140,15 @@ export default function ExplorerCanvas({
     });
     setAnnouncement(t("explorer.announced.ready"));
     onController?.(controller);
+
+    // Canvas text never triggers a webfont load. Ask for it, then redraw once
+    // so labels drawn in the fallback face are replaced; no cost per frame.
+    void document.fonts.load(explorer.font.label).then(
+      () => {
+        controller.invalidate();
+      },
+      () => undefined,
+    );
 
     return () => {
       onController?.(null);

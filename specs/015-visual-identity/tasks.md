@@ -2,7 +2,7 @@
 
 Feature: `015-visual-identity` | Branch: `feat/015-visual-identity` | Input: `specs/015-visual-identity/spec.md`
 
-- [ ] T001 FR-001 bundled Inter, body and canvas label stacks
+- [x] T001 FR-001 bundled Inter, body and canvas label stacks
 - [ ] T002 FR-002 icon module and icon buttons (lock, toolbar, close)
 - [x] T002b FR-008 tooltip reads "<Name> • Magnitude <value>", no horizon text
 - [ ] T003 FR-003 list shows names only

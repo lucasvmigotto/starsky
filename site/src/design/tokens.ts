@@ -86,10 +86,11 @@ export const explorer = {
     glow: 0.25,
     halo: 0.75,
   },
+  /** Same stack as `--font-body`; the canvas redraws once after it loads. */
   font: {
-    label: "12px system-ui, -apple-system, 'Segoe UI', sans-serif",
-    labelSelected: "600 12px system-ui, -apple-system, 'Segoe UI', sans-serif",
-    cardinal: "600 13px system-ui, -apple-system, 'Segoe UI', sans-serif",
+    label: "12px 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif",
+    labelSelected: "600 12px 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif",
+    cardinal: "600 13px 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif",
   },
   /** Stroke widths in CSS pixels. */
   width: { line: 1, lineSelected: 2, horizon: 1.25, grid: 1, ring: 2, hoverRing: 1 },
