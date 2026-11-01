@@ -1,6 +1,6 @@
 # 017 — Hardening and docs
 
-Feature: `017-hardening` | Status: In progress | Depends: 009–016 | Issue: #55
+Feature: `017-hardening` | Status: Implemented | Depends: 009–016 | Issue: #55
 
 ## Why
 
