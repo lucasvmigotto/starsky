@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
-import { geocodePlace, shortPlaceName } from "./geocode.ts";
+import { geocodePlace, searchPlaces, shortPlaceName } from "./geocode.ts";
 
 describe("shortPlaceName", () => {
   it("prefers name + city + state", () => {
@@ -97,3 +97,49 @@ async function rejectionOf(promise: Promise<unknown>): Promise<string> {
   }
   throw new Error("expected the promise to reject, but it resolved");
 }
+
+describe("searchPlaces", () => {
+  afterEach(() => {
+    mock.restore();
+  });
+
+  const items = [
+    { lat: "48.8584", lon: "2.2945", display_name: "Eiffel Tower, Paris", name: "Eiffel Tower", address: { city: "Paris", country: "France" } },
+    { lat: "bad", lon: "2", display_name: "Broken" },
+    { lat: "35.6", lon: "139.7", display_name: "Tokyo, Japan" },
+  ];
+
+  it("returns every usable result, asking for several, with the caller's signal", async () => {
+    const fetchMock = spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(items),
+    } as Response);
+    const signal = new AbortController().signal;
+    const found = await searchPlaces("eiffel", { signal });
+    expect(found.map((p) => p.short)).toEqual(["Eiffel Tower, Paris, France", "Tokyo, Japan"]);
+    expect(found[0]).toMatchObject({ lat: 48.8584, lon: 2.2945 });
+    const firstArg: unknown = fetchMock.mock.calls[0]?.[0];
+    const url = typeof firstArg === "string" ? firstArg : "";
+    expect(url).toContain("q=eiffel");
+    expect(url).toContain("limit=5");
+    expect(url).toContain("addressdetails=1");
+    expect(fetchMock.mock.calls[0]?.[1]?.signal).toBe(signal);
+  });
+
+  it("returns an empty list when nothing matches", async () => {
+    spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, json: () => Promise.resolve([]) } as Response);
+    expect(await searchPlaces("zzzz")).toEqual([]);
+  });
+
+  it("rejects on an HTTP failure and on a network failure", async () => {
+    spyOn(globalThis, "fetch").mockResolvedValueOnce({ ok: false, status: 503 } as Response);
+    expect(await rejectionOf(searchPlaces("paris"))).toMatch(/HTTP 503/);
+    spyOn(globalThis, "fetch").mockRejectedValueOnce(new TypeError("offline"));
+    expect(await rejectionOf(searchPlaces("paris"))).toMatch(/failed/);
+  });
+
+  it("lets an abort through as an abort", async () => {
+    spyOn(globalThis, "fetch").mockRejectedValueOnce(new DOMException("aborted", "AbortError"));
+    expect(await rejectionOf(searchPlaces("paris"))).toBe("aborted");
+  });
+});

@@ -115,6 +115,7 @@ describe("copy", () => {
     // `viewer.canvasHint`, `viewer.viewControls`, `viewer.zoomIn`, `viewer.zoomOut` and
     // `viewer.resetView` retire.
     // 178 → 177 for the footer (FR-011): `footer.source` retires; the version is the link.
-    expect(copyKeys().length).toBe(177);
+    // 177 → 186 for the landing's place search (013-location-first).
+    expect(copyKeys().length).toBe(186);
   });
 });

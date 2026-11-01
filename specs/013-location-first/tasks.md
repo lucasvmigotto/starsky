@@ -3,7 +3,7 @@
 Feature: `013-location-first` | Branch: `feat/013-location-first` | Input: `specs/013-location-first/spec.md`
 
 - [x] T001 Landing state reducer and pure payload builders (`#e=`, `#studio=`) with tests
-- [ ] T002 Search combobox with debounce, cancel and failure states, tested with a stubbed geocoder
+- [x] T002 Search combobox with debounce, cancel and failure states, tested with a stubbed geocoder
 - [ ] T003 Lazy Leaflet map: tiles per ADR-0008, attribution, click and draggable marker, expand
 - [ ] T004 Coordinates toggle and validation; map-failure fallback
 - [ ] T005 Moment row and Advanced (limiting magnitude); remove poster options from the landing

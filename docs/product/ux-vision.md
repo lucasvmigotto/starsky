@@ -757,6 +757,15 @@ Every key gets a stable id for `frontend:build` to wire i18n from.
 | `landing.render.glow` | Glow intensity |
 | `landing.browse` | Just browsing? |
 | `landing.browse.action` | Load a random sky → renders `viewer.randomSky` |
+| `landing.search.label` | Search for a place |
+| `landing.search.placeholder` | City, address or landmark |
+| `landing.search.credit` | Place search by Nominatim, {attribution}. |
+| `landing.search.listLabel` | Matching places |
+| `landing.search.searching` | Searching… |
+| `landing.search.results` | {count} places found. Use the arrow keys to choose one. |
+| `landing.search.resultsOne` | 1 place found. Use the arrow keys to choose it. |
+| `landing.search.empty` | No place found for “{query}”. Try another name, or use the map or coordinates. |
+| `landing.search.error` | Place search is unavailable right now. Use the map or coordinates instead. |
 
 **Viewer · shell**
 
