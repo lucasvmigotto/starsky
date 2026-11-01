@@ -403,6 +403,90 @@ describe("starAt (hover tooltip)", () => {
   });
 });
 
+describe("tooltipAt (019: star or constellation)", () => {
+  // "Tst" runs from HIP 2 (10, 20) to HIP 3 (10, 24); HIP 1 sits alone at (0, 0).
+  function midSegment(c: ExplorerCamera): { x: number; y: number } {
+    const a = project(c, dirAt(10, 20));
+    const b = project(c, dirAt(10, 24));
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + 2 };
+  }
+
+  it("gives a star first, anchored where it is drawn", () => {
+    const { controller, flush } = setup();
+    flush();
+    const star = project(controller.getCamera(), dirAt(10, 20));
+    const hit = controller.tooltipAt(star.x + 3, star.y + 2);
+    expect(hit?.id).toBe("HIP:2");
+    expect(hit?.x).toBeCloseTo(star.x, 3);
+    expect(hit?.y).toBeCloseTo(star.y, 3);
+  });
+
+  it("gives the constellation on its line where no star is, anchored at the pointer", () => {
+    const { controller, flush } = setup();
+    flush();
+    const p = midSegment(controller.getCamera());
+    expect(controller.tooltipAt(p.x, p.y)).toEqual({ id: "CON:Tst", x: p.x, y: p.y });
+  });
+
+  it("gives nothing on empty sky", () => {
+    const { controller, flush } = setup();
+    flush();
+    expect(controller.tooltipAt(30, 30)).toBeNull();
+  });
+
+  it("offers only what a hover can light: no lines and no label there, no constellation", () => {
+    const { controller, flush } = setup();
+    controller.setLayer("constellationLines", false);
+    controller.setLayer("constellationLabels", false);
+    flush();
+    const p = midSegment(controller.getCamera());
+    expect(controller.tooltipAt(p.x, p.y)).toBeNull();
+  });
+
+  it("offers no figure the horizon layer hides", () => {
+    const { scene } = sceneOf(
+      [
+        { hip: 1, dir: dirAt(-5, 0), mag: 1 },
+        { hip: 2, dir: dirAt(-5, 10), mag: 2 },
+      ],
+      [["Low", "Low", 1, 2]],
+    );
+    const queue: (() => void)[] = [];
+    const controller = new ExplorerController({
+      scene,
+      ctx: CTX,
+      camera: horizonCamera(),
+      magLimit: 6.5,
+      viewport: VIEWPORT,
+      requestFrame: (cb) => queue.push(cb),
+      draw: () => undefined,
+    });
+    queue.splice(0).forEach((cb) => {
+      cb();
+    });
+    const a = project(controller.getCamera(), dirAt(-5, 0));
+    const b = project(controller.getCamera(), dirAt(-5, 10));
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    expect(controller.tooltipAt(mid.x, mid.y)?.id).toBe("CON:Low");
+    controller.setLayer("below", "hidden");
+    queue.splice(0).forEach((cb) => {
+      cb();
+    });
+    expect(controller.tooltipAt(mid.x, mid.y)).toBeNull();
+  });
+
+  it("asks for no frame and changes nothing, not even the hover highlight", () => {
+    const { controller, queue, flush, changes } = setup();
+    flush();
+    const p = midSegment(controller.getCamera());
+    for (let i = 0; i < 10; i++) controller.tooltipAt(p.x + i, p.y);
+    expect(queue).toHaveLength(0);
+    expect(changes).toEqual([]);
+    expect(controller.hover.id).toBeNull();
+  });
+});
+
+
 
 describe("animated reset (FR-012)", () => {
   function animated(reduced = false, camera: ExplorerCamera = horizonCamera(30)) {

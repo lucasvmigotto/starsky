@@ -346,6 +346,7 @@ export const roadmapPt: PageContent = {
           ["location-first (013)", "Implementado", "Página inicial com mapa, link #c=."],
           ["square-fill (016)", "Implementado", "O pôster quadrado preenche o quadrado."],
           ["pt-br (018)", "Implementado", "Interface em en-US e pt-BR com seletor no rodapé; idioma do pôster escolhido no Estúdio e guardado no link (BCR-0015)."],
+          ["constellation-tooltip (019)", "Implementado", "Dica ao pousar o cursor numa constelação e a lista de estrelas da figura no inspetor."],
           ["site-delivery (008)", "Parcial", "Deploy, orçamentos e portões ligados; prefixos versionados, smoke test e simulações em aberto."],
           ["hardening (017)", "Parcial", "Em andamento: passes de acessibilidade, falhas, desempenho e estabilidade, indexação estrita, docs."],
           ["Promoção de dev para main", "Planejado — ainda não implementado.", "Aguardando o aval do dono."],
@@ -388,6 +389,8 @@ export const explorerPt: PageContent = {
       heading: "Estrelas, dicas e o inspetor",
       paragraphs: [
         "Pousar o cursor numa estrela por cerca de um segundo e meio mostra uma dica. Selecionar uma estrela ou uma constelação abre o inspetor: um painel à direita com uma aba em telas grandes, uma folha inferior em celulares. Uma linha-resumo do lugar e do momento fica sempre visível; ela se expande durante a atividade.",
+        "Pousar o cursor nas linhas ou no nome de uma constelação pelo mesmo tempo mostra o nome dela, quantas estrelas formam a figura e até três das suas estrelas com nome, da mais brilhante para a menos, por exemplo \"Orion • 22 estrelas\" sobre \"Rigel, Betelgeuse, Bellatrix +19\". Uma estrela sob o cursor mantém a própria dica, e uma figura que não está desenhada não reage ao cursor. As dicas pedem mouse ou caneta; numa tela de toque, toque.",
+        "O inspetor de uma constelação selecionada lista todas as estrelas da figura, da mais brilhante para a menos, pelo nome ou número HIP com a magnitude, e diz por escrito quais estão abaixo do horizonte. Escolher uma seleciona essa estrela. Nomes de estrelas e constelações nunca são traduzidos.",
       ],
     },
     {

@@ -136,6 +136,8 @@ describe("copy", () => {
     // `.projection.stereographic`, `.projection.fisheye`).
     // 227 → 235 for the privacy page: `landing.privacy` and `.osm` retire, and
     // `landing.privacy.link` plus nine `site.privacy.*` keys arrive.
-    expect(copyKeys().length).toBe(235);
+    // 235 → 241 for the constellation tooltip and star list (019): `explorer.tooltip.constellation`,
+    // `.constellationOne`, `.namedMore` and `explorer.members.title`, `.detail`, `.detailBelow`.
+    expect(copyKeys().length).toBe(241);
   });
 });

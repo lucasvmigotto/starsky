@@ -4,17 +4,27 @@
  */
 import { type ExplorerCamera, lookAt } from "../../lib/sky/camera.ts";
 import { ExplorerController } from "../../lib/explorer/controller.ts";
-import { CTX, dirAt, sceneOf } from "../../lib/explorer/fixture.ts";
+import { CTX, type PlacedStar, dirAt, sceneOf } from "../../lib/explorer/fixture.ts";
+import type { SegmentRow } from "../../lib/skymodel.ts";
 import { at } from "../../lib/testing.ts";
 
-export function makeController(fovDeg = 60) {
-  const { scene } = sceneOf(
-    [
-      { hip: 1, dir: dirAt(0, 0), mag: 1 },
-      { hip: 2, dir: dirAt(10, 20), mag: 2 },
-    ],
-    [["Tst", "Test", 1, 2]],
-  );
+export interface HarnessSky {
+  stars: readonly PlacedStar[];
+  segments: readonly SegmentRow[];
+  names?: readonly (readonly [number, string])[];
+}
+
+/** HIP 1 at the view's centre and HIP 2 up and to the right, joined as "Test". */
+const DEFAULT_SKY: HarnessSky = {
+  stars: [
+    { hip: 1, dir: dirAt(0, 0), mag: 1 },
+    { hip: 2, dir: dirAt(10, 20), mag: 2 },
+  ],
+  segments: [["Tst", "Test", 1, 2]],
+};
+
+export function makeController(fovDeg = 60, sky: HarnessSky = DEFAULT_SKY) {
+  const { scene } = sceneOf(sky.stars, sky.segments, sky.names);
   const camera: ExplorerCamera = { orientation: lookAt(dirAt(0, 0), dirAt(90, 0)), fovDeg };
   const frames: (() => void)[] = [];
   const timers: { callback: () => void; cleared: boolean }[] = [];

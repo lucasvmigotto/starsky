@@ -1,9 +1,11 @@
 /**
  * The hover tooltip's two pure parts: when it opens (a rest timer that knows
  * nothing about the page) and where it goes. Picking and drawing live elsewhere.
+ * A target is any id, a star (`HIP:<n>`) or a constellation (`CON:<abbr>`); the
+ * caller decides which one is under the pointer, a star first (019).
  */
 
-/** A pointer must rest on a star this long before the tooltip shows. */
+/** A pointer must rest on a star or a constellation this long before the tooltip shows. */
 export const HOVER_DELAY_MS = 1500;
 
 export interface HoverOptions {
@@ -14,7 +16,7 @@ export interface HoverOptions {
 
 export class HoverMachine {
   private shown: string | null = null;
-  /** The star the pointer is resting on; it keeps the timer from restarting for tiny moves. */
+  /** The target the pointer is resting on; it keeps the timer from restarting for moves on it. */
   private candidate: string | null = null;
   private handle: number | null = null;
   private readonly delayMs: number;
@@ -24,12 +26,12 @@ export class HoverMachine {
     this.delayMs = options.delayMs ?? HOVER_DELAY_MS;
   }
 
-  /** The star whose tooltip is showing, or null. */
+  /** The star or constellation whose tooltip is showing, or null. */
   get open(): string | null {
     return this.shown;
   }
 
-  /** The pointer is over this star, or over none (null). Call it on every move. */
+  /** The pointer is over this target, or over none (null). Call it on every move. */
   over(id: string | null): void {
     if (id === this.candidate) return;
     this.cancelTimer();
@@ -52,7 +54,7 @@ export class HoverMachine {
 
   /**
    * Escape. Returns true when a tooltip was open, so the key is spent on it. It
-   * does not reopen for the same star; the pointer has to move to another one.
+   * does not reopen for the same target; the pointer has to move to another one.
    */
   escape(): boolean {
     this.cancelTimer();
@@ -104,12 +106,13 @@ const MARGIN_PX = 8;
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
 
 /**
- * Top-left corner for a tooltip beside a star: right of it, else left, below or
- * above; always inside the bounds and clear of the star. In a viewport too small
- * for any side it stays inside and gives up clearing the star.
+ * Top-left corner for a tooltip beside a point (a star, or the pointer over a
+ * constellation): right of it, else left, below or above; always inside the
+ * bounds and clear of the point. In a viewport too small for any side it stays
+ * inside and gives up clearing the point.
  */
 export function placeTooltip(
-  star: { x: number; y: number },
+  anchor: { x: number; y: number },
   size: Size,
   bounds: Bounds,
 ): { left: number; top: number } {
@@ -117,17 +120,17 @@ export function placeTooltip(
   const maxTop = bounds.height - size.height;
   const across = (x: number): number => clamp(x, MARGIN_PX, Math.max(MARGIN_PX, maxLeft - MARGIN_PX));
   const down = (y: number): number => clamp(y, MARGIN_PX, Math.max(MARGIN_PX, maxTop - MARGIN_PX));
-  const right = { left: star.x + GAP_PX, top: down(star.y - size.height / 2), fits: star.x + GAP_PX <= maxLeft - MARGIN_PX };
+  const right = { left: anchor.x + GAP_PX, top: down(anchor.y - size.height / 2), fits: anchor.x + GAP_PX <= maxLeft - MARGIN_PX };
   const left = {
-    left: star.x - GAP_PX - size.width,
-    top: down(star.y - size.height / 2),
-    fits: star.x - GAP_PX - size.width >= MARGIN_PX,
+    left: anchor.x - GAP_PX - size.width,
+    top: down(anchor.y - size.height / 2),
+    fits: anchor.x - GAP_PX - size.width >= MARGIN_PX,
   };
-  const below = { left: across(star.x - size.width / 2), top: star.y + GAP_PX, fits: star.y + GAP_PX <= maxTop - MARGIN_PX };
+  const below = { left: across(anchor.x - size.width / 2), top: anchor.y + GAP_PX, fits: anchor.y + GAP_PX <= maxTop - MARGIN_PX };
   const above = {
-    left: across(star.x - size.width / 2),
-    top: star.y - GAP_PX - size.height,
-    fits: star.y - GAP_PX - size.height >= MARGIN_PX,
+    left: across(anchor.x - size.width / 2),
+    top: anchor.y - GAP_PX - size.height,
+    fits: anchor.y - GAP_PX - size.height >= MARGIN_PX,
   };
   const chosen = [right, left, below, above].find((c) => c.fits);
   if (chosen) return { left: chosen.left, top: chosen.top };
