@@ -1,7 +1,8 @@
 # docs/site — truth table (dev-only, not shipped)
 
 Built 2026-10-04 on `docs/site` from code @ `0580de6` + refreshed
-`docs/product/brief.md`. Every behavior claim on the site must trace to a
+`docs/product/brief.md`; refreshed 2026-11-01 (017 B1) to the product as built
+(features 009–016: Explorer, Studio, landing, four link fragments). Every behavior claim on the site must trace to a
 row below. Statuses: Implemented / Partial / Planned / N/A.
 
 ## Features and stories
@@ -20,7 +21,9 @@ row below. Statuses: Implemented / Partial / Planned / N/A.
 | `starsky catalog` / `cache warm` data build | Implemented | `src/starsky/cli.py:26-101` |
 | R2 deploy + fitness gates (budgets, secrets, no-server, i18n, conformance) | Implemented (flat layout; versioned prefixes Planned) | `site_r2.yml:199-235`, `site_ci.yml:76-105`, `check_bundle_budget.sh` |
 | Design system (tokens, atlas classes, i18n keys) | Implemented | `specs/000-design-system/tasks.md` 39/39 |
-| Studio `#studio=` build-and-tune surface | Planned | `specs/006-viewer/tasks.md:81-108` all open; no `Studio*.tsx` in `site/src` |
+| Studio `#studio=` composition, export, story layout | Implemented | `site/src/components/studio/StudioPage.tsx`, `site/src/lib/studio/draft.ts`, `site/src/lib/render/format.ts` |
+| Explorer `#e=` navigable sky | Implemented | `site/src/lib/explorer/`, `site/src/lib/sky/` |
+| Landing `#c=` location-first form, OSM search and map | Implemented | `site/src/components/LandingPage.tsx`, `site/src/lib/landing/` |
 | `pt-BR` locale for the product | Planned | D17; `en-US.ts:1-10` "exactly one locale here" |
 | Versioned R2 prefixes + manifest + rollback drill | Planned | `specs/008-site-delivery/tasks.md` T003–T006/T018/T021 open |
 | REST API / `contracts/openapi.yaml` | N/A | no server exists (ADR-0001) |
@@ -33,7 +36,8 @@ row below. Statuses: Implemented / Partial / Planned / N/A.
 | Overview | brief.md + README.md:1-20 | Implemented |
 | Install / quickstart | README.md:24-49 + `--help` output (generated, never hand-written) | Implemented |
 | CLI reference | `python -m starsky --help` output (generated) | Implemented |
-| Viewer + export guide | `ExportControls.tsx`, `ViewerPage.tsx`, e2e journeys | Implemented |
+| Explorer / Landing and links / Poster Studio | `site/src/lib/{explorer,landing,studio}/`, brief.md, domain-model.md | Implemented |
+| Poster page (route id `viewer`) | `ViewerPage.tsx`, `ExportControls.tsx`, BCR-0013 | Implemented |
 | Concepts / glossary | brief.md Glossary (shared vocabulary) | Implemented |
 | Architecture + ADRs | `architecture.md`, `adr/0001-0005` | Implemented |
 | Delivery / operations | `delivery.md` (honest flat-layout rollback) | Partial (R2 deploy blocked on token scope) |

@@ -6,9 +6,12 @@ import {
   cliEn,
   conceptsEn,
   deliveryEn,
+  explorerEn,
   installEn,
+  linksEn,
   overviewEn,
   roadmapEn,
+  studioEn,
   viewerEn,
 } from "./en.ts";
 import {
@@ -16,9 +19,12 @@ import {
   cliPt,
   conceptsPt,
   deliveryPt,
+  explorerPt,
   installPt,
+  linksPt,
   overviewPt,
   roadmapPt,
+  studioPt,
   viewerPt,
 } from "./pt.ts";
 
@@ -38,6 +44,9 @@ export const pages: Page[] = [
   pair("/", "/", "Implemented", "", overviewEn, overviewPt),
   pair("install", "/install", "Implemented", "", installEn, installPt),
   pair("cli", "/cli", "Implemented", "", cliEn, cliPt),
+  pair("links", "/links", "Implemented", "", linksEn, linksPt),
+  pair("explorer", "/explorer", "Implemented", "", explorerEn, explorerPt),
+  pair("studio", "/studio", "Implemented", "", studioEn, studioPt),
   pair("viewer", "/viewer", "Implemented", "", viewerEn, viewerPt),
   pair("concepts", "/concepts", "Implemented", "", conceptsEn, conceptsPt),
   pair(
