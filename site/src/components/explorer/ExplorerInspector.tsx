@@ -7,6 +7,7 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import type { JSX, ReactNode } from "react";
 import { t } from "../../i18n/index.ts";
+import { Icon } from "../icons.tsx";
 import {
   type ConstellationDetail,
   type GroupedConstellation,
@@ -227,8 +228,14 @@ function ExplorerInspector({
             )}
             <h2 className="explorer-inspector-title">{title}</h2>
           </div>
-          <button type="button" className="explorer-close" onClick={onClose}>
-            {t("explorer.inspector.close")}
+          <button
+            type="button"
+            className="explorer-close explorer-icon-button"
+            aria-label={t("explorer.inspector.close")}
+            title={t("explorer.inspector.close")}
+            onClick={onClose}
+          >
+            <Icon name="close" />
           </button>
         </div>
         {detail === null ? (

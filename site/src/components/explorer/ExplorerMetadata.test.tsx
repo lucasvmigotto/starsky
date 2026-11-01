@@ -113,6 +113,16 @@ describe("ExplorerMetadata", () => {
     expect(screen.getByRole("button", { name: "Keep details open" })).toBeTruthy();
   });
 
+  it("shows the pin as a lock icon, open when unpinned and closed when pinned", () => {
+    mount();
+    const pin = screen.getByRole("button", { name: "Keep details open" });
+    expect(pin.getAttribute("title")).toBe("Keep details open");
+    expect(pin.textContent).toBe("");
+    expect(pin.querySelector("svg")?.getAttribute("data-icon")).toBe("lock-open");
+    fireEvent.click(pin);
+    expect(pin.querySelector("svg")?.getAttribute("data-icon")).toBe("lock-closed");
+  });
+
   it("pins on request and stays pinned through idle time", () => {
     const { clock, machine } = mount();
     const pin = screen.getByRole("button", { name: "Keep details open" });

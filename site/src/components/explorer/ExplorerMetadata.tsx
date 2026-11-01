@@ -7,6 +7,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { JSX, ReactNode } from "react";
 import { t } from "../../i18n/index.ts";
+import { Icon } from "../icons.tsx";
 import { MetadataMachine, type MomentInput, formatMoment } from "../../lib/explorer/metadata.ts";
 
 interface Props {
@@ -74,14 +75,15 @@ export default function ExplorerMetadata({ moment, machine: provided, children }
       </div>
       <button
         type="button"
-        className="explorer-pin"
+        className="explorer-pin explorer-icon-button"
+        aria-label={t("explorer.moment.pin")}
         aria-pressed={pinned}
         title={t("explorer.moment.pin")}
         onClick={() => {
           machine.togglePin();
         }}
       >
-        {t("explorer.moment.pin")}
+        <Icon name={pinned ? "lock-closed" : "lock-open"} />
       </button>
       {children}
     </section>

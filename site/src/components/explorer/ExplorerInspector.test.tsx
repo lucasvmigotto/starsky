@@ -235,7 +235,11 @@ describe("ExplorerInspector, open and closed", () => {
     const handle = screen.getByRole("button", { name: /Hide details/ });
     expect(handle.getAttribute("aria-expanded")).toBe("true");
     fireEvent.click(handle);
-    fireEvent.click(screen.getByRole("button", { name: "Close inspector" }));
+    const close = screen.getByRole("button", { name: "Close inspector" });
+    expect(close.textContent).toBe("");
+    expect(close.getAttribute("title")).toBe("Close inspector");
+    expect(close.querySelector("svg")?.getAttribute("data-icon")).toBe("close");
+    fireEvent.click(close);
     expect(calls.toggled).toBe(1);
     expect(calls.closed).toBe(1);
   });

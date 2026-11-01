@@ -895,18 +895,12 @@ select.atlas-form-input option {
 }
 
 .explorer-icon-button,
-.explorer-tool-icon {
-  width: 44px;
-  padding: 0;
-  border-radius: 50%;
-  font-size: 1.125rem;
-  line-height: 1;
-}
-
-.explorer-icon-button {
+.explorer-tool {
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
+  width: 44px;
+  padding: 0;
 }
 
 .explorer-tool:disabled {
@@ -965,7 +959,7 @@ select.atlas-form-input option {
 .explorer-toolbar {
   display: flex;
   flex: none;
-  flex-flow: row wrap;
+  flex-flow: row nowrap;
   justify-content: flex-end;
   align-items: center;
   gap: var(--space-1);
