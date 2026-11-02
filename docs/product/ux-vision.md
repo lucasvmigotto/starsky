@@ -1117,12 +1117,11 @@ The Explorer reuses `invalid.*` for a link it cannot read and `dataError.*` for 
 | `explorer.list.below` | Below the horizon ({count}) |
 | `explorer.list.partly` | partly above the horizon *(visually hidden, read by screen readers)* |
 | `explorer.search.input` | Search constellations and stars |
-| `explorer.search.placeholder` | Name, abbreviation or HIP number |
+| `explorer.search.placeholder` | Name, abbr. or HIP |
 | `explorer.search.results` | Search results |
 | `explorer.search.none` | No matches. |
 | `explorer.search.countOne` | 1 result. |
 | `explorer.search.countMany` | {count} results. |
-| `explorer.search.close` | Close search |
 | `explorer.search.starDetail` | HIP {hip}, magnitude {mag} |
 | `explorer.moment.label` | Moment |
 | `explorer.moment.pin` | Keep details open |
@@ -1384,12 +1383,11 @@ set.
 | `explorer.list.below` | Abaixo do horizonte ({count}) |
 | `explorer.list.partly` | parcialmente acima do horizonte |
 | `explorer.search.input` | Buscar constelações e estrelas |
-| `explorer.search.placeholder` | Nome, abreviatura ou número HIP |
+| `explorer.search.placeholder` | Nome, abrev. ou HIP |
 | `explorer.search.results` | Resultados da busca |
 | `explorer.search.none` | Nenhum resultado. |
 | `explorer.search.countOne` | 1 resultado. |
 | `explorer.search.countMany` | {count} resultados. |
-| `explorer.search.close` | Fechar busca |
 | `explorer.search.starDetail` | HIP {hip}, magnitude {mag} |
 | `explorer.moment.label` | Momento |
 | `explorer.moment.pin` | Manter os detalhes abertos |

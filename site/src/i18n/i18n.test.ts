@@ -138,6 +138,7 @@ describe("copy", () => {
     // `landing.privacy.link` plus nine `site.privacy.*` keys arrive.
     // 235 → 241 for the constellation tooltip and star list (019): `explorer.tooltip.constellation`,
     // `.constellationOne`, `.namedMore` and `explorer.members.title`, `.detail`, `.detailBelow`.
-    expect(copyKeys().length).toBe(241);
+    // 241 → 240: the search box's close button retires; an outside press closes it.
+    expect(copyKeys().length).toBe(240);
   });
 });
