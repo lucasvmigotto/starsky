@@ -16,7 +16,7 @@ import type { CopyKey } from "./en-US.ts";
 
 export const ptBR: Record<CopyKey, string> = {
   "landing.title": "De onde você quer explorar o céu?",
-  "footer.tagline": "8 000+ estrelas, desenhadas no navegador",
+  "footer.tagline": "8 000+ estrelas, no navegador",
   "landing.moment.legend": "Data e hora",
   "landing.advanced.legend": "Avançado",
   "landing.render.fisheye": "Intensidade do olho de peixe",
@@ -253,12 +253,11 @@ export const ptBR: Record<CopyKey, string> = {
   "explorer.list.below": "Abaixo do horizonte ({count})",
   "explorer.list.partly": "parcialmente acima do horizonte",
   "explorer.search.input": "Buscar constelações e estrelas",
-  "explorer.search.placeholder": "Nome, abreviatura ou número HIP",
+  "explorer.search.placeholder": "Nome, abrev. ou HIP",
   "explorer.search.results": "Resultados da busca",
   "explorer.search.none": "Nenhum resultado.",
   "explorer.search.countOne": "1 resultado.",
   "explorer.search.countMany": "{count} resultados.",
-  "explorer.search.close": "Fechar busca",
   "explorer.search.starDetail": "HIP {hip}, magnitude {mag}",
   "explorer.moment.label": "Momento",
   "explorer.moment.pin": "Manter os detalhes abertos",
