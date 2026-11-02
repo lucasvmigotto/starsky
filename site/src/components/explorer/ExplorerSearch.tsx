@@ -3,7 +3,7 @@
  * keys move, Enter chooses, Escape closes. The result count, or "No matches.",
  * goes to a polite status region.
  */
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { JSX, KeyboardEvent, RefObject } from "react";
 import { t } from "../../i18n/index.ts";
 import { type SearchResult, searchObjects } from "../../lib/explorer/search.ts";
@@ -14,7 +14,15 @@ interface Props {
   scene: SkyScene;
   magLimit: number;
   onChoose: (id: string) => void;
+  /** Escape: closes and hands focus back to whatever opened the box. */
   onClose: () => void;
+  /**
+   * A press outside the box: closes it and leaves focus where the press put it
+   * (the sky, a panel), since the visitor chose to go there.
+   */
+  onDismiss: () => void;
+  /** Presses inside this element are not "outside": the toolbar button that toggles the box. */
+  ignoreRef?: RefObject<HTMLElement | null>;
   inputRef?: RefObject<HTMLInputElement | null>;
 }
 
@@ -30,8 +38,32 @@ function statusOf(query: string, count: number): string {
   return count === 1 ? t("explorer.search.countOne") : t("explorer.search.countMany", { count });
 }
 
-export default function ExplorerSearch({ scene, magLimit, onChoose, onClose, inputRef }: Props): JSX.Element {
+export default function ExplorerSearch({
+  scene,
+  magLimit,
+  onChoose,
+  onClose,
+  onDismiss,
+  ignoreRef,
+  inputRef,
+}: Props): JSX.Element {
   const base = useId();
+  const root = useRef<HTMLDivElement | null>(null);
+  // Closing by clicking elsewhere replaces a close button. Listening on the
+  // document in the capture phase sees presses the sky's own handlers consume.
+  useEffect(() => {
+    const onPress = (event: PointerEvent): void => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (root.current?.contains(target) === true) return;
+      if (ignoreRef?.current?.contains(target) === true) return;
+      onDismiss();
+    };
+    document.addEventListener("pointerdown", onPress, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPress, true);
+    };
+  }, [onDismiss, ignoreRef]);
   const listId = `${base}-list`;
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -67,7 +99,7 @@ export default function ExplorerSearch({ scene, magLimit, onChoose, onClose, inp
   };
 
   return (
-    <div className="explorer-search">
+    <div className="explorer-search" ref={root}>
       <div className="explorer-search-row">
         <input
           ref={inputRef}
@@ -89,9 +121,6 @@ export default function ExplorerSearch({ scene, magLimit, onChoose, onClose, inp
           }}
           onKeyDown={onKeyDown}
         />
-        <button type="button" className="atlas-btn-ghost" onClick={onClose}>
-          {t("explorer.search.close")}
-        </button>
       </div>
       <ul id={listId} role="listbox" aria-label={t("explorer.search.results")} className="explorer-results" hidden={results.length === 0}>
         {results.map((result, index) => (

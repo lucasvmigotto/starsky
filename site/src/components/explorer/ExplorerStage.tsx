@@ -117,6 +117,11 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
     searchButton.current?.focus();
   }, []);
 
+  /** A press outside the search box closes it; focus stays where the press put it. */
+  const dismissSearch = useCallback((): void => {
+    dispatch({ type: "close", panel: "search" });
+  }, []);
+
   const closeLayers = useCallback((): void => {
     dispatch({ type: "close", panel: "layers" });
     layersButton.current?.focus();
@@ -238,6 +243,8 @@ export default function ExplorerStage({ scene, payload }: Props): JSX.Element {
                     magLimit={payload.mag}
                     onChoose={chooseFromSearch}
                     onClose={closeSearch}
+                    onDismiss={dismissSearch}
+                    ignoreRef={searchButton}
                     inputRef={searchInput}
                   />
                 </div>

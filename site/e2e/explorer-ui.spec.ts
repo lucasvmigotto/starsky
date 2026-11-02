@@ -126,6 +126,38 @@ test.describe("explorer interface: inspector and search", () => {
     await expect(page.getByRole("option")).toHaveCount(0);
   });
 
+  test("the search box has no close button: a click on the sky closes it, Escape returns focus to the toolbar", async ({ page }) => {
+    const canvas = await openExplorer(page, explorerUrl(SIRIUS));
+    const toolbarSearch = page.getByRole("button", { name: "Search", exact: true });
+    const input = page.getByRole("combobox", { name: "Search constellations and stars" });
+    await toolbarSearch.click();
+    await expect(input).toBeVisible();
+    await expect(page.getByRole("button", { name: "Close search" })).toHaveCount(0);
+    // The input's whole placeholder is readable: it is not cut off by the box.
+    await expect(input).toHaveAttribute("placeholder", "Name, abbr. or HIP");
+    const fits = await input.evaluate((el) => el.scrollWidth <= el.clientWidth);
+    expect(fits).toBe(true);
+    // A press inside the box keeps it open.
+    await input.fill("uma");
+    await expect(page.getByRole("option", { name: /Ursa Major/ })).toBeVisible();
+    // The toolbar button still toggles (it is not an "outside" press that reopens it).
+    await toolbarSearch.click();
+    await expect(input).toHaveCount(0);
+    await toolbarSearch.click();
+    await expect(input).toBeVisible();
+    // A click on the sky closes it, and focus stays on the sky.
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error("the canvas has no box");
+    await page.mouse.click(box.x + box.width / 3, box.y + box.height / 3);
+    await expect(input).toHaveCount(0);
+    // Escape still closes it and hands focus back to the toolbar button.
+    await toolbarSearch.click();
+    await expect(input).toBeFocused();
+    await input.press("Escape");
+    await expect(input).toHaveCount(0);
+    await expect(toolbarSearch).toBeFocused();
+  });
+
   test("the panel floats over the sky: the canvas keeps its size when it opens, and closing returns focus to the tab", async ({ page }) => {
     const canvas = await openExplorer(page, explorerUrl(SIRIUS));
     const before = await canvas.boundingBox();

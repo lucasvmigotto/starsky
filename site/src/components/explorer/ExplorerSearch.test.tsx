@@ -27,9 +27,14 @@ const { scene } = sceneOf(
   ],
 );
 
+const toggles: HTMLElement[] = [];
+
 function mount() {
   const chosen: string[] = [];
   let closed = 0;
+  let dismissed = 0;
+  const toggle = { current: document.body.appendChild(document.createElement("button")) };
+  toggles.push(toggle.current);
   render(
     <ExplorerSearch
       scene={scene}
@@ -38,17 +43,22 @@ function mount() {
       onClose={() => {
         closed++;
       }}
+      onDismiss={() => {
+        dismissed++;
+      }}
+      ignoreRef={toggle}
     />,
   );
   const input = screen.getByRole("combobox", { name: "Search constellations and stars" });
   const type = (value: string): void => {
     fireEvent.change(input, { target: { value } });
   };
-  return { input, type, chosen, closed: () => closed };
+  return { input, type, chosen, closed: () => closed, dismissed: () => dismissed, toggle: toggle.current };
 }
 
 afterEach(() => {
   cleanup();
+  for (const node of toggles.splice(0)) node.remove();
 });
 
 describe("ExplorerSearch", () => {
@@ -132,12 +142,28 @@ describe("ExplorerSearch", () => {
     expect(screen.getByRole("status").textContent).toBe("");
   });
 
-  it("closes on Escape and from its button", () => {
+  it("closes on Escape", () => {
     const { input, closed } = mount();
     fireEvent.keyDown(input, { key: "Escape" });
     expect(closed()).toBe(1);
-    fireEvent.click(screen.getByRole("button", { name: "Close search" }));
-    expect(closed()).toBe(2);
+  });
+
+  it("has no close button: a press outside dismisses it", () => {
+    const { input, dismissed } = mount();
+    const box = input.closest<HTMLElement>(".explorer-search");
+    expect(box).not.toBeNull();
+    expect(box?.querySelector("button")).toBeNull();
+    fireEvent.pointerDown(document.body);
+    expect(dismissed()).toBe(1);
+  });
+
+  it("does not dismiss on a press inside the box or on the toolbar button that toggles it", () => {
+    const { input, type, dismissed, toggle } = mount();
+    type("sirius");
+    fireEvent.pointerDown(input);
+    fireEvent.pointerDown(screen.getByRole("option"));
+    fireEvent.pointerDown(toggle);
+    expect(dismissed()).toBe(0);
   });
 
   it("does not choose on Enter when there is nothing to choose", () => {
