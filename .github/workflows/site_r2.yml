@@ -27,6 +27,14 @@ on:
       - "specs/007-renderer-export/fixtures/**"
       - ".github/workflows/site_r2.yml"
   workflow_dispatch:
+  # Redeploy once the release workflow has tagged X.Y.Z. The release bot pushes
+  # its version bump with GITHUB_TOKEN, which triggers no push workflow, so
+  # without this the product kept the footer's previous version (1.3.0 shipped
+  # printing 1.2.1). Same pattern as `site_docs.yml`.
+  workflow_run:
+    workflows: ["Tag and Release"]
+    types: [completed]
+    branches: ["main"]
 
 concurrency:
   group: site-r2-${{ github.ref }}
@@ -37,6 +45,7 @@ permissions:
 
 jobs:
   verify:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -151,7 +160,7 @@ jobs:
           if-no-files-found: error
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_run') && github.ref == 'refs/heads/main'
     needs: verify
     runs-on: ubuntu-24.04
     # Named environment: deployment history today, optional manual
