@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.1 — 2026-11-02
+
+### Fixed
+
+- **site:** give the pt-BR footer room for a longer version number
+- **site:** fit the Explorer search placeholder and close it on an outside press
+
 ## 1.3.0 — 2026-11-01
 
 ### Added
