@@ -1174,7 +1174,7 @@ set.
 | Key | Copy |
 |---|---|
 | `landing.title` | De onde você quer explorar o céu? |
-| `footer.tagline` | 8 000+ estrelas, desenhadas no navegador |
+| `footer.tagline` | 8 000+ estrelas, no navegador |
 | `landing.moment.legend` | Data e hora |
 | `landing.advanced.legend` | Avançado |
 | `landing.render.fisheye` | Intensidade do olho de peixe |
